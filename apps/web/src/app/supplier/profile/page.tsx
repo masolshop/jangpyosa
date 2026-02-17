@@ -32,7 +32,7 @@ export default function SupplierProfilePage() {
         return;
       }
 
-      const res = await fetch("http://localhost:4000/supplier/profile", {
+      const res = await fetch("/api/proxy/supplier/profile", {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -110,7 +110,7 @@ export default function SupplierProfilePage() {
 
     try {
       const token = getToken();
-      const res = await fetch("http://localhost:4000/supplier/profile/images", {
+      const res = await fetch("/api/proxy/supplier/profile/images", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -172,24 +172,63 @@ export default function SupplierProfilePage() {
         {profile?.registry && (
           <div style={{ marginTop: 16, padding: 16, background: "#e7f3ff", borderRadius: 8 }}>
             <h3 style={{ margin: 0, fontSize: 16, color: "#0070f3" }}>
-              ✓ 표준사업장 인증 정보 (자동 매칭됨)
+              ✓ 표준사업장 인증 정보 (엑셀 DB에서 자동 매칭)
             </h3>
-            <div style={{ marginTop: 12, fontSize: 14 }}>
-              <p style={{ margin: "4px 0" }}>
-                <strong>인증번호:</strong> {profile.registry.certNo}
-              </p>
-              <p style={{ margin: "4px 0" }}>
-                <strong>사업체명:</strong> {profile.registry.name}
-              </p>
-              <p style={{ margin: "4px 0" }}>
-                <strong>사업자번호:</strong> {profile.registry.bizNo}
-              </p>
-              <p style={{ margin: "4px 0" }}>
-                <strong>소재지:</strong> {profile.registry.address}
-              </p>
-              <p style={{ margin: "4px 0" }}>
-                <strong>업종:</strong> {profile.registry.industry}
-              </p>
+            <div style={{ marginTop: 12, fontSize: 14, display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '8px 16px' }}>
+              {profile.registry.certNo && (
+                <>
+                  <strong>인증번호:</strong>
+                  <span>{profile.registry.certNo}</span>
+                </>
+              )}
+              {profile.registry.name && (
+                <>
+                  <strong>사업체명:</strong>
+                  <span>{profile.registry.name}</span>
+                </>
+              )}
+              {profile.registry.bizNo && (
+                <>
+                  <strong>사업자번호:</strong>
+                  <span>{profile.registry.bizNo}</span>
+                </>
+              )}
+              {profile.registry.representative && (
+                <>
+                  <strong>대표자:</strong>
+                  <span>{profile.registry.representative}</span>
+                </>
+              )}
+              {profile.registry.region && (
+                <>
+                  <strong>지역:</strong>
+                  <span>{profile.registry.region}</span>
+                </>
+              )}
+              {profile.registry.industry && (
+                <>
+                  <strong>업종:</strong>
+                  <span>{profile.registry.industry}</span>
+                </>
+              )}
+              {profile.registry.address && (
+                <>
+                  <strong>소재지:</strong>
+                  <span>{profile.registry.address}</span>
+                </>
+              )}
+              {profile.registry.certDate && (
+                <>
+                  <strong>인증일자:</strong>
+                  <span>{profile.registry.certDate}</span>
+                </>
+              )}
+              {profile.registry.companyType && (
+                <>
+                  <strong>구분:</strong>
+                  <span>{profile.registry.companyType}</span>
+                </>
+              )}
             </div>
           </div>
         )}
