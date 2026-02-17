@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { config } from "../config.js";
 
-export type AuthUser = { sub: string; role: string };
+export type AuthUser = { userId: string; role: string };
 
 declare global {
   namespace Express {
@@ -22,7 +22,7 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
   try {
     const decoded = jwt.verify(token, config.jwtSecret) as AuthUser;
     req.auth = decoded;
-    req.user = { id: decoded.sub, role: decoded.role };
+    req.user = { id: decoded.userId, role: decoded.role };
     next();
   } catch (error) {
     return res.status(401).json({ error: "INVALID_TOKEN" });

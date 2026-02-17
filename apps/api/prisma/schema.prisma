@@ -148,13 +148,46 @@ model Product {
   supplierId  String
   supplier    SupplierProfile @relation(fields: [supplierId], references: [id])
 
-  title       String
-  category    String
-  price       Int     // KRW
-  unit        String  // "월", "개", "건" 등
-  minOrderQty Int     @default(1)
-  leadTimeDays Int    @default(7)
-  isActive    Boolean @default(true)
+  // 기본 정보
+  title       String  // 상품명
+  category    String  // 카테고리
+  summary     String? // 한줄 요약
+  description String? // 상세 설명
+  
+  // 가격 및 수량
+  price       Int     // 단가 (KRW)
+  unit        String  // 단위 ("월", "개", "건" 등)
+  minOrderQty Int     @default(1) // 최소 주문 수량
+  
+  // 납품 및 리드타임
+  leadTimeDays Int    @default(7)  // 평균 납품 소요일
+  deliveryCycle String? // 납품 주기 설명
+  
+  // 계약 조건 (법적 근거 항목)
+  spec        String? // 규격/재질/사양/명세
+  processDescription String? // 공정 설명
+  contractMinMonths Int @default(12) // 최소 계약기간(월) ≥12개월
+  
+  // 가격 상세
+  vatIncluded Boolean @default(true) // VAT 포함 여부
+  shippingIncluded Boolean @default(false) // 배송비 포함 여부
+  extraCostNote String? // 추가 비용 안내 (인건비/자재비 비율 등)
+  
+  // 품질 기준
+  inspectionCriteria String? // 검사 기준
+  defectPolicy String? // 하자 처리 방침
+  
+  // 거래 조건
+  invoiceAvailable Boolean @default(true) // 세금계산서 발행 가능 여부
+  quoteLeadTimeDays Int @default(3) // 견적서 제공 소요일
+  
+  // 이미지
+  thumbnailUrl String? // 대표 이미지
+  imageUrls String? // 추가 이미지 URL들 (JSON array string)
+  
+  // 키워드 및 활성화
+  keywords String? // 검색 키워드 (콤마 구분)
+  isActive Boolean @default(true)
 
   cartItems   CartItem[]
 
