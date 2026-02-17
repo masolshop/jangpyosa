@@ -17,26 +17,20 @@ export default function HomePage() {
           
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 16 }}>
             <ServiceCard
-              icon="📅"
-              title="연간 월별 부담금 계산"
-              description="12개월 고용 현황을 입력하여 정확한 연간 부담금을 계산하세요"
+              icon="💰"
+              title="고용부담금계산기"
+              description="간단 부담금 계산과 월별 상세 계산으로 연간 부담금을 정확히 산출하세요"
               href="/calculators/levy-annual"
             />
             <ServiceCard
               icon="💸"
-              title="연간 월별 장려금 계산"
+              title="고용장려금계산기"
               description="의무고용률 초과 고용 시 받을 수 있는 장려금을 계산하세요"
               href="/calculators/incentive-annual"
             />
             <ServiceCard
-              icon="💰"
-              title="간단 부담금 계산"
-              description="상시근로자 수와 장애인 고용인원을 입력하여 예상 부담금을 빠르게 계산하세요"
-              href="/calculators/levy"
-            />
-            <ServiceCard
               icon="📉"
-              title="감면 계산기"
+              title="고용연계감면계산기"
               description="도급계약 금액을 입력하여 부담금 감면액을 확인하세요"
               href="/calculators/linkage"
             />

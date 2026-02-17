@@ -148,9 +148,12 @@ export default function LevyAnnualPage() {
 
   return (
     <div style={{ padding: 20, maxWidth: 1400, margin: "0 auto" }}>
-      <h1>📅 연간 월별 부담금 계산기</h1>
+      <h1>📅 월별부담금계산</h1>
       <p style={{ color: "#666", marginTop: 8 }}>
         매월 상시근로자 수와 장애인 고용 현황을 입력하여 정확한 연간 부담금을 계산하세요
+      </p>
+      <p style={{ color: "#0070f3", fontSize: 14, marginTop: 8 }}>
+        💡 <strong>실무 팁:</strong> 간단한 추정이 필요하시면 <a href="/calculators/levy" style={{ color: "#0070f3", textDecoration: "underline" }}>간단부담금계산</a>을 이용하세요
       </p>
 
       {/* 기본 설정 */}

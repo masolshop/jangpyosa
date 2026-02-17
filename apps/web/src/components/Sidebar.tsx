@@ -28,7 +28,7 @@ export default function Sidebar() {
         style={{
           position: "fixed",
           top: 16,
-          left: isOpen ? 260 : 16,
+          left: isOpen ? 410 : 16,
           zIndex: 1001,
           background: "#0070f3",
           color: "white",
@@ -47,8 +47,8 @@ export default function Sidebar() {
         style={{
           position: "fixed",
           top: 0,
-          left: isOpen ? 0 : -260,
-          width: 240,
+          left: isOpen ? 0 : -410,
+          width: 390,
           height: "100vh",
           background: "#1a1a1a",
           color: "white",
@@ -78,8 +78,8 @@ export default function Sidebar() {
             e.currentTarget.style.opacity = "1";
           }}
         >
-          <h2 style={{ margin: 0, fontSize: 24 }}>🏢 장표사닷컴</h2>
-          <p style={{ margin: "4px 0 0 0", fontSize: 14.4, color: "#999", lineHeight: 1.4 }}>
+          <h2 style={{ margin: 0, fontSize: 28.8 }}>🏢 장표사닷컴</h2>
+          <p style={{ margin: "4px 0 0 0", fontSize: 17.28, color: "#999", lineHeight: 1.4 }}>
             장애인표준사업장<br />
             연계고용플랫폼
           </p>
@@ -88,7 +88,7 @@ export default function Sidebar() {
         {/* 메인 메뉴 */}
         <nav>
           <div style={{ marginBottom: 24 }}>
-            <div style={{ fontSize: 11, color: "#666", marginBottom: 8, fontWeight: "bold" }}>
+            <div style={{ fontSize: 13.2, color: "#666", marginBottom: 8, fontWeight: "bold" }}>
               메인
             </div>
             <MenuItem
@@ -123,30 +123,28 @@ export default function Sidebar() {
 
           {/* 계산기 */}
           <div style={{ marginBottom: 24 }}>
-            <div style={{ fontSize: 11, color: "#666", marginBottom: 8, fontWeight: "bold" }}>
+            <div style={{ fontSize: 15.84, color: "#666", marginBottom: 8, fontWeight: "bold" }}>
               계산기
             </div>
             <MenuItem
               href="/calculators/levy-annual"
-              label="연간 월별 부담금"
-              icon="📅"
-              active={isActive("/calculators/levy-annual")}
+              label="고용부담금계산기"
+              icon="💰"
+              active={isActive("/calculators/levy-annual") || isActive("/calculators/levy")}
+              subItems={[
+                { href: "/calculators/levy", label: "간단부담금계산" },
+                { href: "/calculators/levy-annual", label: "월별부담금계산" },
+              ]}
             />
             <MenuItem
               href="/calculators/incentive-annual"
-              label="연간 월별 장려금"
+              label="고용장려금계산기"
               icon="💸"
               active={isActive("/calculators/incentive-annual")}
             />
             <MenuItem
-              href="/calculators/levy"
-              label="간단 부담금 계산"
-              icon="💰"
-              active={isActive("/calculators/levy")}
-            />
-            <MenuItem
               href="/calculators/linkage"
-              label="감면 계산기"
+              label="고용연계감면계산기"
               icon="📉"
               active={isActive("/calculators/linkage")}
             />
@@ -154,7 +152,7 @@ export default function Sidebar() {
 
           {/* 콘텐츠 */}
           <div style={{ marginBottom: 24 }}>
-            <div style={{ fontSize: 11, color: "#666", marginBottom: 8, fontWeight: "bold" }}>
+            <div style={{ fontSize: 13.2, color: "#666", marginBottom: 8, fontWeight: "bold" }}>
               안내
             </div>
             <MenuItem
@@ -179,7 +177,7 @@ export default function Sidebar() {
 
           {/* 계정 */}
           <div style={{ marginBottom: 24 }}>
-            <div style={{ fontSize: 11, color: "#666", marginBottom: 8, fontWeight: "bold" }}>
+            <div style={{ fontSize: 13.2, color: "#666", marginBottom: 8, fontWeight: "bold" }}>
               계정
             </div>
             {userRole ? (
@@ -228,7 +226,7 @@ export default function Sidebar() {
           {/* 슈퍼어드민 전용 메뉴 */}
           {userRole === "SUPER_ADMIN" && (
             <div style={{ marginBottom: 24 }}>
-              <div style={{ fontSize: 11, color: "#666", marginBottom: 8, fontWeight: "bold" }}>
+              <div style={{ fontSize: 13.2, color: "#666", marginBottom: 8, fontWeight: "bold" }}>
                 관리자
               </div>
               <MenuItem
@@ -268,51 +266,101 @@ function MenuItem({
   icon,
   active = false,
   onClick,
+  subItems,
 }: {
   href: string;
   label: string;
   icon: string;
   active?: boolean;
   onClick?: () => void;
+  subItems?: { href: string; label: string }[];
 }) {
+  const pathname = usePathname();
+  const [isExpanded, setIsExpanded] = useState(false);
+
   const handleClick = (e: React.MouseEvent) => {
     if (onClick) {
       e.preventDefault();
       onClick();
+    } else if (subItems) {
+      e.preventDefault();
+      setIsExpanded(!isExpanded);
     }
   };
 
   return (
-    <a
-      href={href}
-      onClick={handleClick}
-      style={{
-        display: "flex",
-        alignItems: "center",
-        padding: "10px 12px",
-        marginBottom: 4,
-        borderRadius: 6,
-        textDecoration: "none",
-        color: active ? "white" : "#ccc",
-        background: active ? "#0070f3" : "transparent",
-        fontSize: 14,
-        transition: "all 0.2s",
-      }}
-      onMouseEnter={(e) => {
-        if (!active) {
-          e.currentTarget.style.background = "#2a2a2a";
-          e.currentTarget.style.color = "white";
-        }
-      }}
-      onMouseLeave={(e) => {
-        if (!active) {
-          e.currentTarget.style.background = "transparent";
-          e.currentTarget.style.color = "#ccc";
-        }
-      }}
-    >
-      <span style={{ marginRight: 8 }}>{icon}</span>
-      <span>{label}</span>
-    </a>
+    <>
+      <a
+        href={href}
+        onClick={handleClick}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          padding: "12px 14px",
+          marginBottom: 4,
+          borderRadius: 6,
+          textDecoration: "none",
+          color: active ? "white" : "#ccc",
+          background: active ? "#0070f3" : "transparent",
+          fontSize: 20.16,
+          transition: "all 0.2s",
+        }}
+        onMouseEnter={(e) => {
+          if (!active) {
+            e.currentTarget.style.background = "#2a2a2a";
+            e.currentTarget.style.color = "white";
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (!active) {
+            e.currentTarget.style.background = "transparent";
+            e.currentTarget.style.color = "#ccc";
+          }
+        }}
+      >
+        <span style={{ marginRight: 10 }}>{icon}</span>
+        <span style={{ flex: 1 }}>{label}</span>
+        {subItems && (
+          <span style={{ fontSize: 12, marginLeft: 4 }}>
+            {isExpanded ? "▼" : "▶"}
+          </span>
+        )}
+      </a>
+
+      {/* 하위 메뉴 */}
+      {subItems && isExpanded && (
+        <div style={{ marginLeft: 20, marginBottom: 8 }}>
+          {subItems.map((sub, i) => (
+            <a
+              key={i}
+              href={sub.href}
+              style={{
+                display: "block",
+                padding: "8px 12px",
+                marginBottom: 4,
+                borderRadius: 4,
+                textDecoration: "none",
+                color: pathname === sub.href ? "#0070f3" : "#999",
+                background: pathname === sub.href ? "rgba(0,112,243,0.1)" : "transparent",
+                fontSize: 16.8,
+                transition: "all 0.2s",
+              }}
+              onMouseEnter={(e) => {
+                if (pathname !== sub.href) {
+                  e.currentTarget.style.color = "white";
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (pathname !== sub.href) {
+                  e.currentTarget.style.color = "#999";
+                }
+              }}
+            >
+              • {sub.label}
+            </a>
+          ))}
+        </div>
+      )}
+    </>
   );
 }

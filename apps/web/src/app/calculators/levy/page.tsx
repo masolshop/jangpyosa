@@ -37,9 +37,12 @@ export default function LevyCalcPage() {
   return (
     <div className="container">
       <div className="card" style={{ maxWidth: 600, margin: "40px auto" }}>
-        <h1>💰 장애인고용부담금 계산기</h1>
+        <h1>💰 간단부담금계산</h1>
         <p style={{ color: "#666", marginTop: 8 }}>
-          상시근로자 수와 장애인 고용인원을 입력하여 부담금을 추정하세요
+          상시근로자 수와 장애인 고용인원을 입력하여 부담금을 빠르게 추정하세요
+        </p>
+        <p style={{ color: "#0070f3", fontSize: 14, marginTop: 8 }}>
+          💡 <strong>실무 팁:</strong> 연간 상세 계산이 필요하시면 <a href="/calculators/levy-annual" style={{ color: "#0070f3", textDecoration: "underline" }}>월별부담금계산</a>을 이용하세요
         </p>
 
         <div style={{ marginTop: 24 }}>
