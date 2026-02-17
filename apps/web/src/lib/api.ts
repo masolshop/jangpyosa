@@ -1,4 +1,5 @@
-export const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:4000";
+// API 기본 URL - Next.js API proxy를 사용
+export const API_BASE = "/api/proxy";
 
 export async function apiFetch(path: string, opts: RequestInit = {}) {
   const token =
@@ -15,6 +16,6 @@ export async function apiFetch(path: string, opts: RequestInit = {}) {
   });
 
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data?.error || "API_ERROR");
+  if (!res.ok) throw new Error(data?.error || data?.message || "API_ERROR");
   return data;
 }
