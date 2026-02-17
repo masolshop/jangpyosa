@@ -109,6 +109,10 @@ export default function SignupPage() {
         setMsg("사업자등록번호를 입력하세요");
         return;
       }
+      if (!referrerPhone) {
+        setMsg("추천인 매니저 핸드폰 번호를 입력하세요");
+        return;
+      }
     }
 
     setLoading(true);
@@ -134,14 +138,14 @@ export default function SignupPage() {
         body = {
           ...body,
           bizNo: bizNo.replace(/\D/g, ""),
-          referrerPhone: referrerPhone ? referrerPhone.replace(/\D/g, "") : undefined,
+          referrerPhone: referrerPhone.replace(/\D/g, ""),
         };
       } else if (type === "buyer") {
         endpoint = "/auth/signup/buyer";
         body = {
           ...body,
           bizNo: bizNo.replace(/\D/g, ""),
-          referrerPhone: referrerPhone ? referrerPhone.replace(/\D/g, "") : undefined,
+          referrerPhone: referrerPhone.replace(/\D/g, ""),
         };
       }
 
@@ -418,7 +422,7 @@ export default function SignupPage() {
                 💡 APICK API로 자동 인증되며, 상호명과 대표자명이 자동 입력됩니다
               </p>
 
-              <label>추천인 매니저 핸드폰 번호 (선택)</label>
+              <label>추천인 매니저 핸드폰 번호 *</label>
               <input
                 type="tel"
                 placeholder="010-9876-5432"
@@ -427,7 +431,7 @@ export default function SignupPage() {
                 maxLength={13}
               />
               <p style={{ fontSize: 12, color: "#666", margin: "4px 0 12px 0" }}>
-                추천인 매니저의 핸드폰 번호를 입력하면 해당 매니저에게 매칭됩니다
+                💡 추천인 매니저의 핸드폰 번호를 입력하세요 (필수)
               </p>
             </>
           )}

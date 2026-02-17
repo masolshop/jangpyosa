@@ -153,7 +153,7 @@ const signupSupplierSchema = z.object({
   phone: z.string().min(10),
   password: z.string().min(8),
   bizNo: z.string().min(10, "사업자등록번호 10자리를 입력하세요"),
-  referrerPhone: z.string().optional(), // 추천인 매니저 핸드폰 번호
+  referrerPhone: z.string().min(10, "추천인 매니저 핸드폰 번호는 필수입니다"), // 필수로 변경
 });
 
 r.post("/signup/supplier", async (req, res) => {
@@ -183,13 +183,17 @@ r.post("/signup/supplier", async (req, res) => {
       });
     }
 
-    // 추천인 매니저 확인 (핸드폰 번호로 매칭)
-    let referredBy = null;
-    if (body.referrerPhone) {
-      const cleanReferrerPhone = body.referrerPhone.replace(/\D/g, "");
-      referredBy = await prisma.user.findFirst({
-        where: { phone: cleanReferrerPhone, role: "AGENT" },
-        include: { branch: true },
+    // 추천인 매니저 확인 (핸드폰 번호로 매칭) - 필수
+    const cleanReferrerPhone = body.referrerPhone.replace(/\D/g, "");
+    const referredBy = await prisma.user.findFirst({
+      where: { phone: cleanReferrerPhone, role: "AGENT" },
+      include: { branch: true },
+    });
+
+    if (!referredBy) {
+      return res.status(400).json({
+        error: "REFERRER_NOT_FOUND",
+        message: "해당 핸드폰 번호의 매니저를 찾을 수 없습니다",
       });
     }
 
@@ -202,7 +206,7 @@ r.post("/signup/supplier", async (req, res) => {
         passwordHash,
         name: apickResult.representative || "대표자",
         role: "SUPPLIER",
-        referredById: referredBy?.id,
+        referredById: referredBy.id,
         company: {
           create: {
             name: apickResult.name!,
@@ -282,7 +286,7 @@ const signupBuyerSchema = z.object({
   phone: z.string().min(10),
   password: z.string().min(8),
   bizNo: z.string().min(10, "사업자등록번호 10자리를 입력하세요"),
-  referrerPhone: z.string().optional(), // 추천인 매니저 핸드폰 번호
+  referrerPhone: z.string().min(10, "추천인 매니저 핸드폰 번호는 필수입니다"), // 필수로 변경
 });
 
 r.post("/signup/buyer", async (req, res) => {
@@ -312,13 +316,17 @@ r.post("/signup/buyer", async (req, res) => {
       });
     }
 
-    // 추천인 매니저 확인 (핸드폰 번호로 매칭)
-    let referredBy = null;
-    if (body.referrerPhone) {
-      const cleanReferrerPhone = body.referrerPhone.replace(/\D/g, "");
-      referredBy = await prisma.user.findFirst({
-        where: { phone: cleanReferrerPhone, role: "AGENT" },
-        include: { branch: true },
+    // 추천인 매니저 확인 (핸드폰 번호로 매칭) - 필수
+    const cleanReferrerPhone = body.referrerPhone.replace(/\D/g, "");
+    const referredBy = await prisma.user.findFirst({
+      where: { phone: cleanReferrerPhone, role: "AGENT" },
+      include: { branch: true },
+    });
+
+    if (!referredBy) {
+      return res.status(400).json({
+        error: "REFERRER_NOT_FOUND",
+        message: "해당 핸드폰 번호의 매니저를 찾을 수 없습니다",
       });
     }
 
@@ -331,7 +339,7 @@ r.post("/signup/buyer", async (req, res) => {
         passwordHash,
         name: apickResult.representative || "대표자",
         role: "BUYER",
-        referredById: referredBy?.id,
+        referredById: referredBy.id,
         company: {
           create: {
             name: apickResult.name!,
