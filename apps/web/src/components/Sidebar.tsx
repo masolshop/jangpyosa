@@ -28,7 +28,7 @@ export default function Sidebar() {
         style={{
           position: "fixed",
           top: 16,
-          left: isOpen ? 410 : 16,
+          left: isOpen ? 350 : 16,
           zIndex: 1001,
           background: "#0070f3",
           color: "white",
@@ -47,8 +47,8 @@ export default function Sidebar() {
         style={{
           position: "fixed",
           top: 0,
-          left: isOpen ? 0 : -410,
-          width: 390,
+          left: isOpen ? 0 : -350,
+          width: 330,
           height: "100vh",
           background: "#1a1a1a",
           color: "white",
