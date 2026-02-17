@@ -9,6 +9,28 @@ import { verifyBizNo } from "../services/apick.js";
 const r = Router();
 
 // ========================================
+// 🔧 헬퍼 함수
+// ========================================
+
+/**
+ * 핸드폰 번호 정규화
+ * 지원 형식: 010-1234-5678, 01012345678, 1012345678
+ * @param phone 입력된 핸드폰 번호
+ * @returns 11자리 숫자 문자열 (예: 01012345678)
+ */
+function normalizePhone(phone: string): string {
+  // 숫자만 추출
+  let cleanPhone = phone.replace(/\D/g, "");
+  
+  // 10자리이고 0으로 시작하지 않으면 0 추가 (1012345678 -> 01012345678)
+  if (cleanPhone.length === 10 && cleanPhone[0] !== "0") {
+    cleanPhone = "0" + cleanPhone;
+  }
+  
+  return cleanPhone;
+}
+
+// ========================================
 // 📱 핸드폰 번호 기반 로그인
 // ========================================
 
@@ -20,7 +42,7 @@ const loginSchema = z.object({
 r.post("/login", async (req, res) => {
   try {
     const body = loginSchema.parse(req.body);
-    const cleanPhone = body.phone.replace(/\D/g, ""); // 숫자만 추출
+    const cleanPhone = normalizePhone(body.phone);
 
     const user = await prisma.user.findUnique({
       where: { phone: cleanPhone },
@@ -88,7 +110,7 @@ const signupAgentSchema = z.object({
 r.post("/signup/agent", async (req, res) => {
   try {
     const body = signupAgentSchema.parse(req.body);
-    const cleanPhone = body.phone.replace(/\D/g, "");
+    const cleanPhone = normalizePhone(body.phone);
 
     // 핸드폰 번호 중복 체크
     const existing = await prisma.user.findUnique({ where: { phone: cleanPhone } });
@@ -159,7 +181,7 @@ const signupSupplierSchema = z.object({
 r.post("/signup/supplier", async (req, res) => {
   try {
     const body = signupSupplierSchema.parse(req.body);
-    const cleanPhone = body.phone.replace(/\D/g, "");
+    const cleanPhone = normalizePhone(body.phone);
     const cleanBizNo = body.bizNo.replace(/\D/g, "");
 
     // 핸드폰 번호 중복 체크
@@ -184,7 +206,7 @@ r.post("/signup/supplier", async (req, res) => {
     }
 
     // 추천인 매니저 확인 (핸드폰 번호로 매칭) - 필수
-    const cleanReferrerPhone = body.referrerPhone.replace(/\D/g, "");
+    const cleanReferrerPhone = normalizePhone(body.referrerPhone);
     const referredBy = await prisma.user.findFirst({
       where: { phone: cleanReferrerPhone, role: "AGENT" },
       include: { branch: true },
@@ -292,7 +314,7 @@ const signupBuyerSchema = z.object({
 r.post("/signup/buyer", async (req, res) => {
   try {
     const body = signupBuyerSchema.parse(req.body);
-    const cleanPhone = body.phone.replace(/\D/g, "");
+    const cleanPhone = normalizePhone(body.phone);
     const cleanBizNo = body.bizNo.replace(/\D/g, "");
 
     // 핸드폰 번호 중복 체크
@@ -317,7 +339,7 @@ r.post("/signup/buyer", async (req, res) => {
     }
 
     // 추천인 매니저 확인 (핸드폰 번호로 매칭) - 필수
-    const cleanReferrerPhone = body.referrerPhone.replace(/\D/g, "");
+    const cleanReferrerPhone = normalizePhone(body.referrerPhone);
     const referredBy = await prisma.user.findFirst({
       where: { phone: cleanReferrerPhone, role: "AGENT" },
       include: { branch: true },
@@ -404,7 +426,7 @@ const forgotPasswordSchema = z.object({
 r.post("/forgot-password", async (req, res) => {
   try {
     const body = forgotPasswordSchema.parse(req.body);
-    const cleanPhone = body.phone.replace(/\D/g, "");
+    const cleanPhone = normalizePhone(body.phone);
 
     const user = await prisma.user.findUnique({ where: { phone: cleanPhone } });
     if (!user) {
@@ -435,7 +457,7 @@ const resetPasswordSchema = z.object({
 r.post("/reset-password", async (req, res) => {
   try {
     const body = resetPasswordSchema.parse(req.body);
-    const cleanPhone = body.phone.replace(/\D/g, "");
+    const cleanPhone = normalizePhone(body.phone);
 
     // TODO: 인증번호 검증 로직
     // MVP: 간단한 검증 (실제로는 Redis/세션에서 확인)
