@@ -203,21 +203,21 @@ export default function SupplierProfilePage() {
           <div className={styles.infoItem}>
             <label>회사명</label>
             <div className={styles.infoValue}>
-              {profile.company.name}
+              {profile.company?.name || profile.registry?.name || '-'}
             </div>
           </div>
 
           <div className={styles.infoItem}>
             <label>사업자번호</label>
             <div className={styles.infoValue}>
-              {profile.company.bizNo}
+              {profile.company?.bizNo || profile.registry?.bizNo || '-'}
             </div>
           </div>
 
           <div className={styles.infoItem}>
             <label>대표자</label>
             <div className={styles.infoValue}>
-              {profile.company.representative || '-'}
+              {profile.company?.representative || profile.registry?.representative || '-'}
             </div>
           </div>
 
