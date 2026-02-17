@@ -5,7 +5,6 @@ import jwt from "jsonwebtoken";
 import { prisma } from "../index.js";
 import { config } from "../config.js";
 import { verifyBizNo } from "../services/apick.js";
-import { Role, CompanyType } from "@prisma/client";
 
 const r = Router();
 
@@ -45,7 +44,7 @@ r.post("/signup", async (req, res) => {
       return res.status(400).json({ error: "BIZNO_ALREADY_REGISTERED" });
     }
 
-    const role = (body.role ?? "BUYER") as Role;
+    const role = (body.role ?? "BUYER");
 
     // 추천코드 확인
     const referredBy = body.refCode
@@ -67,7 +66,7 @@ r.post("/signup", async (req, res) => {
           create: {
             name: body.companyName,
             bizNo: cleanBizNo,
-            type: body.companyType as CompanyType,
+            type: body.companyType,
             isVerified: true,
             buyerProfile: role === "BUYER" ? { create: {} } : undefined,
             supplierProfile: role === "SUPPLIER" ? { create: {} } : undefined,

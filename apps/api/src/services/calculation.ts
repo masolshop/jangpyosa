@@ -1,4 +1,4 @@
-import { CompanyType, YearSetting } from "@prisma/client";
+import { YearSetting } from "@prisma/client";
 
 export function calcObligation(employeeCount: number, quotaRate: number): number {
   // 단순 반올림 규칙 (실제는 더 복잡할 수 있음)
@@ -10,7 +10,7 @@ export function calcLevyEstimate(params: {
   employeeCount: number;
   disabledCount: number;
   yearSetting: YearSetting;
-  companyType: CompanyType;
+  companyType: string; // "PRIVATE" | "PUBLIC"
 }) {
   const quotaRate =
     params.companyType === "PUBLIC"

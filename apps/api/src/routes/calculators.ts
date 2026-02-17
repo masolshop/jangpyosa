@@ -2,7 +2,6 @@ import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../index.js";
 import { calcLevyEstimate, calcLinkageReduction } from "../services/calculation.js";
-import { CompanyType } from "@prisma/client";
 
 const r = Router();
 
@@ -26,7 +25,7 @@ r.post("/levy", async (req, res) => {
       employeeCount: body.employeeCount,
       disabledCount: body.disabledCount,
       yearSetting: setting,
-      companyType: body.companyType as CompanyType,
+      companyType: body.companyType,
     });
 
     res.json({
