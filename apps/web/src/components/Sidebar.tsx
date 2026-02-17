@@ -164,6 +164,12 @@ export default function Sidebar() {
               icon="📉"
               active={isActive("/calculators/linkage")}
             />
+            <MenuItem
+              href="/calculators/standard-benefit"
+              label="표준사업장혜택계산기"
+              icon="🎁"
+              active={isActive("/calculators/standard-benefit")}
+            />
           </div>
 
           {/* 콘텐츠 */}
