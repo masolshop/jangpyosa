@@ -4,7 +4,10 @@ import { useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { setToken, setUserRole } from "@/lib/auth";
 
+type UserType = "AGENT" | "SUPPLIER" | "BUYER" | "";
+
 export default function LoginPage() {
+  const [userType, setUserType] = useState<UserType>("");
   const [phone, setPhone] = useState("");
   const [password, setPw] = useState("");
   const [msg, setMsg] = useState("");
@@ -24,6 +27,11 @@ export default function LoginPage() {
   };
 
   async function onLogin() {
+    if (!userType) {
+      setMsg("회원 유형을 선택해주세요");
+      return;
+    }
+
     setMsg("");
     setLoading(true);
     try {
@@ -32,9 +40,20 @@ export default function LoginPage() {
       
       const out = await apiFetch("/auth/login", {
         method: "POST",
-        body: JSON.stringify({ phone: cleanPhone, password }),
+        body: JSON.stringify({ 
+          phone: cleanPhone, 
+          password,
+          userType // 선택한 유저 타입 전송
+        }),
       });
       
+      // 선택한 유형과 실제 유형이 일치하는지 확인
+      if (out.user.role !== userType && out.user.role !== "SUPER_ADMIN") {
+        setMsg(`선택하신 회원 유형(${getUserTypeLabel(userType)})과 일치하지 않습니다. 올바른 유형을 선택해주세요.`);
+        setLoading(false);
+        return;
+      }
+
       setToken(out.accessToken);
       setUserRole(out.user.role);
       
@@ -70,6 +89,15 @@ export default function LoginPage() {
     }
   };
 
+  const getUserTypeLabel = (type: UserType) => {
+    switch (type) {
+      case "AGENT": return "매니저";
+      case "SUPPLIER": return "표준사업장";
+      case "BUYER": return "부담금기업";
+      default: return "";
+    }
+  };
+
   return (
     <div className="container">
       <div className="card" style={{ maxWidth: 420, margin: "40px auto" }}>
@@ -77,6 +105,67 @@ export default function LoginPage() {
         <p style={{ marginTop: 8, color: "#666" }}>장표사닷컴에 오신 것을 환영합니다</p>
 
         <div style={{ marginTop: 24 }}>
+          {/* 회원 유형 선택 */}
+          <label style={{ fontWeight: 600, marginBottom: 8 }}>회원 유형</label>
+          <div style={{ 
+            display: "grid", 
+            gridTemplateColumns: "repeat(3, 1fr)", 
+            gap: 8,
+            marginBottom: 16
+          }}>
+            <button
+              type="button"
+              onClick={() => setUserType("AGENT")}
+              style={{
+                padding: "12px 16px",
+                border: `2px solid ${userType === "AGENT" ? "#0070f3" : "#ddd"}`,
+                background: userType === "AGENT" ? "#e7f3ff" : "white",
+                color: userType === "AGENT" ? "#0070f3" : "#666",
+                borderRadius: 8,
+                cursor: "pointer",
+                fontSize: 14,
+                fontWeight: userType === "AGENT" ? 600 : 400,
+                transition: "all 0.2s"
+              }}
+            >
+              👔 매니저
+            </button>
+            <button
+              type="button"
+              onClick={() => setUserType("SUPPLIER")}
+              style={{
+                padding: "12px 16px",
+                border: `2px solid ${userType === "SUPPLIER" ? "#0070f3" : "#ddd"}`,
+                background: userType === "SUPPLIER" ? "#e7f3ff" : "white",
+                color: userType === "SUPPLIER" ? "#0070f3" : "#666",
+                borderRadius: 8,
+                cursor: "pointer",
+                fontSize: 14,
+                fontWeight: userType === "SUPPLIER" ? 600 : 400,
+                transition: "all 0.2s"
+              }}
+            >
+              🏭 표준사업장
+            </button>
+            <button
+              type="button"
+              onClick={() => setUserType("BUYER")}
+              style={{
+                padding: "12px 16px",
+                border: `2px solid ${userType === "BUYER" ? "#0070f3" : "#ddd"}`,
+                background: userType === "BUYER" ? "#e7f3ff" : "white",
+                color: userType === "BUYER" ? "#0070f3" : "#666",
+                borderRadius: 8,
+                cursor: "pointer",
+                fontSize: 14,
+                fontWeight: userType === "BUYER" ? 600 : 400,
+                transition: "all 0.2s"
+              }}
+            >
+              🏢 부담금기업
+            </button>
+          </div>
+
           <label>핸드폰 번호</label>
           <input
             type="tel"
@@ -100,7 +189,7 @@ export default function LoginPage() {
 
           <button
             onClick={onLogin}
-            disabled={loading || !phone || !password}
+            disabled={loading || !phone || !password || !userType}
             style={{ width: "100%", marginTop: 16 }}
           >
             {loading ? "로그인 중..." : "로그인"}
@@ -149,40 +238,108 @@ export default function LoginPage() {
             color: "#666",
           }}
         >
-          <p style={{ fontWeight: 600, marginBottom: 8 }}>💡 테스트 계정</p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '4px 8px', fontSize: 11 }}>
-            <span style={{ fontWeight: 600 }}>슈퍼어드민:</span>
-            <span>010-1234-5678 / admin1234</span>
-            
-            <span style={{ fontWeight: 600 }}>매니저 1:</span>
-            <span>010-9876-5432 / agent1234</span>
-            
-            <span style={{ fontWeight: 600 }}>매니저 2:</span>
-            <span>010-8765-4321 / agent1234</span>
-            
-            <span style={{ fontWeight: 600 }}>표준사업장:</span>
-            <span>010-9999-8888 / test1234</span>
-            
-            <span style={{ fontWeight: 600 }}>부담금기업:</span>
-            <span>010-5555-6666 / test1234</span>
-          </div>
+          <p style={{ marginBottom: 8, fontWeight: 600 }}>💡 안내</p>
+          <p style={{ marginBottom: 4 }}>
+            • 회원가입 시 선택한 회원 유형을 선택해주세요
+          </p>
+          <p style={{ marginBottom: 4 }}>
+            • 매니저: 지사 관리 및 회원 관리
+          </p>
+          <p style={{ marginBottom: 4 }}>
+            • 표준사업장: 상품 등록 및 계약 관리
+          </p>
+          <p>
+            • 부담금기업: 상품 구매 및 계약 요청
+          </p>
         </div>
-        
+
         <div
           style={{
             marginTop: 16,
-            padding: 12,
-            background: "#e7f3ff",
+            padding: 16,
+            background: "#fff3cd",
             borderRadius: 8,
-            fontSize: 12,
-            color: "#0070f3",
+            fontSize: 13,
           }}
         >
-          <p style={{ margin: 0, fontWeight: 600 }}>
-            ℹ️ 회원 유형은 가입 시 선택하며, 로그인 후 자동으로 인식됩니다
-          </p>
+          <p style={{ marginBottom: 8, fontWeight: 600 }}>🧪 테스트 계정</p>
+          <div style={{ 
+            display: "grid", 
+            gridTemplateColumns: "auto 1fr 1fr",
+            gap: "8px",
+            fontSize: 12
+          }}>
+            <strong>슈퍼관리자:</strong>
+            <span>010-1234-5678</span>
+            <span>admin1234</span>
+            
+            <strong>매니저 1:</strong>
+            <span>010-9876-5432</span>
+            <span>agent1234</span>
+            
+            <strong>표준사업장:</strong>
+            <span>010-8888-9999</span>
+            <span>test1234</span>
+            
+            <strong>부담금기업:</strong>
+            <span>010-5555-6666</span>
+            <span>test1234</span>
+          </div>
         </div>
       </div>
+
+      <style jsx>{`
+        .container {
+          min-height: 100vh;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          padding: 20px;
+        }
+        .card {
+          background: white;
+          border-radius: 12px;
+          padding: 32px;
+          box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        }
+        label {
+          display: block;
+          margin-bottom: 8px;
+          margin-top: 16px;
+          font-weight: 500;
+          color: #333;
+        }
+        input {
+          width: 100%;
+          padding: 12px;
+          border: 1px solid #ddd;
+          border-radius: 6px;
+          font-size: 14px;
+        }
+        input:focus {
+          outline: none;
+          border-color: #0070f3;
+        }
+        button {
+          padding: 12px 24px;
+          background: #0070f3;
+          color: white;
+          border: none;
+          border-radius: 6px;
+          font-size: 16px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        button:hover:not(:disabled) {
+          background: #0051cc;
+        }
+        button:disabled {
+          background: #ccc;
+          cursor: not-allowed;
+        }
+      `}</style>
     </div>
   );
 }

@@ -37,6 +37,7 @@ function normalizePhone(phone: string): string {
 const loginSchema = z.object({
   phone: z.string().min(10, "핸드폰 번호를 입력하세요"),
   password: z.string().min(1, "비밀번호를 입력하세요"),
+  userType: z.enum(["AGENT", "SUPPLIER", "BUYER"]).optional(),
 });
 
 r.post("/login", async (req, res) => {
@@ -56,6 +57,16 @@ r.post("/login", async (req, res) => {
     const ok = await bcrypt.compare(body.password, user.passwordHash);
     if (!ok) {
       return res.status(401).json({ error: "INVALID_CREDENTIALS" });
+    }
+
+    // 회원 유형 검증 (선택된 경우)
+    if (body.userType && user.role !== "SUPER_ADMIN") {
+      if (user.role !== body.userType) {
+        return res.status(403).json({ 
+          error: "USER_TYPE_MISMATCH",
+          message: `선택하신 회원 유형과 일치하지 않습니다. (계정 유형: ${user.role})`
+        });
+      }
     }
 
     const accessToken = jwt.sign(

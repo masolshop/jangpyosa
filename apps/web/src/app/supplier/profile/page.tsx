@@ -224,7 +224,7 @@ export default function SupplierProfilePage() {
           <div className={styles.infoItem}>
             <label>인증상태</label>
             <div className={styles.infoValue}>
-              {profile.company.isVerified ? (
+              {profile.company?.isVerified ? (
                 <span className={styles.badge}>✅ 인증완료</span>
               ) : (
                 <span className={styles.badgeWarning}>⏳ 미인증</span>
