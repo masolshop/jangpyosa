@@ -97,6 +97,12 @@ export default function Sidebar() {
               icon="🛒"
               active={isActive("/catalog")}
             />
+            <MenuItem
+              href="/contract-sample"
+              label="표준도급계약서 샘플"
+              icon="📄"
+              active={isActive("/contract-sample")}
+            />
             {userRole === "BUYER" && (
               <MenuItem
                 href="/cart"
