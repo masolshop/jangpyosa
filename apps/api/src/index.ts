@@ -17,6 +17,7 @@ import calcRoutes from "./routes/calculators.js";
 import contentRoutes from "./routes/content.js";
 import supplierRoutes from "./routes/supplier.js";
 import registryRoutes from "./routes/registry.js";
+import publicRoutes from "./routes/public.js";
 
 export const prisma = new PrismaClient();
 
@@ -29,6 +30,7 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 app.get("/health", (_req, res) => res.json({ ok: true, service: "jangpyosa-api" }));
 
+app.use("/public", publicRoutes);
 app.use("/auth", authRoutes);
 app.use("/admin", adminRoutes);
 app.use("/catalog", catalogRoutes);

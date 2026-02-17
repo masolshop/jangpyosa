@@ -174,7 +174,13 @@ export default function Sidebar() {
                     color: "#28a745",
                   }}
                 >
-                  ✓ 로그인됨 ({userRole})
+                  ✓ 로그인됨 ({
+                    userRole === "SUPER_ADMIN" ? "슈퍼관리자" :
+                    userRole === "AGENT" ? "매니저" :
+                    userRole === "SUPPLIER" ? "표준사업장" :
+                    userRole === "BUYER" ? "부담금기업" :
+                    userRole
+                  })
                 </div>
                 <MenuItem
                   href="#"
@@ -200,6 +206,21 @@ export default function Sidebar() {
               </>
             )}
           </div>
+
+          {/* 슈퍼어드민 전용 메뉴 */}
+          {userRole === "SUPER_ADMIN" && (
+            <div style={{ marginBottom: 24 }}>
+              <div style={{ fontSize: 11, color: "#666", marginBottom: 8, fontWeight: "bold" }}>
+                관리자
+              </div>
+              <MenuItem
+                href="/admin/branches"
+                label="지사 관리"
+                icon="🏢"
+                active={isActive("/admin/branches")}
+              />
+            </div>
+          )}
         </nav>
 
         {/* 푸터 */}
