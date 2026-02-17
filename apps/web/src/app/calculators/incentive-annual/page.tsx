@@ -9,6 +9,7 @@ type Worker = {
   severity: "MILD" | "SEVERE";
   gender: "M" | "F";
   hireDate: string; // YYYY-MM-DD
+  resignDate?: string; // YYYY-MM-DD (퇴사일, 선택)
   monthlySalary: number;
   hasEmploymentInsurance: boolean;
   meetsMinimumWage: boolean;
@@ -51,6 +52,7 @@ export default function IncentiveAnnualPage() {
   );
 
   const [allWorkers, setAllWorkers] = useState<Worker[]>([]);
+  const [editingWorkerId, setEditingWorkerId] = useState<string | null>(null);
   const [editingWorker, setEditingWorker] = useState<Partial<Worker>>({
     severity: "MILD",
     gender: "M",
@@ -74,19 +76,60 @@ export default function IncentiveAnnualPage() {
       return;
     }
 
-    const worker: Worker = {
-      id: Date.now().toString(),
-      name: editingWorker.name!,
-      disabilityType: editingWorker.disabilityType || "지체",
-      severity: editingWorker.severity!,
-      gender: editingWorker.gender!,
-      hireDate: editingWorker.hireDate!,
-      monthlySalary: editingWorker.monthlySalary!,
-      hasEmploymentInsurance: editingWorker.hasEmploymentInsurance!,
-      meetsMinimumWage: editingWorker.meetsMinimumWage!,
-    };
+    if (editingWorkerId) {
+      // 수정 모드
+      setAllWorkers(
+        allWorkers.map((w) =>
+          w.id === editingWorkerId
+            ? {
+                ...w,
+                name: editingWorker.name!,
+                disabilityType: editingWorker.disabilityType || "지체",
+                severity: editingWorker.severity!,
+                gender: editingWorker.gender!,
+                hireDate: editingWorker.hireDate!,
+                resignDate: editingWorker.resignDate,
+                monthlySalary: editingWorker.monthlySalary!,
+                hasEmploymentInsurance: editingWorker.hasEmploymentInsurance!,
+                meetsMinimumWage: editingWorker.meetsMinimumWage!,
+              }
+            : w
+        )
+      );
+      setEditingWorkerId(null);
+    } else {
+      // 추가 모드
+      const worker: Worker = {
+        id: Date.now().toString(),
+        name: editingWorker.name!,
+        disabilityType: editingWorker.disabilityType || "지체",
+        severity: editingWorker.severity!,
+        gender: editingWorker.gender!,
+        hireDate: editingWorker.hireDate!,
+        resignDate: editingWorker.resignDate,
+        monthlySalary: editingWorker.monthlySalary!,
+        hasEmploymentInsurance: editingWorker.hasEmploymentInsurance!,
+        meetsMinimumWage: editingWorker.meetsMinimumWage!,
+      };
+      setAllWorkers([...allWorkers, worker]);
+    }
 
-    setAllWorkers([...allWorkers, worker]);
+    setEditingWorker({
+      severity: "MILD",
+      gender: "M",
+      hasEmploymentInsurance: true,
+      meetsMinimumWage: true,
+    });
+  }
+
+  function editWorker(worker: Worker) {
+    setEditingWorkerId(worker.id);
+    setEditingWorker(worker);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function cancelEdit() {
+    setEditingWorkerId(null);
     setEditingWorker({
       severity: "MILD",
       gender: "M",
@@ -106,10 +149,18 @@ export default function IncentiveAnnualPage() {
       const m = months[i];
       const monthDate = new Date(2026, i, 1);
 
-      // 해당 월에 근무 중인 근로자 필터링
+      // 해당 월에 근무 중인 근로자 필터링 (입사일 <= 월 && (퇴사일 없음 || 퇴사일 >= 월))
       const activeWorkers = allWorkers.filter((w) => {
         const hireDate = new Date(w.hireDate);
-        return hireDate <= monthDate;
+        if (hireDate > monthDate) return false;
+
+        if (w.resignDate) {
+          const resignDate = new Date(w.resignDate);
+          // 퇴사일이 해당 월보다 이전이면 제외
+          if (resignDate < monthDate) return false;
+        }
+
+        return true;
       });
 
       const obligated = Math.floor(m.employees * quotaRate);
@@ -257,7 +308,21 @@ export default function IncentiveAnnualPage() {
           boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
         }}
       >
-        <h2>장애인 근로자 등록</h2>
+        <h2>{editingWorkerId ? "장애인 근로자 수정" : "장애인 근로자 등록"}</h2>
+        {editingWorkerId && (
+          <div
+            style={{
+              marginTop: 8,
+              padding: 8,
+              background: "#fef3c7",
+              borderRadius: 4,
+              fontSize: 14,
+              color: "#92400e",
+            }}
+          >
+            ✏️ <strong>수정 모드:</strong> 근로자 정보를 수정하고 있습니다.
+          </div>
+        )}
         <div
           style={{
             marginTop: 16,
@@ -320,6 +385,15 @@ export default function IncentiveAnnualPage() {
             />
           </div>
           <div>
+            <label>퇴사일 (선택)</label>
+            <input
+              type="date"
+              value={editingWorker.resignDate || ""}
+              onChange={(e) => setEditingWorker({ ...editingWorker, resignDate: e.target.value })}
+              placeholder="재직 중이면 비워두세요"
+            />
+          </div>
+          <div>
             <label>월 임금 (원)</label>
             <input
               type="number"
@@ -361,20 +435,48 @@ export default function IncentiveAnnualPage() {
             </select>
           </div>
         </div>
-        <button
-          onClick={addWorker}
+        <div style={{ marginTop: 16, display: "flex", gap: 8 }}>
+          <button
+            onClick={addWorker}
+            style={{
+              background: editingWorkerId ? "#f59e0b" : "#10b981",
+              color: "white",
+              padding: "10px 20px",
+              border: "none",
+              borderRadius: 6,
+              cursor: "pointer",
+            }}
+          >
+            {editingWorkerId ? "✏️ 근로자 수정 완료" : "➕ 근로자 추가"}
+          </button>
+          {editingWorkerId && (
+            <button
+              onClick={cancelEdit}
+              style={{
+                background: "#6b7280",
+                color: "white",
+                padding: "10px 20px",
+                border: "none",
+                borderRadius: 6,
+                cursor: "pointer",
+              }}
+            >
+              ✖️ 취소
+            </button>
+          )}
+        </div>
+
+        <div
           style={{
             marginTop: 16,
-            background: "#10b981",
-            color: "white",
-            padding: "10px 20px",
-            border: "none",
+            padding: 12,
+            background: "#dbeafe",
             borderRadius: 6,
-            cursor: "pointer",
+            fontSize: 14,
           }}
         >
-          근로자 추가
-        </button>
+          💡 <strong>자동 월별 매칭:</strong> 등록된 근로자는 입사일과 퇴사일에 따라 자동으로 각 월에 매칭됩니다. 퇴사일이 없으면 재직 중으로 간주됩니다.
+        </div>
 
         {/* 등록된 근로자 목록 */}
         {allWorkers.length > 0 && (
@@ -389,10 +491,11 @@ export default function IncentiveAnnualPage() {
                     <th style={{ padding: 8, border: "1px solid #ddd" }}>중증여부</th>
                     <th style={{ padding: 8, border: "1px solid #ddd" }}>성별</th>
                     <th style={{ padding: 8, border: "1px solid #ddd" }}>입사일</th>
+                    <th style={{ padding: 8, border: "1px solid #ddd" }}>퇴사일</th>
                     <th style={{ padding: 8, border: "1px solid #ddd" }}>월 임금</th>
                     <th style={{ padding: 8, border: "1px solid #ddd" }}>고용보험</th>
                     <th style={{ padding: 8, border: "1px solid #ddd" }}>최저임금</th>
-                    <th style={{ padding: 8, border: "1px solid #ddd" }}>삭제</th>
+                    <th style={{ padding: 8, border: "1px solid #ddd" }}>관리</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -412,6 +515,9 @@ export default function IncentiveAnnualPage() {
                       </td>
                       <td style={{ padding: 8, border: "1px solid #ddd", textAlign: "center" }}>
                         {w.hireDate}
+                      </td>
+                      <td style={{ padding: 8, border: "1px solid #ddd", textAlign: "center" }}>
+                        {w.resignDate || <span style={{ color: "#10b981" }}>재직중</span>}
                       </td>
                       <td style={{ padding: 8, border: "1px solid #ddd", textAlign: "right" }}>
                         {w.monthlySalary.toLocaleString()}원
@@ -437,20 +543,36 @@ export default function IncentiveAnnualPage() {
                         {w.meetsMinimumWage ? "✓" : "✗"}
                       </td>
                       <td style={{ padding: 8, border: "1px solid #ddd", textAlign: "center" }}>
-                        <button
-                          onClick={() => removeWorker(w.id)}
-                          style={{
-                            background: "#ef4444",
-                            color: "white",
-                            border: "none",
-                            padding: "4px 12px",
-                            borderRadius: 4,
-                            cursor: "pointer",
-                            fontSize: 12,
-                          }}
-                        >
-                          삭제
-                        </button>
+                        <div style={{ display: "flex", gap: 4, justifyContent: "center" }}>
+                          <button
+                            onClick={() => editWorker(w)}
+                            style={{
+                              background: "#3b82f6",
+                              color: "white",
+                              border: "none",
+                              padding: "4px 12px",
+                              borderRadius: 4,
+                              cursor: "pointer",
+                              fontSize: 12,
+                            }}
+                          >
+                            수정
+                          </button>
+                          <button
+                            onClick={() => removeWorker(w.id)}
+                            style={{
+                              background: "#ef4444",
+                              color: "white",
+                              border: "none",
+                              padding: "4px 12px",
+                              borderRadius: 4,
+                              cursor: "pointer",
+                              fontSize: 12,
+                            }}
+                          >
+                            삭제
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
