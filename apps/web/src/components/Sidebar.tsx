@@ -78,8 +78,9 @@ export default function Sidebar() {
           }}
         >
           <h2 style={{ margin: 0, fontSize: 20 }}>🏢 장표사닷컴</h2>
-          <p style={{ margin: "4px 0 0 0", fontSize: 12, color: "#999" }}>
-            연계고용 플랫폼
+          <p style={{ margin: "4px 0 0 0", fontSize: 12, color: "#999", lineHeight: 1.4 }}>
+            장애인표준사업장<br />
+            연계고용플랫폼
           </p>
         </a>
 
