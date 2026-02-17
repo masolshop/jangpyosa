@@ -15,7 +15,7 @@ export default function RootLayout({
     <html lang="ko">
       <body>
         <Sidebar />
-        <main style={{ marginLeft: 240, minHeight: '100vh' }}>
+        <main style={{ marginLeft: 350, minHeight: '100vh' }}>
           {children}
         </main>
       </body>
