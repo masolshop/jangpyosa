@@ -133,6 +133,12 @@ export default function Sidebar() {
               active={isActive("/calculators/levy-annual")}
             />
             <MenuItem
+              href="/calculators/incentive-annual"
+              label="연간 월별 장려금"
+              icon="💸"
+              active={isActive("/calculators/incentive-annual")}
+            />
+            <MenuItem
               href="/calculators/levy"
               label="간단 부담금 계산"
               icon="💰"

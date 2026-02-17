@@ -23,6 +23,12 @@ export default function HomePage() {
               href="/calculators/levy-annual"
             />
             <ServiceCard
+              icon="💸"
+              title="연간 월별 장려금 계산"
+              description="의무고용률 초과 고용 시 받을 수 있는 장려금을 계산하세요"
+              href="/calculators/incentive-annual"
+            />
+            <ServiceCard
               icon="💰"
               title="간단 부담금 계산"
               description="상시근로자 수와 장애인 고용인원을 입력하여 예상 부담금을 빠르게 계산하세요"
