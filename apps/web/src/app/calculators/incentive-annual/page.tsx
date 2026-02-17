@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { API_BASE } from "@/lib/api";
 import { getToken, getUserRole } from "@/lib/auth";
+import * as XLSX from "xlsx";
 
 type Worker = {
   id: string;
@@ -313,6 +314,127 @@ export default function IncentiveAnnualPage() {
     }
 
     setResults(monthResults);
+  }
+
+  // Excel 내보내기 함수
+  function exportToExcel() {
+    if (!results || results.length === 0) {
+      alert("먼저 계산을 실행하세요.");
+      return;
+    }
+
+    const currentDate = new Date().toISOString().split("T")[0];
+    const companyTypeText = companyType === "PRIVATE" ? "민간/공공기업" : "국가/지자체/교육청";
+
+    // 워크북 생성
+    const wb = XLSX.utils.book_new();
+
+    // 1. 월별 요약 시트
+    const monthlyData = [
+      ["2026년 장애인 고용장려금 월별 계산서"],
+      [`기업 유형: ${companyTypeText} (의무고용률 ${companyType === "PRIVATE" ? "3.1%" : "3.8%"})`],
+      [`최저임금: ${minimumWage.toLocaleString()}원`],
+      [`작성일: ${currentDate}`],
+      [],
+      ["월", "상시근로자", "의무고용", "기준인원", "제외인원", "지급인원", "장려금"],
+    ];
+
+    results.forEach((r) => {
+      monthlyData.push([
+        `${r.month}월`,
+        r.employees.toString(),
+        r.obligated.toString(),
+        r.baseCount.toString(),
+        r.excludedCount.toString(),
+        r.eligibleCount.toString(),
+        r.incentiveAmount.toString(),
+      ]);
+    });
+
+    monthlyData.push([]);
+    monthlyData.push(["합계", "", "", "", "", totalEligible.toString(), totalIncentive.toString()]);
+
+    const ws1 = XLSX.utils.aoa_to_sheet(monthlyData);
+    ws1["!cols"] = [
+      { wch: 8 },
+      { wch: 12 },
+      { wch: 12 },
+      { wch: 12 },
+      { wch: 12 },
+      { wch: 12 },
+      { wch: 15 },
+    ];
+    XLSX.utils.book_append_sheet(wb, ws1, "월별요약");
+
+    // 2. 월별 지급대상자 상세
+    results.forEach((r) => {
+      if (r.eligibleWorkers.length === 0) return;
+
+      const detailData = [
+        [`${r.month}월 장려금 지급대상자 상세`],
+        [],
+        ["성명", "장애유형", "중증여부", "성별", "월급여", "장려금단가", "지급액"],
+      ];
+
+      r.eligibleWorkers.forEach(({ worker: w, amount }) => {
+        let rate = 0;
+        if (w.severity === "MILD" && w.gender === "M") rate = INCENTIVE_RATES_2026.MILD_M;
+        if (w.severity === "MILD" && w.gender === "F") rate = INCENTIVE_RATES_2026.MILD_F;
+        if (w.severity === "SEVERE" && w.gender === "M") rate = INCENTIVE_RATES_2026.SEVERE_M;
+        if (w.severity === "SEVERE" && w.gender === "F") rate = INCENTIVE_RATES_2026.SEVERE_F;
+
+        detailData.push([
+          w.name,
+          w.disabilityType,
+          w.severity === "MILD" ? "경증" : "중증",
+          w.gender === "M" ? "남" : "여",
+          w.monthlySalary.toString(),
+          rate.toString(),
+          amount.toString(),
+        ]);
+      });
+
+      detailData.push([]);
+      detailData.push(["소계", "", "", "", "", "", r.incentiveAmount.toString()]);
+
+      const ws = XLSX.utils.aoa_to_sheet(detailData);
+      ws["!cols"] = [
+        { wch: 10 },
+        { wch: 12 },
+        { wch: 10 },
+        { wch: 8 },
+        { wch: 12 },
+        { wch: 12 },
+        { wch: 12 },
+      ];
+      XLSX.utils.book_append_sheet(wb, ws, `${r.month}월 상세`);
+    });
+
+    // 3. 분기별 집계
+    const quarterData = [
+      ["2026년 장려금 분기별 집계"],
+      [],
+      ["분기", "평균근로자", "지급인원합계", "장려금합계"],
+    ];
+
+    quarters.forEach((q) => {
+      const avgEmp = Math.floor(
+        q.months.reduce((sum, m) => sum + m.employees, 0) / 3
+      );
+      const eligibleSum = q.months.reduce((sum, m) => sum + m.eligibleCount, 0);
+      const incentiveSum = q.months.reduce((sum, m) => sum + m.incentiveAmount, 0);
+      quarterData.push([q.name, avgEmp.toString(), eligibleSum.toString(), incentiveSum.toString()]);
+    });
+
+    quarterData.push([]);
+    quarterData.push(["연간 총 장려금", "", totalEligible.toString(), totalIncentive.toString()]);
+
+    const ws3 = XLSX.utils.aoa_to_sheet(quarterData);
+    ws3["!cols"] = [{ wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }];
+    XLSX.utils.book_append_sheet(wb, ws3, "분기별집계");
+
+    // 파일 다운로드
+    XLSX.writeFile(wb, `장려금신청서_2026_${currentDate}.xlsx`);
   }
 
   const totalIncentive = results?.reduce((sum, r) => sum + r.incentiveAmount, 0) || 0;
@@ -770,6 +892,43 @@ export default function IncentiveAnnualPage() {
       {/* 계산 결과 */}
       {results && (
         <>
+          {/* Excel 다운로드 버튼 */}
+          <div
+            style={{
+              marginTop: 24,
+              padding: 16,
+              background: "#10b981",
+              borderRadius: 8,
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <div>
+              <h3 style={{ margin: 0, color: "white", fontSize: 18 }}>
+                📥 신청서 다운로드
+              </h3>
+              <p style={{ margin: "4px 0 0 0", color: "white", opacity: 0.9, fontSize: 14 }}>
+                월별 요약, 지급대상자 상세, 분기별 집계가 포함된 Excel 파일
+              </p>
+            </div>
+            <button
+              onClick={exportToExcel}
+              style={{
+                padding: "12px 32px",
+                background: "white",
+                color: "#10b981",
+                border: "none",
+                borderRadius: 6,
+                fontSize: 16,
+                fontWeight: "bold",
+                cursor: "pointer",
+              }}
+            >
+              📊 Excel 다운로드
+            </button>
+          </div>
+
           {/* 연간 요약 */}
           <div
             style={{

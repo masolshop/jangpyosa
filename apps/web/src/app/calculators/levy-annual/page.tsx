@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { API_BASE } from "@/lib/api";
 import { getToken, getUserRole } from "@/lib/auth";
+import * as XLSX from "xlsx";
 
 type MonthData = {
   employees: number; // 상시근로자 수
@@ -202,6 +203,116 @@ export default function LevyAnnualPage() {
     }
 
     setResults(monthResults);
+  }
+
+  // Excel 내보내기 함수
+  function exportToExcel() {
+    if (!results || results.length === 0) {
+      alert("먼저 계산을 실행하세요.");
+      return;
+    }
+
+    const currentDate = new Date().toISOString().split("T")[0];
+    const companyTypeText = companyType === "PRIVATE" ? "민간/공공기업" : "국가/지자체/교육청";
+
+    // 워크북 생성
+    const wb = XLSX.utils.book_new();
+
+    // 1. 월별 상세 시트
+    const monthlyData = [
+      ["2026년 장애인 고용부담금 월별 계산서"],
+      [`기업 유형: ${companyTypeText} (의무고용률 ${companyType === "PRIVATE" ? "3.1%" : "3.8%"})`],
+      [`작성일: ${currentDate}`],
+      [],
+      ["월", "상시근로자", "의무고용", "장애인고용", "미달인원", "이행수준", "부담기초액", "월별부담금"],
+    ];
+
+    results.forEach((r) => {
+      monthlyData.push([
+        `${r.month}월`,
+        r.employees.toString(),
+        r.obligated.toString(),
+        r.disabledCount.toString(),
+        r.shortfall.toString(),
+        LEVEL_LABELS[r.levelEn],
+        r.baseAmount.toString(),
+        r.monthlyLevy.toString(),
+      ]);
+    });
+
+    monthlyData.push([]);
+    monthlyData.push(["합계", "", totalObligated.toString(), "", totalShortfall.toString(), "", "", totalLevy.toString()]);
+
+    const ws1 = XLSX.utils.aoa_to_sheet(monthlyData);
+    ws1["!cols"] = [
+      { wch: 8 },
+      { wch: 12 },
+      { wch: 12 },
+      { wch: 12 },
+      { wch: 12 },
+      { wch: 15 },
+      { wch: 15 },
+      { wch: 15 },
+    ];
+    XLSX.utils.book_append_sheet(wb, ws1, "월별상세");
+
+    // 2. 이행수준별 집계 시트
+    const levelData = [
+      ["2026년 부담금 이행수준별 집계"],
+      [],
+      ["이행수준", "해당월수", "미달인원합계", "부담금합계"],
+    ];
+
+    if (levelGroups) {
+      Object.entries(levelGroups).forEach(([level, data]) => {
+        levelData.push([
+          LEVEL_LABELS[level],
+          `${data.count}개월`,
+          data.shortfall.toString(),
+          data.levy.toString(),
+        ]);
+      });
+    }
+
+    levelData.push([]);
+    levelData.push(["연간 총 부담금", "", "", totalLevy.toString()]);
+
+    const ws2 = XLSX.utils.aoa_to_sheet(levelData);
+    ws2["!cols"] = [{ wch: 20 }, { wch: 12 }, { wch: 15 }, { wch: 15 }];
+    XLSX.utils.book_append_sheet(wb, ws2, "이행수준별집계");
+
+    // 3. 분기별 집계 시트
+    const quarters = [
+      { name: "1분기", months: results.slice(0, 3) },
+      { name: "2분기", months: results.slice(3, 6) },
+      { name: "3분기", months: results.slice(6, 9) },
+      { name: "4분기", months: results.slice(9, 12) },
+    ];
+
+    const quarterData = [
+      ["2026년 부담금 분기별 집계"],
+      [],
+      ["분기", "평균근로자", "미달인원합계", "부담금합계"],
+    ];
+
+    quarters.forEach((q) => {
+      const avgEmp = Math.floor(
+        q.months.reduce((sum, m) => sum + m.employees, 0) / 3
+      );
+      const shortfallSum = q.months.reduce((sum, m) => sum + m.shortfall, 0);
+      const levySum = q.months.reduce((sum, m) => sum + m.monthlyLevy, 0);
+      quarterData.push([q.name, avgEmp.toString(), shortfallSum.toString(), levySum.toString()]);
+    });
+
+    quarterData.push([]);
+    quarterData.push(["연간 총 부담금", "", "", totalLevy.toString()]);
+
+    const ws3 = XLSX.utils.aoa_to_sheet(quarterData);
+    ws3["!cols"] = [{ wch: 12 }, { wch: 15 }, { wch: 15 }, { wch: 15 }];
+    XLSX.utils.book_append_sheet(wb, ws3, "분기별집계");
+
+    // 파일 다운로드
+    XLSX.writeFile(wb, `부담금계산서_2026_${currentDate}.xlsx`);
   }
 
   // 집계
@@ -470,6 +581,43 @@ export default function LevyAnnualPage() {
       {/* 계산 결과 */}
       {results && (
         <>
+          {/* Excel 다운로드 버튼 */}
+          <div
+            style={{
+              marginTop: 24,
+              padding: 16,
+              background: "#10b981",
+              borderRadius: 8,
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <div>
+              <h3 style={{ margin: 0, color: "white", fontSize: 18 }}>
+                📥 신고서 다운로드
+              </h3>
+              <p style={{ margin: "4px 0 0 0", color: "white", opacity: 0.9, fontSize: 14 }}>
+                월별 상세, 이행수준별 집계, 분기별 집계가 포함된 Excel 파일
+              </p>
+            </div>
+            <button
+              onClick={exportToExcel}
+              style={{
+                padding: "12px 32px",
+                background: "white",
+                color: "#10b981",
+                border: "none",
+                borderRadius: 6,
+                fontSize: 16,
+                fontWeight: "bold",
+                cursor: "pointer",
+              }}
+            >
+              📊 Excel 다운로드
+            </button>
+          </div>
+
           {/* 연간 요약 */}
           <div
             style={{
