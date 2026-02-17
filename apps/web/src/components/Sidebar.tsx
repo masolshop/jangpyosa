@@ -105,6 +105,14 @@ export default function Sidebar() {
                 active={isActive("/cart")}
               />
             )}
+            {userRole === "SUPPLIER" && (
+              <MenuItem
+                href="/supplier/profile"
+                label="프로필 관리"
+                icon="🏭"
+                active={isActive("/supplier/profile")}
+              />
+            )}
           </div>
 
           {/* 계산기 */}
