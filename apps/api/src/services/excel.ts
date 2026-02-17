@@ -10,7 +10,7 @@ export type SupplierRow = {
 
 export async function parseSupplierExcel(buffer: Buffer): Promise<SupplierRow[]> {
   const wb = new ExcelJS.Workbook();
-  await wb.xlsx.load(buffer);
+  await wb.xlsx.load(buffer as any);
   const ws = wb.worksheets[0];
   if (!ws) return [];
 

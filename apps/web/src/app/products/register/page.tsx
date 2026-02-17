@@ -64,12 +64,64 @@ export default function ProductRegisterPage() {
     imageUrl4: '',
     
     // 키워드
-    keywords: ''
+    keywords: '',
+    
+    // 🆕 민원 방지 필수 항목
+    noSubcontractConfirm: false, // 직접이행 확인
+    monthlyDeliverySchedule: '매월 1회', // 납품주기
+    monthlyBillingBasis: '월별 정액', // 월별 산출 기준
+    monthlyBillingDay: '31', // 청구일
+    monthlyPaymentDay: '10', // 지급일
+    monthlyFixedAmount: '', // 월 확정금액
+    monthlyAmountNote: '', // 금액 설명
+    costBreakdownLabor: '60', // 노무비 (%)
+    costBreakdownMaterial: '30', // 재료비 (%)
+    costBreakdownOther: '10', // 기타 (%)
+    evidenceDeliveryConfirm: true, // 납품확인서
+    evidenceInspection: false, // 검수서명
+    evidenceElectronic: false, // 전자검수
+    evidencePhoto: false, // 사진
+    evidenceTaxInvoice: true, // 세금계산서
+    invoiceIssueConfirmed: true, // 세금계산서 발행 가능 확인
+    receiptNote: '', // 영수증 안내
   })
   
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setError('')
+    
+    // 🆕 민원 방지 필수 항목 유효성 검사
+    if (!formData.noSubcontractConfirm) {
+      setError('❌ 직접이행 확인은 필수입니다. 하도급/재하도급을 하지 않는다는 것을 확인해주세요.')
+      return
+    }
+    
+    if (!formData.monthlyFixedAmount) {
+      setError('❌ 월 확정금액은 필수입니다. 월별 도급액을 입력해주세요.')
+      return
+    }
+    
+    const laborPct = parseInt(formData.costBreakdownLabor || '0')
+    const materialPct = parseInt(formData.costBreakdownMaterial || '0')
+    const otherPct = parseInt(formData.costBreakdownOther || '0')
+    const totalPct = laborPct + materialPct + otherPct
+    
+    if (totalPct !== 100) {
+      setError(`❌ 보수 산출내역의 합계는 100%여야 합니다. (현재: ${totalPct}%)`)
+      return
+    }
+    
+    if (!formData.invoiceIssueConfirmed) {
+      setError('❌ 세금계산서 발행 가능 여부 확인은 필수입니다.')
+      return
+    }
+    
+    const contractMonths = parseInt(formData.contractMinMonths)
+    if (contractMonths < 12) {
+      setError('❌ 연계고용 감면을 위해서는 계약기간이 최소 12개월 이상이어야 합니다.')
+      return
+    }
+    
     setLoading(true)
     
     try {
@@ -104,7 +156,30 @@ export default function ProductRegisterPage() {
         quoteLeadTimeDays: parseInt(formData.quoteLeadTimeDays),
         thumbnailUrl: formData.thumbnailUrl || undefined,
         imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
-        keywords: formData.keywords || undefined
+        keywords: formData.keywords || undefined,
+        
+        // 🆕 민원 방지 필수 항목
+        noSubcontractConfirm: formData.noSubcontractConfirm,
+        monthlyDeliverySchedule: formData.monthlyDeliverySchedule,
+        monthlyBillingBasis: formData.monthlyBillingBasis,
+        monthlyBillingDay: parseInt(formData.monthlyBillingDay),
+        monthlyPaymentDay: parseInt(formData.monthlyPaymentDay),
+        monthlyFixedAmount: formData.monthlyFixedAmount ? parseInt(formData.monthlyFixedAmount) : undefined,
+        monthlyAmountNote: formData.monthlyAmountNote || undefined,
+        costBreakdownJson: JSON.stringify({
+          labor: parseInt(formData.costBreakdownLabor),
+          material: parseInt(formData.costBreakdownMaterial),
+          other: parseInt(formData.costBreakdownOther)
+        }),
+        evidenceMethods: JSON.stringify([
+          formData.evidenceDeliveryConfirm && '납품확인서',
+          formData.evidenceInspection && '검수서명',
+          formData.evidenceElectronic && '전자검수',
+          formData.evidencePhoto && '사진',
+          formData.evidenceTaxInvoice && '세금계산서',
+        ].filter(Boolean)),
+        invoiceIssueConfirmed: formData.invoiceIssueConfirmed,
+        receiptNote: formData.receiptNote || undefined,
       }
       
       const token = localStorage.getItem('accessToken')

@@ -46,7 +46,24 @@ const createProductSchema = z.object({
   
   // 키워드
   keywords: z.string().optional(),
-  isActive: z.boolean().default(true)
+  isActive: z.boolean().default(true),
+  
+  // 🆕 민원 방지 필수 항목 (연계고용 감면 리스크 최소화)
+  noSubcontractConfirm: z.boolean().refine(val => val === true, {
+    message: '직접이행 확인은 필수입니다'
+  }),
+  monthlyDeliverySchedule: z.string().min(1, '납품주기를 입력하세요'),
+  monthlyBillingBasis: z.string().min(1, '월별 산출 기준을 입력하세요'),
+  monthlyBillingDay: z.number().int().min(1).max(31).default(31),
+  monthlyPaymentDay: z.number().int().min(1).max(31).default(10),
+  monthlyFixedAmount: z.number().int().positive('월 확정금액은 양수여야 합니다').optional(),
+  monthlyAmountNote: z.string().optional(),
+  costBreakdownJson: z.string().min(1, '보수 산출내역을 입력하세요'),
+  evidenceMethods: z.string().min(1, '이행증빙 방식을 선택하세요'),
+  invoiceIssueConfirmed: z.boolean().refine(val => val === true, {
+    message: '세금계산서 발행 가능 확인은 필수입니다'
+  }),
+  receiptNote: z.string().optional()
 })
 
 // 🔹 상품 수정 스키마
@@ -118,7 +135,19 @@ router.post('/', requireAuth, async (req, res) => {
         thumbnailUrl: body.thumbnailUrl,
         imageUrls: imageUrlsString,
         keywords: body.keywords,
-        isActive: body.isActive
+        isActive: body.isActive,
+        // 🆕 민원 방지 필수 항목
+        noSubcontractConfirm: body.noSubcontractConfirm,
+        monthlyDeliverySchedule: body.monthlyDeliverySchedule,
+        monthlyBillingBasis: body.monthlyBillingBasis,
+        monthlyBillingDay: body.monthlyBillingDay,
+        monthlyPaymentDay: body.monthlyPaymentDay,
+        monthlyFixedAmount: body.monthlyFixedAmount,
+        monthlyAmountNote: body.monthlyAmountNote,
+        costBreakdownJson: body.costBreakdownJson,
+        evidenceMethods: body.evidenceMethods,
+        invoiceIssueConfirmed: body.invoiceIssueConfirmed,
+        receiptNote: body.receiptNote
       }
     })
     
@@ -416,7 +445,13 @@ router.delete('/:id', requireAuth, async (req, res) => {
 // ========================================
 router.get('/my/list', requireAuth, async (req, res) => {
   try {
-    const userId = req.userId!
+    const userId = req.user?.id
+    if (!userId) {
+      return res.status(401).json({
+        error: 'UNAUTHORIZED',
+        message: '로그인이 필요합니다'
+      })
+    }
     
     // 공급사 프로필 확인
     const user = await prisma.user.findUnique({

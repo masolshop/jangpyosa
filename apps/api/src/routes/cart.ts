@@ -145,6 +145,10 @@ r.post("/checkout", async (req, res) => {
     const schema = z.object({
       requirements: z.string().optional(),
       durationMonths: z.number().int().min(1).optional(),
+      // 🆕 감면 리스크 확인 (필수)
+      buyerAcceptedRiskDisclosure: z.boolean().refine(val => val === true, {
+        message: '감면 리스크 확인을 위해 3가지 항목을 모두 체크해주세요.'
+      }),
     });
     const body = schema.parse(req.body);
 
@@ -191,6 +195,8 @@ r.post("/checkout", async (req, res) => {
           requirements: body.requirements,
           durationMonths: body.durationMonths,
           status: "REQUESTED",
+          // 🆕 감면 리스크 확인 저장
+          buyerAcceptedRiskDisclosure: body.buyerAcceptedRiskDisclosure,
         },
         include: {
           supplier: {

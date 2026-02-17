@@ -191,6 +191,30 @@ model Product {
   // 키워드 및 활성화
   keywords String? // 검색 키워드 (콤마 구분)
   isActive Boolean @default(true)
+  
+  // 🆕 민원 방지 필수 항목 (연계고용 감면 리스크 최소화)
+  // 1. 직접이행 확인
+  noSubcontractConfirm Boolean @default(false) // "본 도급은 당사가 직접 수행하며 하도급/재하도급 하지 않음" 체크 (필수)
+  
+  // 2. 월별 이행 구조
+  monthlyDeliverySchedule String? // 납품주기 (예: "매월 1회", "주 2회")
+  monthlyBillingBasis String? // 월별 산출 기준 (예: "월별 정액", "월별 수량×단가")
+  monthlyBillingDay Int @default(31) // 월별 청구일 (1~31)
+  monthlyPaymentDay Int @default(10) // 월별 지급일 (1~31)
+  
+  // 3. 월별 확정금액
+  monthlyFixedAmount Int? // 월 확정금액 (원) - 변동형이면 최소 보수(하한)
+  monthlyAmountNote String? // 월별 금액 설명 (예: "월 최소 보수", "변동형")
+  
+  // 4. 보수 산출내역 (JSON: {labor: %, material: %, other: %} 또는 금액)
+  costBreakdownJson String? // 노무비/재료비/기타 비율 또는 금액 (JSON 문자열)
+  
+  // 5. 이행증빙
+  evidenceMethods String? // 증빙 방식 (JSON array: ["납품확인서", "검수서명", "전자검수", "사진", "세금계산서"])
+  invoiceIssueConfirmed Boolean @default(false) // 세금계산서 발행 가능 확인 (필수)
+  receiptNote String? // 영수증/이체증빙 안내 (선택)
+  
+  // 6. 계약기간 (기존 contractMinMonths 활용, 최소 12개월 강제)
 
   cartItems   CartItem[]
 
@@ -230,6 +254,9 @@ model ContractRequest {
   status      String @default("REQUESTED") // "REQUESTED" | "QUOTED" | "AGREED" | "IN_PROGRESS" | "DELIVERED" | "COMPLETED" | "CANCELED"
   requirements String?
   durationMonths Int? // 계약기간(월)
+  
+  // 🆕 감면 리스크 확인 (체크아웃 시 필수)
+  buyerAcceptedRiskDisclosure Boolean @default(false) // 구매자가 감면 리스크 확인 체크박스에 동의했는지
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
