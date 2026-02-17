@@ -134,6 +134,14 @@ export default function Sidebar() {
             <div style={{ fontSize: 15.84, color: "#666", marginBottom: 8, fontWeight: "bold" }}>
               계산기
             </div>
+            {userRole === "BUYER" && (
+              <MenuItem
+                href="/dashboard/employees"
+                label="👥 직원 관리"
+                icon=""
+                active={isActive("/dashboard/employees")}
+              />
+            )}
             <MenuItem
               href="/calculators/levy-annual"
               label="고용부담금계산기"

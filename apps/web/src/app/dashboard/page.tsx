@@ -162,9 +162,20 @@ export default function DashboardPage() {
               </p>
             </div>
           </div>
+          <div
+            style={{
+              marginTop: 16,
+              padding: 12,
+              background: "#dbeafe",
+              borderRadius: 6,
+              fontSize: 14,
+            }}
+          >
+            💡 <strong>직원을 한 번만 등록하세요!</strong> 부담금/장려금/감면 계산기에서 자동으로 활용됩니다.
+          </div>
           <div style={{ marginTop: 16 }}>
             <a href="/dashboard/employees">
-              <button style={{ width: "100%" }}>👥 직원 관리</button>
+              <button style={{ width: "100%", background: "#10b981" }}>👥 직원 관리 (등록/수정/삭제)</button>
             </a>
           </div>
         </div>

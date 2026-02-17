@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { API_BASE } from "@/lib/api";
+import { getToken, getUserRole } from "@/lib/auth";
 
 type MonthData = {
   employees: number; // 상시근로자 수
@@ -59,8 +61,85 @@ export default function LevyAnnualPage() {
   );
 
   const [results, setResults] = useState<MonthResult[] | null>(null);
+  const [loadingEmployees, setLoadingEmployees] = useState(false);
 
   const quotaRate = companyType === "PRIVATE" ? 0.031 : 0.038;
+
+  // DB에서 직원 데이터 불러오기
+  async function loadFromDB() {
+    const token = getToken();
+    const role = getUserRole();
+
+    if (role !== "BUYER") {
+      alert("부담금기업만 이용 가능합니다.");
+      return;
+    }
+
+    if (!token) {
+      alert("로그인이 필요합니다.");
+      window.location.href = "/login";
+      return;
+    }
+
+    setLoadingEmployees(true);
+    try {
+      const res = await fetch(`${API_BASE}/employees`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!res.ok) throw new Error("직원 데이터 로드 실패");
+
+      const json = await res.json();
+      const employees = json.employees || [];
+
+      // 월별로 직원 자동 분류
+      const newMonths = months.map((m, idx) => {
+        const month = idx + 1;
+        const monthDate = new Date(2026, month - 1, 1);
+
+        let mildDisabled = 0;
+        let severeOver60 = 0;
+        let severeUnder60 = 0;
+
+        employees.forEach((emp: any) => {
+          const hireDate = new Date(emp.hireDate);
+          if (hireDate > monthDate) return;
+
+          if (emp.resignDate) {
+            const resignDate = new Date(emp.resignDate);
+            if (resignDate < monthDate) return;
+          }
+
+          // 장애 유형별 분류
+          if (emp.severity === "MILD") {
+            mildDisabled += 1;
+          } else if (emp.severity === "SEVERE") {
+            const workHours = emp.workHoursPerWeek || 40;
+            if (workHours >= 60) {
+              severeOver60 += 1;
+            } else {
+              severeUnder60 += 1;
+            }
+          }
+        });
+
+        return {
+          ...m,
+          mildDisabled,
+          severeOver60,
+          severeUnder60,
+          disabled: mildDisabled + severeOver60 + severeUnder60,
+        };
+      });
+
+      setMonths(newMonths);
+      alert(`${employees.length}명의 직원 데이터를 불러왔습니다!`);
+    } catch (e: any) {
+      alert(e.message);
+    } finally {
+      setLoadingEmployees(false);
+    }
+  }
 
   function updateMonth(index: number, field: keyof MonthData, value: number) {
     const newMonths = [...months];
@@ -155,6 +234,55 @@ export default function LevyAnnualPage() {
       <p style={{ color: "#0070f3", fontSize: 14, marginTop: 8 }}>
         💡 <strong>실무 팁:</strong> 간단한 추정이 필요하시면 <a href="/calculators/levy" style={{ color: "#0070f3", textDecoration: "underline" }}>간단부담금계산</a>을 이용하세요
       </p>
+
+      {/* 직원 데이터 불러오기 버튼 */}
+      <div
+        style={{
+          marginTop: 24,
+          padding: 16,
+          background: "#f0f9ff",
+          borderRadius: 8,
+          border: "2px solid #0070f3",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+          <span style={{ fontSize: 24 }}>👥</span>
+          <div style={{ flex: 1 }}>
+            <h3 style={{ margin: 0, fontSize: 16, color: "#0070f3" }}>
+              직원 데이터 자동 불러오기
+            </h3>
+            <p style={{ margin: "4px 0 0 0", fontSize: 14, color: "#666" }}>
+              등록된 장애인 직원 정보를 불러와 자동으로 월별 데이터를 채웁니다
+            </p>
+          </div>
+          <button
+            onClick={loadFromDB}
+            disabled={loadingEmployees}
+            style={{
+              background: "#0070f3",
+              padding: "12px 24px",
+              fontSize: 16,
+              fontWeight: "bold",
+              border: "none",
+              borderRadius: 6,
+              cursor: loadingEmployees ? "not-allowed" : "pointer",
+              opacity: loadingEmployees ? 0.6 : 1,
+            }}
+          >
+            {loadingEmployees ? "불러오는 중..." : "📥 불러오기"}
+          </button>
+        </div>
+        <p style={{ margin: 0, fontSize: 13, color: "#666" }}>
+          💡 직원이 등록되지 않았다면{" "}
+          <a
+            href="/dashboard/employees"
+            style={{ color: "#0070f3", textDecoration: "underline" }}
+          >
+            직원 관리
+          </a>
+          에서 먼저 등록하세요
+        </p>
+      </div>
 
       {/* 기본 설정 */}
       <div

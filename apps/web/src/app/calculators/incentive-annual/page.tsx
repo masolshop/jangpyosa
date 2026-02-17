@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { API_BASE } from "@/lib/api";
+import { getToken, getUserRole } from "@/lib/auth";
 
 type Worker = {
   id: string;
@@ -61,8 +63,89 @@ export default function IncentiveAnnualPage() {
   });
 
   const [results, setResults] = useState<MonthResult[] | null>(null);
+  const [loadingEmployees, setLoadingEmployees] = useState(false);
 
   const quotaRate = companyType === "PRIVATE" ? 0.031 : 0.038;
+
+  // DB에서 직원 데이터 불러오기
+  async function loadFromDB() {
+    const token = getToken();
+    const role = getUserRole();
+
+    if (role !== "BUYER") {
+      alert("부담금기업만 이용 가능합니다.");
+      return;
+    }
+
+    if (!token) {
+      alert("로그인이 필요합니다.");
+      window.location.href = "/login";
+      return;
+    }
+
+    setLoadingEmployees(true);
+    try {
+      const res = await fetch(`${API_BASE}/employees`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!res.ok) throw new Error("직원 데이터 로드 실패");
+
+      const json = await res.json();
+      const employees = json.employees || [];
+
+      if (employees.length === 0) {
+        alert("등록된 직원이 없습니다. 먼저 직원을 등록하세요.");
+        return;
+      }
+
+      // 기존 allWorkers를 DB 데이터로 교체
+      const loadedWorkers: Worker[] = employees.map((emp: any) => ({
+        id: emp.id,
+        name: emp.name,
+        disabilityType: emp.disabilityType,
+        severity: emp.severity,
+        gender: emp.gender,
+        hireDate: emp.hireDate.split("T")[0],
+        resignDate: emp.resignDate ? emp.resignDate.split("T")[0] : undefined,
+        monthlySalary: emp.monthlySalary,
+        hasEmploymentInsurance: emp.hasEmploymentInsurance,
+        meetsMinimumWage: emp.meetsMinimumWage,
+      }));
+
+      setAllWorkers(loadedWorkers);
+
+      // 월별 자동 매칭
+      const newMonths = months.map((m, idx) => {
+        const month = idx + 1;
+        const monthDate = new Date(2026, month - 1, 1);
+
+        const workersThisMonth = loadedWorkers.filter((w) => {
+          const hireDate = new Date(w.hireDate);
+          if (hireDate > monthDate) return false;
+
+          if (w.resignDate) {
+            const resignDate = new Date(w.resignDate);
+            if (resignDate < monthDate) return false;
+          }
+
+          return true;
+        });
+
+        return {
+          ...m,
+          workers: workersThisMonth,
+        };
+      });
+
+      setMonths(newMonths);
+      alert(`${loadedWorkers.length}명의 직원 데이터를 불러왔습니다!`);
+    } catch (e: any) {
+      alert(e.message);
+    } finally {
+      setLoadingEmployees(false);
+    }
+  }
 
   function updateEmployees(index: number, value: number) {
     const newMonths = [...months];
@@ -249,6 +332,56 @@ export default function IncentiveAnnualPage() {
       <p style={{ color: "#666", marginTop: 8 }}>
         의무고용률을 초과하여 장애인을 고용한 사업주에게 지급되는 장려금을 계산하세요
       </p>
+
+      {/* 직원 데이터 불러오기 버튼 */}
+      <div
+        style={{
+          marginTop: 24,
+          padding: 16,
+          background: "#f0fdf4",
+          borderRadius: 8,
+          border: "2px solid #10b981",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+          <span style={{ fontSize: 24 }}>👥</span>
+          <div style={{ flex: 1 }}>
+            <h3 style={{ margin: 0, fontSize: 16, color: "#10b981" }}>
+              직원 데이터 자동 불러오기
+            </h3>
+            <p style={{ margin: "4px 0 0 0", fontSize: 14, color: "#666" }}>
+              등록된 장애인 직원 정보를 불러와 자동으로 월별 장려금을 계산합니다
+            </p>
+          </div>
+          <button
+            onClick={loadFromDB}
+            disabled={loadingEmployees}
+            style={{
+              background: "#10b981",
+              padding: "12px 24px",
+              fontSize: 16,
+              fontWeight: "bold",
+              border: "none",
+              borderRadius: 6,
+              color: "white",
+              cursor: loadingEmployees ? "not-allowed" : "pointer",
+              opacity: loadingEmployees ? 0.6 : 1,
+            }}
+          >
+            {loadingEmployees ? "불러오는 중..." : "📥 불러오기"}
+          </button>
+        </div>
+        <p style={{ margin: 0, fontSize: 13, color: "#666" }}>
+          💡 직원이 등록되지 않았다면{" "}
+          <a
+            href="/dashboard/employees"
+            style={{ color: "#10b981", textDecoration: "underline" }}
+          >
+            직원 관리
+          </a>
+          에서 먼저 등록하세요
+        </p>
+      </div>
 
       {/* 기본 설정 */}
       <div
