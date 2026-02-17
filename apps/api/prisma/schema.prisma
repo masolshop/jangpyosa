@@ -20,6 +20,9 @@ model User {
   branch       Branch?  @relation(fields: [branchId], references: [id])
   refCode      String?  @unique // 추천코드(매니저만)
   
+  // 🆕 BUYER 전용 필드
+  companyType  String?  // "PRIVATE" | "GOVERNMENT" (BUYER만 사용, 부담금 계산 방식 구분)
+  
   // 추천인 관계
   referredById String?  // 가입 시 추천자 ID
   referredBy   User?    @relation("Referrals", fields: [referredById], references: [id])

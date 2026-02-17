@@ -24,6 +24,7 @@ export default function SignupPage() {
   // 기업 전용
   const [bizNo, setBizNo] = useState("");
   const [referrerPhone, setReferrerPhone] = useState("");
+  const [companyType, setCompanyType] = useState<"PRIVATE" | "GOVERNMENT">("PRIVATE");
 
   const [msg, setMsg] = useState("");
   const [loading, setLoading] = useState(false);
@@ -113,6 +114,10 @@ export default function SignupPage() {
         setMsg("추천인 매니저 핸드폰 번호를 입력하세요");
         return;
       }
+      if (type === "buyer" && !companyType) {
+        setMsg("기업 유형을 선택하세요");
+        return;
+      }
     }
 
     setLoading(true);
@@ -146,6 +151,7 @@ export default function SignupPage() {
           ...body,
           bizNo: bizNo.replace(/\D/g, ""),
           referrerPhone: referrerPhone.replace(/\D/g, ""),
+          companyType,
         };
       }
 
@@ -410,6 +416,54 @@ export default function SignupPage() {
           {/* 기업 전용 필드 */}
           {(type === "supplier" || type === "buyer") && (
             <>
+              {/* BUYER 전용: 기업 유형 선택 */}
+              {type === "buyer" && (
+                <>
+                  <label>기업 유형 *</label>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
+                    <button
+                      type="button"
+                      onClick={() => setCompanyType("PRIVATE")}
+                      style={{
+                        padding: "16px 12px",
+                        border: companyType === "PRIVATE" ? "2px solid #0070f3" : "2px solid #ddd",
+                        borderRadius: 8,
+                        background: companyType === "PRIVATE" ? "#e7f3ff" : "white",
+                        cursor: "pointer",
+                        transition: "all 0.2s",
+                        fontSize: 14,
+                        fontWeight: companyType === "PRIVATE" ? "bold" : "normal",
+                        color: companyType === "PRIVATE" ? "#0070f3" : "#666",
+                      }}
+                    >
+                      🏢 민간/공공기관
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCompanyType("GOVERNMENT")}
+                      style={{
+                        padding: "16px 12px",
+                        border: companyType === "GOVERNMENT" ? "2px solid #0070f3" : "2px solid #ddd",
+                        borderRadius: 8,
+                        background: companyType === "GOVERNMENT" ? "#e7f3ff" : "white",
+                        cursor: "pointer",
+                        transition: "all 0.2s",
+                        fontSize: 14,
+                        fontWeight: companyType === "GOVERNMENT" ? "bold" : "normal",
+                        color: companyType === "GOVERNMENT" ? "#0070f3" : "#666",
+                      }}
+                    >
+                      🏛️ 국가/지자체/교육청
+                    </button>
+                  </div>
+                  <p style={{ fontSize: 12, color: "#666", margin: "4px 0 16px 0" }}>
+                    💡 {companyType === "PRIVATE" 
+                      ? "일반 기업 및 공공기관 (부담금 감면 기본 계산식 적용)"
+                      : "국가기관, 지자체, 교육청 (표준사업장 우선구매 초과액 반영)"}
+                  </p>
+                </>
+              )}
+
               <label>사업자등록번호 *</label>
               <input
                 type="text"

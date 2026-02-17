@@ -320,6 +320,7 @@ const signupBuyerSchema = z.object({
   password: z.string().min(8),
   bizNo: z.string().min(10, "사업자등록번호 10자리를 입력하세요"),
   referrerPhone: z.string().min(10, "추천인 매니저 핸드폰 번호는 필수입니다"), // 필수로 변경
+  companyType: z.enum(["PRIVATE", "GOVERNMENT"]).default("PRIVATE"), // 기업 유형 (민간/공공 vs 국가/지자체/교육청)
 });
 
 r.post("/signup/buyer", async (req, res) => {
@@ -372,6 +373,7 @@ r.post("/signup/buyer", async (req, res) => {
         passwordHash,
         name: apickResult.representative || "대표자",
         role: "BUYER",
+        companyType: body.companyType, // 🆕 기업 유형 저장
         referredById: referredBy.id,
         company: {
           create: {
