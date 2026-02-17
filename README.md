@@ -6,6 +6,7 @@
 
 ## ✨ 핵심 기능
 
+- 🎨 **사이드바 네비게이션**: 왼쪽 고정 메뉴 (토글 가능, 반응형)
 - 💰 **장애인고용부담금 계산기**: 의무고용률 기반 부담금 추정
 - 📉 **연계고용 감면 계산기**: 도급계약 금액 기반 감면액 계산 (최대 90%, 도급액 50% 상한)
 - 🛒 **도급계약 쇼핑몰**: 830개 표준사업장 상품·서비스 검색 및 장바구니
@@ -42,7 +43,8 @@
 ### Frontend
 - **Framework**: Next.js 14 (App Router)
 - **Language**: TypeScript
-- **Styling**: CSS Modules
+- **Styling**: CSS Modules + Inline Styles
+- **Navigation**: 반응형 사이드바 (고정 메뉴, 토글 기능)
 - **State**: React Hooks + LocalStorage
 
 ### Business Logic
