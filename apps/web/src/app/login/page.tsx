@@ -27,10 +27,11 @@ export default function LoginPage() {
   };
 
   async function onLogin() {
-    if (!userType) {
-      setMsg("회원 유형을 선택해주세요");
-      return;
-    }
+    // ✅ 유형 선택 필수 제거 - 핸드폰+비밀번호만 검증
+    // if (!userType) {
+    //   setMsg("회원 유형을 선택해주세요");
+    //   return;
+    // }
 
     setMsg("");
     setLoading(true);
@@ -43,24 +44,25 @@ export default function LoginPage() {
         body: JSON.stringify({ 
           phone: cleanPhone, 
           password,
-          userType // 선택한 유저 타입 전송
+          // userType은 참고용으로만 전송 (백엔드에서 무시됨)
         }),
       });
       
-      // 선택한 유형과 실제 유형이 일치하는지 확인
-      if (out.user.role !== userType && out.user.role !== "SUPER_ADMIN") {
-        setMsg(`선택하신 회원 유형(${getUserTypeLabel(userType)})과 일치하지 않습니다. 올바른 유형을 선택해주세요.`);
-        setLoading(false);
-        return;
-      }
-
+      // ✅ 유형 불일치 검증 제거 - 가입된 유형으로 자동 로그인
+      // 선택한 버튼과 상관없이 DB에 저장된 실제 유형으로 로그인됨
+      
       setToken(out.accessToken);
       setUserRole(out.user.role);
       
       // 사용자 정보 로컬스토리지 저장
       localStorage.setItem("user", JSON.stringify(out.user));
       
-      setMsg("로그인 성공!");
+      // 선택한 유형과 다르면 안내 메시지 표시
+      if (userType && userType !== out.user.role && out.user.role !== "SUPER_ADMIN") {
+        setMsg(`✅ ${getUserTypeLabel(out.user.role)} 계정으로 로그인되었습니다`);
+      } else {
+        setMsg("✅ 로그인 성공!");
+      }
       
       // 역할별 리다이렉션
       setTimeout(() => {
@@ -77,7 +79,7 @@ export default function LoginPage() {
         }
       }, 1000);
     } catch (e: any) {
-      setMsg("로그인 실패: " + (e.message || "핸드폰 번호 또는 비밀번호를 확인하세요"));
+      setMsg("❌ 로그인 실패: " + (e.message || "핸드폰 번호 또는 비밀번호를 확인하세요"));
     } finally {
       setLoading(false);
     }
@@ -189,7 +191,7 @@ export default function LoginPage() {
 
           <button
             onClick={onLogin}
-            disabled={loading || !phone || !password || !userType}
+            disabled={loading || !phone || !password}
             style={{ width: "100%", marginTop: 16 }}
           >
             {loading ? "로그인 중..." : "로그인"}
@@ -240,16 +242,16 @@ export default function LoginPage() {
         >
           <p style={{ marginBottom: 8, fontWeight: 600 }}>💡 안내</p>
           <p style={{ marginBottom: 4 }}>
-            • 회원가입 시 선택한 회원 유형을 선택해주세요
+            • 회원 유형 버튼은 선택하지 않아도 로그인 가능합니다
           </p>
           <p style={{ marginBottom: 4 }}>
-            • 매니저: 지사 관리 및 회원 관리
+            • 핸드폰 번호와 비밀번호만으로 자동 로그인됩니다
           </p>
           <p style={{ marginBottom: 4 }}>
-            • 표준사업장: 상품 등록 및 계약 관리
+            • 가입하신 유형(매니저/표준사업장/부담금기업)으로 자동 접속됩니다
           </p>
           <p>
-            • 부담금기업: 상품 구매 및 계약 요청
+            • 회원가입 시 선택한 유형은 변경할 수 없습니다
           </p>
         </div>
 

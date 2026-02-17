@@ -59,15 +59,9 @@ r.post("/login", async (req, res) => {
       return res.status(401).json({ error: "INVALID_CREDENTIALS" });
     }
 
-    // 회원 유형 검증 (선택된 경우)
-    if (body.userType && user.role !== "SUPER_ADMIN") {
-      if (user.role !== body.userType) {
-        return res.status(403).json({ 
-          error: "USER_TYPE_MISMATCH",
-          message: `선택하신 회원 유형과 일치하지 않습니다. (계정 유형: ${user.role})`
-        });
-      }
-    }
+    // ✅ 회원 유형 검증 제거 (핸드폰+비밀번호만 검증)
+    // 사용자는 가입한 유형으로 자동 로그인됨
+    // userType 파라미터는 무시됨
 
     const accessToken = jwt.sign(
       { userId: user.id, role: user.role },
