@@ -58,13 +58,30 @@ export default function Sidebar() {
           overflowY: "auto",
         }}
       >
-        {/* 로고 */}
-        <div style={{ marginBottom: 32, marginTop: 32 }}>
+        {/* 로고 - 홈으로 이동 */}
+        <a 
+          href="/" 
+          style={{ 
+            display: "block",
+            marginBottom: 32, 
+            marginTop: 32,
+            textDecoration: "none",
+            color: "white",
+            cursor: "pointer",
+            transition: "all 0.2s"
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.opacity = "0.8";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.opacity = "1";
+          }}
+        >
           <h2 style={{ margin: 0, fontSize: 20 }}>🏢 장표사닷컴</h2>
           <p style={{ margin: "4px 0 0 0", fontSize: 12, color: "#999" }}>
             연계고용 플랫폼
           </p>
-        </div>
+        </a>
 
         {/* 메인 메뉴 */}
         <nav>
@@ -72,7 +89,6 @@ export default function Sidebar() {
             <div style={{ fontSize: 11, color: "#666", marginBottom: 8, fontWeight: "bold" }}>
               메인
             </div>
-            <MenuItem href="/" label="홈" icon="🏠" active={isActive("/")} />
             <MenuItem
               href="/catalog"
               label="상품 쇼핑몰"
