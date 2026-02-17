@@ -91,12 +91,17 @@ export default function CatalogPage() {
   }
 
   useEffect(() => {
+    // 초기 로드
+    loadRegistries(1);
+  }, []);
+
+  const handleSearch = () => {
     if (tab === "registries") {
       loadRegistries(1);
     } else {
       loadProducts();
     }
-  }, [tab]);
+  };
 
   const handleSearch = () => {
     if (tab === "registries") {
