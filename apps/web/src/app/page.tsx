@@ -17,9 +17,15 @@ export default function HomePage() {
           
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 16 }}>
             <ServiceCard
+              icon="📅"
+              title="연간 월별 부담금 계산"
+              description="12개월 고용 현황을 입력하여 정확한 연간 부담금을 계산하세요"
+              href="/calculators/levy-annual"
+            />
+            <ServiceCard
               icon="💰"
-              title="부담금 계산기"
-              description="상시근로자 수와 장애인 고용인원을 입력하여 예상 부담금을 계산하세요"
+              title="간단 부담금 계산"
+              description="상시근로자 수와 장애인 고용인원을 입력하여 예상 부담금을 빠르게 계산하세요"
               href="/calculators/levy"
             />
             <ServiceCard
@@ -31,7 +37,7 @@ export default function HomePage() {
             <ServiceCard
               icon="🛒"
               title="도급계약 표준사업장"
-              description="830개 장애인표준사업장의 상품과 서비스를 검색하고 도급계약을 의뢰하세요"
+              description="873개 장애인표준사업장의 상품과 서비스를 검색하고 도급계약을 의뢰하세요"
               href="/catalog"
             />
           </div>

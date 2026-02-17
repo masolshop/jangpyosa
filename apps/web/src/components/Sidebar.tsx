@@ -127,8 +127,14 @@ export default function Sidebar() {
               계산기
             </div>
             <MenuItem
+              href="/calculators/levy-annual"
+              label="연간 월별 부담금"
+              icon="📅"
+              active={isActive("/calculators/levy-annual")}
+            />
+            <MenuItem
               href="/calculators/levy"
-              label="부담금 계산기"
+              label="간단 부담금 계산"
               icon="💰"
               active={isActive("/calculators/levy")}
             />
