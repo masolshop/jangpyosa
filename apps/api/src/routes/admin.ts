@@ -12,6 +12,219 @@ const upload = multer();
 r.use(requireAuth);
 r.use(requireRole(["SUPER_ADMIN"]));
 
+// ========================================
+// 🏢 지사(Branch) 관리 API
+// ========================================
+
+// 지사 목록 조회
+r.get("/branches", async (req, res) => {
+  try {
+    const branches = await prisma.branch.findMany({
+      include: {
+        _count: {
+          select: { agents: true }, // 소속 매니저 수
+        },
+      },
+      orderBy: { name: "asc" },
+    });
+    res.json({ ok: true, branches });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 지사 생성
+const createBranchSchema = z.object({
+  name: z.string().min(1, "지사명을 입력하세요"),
+  code: z.string().min(1, "지사 코드를 입력하세요"),
+  region: z.string().optional(),
+  address: z.string().optional(),
+  phone: z.string().optional(),
+});
+
+r.post("/branches", async (req, res) => {
+  try {
+    const body = createBranchSchema.parse(req.body);
+
+    // 지사명 중복 체크
+    const existing = await prisma.branch.findUnique({ where: { name: body.name } });
+    if (existing) {
+      return res.status(400).json({ error: "BRANCH_NAME_EXISTS" });
+    }
+
+    // 지사 코드 중복 체크
+    const existingCode = await prisma.branch.findUnique({ where: { code: body.code } });
+    if (existingCode) {
+      return res.status(400).json({ error: "BRANCH_CODE_EXISTS" });
+    }
+
+    const branch = await prisma.branch.create({
+      data: body,
+    });
+
+    res.json({ ok: true, branch });
+  } catch (error: any) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: "VALIDATION_ERROR", details: error.errors });
+    }
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 지사 수정
+const updateBranchSchema = z.object({
+  name: z.string().min(1).optional(),
+  region: z.string().optional(),
+  address: z.string().optional(),
+  phone: z.string().optional(),
+  isActive: z.boolean().optional(),
+});
+
+r.put("/branches/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const body = updateBranchSchema.parse(req.body);
+
+    // 지사명 중복 체크 (변경하는 경우)
+    if (body.name) {
+      const existing = await prisma.branch.findFirst({
+        where: { name: body.name, NOT: { id } },
+      });
+      if (existing) {
+        return res.status(400).json({ error: "BRANCH_NAME_EXISTS" });
+      }
+    }
+
+    const branch = await prisma.branch.update({
+      where: { id },
+      data: body,
+    });
+
+    res.json({ ok: true, branch });
+  } catch (error: any) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: "VALIDATION_ERROR", details: error.errors });
+    }
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 지사 삭제 (소속 매니저가 없는 경우에만)
+r.delete("/branches/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // 소속 매니저 확인
+    const agentCount = await prisma.user.count({
+      where: { branchId: id, role: "AGENT" },
+    });
+
+    if (agentCount > 0) {
+      return res.status(400).json({
+        error: "BRANCH_HAS_AGENTS",
+        message: `이 지사에는 ${agentCount}명의 매니저가 소속되어 있습니다. 먼저 매니저를 이동하거나 삭제하세요.`,
+      });
+    }
+
+    await prisma.branch.delete({ where: { id } });
+    res.json({ ok: true, message: "지사가 삭제되었습니다" });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 매니저 지사 이동
+const moveAgentSchema = z.object({
+  agentId: z.string().min(1),
+  newBranchId: z.string().min(1),
+});
+
+r.post("/branches/move-agent", async (req, res) => {
+  try {
+    const body = moveAgentSchema.parse(req.body);
+
+    // 매니저 확인
+    const agent = await prisma.user.findUnique({
+      where: { id: body.agentId },
+      include: { branch: true },
+    });
+
+    if (!agent || agent.role !== "AGENT") {
+      return res.status(404).json({ error: "AGENT_NOT_FOUND" });
+    }
+
+    // 새 지사 확인
+    const newBranch = await prisma.branch.findUnique({
+      where: { id: body.newBranchId },
+    });
+
+    if (!newBranch) {
+      return res.status(404).json({ error: "BRANCH_NOT_FOUND" });
+    }
+
+    // 지사 이동
+    const updated = await prisma.user.update({
+      where: { id: body.agentId },
+      data: { branchId: body.newBranchId },
+      include: { branch: true },
+    });
+
+    res.json({
+      ok: true,
+      message: `${agent.name} 매니저가 ${agent.branch?.name}에서 ${newBranch.name}으로 이동되었습니다`,
+      agent: {
+        id: updated.id,
+        name: updated.name,
+        phone: updated.phone,
+        branchName: updated.branch?.name,
+      },
+    });
+  } catch (error: any) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: "VALIDATION_ERROR", details: error.errors });
+    }
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 지사별 매니저 목록 조회
+r.get("/branches/:id/agents", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const branch = await prisma.branch.findUnique({
+      where: { id },
+      include: {
+        agents: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+            email: true,
+            refCode: true,
+            createdAt: true,
+            _count: {
+              select: { referrals: true }, // 추천한 회원 수
+            },
+          },
+        },
+      },
+    });
+
+    if (!branch) {
+      return res.status(404).json({ error: "BRANCH_NOT_FOUND" });
+    }
+
+    res.json({ ok: true, branch });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ========================================
+// 📅 연도별 설정 관리
+// ========================================
+
 // 연도별 설정 upsert
 r.post("/year-settings/upsert", async (req, res) => {
   try {

@@ -9,26 +9,55 @@ datasource db {
 
 model User {
   id           String   @id @default(cuid())
-  email        String   @unique
+  phone        String   @unique // 🆕 핸드폰 번호가 아이디 (로그인용)
+  email        String?  // 이메일은 선택사항
   passwordHash String
   name         String
-  phone        String?
-  role         String   // "SUPER_ADMIN" | "BRANCH_ADMIN" | "AGENT" | "BUYER" | "SUPPLIER"
-  refCode      String?  @unique // 추천코드(영업자) - 유니크 추가
-  referredById String?  // 가입 시 추천자
+  role         String   // "SUPER_ADMIN" | "AGENT" | "BUYER" | "SUPPLIER"
+  
+  // 🆕 매니저(AGENT) 전용 필드
+  branchId     String?  // 지사 ID (매니저만)
+  branch       Branch?  @relation(fields: [branchId], references: [id])
+  refCode      String?  @unique // 추천코드(매니저만)
+  
+  // 추천인 관계
+  referredById String?  // 가입 시 추천자 ID
   referredBy   User?    @relation("Referrals", fields: [referredById], references: [id])
   referrals    User[]   @relation("Referrals")
+  
   company      Company?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
 
+// 🆕 지사(Branch) 모델
+model Branch {
+  id        String   @id @default(cuid())
+  name      String   @unique // 지사명 (예: "서울지사", "부산지사")
+  code      String   @unique // 지사 코드 (예: "SEOUL", "BUSAN")
+  region    String?  // 지역 (예: "서울특별시", "부산광역시")
+  address   String?  // 주소
+  phone     String?  // 대표 전화번호
+  isActive  Boolean  @default(true)
+  
+  // 관계
+  agents    User[]   // 소속 매니저들
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model Company {
   id          String      @id @default(cuid())
-  name        String
-  bizNo       String      @unique
-  type        String      // "PRIVATE" | "PUBLIC"
-  isVerified  Boolean     @default(false)
+  name        String      // 상호명 (APICK에서 자동)
+  bizNo       String      @unique // 사업자번호
+  representative String?  // 🆕 대표자명 (APICK에서 자동)
+  type        String      // "SUPPLIER" | "BUYER"
+  isVerified  Boolean     @default(false) // APICK 인증 여부
+  
+  // 🆕 APICK 인증 데이터
+  apickData   String?     // APICK 응답 전체 JSON (필요시 참조)
+  
   ownerUserId String      @unique
   ownerUser   User        @relation(fields: [ownerUserId], references: [id])
 
