@@ -91,7 +91,7 @@ export default function Sidebar() {
             <div style={{ fontSize: 13.2, color: "#666", marginBottom: 8, fontWeight: "bold" }}>
               메인
             </div>
-            {userRole === "BUYER" && (
+            {(userRole === "BUYER" || userRole === "SUPER_ADMIN") && (
               <MenuItem
                 href="/dashboard"
                 label="기업 대시보드"
@@ -134,11 +134,11 @@ export default function Sidebar() {
             <div style={{ fontSize: 15.84, color: "#666", marginBottom: 8, fontWeight: "bold" }}>
               계산기
             </div>
-            {userRole === "BUYER" && (
+            {(userRole === "BUYER" || userRole === "SUPER_ADMIN") && (
               <MenuItem
                 href="/dashboard/employees"
-                label="👥 직원 관리"
-                icon=""
+                label="장애인고용직원등록관리"
+                icon="👥"
                 active={isActive("/dashboard/employees")}
               />
             )}

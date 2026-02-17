@@ -30,7 +30,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const role = getUserRole();
-    if (role !== "BUYER") {
+    if (role !== "BUYER" && role !== "SUPER_ADMIN") {
       router.push("/");
       return;
     }

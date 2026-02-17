@@ -48,7 +48,7 @@ export default function EmployeesPage() {
 
   useEffect(() => {
     const role = getUserRole();
-    if (role !== "BUYER") {
+    if (role !== "BUYER" && role !== "SUPER_ADMIN") {
       router.push("/");
       return;
     }
