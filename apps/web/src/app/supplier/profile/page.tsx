@@ -117,7 +117,7 @@ export default function SupplierProfilePage() {
           <div className={styles.infoItem}>
             <label>담당자명</label>
             <div className={styles.infoValue}>
-              {profile.company.representative || profile.registry?.representative || '-'}
+              {profile.company?.representative || profile.registry?.representative || '-'}
             </div>
           </div>
         </div>
