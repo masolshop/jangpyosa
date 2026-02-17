@@ -71,9 +71,6 @@ export default function LoginPage() {
           <p>
             계정이 없으신가요? <a href="/signup">회원가입</a>
           </p>
-          <p style={{ marginTop: 8 }}>
-            <a href="/">홈으로 돌아가기</a>
-          </p>
         </div>
       </div>
     </div>

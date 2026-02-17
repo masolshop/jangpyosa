@@ -55,9 +55,6 @@ export default function ContentPage({ params }: { params: { slug: string } }) {
           style={{ marginTop: 24, lineHeight: 1.8 }}
           dangerouslySetInnerHTML={{ __html: page.contentMd }}
         />
-        <div style={{ marginTop: 32, textAlign: "center" }}>
-          <a href="/">홈으로 돌아가기</a>
-        </div>
       </div>
     </div>
   );

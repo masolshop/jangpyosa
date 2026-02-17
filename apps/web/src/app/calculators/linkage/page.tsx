@@ -126,10 +126,6 @@ export default function LinkageCalcPage() {
             </div>
           </div>
         )}
-
-        <div style={{ marginTop: 24, textAlign: "center" }}>
-          <a href="/calculators/levy">부담금 계산기</a> | <a href="/">홈으로</a>
-        </div>
       </div>
     </div>
   );

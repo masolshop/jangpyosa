@@ -17,9 +17,11 @@ body {
 a {
   color: #0070f3;
   text-decoration: none;
+  transition: color 0.2s;
 }
 
 a:hover {
+  color: #0051cc;
   text-decoration: underline;
 }
 
@@ -31,15 +33,25 @@ button {
   border-radius: 5px;
   cursor: pointer;
   font-size: 14px;
+  transition: all 0.2s;
+  font-weight: 500;
 }
 
 button:hover {
   background: #0051cc;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 112, 243, 0.3);
+}
+
+button:active {
+  transform: translateY(0);
 }
 
 button:disabled {
   background: #ccc;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 input,
@@ -51,6 +63,15 @@ select {
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 14px;
+  transition: border-color 0.2s;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: #0070f3;
+  box-shadow: 0 0 0 3px rgba(0, 112, 243, 0.1);
 }
 
 .container {
@@ -61,18 +82,37 @@ select {
 
 .card {
   background: white;
-  padding: 20px;
+  padding: 24px;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   margin-bottom: 20px;
 }
 
 .error {
   color: #e00;
   margin: 10px 0;
+  padding: 12px;
+  background: #fee;
+  border-left: 4px solid #e00;
+  border-radius: 4px;
 }
 
 .success {
   color: #0a0;
   margin: 10px 0;
+  padding: 12px;
+  background: #efe;
+  border-left: 4px solid #0a0;
+  border-radius: 4px;
+}
+
+/* 반응형 레이아웃 */
+@media (max-width: 768px) {
+  .container {
+    padding: 12px;
+  }
+  
+  .card {
+    padding: 16px;
+  }
 }

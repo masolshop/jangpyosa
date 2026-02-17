@@ -73,15 +73,6 @@ export default function CatalogPage() {
             style={{ flex: 1, minWidth: 200 }}
           />
           <button onClick={load}>검색</button>
-          <a href="/cart">
-            <button style={{ background: "#28a745" }}>장바구니</button>
-          </a>
-          <a href="/calculators/levy">
-            <button style={{ background: "#6c757d" }}>부담금 계산기</button>
-          </a>
-          <a href="/calculators/linkage">
-            <button style={{ background: "#6c757d" }}>연계고용 계산기</button>
-          </a>
         </div>
 
         {msg && <p className={msg.includes("✓") ? "success" : "error"}>{msg}</p>}

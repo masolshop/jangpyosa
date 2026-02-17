@@ -138,9 +138,6 @@ export default function SignupPage() {
           <p>
             이미 계정이 있으신가요? <a href="/login">로그인</a>
           </p>
-          <p style={{ marginTop: 8 }}>
-            <a href="/">홈으로 돌아가기</a>
-          </p>
         </div>
       </div>
     </div>

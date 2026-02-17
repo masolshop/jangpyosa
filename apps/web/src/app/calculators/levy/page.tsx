@@ -118,10 +118,6 @@ export default function LevyCalcPage() {
             </div>
           </div>
         )}
-
-        <div style={{ marginTop: 24, textAlign: "center" }}>
-          <a href="/">홈으로 돌아가기</a> | <a href="/catalog">상품 둘러보기</a>
-        </div>
       </div>
     </div>
   );
