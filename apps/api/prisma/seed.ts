@@ -88,7 +88,117 @@ async function main() {
 
   console.log(`✅ Agents created: ${agent1.phone}, ${agent2.phone}`);
 
-  // 4. 연도별 설정 생성
+  // 4. 표준사업장(Supplier) 테스트 계정 생성
+  console.log("🏭 Creating supplier test account...");
+
+  const supplierPassword = await bcrypt.hash("test1234", 10);
+  
+  const supplier = await prisma.user.upsert({
+    where: { phone: "01099998888" },
+    update: {},
+    create: {
+      phone: "01099998888",
+      email: "supplier@test.com",
+      passwordHash: supplierPassword,
+      name: "테스트표준사업장",
+      role: "SUPPLIER",
+      referredById: agent1.id, // 김매니저가 추천
+      company: {
+        create: {
+          name: "(주)테스트표준사업장",
+          bizNo: "1234567890",
+          representative: "김대표",
+          type: "SUPPLIER",
+          isVerified: true,
+          supplierProfile: {
+            create: {
+              region: "서울특별시",
+              industry: "제조업",
+              contactTel: "010-9999-8888",
+              approved: true,
+            },
+          },
+        },
+      },
+    },
+    include: { company: true },
+  });
+
+  console.log(`✅ Supplier created: ${supplier.phone}`);
+
+  // 5. 부담금기업(Buyer) 테스트 계정 생성
+  console.log("🏢 Creating buyer test account...");
+
+  const buyerPassword = await bcrypt.hash("test1234", 10);
+  
+  const buyer = await prisma.user.upsert({
+    where: { phone: "01055556666" },
+    update: {},
+    create: {
+      phone: "01055556666",
+      email: "buyer@test.com",
+      passwordHash: buyerPassword,
+      name: "테스트부담금기업",
+      role: "BUYER",
+      companyType: "PRIVATE", // 민간기업
+      referredById: agent1.id, // 김매니저가 추천
+      company: {
+        create: {
+          name: "(주)테스트부담금기업",
+          bizNo: "9876543210",
+          representative: "이대표",
+          type: "BUYER",
+          isVerified: true,
+          buyerProfile: {
+            create: {
+              employeeCount: 150,
+              disabledCount: 2,
+            },
+          },
+        },
+      },
+    },
+    include: { company: true },
+  });
+
+  console.log(`✅ Buyer created: ${buyer.phone}`);
+
+  // 6. 부담금기업(국가/지자체) 테스트 계정 생성
+  console.log("🏢 Creating government buyer test account...");
+
+  const govBuyer = await prisma.user.upsert({
+    where: { phone: "01077778888" },
+    update: {},
+    create: {
+      phone: "01077778888",
+      email: "govbuyer@test.com",
+      passwordHash: buyerPassword,
+      name: "테스트국가기관",
+      role: "BUYER",
+      companyType: "GOVERNMENT", // 국가/지자체/교육청
+      referredById: agent2.id, // 이매니저가 추천
+      company: {
+        create: {
+          name: "서울시교육청",
+          bizNo: "1122334455",
+          representative: "박교육감",
+          type: "BUYER",
+          isVerified: true,
+          buyerProfile: {
+            create: {
+              employeeCount: 500,
+              disabledCount: 12,
+            },
+          },
+        },
+      },
+    },
+    include: { company: true },
+  });
+
+  console.log(`✅ Government buyer created: ${govBuyer.phone}`);
+
+  // 7. 연도별 설정 생성
   console.log("📅 Creating year settings...");
 
   await prisma.yearSetting.upsert({
@@ -119,7 +229,7 @@ async function main() {
 
   console.log("✅ Year settings created for 2026, 2027");
 
-  // 5. CMS 페이지 생성
+  // 8. CMS 페이지 생성
   console.log("📄 Creating CMS pages...");
 
   await prisma.page.upsert({
@@ -170,19 +280,39 @@ async function main() {
   console.log("\n🎉 Seeding completed!");
   console.log("\n📝 Initial accounts:");
   console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-  console.log("🔑 Super Admin");
-  console.log("   Phone: 01012345678");
+  console.log("🔑 슈퍼어드민");
+  console.log("   Phone: 010-1234-5678");
   console.log("   Password: admin1234");
+  console.log("   기능: 전체 관리");
   console.log("");
-  console.log("👤 Agent 1 (서울남부지사)");
-  console.log("   Phone: 01098765432");
+  console.log("👤 매니저 1 (서울남부지사)");
+  console.log("   Phone: 010-9876-5432");
   console.log("   Password: agent1234");
   console.log("   RefCode: AGENT001");
+  console.log("   기능: 지사 관리 및 회원 관리");
   console.log("");
-  console.log("👤 Agent 2 (부산지역본부)");
-  console.log("   Phone: 01087654321");
+  console.log("👤 매니저 2 (부산지역본부)");
+  console.log("   Phone: 010-8765-4321");
   console.log("   Password: agent1234");
   console.log("   RefCode: AGENT002");
+  console.log("   기능: 지사 관리 및 회원 관리");
+  console.log("");
+  console.log("🏭 표준사업장");
+  console.log("   Phone: 010-9999-8888");
+  console.log("   Password: test1234");
+  console.log("   기능: 상품 등록 및 계약 관리 ✅");
+  console.log("");
+  console.log("🏢 부담금기업 (민간/공공기업)");
+  console.log("   Phone: 010-5555-6666");
+  console.log("   Password: test1234");
+  console.log("   CompanyType: PRIVATE");
+  console.log("   기능: 상품 구매 및 계약 요청");
+  console.log("");
+  console.log("🏛️ 부담금기업 (국가/지자체/교육청)");
+  console.log("   Phone: 010-7777-8888");
+  console.log("   Password: test1234");
+  console.log("   CompanyType: GOVERNMENT");
+  console.log("   기능: 상품 구매 및 계약 요청");
   console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 }
 

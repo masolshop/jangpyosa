@@ -9,274 +9,199 @@ datasource db {
 
 model User {
   id           String   @id @default(cuid())
-  phone        String   @unique // 🆕 핸드폰 번호가 아이디 (로그인용)
-  email        String?  // 이메일은 선택사항
+  phone        String   @unique
+  email        String?
   passwordHash String
   name         String
-  role         String   // "SUPER_ADMIN" | "AGENT" | "BUYER" | "SUPPLIER"
-  
-  // 🆕 매니저(AGENT) 전용 필드
-  branchId     String?  // 지사 ID (매니저만)
-  branch       Branch?  @relation(fields: [branchId], references: [id])
-  refCode      String?  @unique // 추천코드(매니저만)
-  
-  // 🆕 BUYER 전용 필드
-  companyType  String?  // "PRIVATE" | "GOVERNMENT" (BUYER만 사용, 부담금 계산 방식 구분)
-  
-  // 추천인 관계
-  referredById String?  // 가입 시 추천자 ID
-  referredBy   User?    @relation("Referrals", fields: [referredById], references: [id])
-  referrals    User[]   @relation("Referrals")
-  
-  company      Company?
+  role         String
+  branchId     String?
+  refCode      String?  @unique
+  referredById String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  companyType  String?
+  company      Company?
+  referredBy   User?    @relation("Referrals", fields: [referredById], references: [id])
+  referrals    User[]   @relation("Referrals")
+  branch       Branch?  @relation(fields: [branchId], references: [id])
 }
 
-// 🆕 지사(Branch) 모델
 model Branch {
   id        String   @id @default(cuid())
-  name      String   @unique // 지사명 (예: "서울지사", "부산지사")
-  code      String   @unique // 지사 코드 (예: "SEOUL", "BUSAN")
-  region    String?  // 지역 (예: "서울특별시", "부산광역시")
-  address   String?  // 주소
-  phone     String?  // 대표 전화번호
+  name      String   @unique
+  code      String   @unique
+  region    String?
+  address   String?
+  phone     String?
   isActive  Boolean  @default(true)
-  
-  // 관계
-  agents    User[]   // 소속 매니저들
-  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  agents    User[]
 }
 
 model Company {
-  id          String      @id @default(cuid())
-  name        String      // 상호명 (APICK에서 자동)
-  bizNo       String      @unique // 사업자번호
-  representative String?  // 🆕 대표자명 (APICK에서 자동)
-  type        String      // "SUPPLIER" | "BUYER"
-  isVerified  Boolean     @default(false) // APICK 인증 여부
-  
-  // 🆕 APICK 인증 데이터
-  apickData   String?     // APICK 응답 전체 JSON (필요시 참조)
-  
-  ownerUserId String      @unique
-  ownerUser   User        @relation(fields: [ownerUserId], references: [id])
-
-  supplierProfile SupplierProfile?
+  id              String           @id @default(cuid())
+  name            String
+  bizNo           String           @unique
+  representative  String?
+  type            String
+  isVerified      Boolean          @default(false)
+  apickData       String?
+  ownerUserId     String           @unique
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
   buyerProfile    BuyerProfile?
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  ownerUser       User             @relation(fields: [ownerUserId], references: [id])
+  supplierProfile SupplierProfile?
 }
 
-// ⭐ 830개 업체 엑셀 업로드용 레지스트리 테이블 (유저 없이도 저장 가능)
 model SupplierRegistry {
-  id         String   @id @default(cuid())
-  
-  // 기본 정보 (엑셀에서 가져옴)
-  certNo     String?  // 인증번호
-  name       String   // 사업체명
-  bizNo      String   @unique // 사업자번호
-  region     String?  // 관할지사/소재지
-  representative String? // 대표자
-  address    String?  // 소재지
-  certDate   String?  // 인증일자
-  contactTel String?  // 전화번호
-  industry   String?  // 업종 및 주요생산품
-  companyType String? // 구분 (일반/자회사)
-  
-  // ✅ Claim 관계 설정
+  id              String            @id @default(cuid())
+  certNo          String?
+  name            String
+  bizNo           String            @unique
+  region          String?
+  representative  String?
+  address         String?
+  certDate        String?
+  contactTel      String?
+  industry        String?
+  companyType     String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
   claimedProfiles SupplierProfile[]
-  
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
 }
 
 model SupplierProfile {
-  id          String @id @default(cuid())
-  companyId   String @unique
-  company     Company @relation(fields: [companyId], references: [id])
-
-  region      String?
-  industry    String?
-  contactName String?
-  contactTel  String?
-  approved    Boolean @default(false)
-  
-  // 🆕 도급계약 정보
-  contractDescription String? // 도급계약 방법 및 조건 설명
-  minContractAmount   Int?    // 최소 도급계약 가능 금액 (KRW)
-  maxContractAmount   Int?    // 최대 도급계약 가능 금액 (KRW)
-  
-  // 🆕 대표 이미지 (최대 5개)
-  image1 String? // 이미지 URL
-  image2 String?
-  image3 String?
-  image4 String?
-  image5 String?
-  
-  // 🆕 상세 페이지 콘텐츠
-  detailPageContent String? // HTML 또는 Markdown 형식
-
-  // ✅ Registry 연결 (가입 시 매칭)
-  registryBizNo String?
-  registry      SupplierRegistry? @relation(fields: [registryBizNo], references: [bizNo])
-
-  products    Product[]
-  contractRequests ContractRequest[]
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                  String            @id @default(cuid())
+  companyId           String            @unique
+  region              String?
+  industry            String?
+  contactName         String?
+  contactTel          String?
+  approved            Boolean           @default(false)
+  contractDescription String?
+  minContractAmount   Int?
+  maxContractAmount   Int?
+  image1              String?
+  image2              String?
+  image3              String?
+  image4              String?
+  image5              String?
+  detailPageContent   String?
+  registryBizNo       String?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  contractRequests    ContractRequest[]
+  products            Product[]
+  registry            SupplierRegistry? @relation(fields: [registryBizNo], references: [bizNo])
+  company             Company           @relation(fields: [companyId], references: [id])
 }
 
 model BuyerProfile {
-  id          String @id @default(cuid())
-  companyId   String @unique
-  company     Company @relation(fields: [companyId], references: [id])
-
-  employeeCount Int @default(0)
-  disabledCount Int @default(0)
-
-  carts            Cart[]
+  id               String            @id @default(cuid())
+  companyId        String            @unique
+  employeeCount    Int               @default(0)
+  disabledCount    Int               @default(0)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  company          Company           @relation(fields: [companyId], references: [id])
+  carts            Cart?
   contractRequests ContractRequest[]
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
 }
 
 model Product {
-  id          String @id @default(cuid())
-  supplierId  String
-  supplier    SupplierProfile @relation(fields: [supplierId], references: [id])
-
-  // 기본 정보
-  title       String  // 상품명
-  category    String  // 카테고리
-  summary     String? // 한줄 요약
-  description String? // 상세 설명
-  
-  // 가격 및 수량
-  price       Int     // 단가 (KRW)
-  unit        String  // 단위 ("월", "개", "건" 등)
-  minOrderQty Int     @default(1) // 최소 주문 수량
-  
-  // 납품 및 리드타임
-  leadTimeDays Int    @default(7)  // 평균 납품 소요일
-  deliveryCycle String? // 납품 주기 설명
-  
-  // 계약 조건 (법적 근거 항목)
-  spec        String? // 규격/재질/사양/명세
-  processDescription String? // 공정 설명
-  contractMinMonths Int @default(12) // 최소 계약기간(월) ≥12개월
-  
-  // 가격 상세
-  vatIncluded Boolean @default(true) // VAT 포함 여부
-  shippingIncluded Boolean @default(false) // 배송비 포함 여부
-  extraCostNote String? // 추가 비용 안내 (인건비/자재비 비율 등)
-  
-  // 품질 기준
-  inspectionCriteria String? // 검사 기준
-  defectPolicy String? // 하자 처리 방침
-  
-  // 거래 조건
-  invoiceAvailable Boolean @default(true) // 세금계산서 발행 가능 여부
-  quoteLeadTimeDays Int @default(3) // 견적서 제공 소요일
-  
-  // 이미지
-  thumbnailUrl String? // 대표 이미지
-  imageUrls String? // 추가 이미지 URL들 (JSON array string)
-  
-  // 키워드 및 활성화
-  keywords String? // 검색 키워드 (콤마 구분)
-  isActive Boolean @default(true)
-  
-  // 🆕 민원 방지 필수 항목 (연계고용 감면 리스크 최소화)
-  // 1. 직접이행 확인
-  noSubcontractConfirm Boolean @default(false) // "본 도급은 당사가 직접 수행하며 하도급/재하도급 하지 않음" 체크 (필수)
-  
-  // 2. 월별 이행 구조
-  monthlyDeliverySchedule String? // 납품주기 (예: "매월 1회", "주 2회")
-  monthlyBillingBasis String? // 월별 산출 기준 (예: "월별 정액", "월별 수량×단가")
-  monthlyBillingDay Int @default(31) // 월별 청구일 (1~31)
-  monthlyPaymentDay Int @default(10) // 월별 지급일 (1~31)
-  
-  // 3. 월별 확정금액
-  monthlyFixedAmount Int? // 월 확정금액 (원) - 변동형이면 최소 보수(하한)
-  monthlyAmountNote String? // 월별 금액 설명 (예: "월 최소 보수", "변동형")
-  
-  // 4. 보수 산출내역 (JSON: {labor: %, material: %, other: %} 또는 금액)
-  costBreakdownJson String? // 노무비/재료비/기타 비율 또는 금액 (JSON 문자열)
-  
-  // 5. 이행증빙
-  evidenceMethods String? // 증빙 방식 (JSON array: ["납품확인서", "검수서명", "전자검수", "사진", "세금계산서"])
-  invoiceIssueConfirmed Boolean @default(false) // 세금계산서 발행 가능 확인 (필수)
-  receiptNote String? // 영수증/이체증빙 안내 (선택)
-  
-  // 6. 계약기간 (기존 contractMinMonths 활용, 최소 12개월 강제)
-
-  cartItems   CartItem[]
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                      String          @id @default(cuid())
+  supplierId              String
+  title                   String
+  category                String
+  summary                 String?
+  description             String?
+  price                   Int
+  unit                    String
+  minOrderQty             Int             @default(1)
+  leadTimeDays            Int             @default(7)
+  deliveryCycle           String?
+  spec                    String?
+  processDescription      String?
+  contractMinMonths       Int             @default(12)
+  vatIncluded             Boolean         @default(true)
+  shippingIncluded        Boolean         @default(false)
+  extraCostNote           String?
+  inspectionCriteria      String?
+  defectPolicy            String?
+  invoiceAvailable        Boolean         @default(true)
+  quoteLeadTimeDays       Int             @default(3)
+  thumbnailUrl            String?
+  imageUrls               String?
+  keywords                String?
+  isActive                Boolean         @default(true)
+  noSubcontractConfirm    Boolean         @default(false)
+  monthlyDeliverySchedule String?
+  monthlyBillingBasis     String?
+  monthlyBillingDay       Int             @default(31)
+  monthlyPaymentDay       Int             @default(10)
+  monthlyFixedAmount      Int?
+  monthlyAmountNote       String?
+  costBreakdownJson       String?
+  evidenceMethods         String?
+  invoiceIssueConfirmed   Boolean         @default(false)
+  receiptNote             String?
+  createdAt               DateTime        @default(now())
+  updatedAt               DateTime        @updatedAt
+  cartItems               CartItem[]
+  supplier                SupplierProfile @relation(fields: [supplierId], references: [id])
 }
 
 model Cart {
-  id        String @id @default(cuid())
-  buyerId   String @unique
+  id        String       @id @default(cuid())
+  buyerId   String       @unique
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
   buyer     BuyerProfile @relation(fields: [buyerId], references: [id])
   items     CartItem[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 }
 
 model CartItem {
-  id        String @id @default(cuid())
+  id        String   @id @default(cuid())
   cartId    String
-  cart      Cart @relation(fields: [cartId], references: [id], onDelete: Cascade)
   productId String
-  product   Product @relation(fields: [productId], references: [id])
   qty       Int
   createdAt DateTime @default(now())
+  product   Product  @relation(fields: [productId], references: [id])
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
 
   @@unique([cartId, productId])
 }
 
 model ContractRequest {
-  id          String @id @default(cuid())
-  buyerId     String
-  buyer       BuyerProfile @relation(fields: [buyerId], references: [id])
-  supplierId  String
-  supplier    SupplierProfile @relation(fields: [supplierId], references: [id])
-
-  totalAmount Int
-  status      String @default("REQUESTED") // "REQUESTED" | "QUOTED" | "AGREED" | "IN_PROGRESS" | "DELIVERED" | "COMPLETED" | "CANCELED"
-  requirements String?
-  durationMonths Int? // 계약기간(월)
-  
-  // 🆕 감면 리스크 확인 (체크아웃 시 필수)
-  buyerAcceptedRiskDisclosure Boolean @default(false) // 구매자가 감면 리스크 확인 체크박스에 동의했는지
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                          String          @id @default(cuid())
+  buyerId                     String
+  supplierId                  String
+  totalAmount                 Int
+  status                      String          @default("REQUESTED")
+  requirements                String?
+  durationMonths              Int?
+  buyerAcceptedRiskDisclosure Boolean         @default(false)
+  createdAt                   DateTime        @default(now())
+  updatedAt                   DateTime        @updatedAt
+  supplier                    SupplierProfile @relation(fields: [supplierId], references: [id])
+  buyer                       BuyerProfile    @relation(fields: [buyerId], references: [id])
 }
 
-// 연도별 의무고용률 및 부담금 설정
 model YearSetting {
-  year              Int @id
-  privateQuotaRate  Float  // 예: 0.031 (3.1%)
-  publicQuotaRate   Float  // 예: 0.038 (3.8%)
-  baseLevyAmount    Int    // 부담기초액(설정값)
-  maxReductionRate  Float  @default(0.9) // 90%
-  maxReductionByContract Float @default(0.5) // 도급액 50%
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  year                   Int      @id @default(autoincrement())
+  privateQuotaRate       Float
+  publicQuotaRate        Float
+  baseLevyAmount         Int
+  maxReductionRate       Float    @default(0.9)
+  maxReductionByContract Float    @default(0.5)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
 }
 
-// CMS 콘텐츠 페이지
 model Page {
-  slug      String @id
+  slug      String   @id
   title     String
   contentMd String
   createdAt DateTime @default(now())

@@ -59,9 +59,22 @@ r.post("/login", async (req, res) => {
       return res.status(401).json({ error: "INVALID_CREDENTIALS" });
     }
 
-    // ✅ 회원 유형 검증 제거 (핸드폰+비밀번호만 검증)
-    // 사용자는 가입한 유형으로 자동 로그인됨
-    // userType 파라미터는 무시됨
+    // 회원 유형 검증 (선택된 경우)
+    if (body.userType && user.role !== "SUPER_ADMIN") {
+      if (user.role !== body.userType) {
+        const roleLabels: Record<string, string> = {
+          AGENT: "매니저",
+          SUPPLIER: "표준사업장",
+          BUYER: "부담금기업"
+        };
+        return res.status(403).json({ 
+          error: "USER_TYPE_MISMATCH",
+          message: `이 핸드폰 번호는 "${roleLabels[user.role]}" 계정입니다. "${roleLabels[body.userType]}" 버튼이 아닌 "${roleLabels[user.role]}" 버튼을 눌러주세요.`,
+          actualRole: user.role,
+          requestedRole: body.userType
+        });
+      }
+    }
 
     const accessToken = jwt.sign(
       { userId: user.id, role: user.role },
