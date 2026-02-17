@@ -68,7 +68,8 @@ export default function Sidebar() {
             textDecoration: "none",
             color: "white",
             cursor: "pointer",
-            transition: "all 0.2s"
+            transition: "all 0.2s",
+            textAlign: "center"
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.opacity = "0.8";
@@ -77,8 +78,8 @@ export default function Sidebar() {
             e.currentTarget.style.opacity = "1";
           }}
         >
-          <h2 style={{ margin: 0, fontSize: 20 }}>🏢 장표사닷컴</h2>
-          <p style={{ margin: "4px 0 0 0", fontSize: 12, color: "#999", lineHeight: 1.4 }}>
+          <h2 style={{ margin: 0, fontSize: 24 }}>🏢 장표사닷컴</h2>
+          <p style={{ margin: "4px 0 0 0", fontSize: 14.4, color: "#999", lineHeight: 1.4 }}>
             장애인표준사업장<br />
             연계고용플랫폼
           </p>
