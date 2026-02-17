@@ -21,7 +21,7 @@ async function getBuyerProfile(userId: string) {
 // 장바구니 조회
 r.get("/", async (req, res) => {
   try {
-    const buyer = await getBuyerProfile(req.auth!.sub);
+    const buyer = await getBuyerProfile(req.auth!.userId);
     const cart = await prisma.cart.findUnique({
       where: { buyerId: buyer.id },
       include: {
@@ -65,7 +65,7 @@ r.post("/add", async (req, res) => {
     const schema = z.object({ productId: z.string(), qty: z.number().int().min(1) });
     const body = schema.parse(req.body);
 
-    const buyer = await getBuyerProfile(req.auth!.sub);
+    const buyer = await getBuyerProfile(req.auth!.userId);
 
     // 장바구니 생성 또는 가져오기
     let cart = await prisma.cart.findUnique({ where: { buyerId: buyer.id } });
@@ -104,7 +104,7 @@ r.post("/add", async (req, res) => {
 // 장바구니 아이템 삭제
 r.delete("/items/:itemId", async (req, res) => {
   try {
-    const buyer = await getBuyerProfile(req.auth!.sub);
+    const buyer = await getBuyerProfile(req.auth!.userId);
     const cart = await prisma.cart.findUnique({ where: { buyerId: buyer.id } });
     if (!cart) {
       return res.status(404).json({ error: "CART_NOT_FOUND" });
@@ -123,7 +123,7 @@ r.delete("/items/:itemId", async (req, res) => {
 // 장바구니 비우기
 r.delete("/clear", async (req, res) => {
   try {
-    const buyer = await getBuyerProfile(req.auth!.sub);
+    const buyer = await getBuyerProfile(req.auth!.userId);
     const cart = await prisma.cart.findUnique({ where: { buyerId: buyer.id } });
     if (!cart) {
       return res.status(404).json({ error: "CART_NOT_FOUND" });
@@ -140,7 +140,7 @@ r.delete("/clear", async (req, res) => {
 // ✅ 장바구니에서 도급계약 의뢰서 생성 (공급사별로 분리)
 r.post("/checkout", async (req, res) => {
   try {
-    const buyer = await getBuyerProfile(req.auth!.sub);
+    const buyer = await getBuyerProfile(req.auth!.userId);
 
     const schema = z.object({
       requirements: z.string().optional(),
@@ -223,7 +223,7 @@ r.post("/checkout", async (req, res) => {
 // ✅ 내 계약 목록 조회
 r.get("/my-contracts", async (req, res) => {
   try {
-    const buyer = await getBuyerProfile(req.auth!.sub);
+    const buyer = await getBuyerProfile(req.auth!.userId);
 
     const contracts = await prisma.contractRequest.findMany({
       where: { buyerId: buyer.id },
