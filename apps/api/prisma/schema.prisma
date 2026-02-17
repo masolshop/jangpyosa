@@ -99,15 +99,18 @@ model SupplierProfile {
 }
 
 model BuyerProfile {
-  id               String            @id @default(cuid())
-  companyId        String            @unique
-  employeeCount    Int               @default(0)
-  disabledCount    Int               @default(0)
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-  company          Company           @relation(fields: [companyId], references: [id])
-  carts            Cart?
-  contractRequests ContractRequest[]
+  id                  String            @id @default(cuid())
+  companyId           String            @unique
+  employeeCount       Int               @default(0)
+  disabledCount       Int               @default(0)
+  yearlyEmployeesJson String?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  company             Company           @relation(fields: [companyId], references: [id])
+  carts               Cart?
+  contractRequests    ContractRequest[]
+  disabledEmployees   DisabledEmployee[]
+  calculations        Calculation[]
 }
 
 model Product {
@@ -206,4 +209,40 @@ model Page {
   contentMd String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model DisabledEmployee {
+  id                     String       @id @default(cuid())
+  buyerId                String
+  name                   String
+  registrationNumber     String?
+  disabilityType         String
+  disabilityGrade        String?
+  severity               String
+  gender                 String
+  hireDate               DateTime
+  resignDate             DateTime?
+  monthlySalary          Int
+  hasEmploymentInsurance Boolean      @default(true)
+  meetsMinimumWage       Boolean      @default(true)
+  workHoursPerWeek       Int?
+  memo                   String?
+  createdAt              DateTime     @default(now())
+  updatedAt              DateTime     @updatedAt
+  buyer                  BuyerProfile @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+
+  @@index([buyerId, resignDate])
+}
+
+model Calculation {
+  id         String       @id @default(cuid())
+  buyerId    String
+  year       Int
+  month      Int?
+  type       String
+  resultJson String
+  createdAt  DateTime     @default(now())
+  buyer      BuyerProfile @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+
+  @@index([buyerId, year, month, type])
 }
