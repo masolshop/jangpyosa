@@ -60,7 +60,7 @@ export default function CatalogPage() {
   return (
     <div className="container">
       <div className="card">
-        <h1>🛒 연계고용 도급 쇼핑몰</h1>
+        <h1>🛒 도급계약 표준사업장</h1>
         <p style={{ color: "#666", marginTop: 8 }}>
           830개 장애인표준사업장의 상품·서비스를 검색하고 도급계약을 의뢰하세요
         </p>

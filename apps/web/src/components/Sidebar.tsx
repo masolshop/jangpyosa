@@ -93,7 +93,7 @@ export default function Sidebar() {
             </div>
             <MenuItem
               href="/catalog"
-              label="연계고용 쇼핑몰"
+              label="도급계약 표준사업장"
               icon="🛒"
               active={isActive("/catalog")}
             />
