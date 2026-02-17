@@ -1,0 +1,187 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPER_ADMIN
+  BRANCH_ADMIN
+  AGENT
+  BUYER
+  SUPPLIER
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  phone        String?
+  role         Role
+  refCode      String?  @unique // 추천코드(영업자) - 유니크 추가
+  referredById String?  // 가입 시 추천자
+  referredBy   User?    @relation("Referrals", fields: [referredById], references: [id])
+  referrals    User[]   @relation("Referrals")
+  company      Company?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+enum CompanyType {
+  PRIVATE
+  PUBLIC
+}
+
+model Company {
+  id          String      @id @default(cuid())
+  name        String
+  bizNo       String      @unique
+  type        CompanyType
+  isVerified  Boolean     @default(false)
+  ownerUserId String      @unique
+  ownerUser   User        @relation(fields: [ownerUserId], references: [id])
+
+  supplierProfile SupplierProfile?
+  buyerProfile    BuyerProfile?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ⭐ 830개 업체 엑셀 업로드용 레지스트리 테이블 (유저 없이도 저장 가능)
+model SupplierRegistry {
+  id         String   @id @default(cuid())
+  name       String   // 회사명
+  bizNo      String   @unique // 사업자번호
+  region     String?  // 지역
+  industry   String?  // 업종
+  contactTel String?  // 연락처
+  isClaimed  Boolean  @default(false) // 공급사가 Claim 했는지 여부
+  claimedBy  String?  // Claim한 SupplierProfile ID (optional)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model SupplierProfile {
+  id          String @id @default(cuid())
+  companyId   String @unique
+  company     Company @relation(fields: [companyId], references: [id])
+
+  region      String?
+  industry    String?
+  contactName String?
+  contactTel  String?
+  approved    Boolean @default(false)
+
+  products    Product[]
+  contractRequests ContractRequest[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model BuyerProfile {
+  id          String @id @default(cuid())
+  companyId   String @unique
+  company     Company @relation(fields: [companyId], references: [id])
+
+  employeeCount Int @default(0)
+  disabledCount Int @default(0)
+
+  carts            Cart[]
+  contractRequests ContractRequest[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Product {
+  id          String @id @default(cuid())
+  supplierId  String
+  supplier    SupplierProfile @relation(fields: [supplierId], references: [id])
+
+  title       String
+  category    String
+  price       Int     // KRW
+  unit        String  // "월", "개", "건" 등
+  minOrderQty Int     @default(1)
+  leadTimeDays Int    @default(7)
+  isActive    Boolean @default(true)
+
+  cartItems   CartItem[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Cart {
+  id        String @id @default(cuid())
+  buyerId   String @unique
+  buyer     BuyerProfile @relation(fields: [buyerId], references: [id])
+  items     CartItem[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model CartItem {
+  id        String @id @default(cuid())
+  cartId    String
+  cart      Cart @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  qty       Int
+  createdAt DateTime @default(now())
+
+  @@unique([cartId, productId])
+}
+
+enum ContractStatus {
+  REQUESTED
+  QUOTED
+  AGREED
+  IN_PROGRESS
+  DELIVERED
+  COMPLETED
+  CANCELED
+}
+
+model ContractRequest {
+  id          String @id @default(cuid())
+  buyerId     String
+  buyer       BuyerProfile @relation(fields: [buyerId], references: [id])
+  supplierId  String
+  supplier    SupplierProfile @relation(fields: [supplierId], references: [id])
+
+  totalAmount Int
+  status      ContractStatus @default(REQUESTED)
+  requirements String?
+  durationMonths Int? // 계약기간(월)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// 연도별 의무고용률 및 부담금 설정
+model YearSetting {
+  year              Int @id
+  privateQuotaRate  Float  // 예: 0.031 (3.1%)
+  publicQuotaRate   Float  // 예: 0.038 (3.8%)
+  baseLevyAmount    Int    // 부담기초액(설정값)
+  maxReductionRate  Float  @default(0.9) // 90%
+  maxReductionByContract Float @default(0.5) // 도급액 50%
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// CMS 콘텐츠 페이지
+model Page {
+  slug      String @id
+  title     String
+  contentMd String @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

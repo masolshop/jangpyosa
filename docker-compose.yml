@@ -1,0 +1,14 @@
+version: "3.9"
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: jp
+      POSTGRES_PASSWORD: jp_pw
+      POSTGRES_DB: jangpyosa
+    ports:
+      - "5432:5432"
+    volumes:
+      - jp_pg:/var/lib/postgresql/data
+volumes:
+  jp_pg:
