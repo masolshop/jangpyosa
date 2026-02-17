@@ -25,7 +25,7 @@ export default function CatalogPage() {
     setLoading(true);
     try {
       const res = await fetch(
-        `/api/registry/list?page=${page}&limit=20&search=${encodeURIComponent(q)}`
+        `/api/proxy/registry/list?page=${page}&limit=20&search=${encodeURIComponent(q)}`
       );
       const data = await res.json();
       console.log("Loaded data:", data);
@@ -77,67 +77,82 @@ export default function CatalogPage() {
             <div
               key={r.id}
               style={{
-                padding: 16,
+                padding: 20,
                 border: "1px solid #ddd",
                 borderRadius: 8,
                 marginBottom: 12,
                 background: "white",
               }}
             >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: 12 }}>
                 <div style={{ flex: 1 }}>
-                  <h3 style={{ margin: 0, fontSize: 18, color: "#333" }}>
+                  <h3 style={{ margin: 0, fontSize: 18, color: "#333", fontWeight: 600 }}>
                     {r.name}
                     {r.certNo && (
-                      <span style={{ marginLeft: 8, fontSize: 14, color: "#0070f3" }}>
+                      <span style={{ marginLeft: 8, fontSize: 13, color: "#0070f3", fontWeight: 400 }}>
                         {r.certNo}
                       </span>
                     )}
                   </h3>
-                  <div style={{ marginTop: 8, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 8 }}>
-                    {r.representative && (
-                      <p style={{ margin: 0, fontSize: 14, color: "#666" }}>
-                        <strong>대표자:</strong> {r.representative}
-                      </p>
-                    )}
-                    {r.region && (
-                      <p style={{ margin: 0, fontSize: 14, color: "#666" }}>
-                        <strong>지역:</strong> {r.region}
-                      </p>
-                    )}
-                    {r.industry && (
-                      <p style={{ margin: 0, fontSize: 14, color: "#666" }}>
-                        <strong>업종:</strong> {r.industry}
-                      </p>
-                    )}
-                    {r.contactTel && (
-                      <p style={{ margin: 0, fontSize: 14, color: "#666" }}>
-                        <strong>연락처:</strong> {r.contactTel}
-                      </p>
-                    )}
-                  </div>
-                  {r.address && (
-                    <p style={{ margin: "8px 0 0 0", fontSize: 14, color: "#666" }}>
-                      <strong>소재지:</strong> {r.address}
-                    </p>
-                  )}
-                  {r.companyType && (
-                    <span
-                      style={{
-                        display: "inline-block",
-                        marginTop: 8,
-                        padding: "4px 8px",
-                        fontSize: 12,
-                        background: r.companyType === "자회사" ? "#e7f3ff" : "#f0f0f0",
-                        color: r.companyType === "자회사" ? "#0070f3" : "#666",
-                        borderRadius: 4,
-                      }}
-                    >
-                      {r.companyType}
-                    </span>
-                  )}
                 </div>
+                {r.companyType && (
+                  <span
+                    style={{
+                      display: "inline-block",
+                      padding: "4px 12px",
+                      fontSize: 12,
+                      background: r.companyType === "자회사" ? "#e7f3ff" : "#f0f0f0",
+                      color: r.companyType === "자회사" ? "#0070f3" : "#666",
+                      borderRadius: 4,
+                      fontWeight: 500,
+                    }}
+                  >
+                    {r.companyType}
+                  </span>
+                )}
               </div>
+
+              {/* 업종 및 주요 생산품 (강조) */}
+              {r.industry && (
+                <div
+                  style={{
+                    padding: 12,
+                    background: "#f8f9fa",
+                    borderRadius: 6,
+                    marginBottom: 12,
+                    borderLeft: "3px solid #0070f3",
+                  }}
+                >
+                  <p style={{ margin: 0, fontSize: 14, color: "#333", fontWeight: 500 }}>
+                    <span style={{ color: "#0070f3", marginRight: 8 }}>📦</span>
+                    <strong>업종 및 주요 생산품:</strong>
+                  </p>
+                  <p style={{ margin: "4px 0 0 24px", fontSize: 14, color: "#555", lineHeight: 1.6 }}>
+                    {r.industry}
+                  </p>
+                </div>
+              )}
+
+              {/* 기본 정보 */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: 12 }}>
+                {r.representative && (
+                  <p style={{ margin: 0, fontSize: 14, color: "#666" }}>
+                    <strong style={{ color: "#333" }}>대표자:</strong> {r.representative}
+                  </p>
+                )}
+                {r.region && (
+                  <p style={{ margin: 0, fontSize: 14, color: "#666" }}>
+                    <strong style={{ color: "#333" }}>지역:</strong> {r.region}
+                  </p>
+                )}
+              </div>
+
+              {/* 소재지 */}
+              {r.address && (
+                <p style={{ margin: "12px 0 0 0", fontSize: 14, color: "#666" }}>
+                  <strong style={{ color: "#333" }}>소재지:</strong> {r.address}
+                </p>
+              )}
             </div>
           ))}
 
@@ -165,6 +180,53 @@ export default function CatalogPage() {
           )}
         </div>
       </div>
+
+      <style jsx>{`
+        .container {
+          padding: 20px;
+          max-width: 1200px;
+          margin: 0 auto;
+        }
+        .card {
+          background: white;
+          border-radius: 12px;
+          padding: 32px;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+          margin: 0;
+          font-size: 28px;
+          color: #333;
+        }
+        input {
+          padding: 12px;
+          border: 1px solid #ddd;
+          border-radius: 6px;
+          font-size: 14px;
+        }
+        input:focus {
+          outline: none;
+          border-color: #0070f3;
+        }
+        button {
+          padding: 12px 24px;
+          background: #0070f3;
+          color: white;
+          border: none;
+          border-radius: 6px;
+          font-size: 14px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        button:hover:not(:disabled) {
+          background: #0051cc;
+        }
+        button:disabled {
+          background: #ccc;
+          cursor: not-allowed;
+        }
+      `}</style>
     </div>
   );
 }
