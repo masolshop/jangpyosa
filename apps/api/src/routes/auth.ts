@@ -76,26 +76,25 @@ r.post("/signup", async (req, res) => {
       include: { company: true },
     });
 
-    // 공급사인 경우 SupplierRegistry에서 매칭된 정보 있으면 가져오기
+    // ✅ 공급사인 경우 SupplierRegistry에서 매칭된 정보 자동 프리필 (Claim)
+    let registryMatched = false;
     if (role === "SUPPLIER") {
       const registry = await prisma.supplierRegistry.findUnique({
         where: { bizNo: cleanBizNo },
       });
-      if (registry && !registry.isClaimed) {
-        // Registry 정보를 SupplierProfile에 반영
+      
+      if (registry) {
+        // Registry 정보를 SupplierProfile에 반영 (자동 Claim)
         await prisma.supplierProfile.update({
           where: { companyId: user.company!.id },
           data: {
+            registryBizNo: cleanBizNo,
             region: registry.region,
             industry: registry.industry,
             contactTel: registry.contactTel,
           },
         });
-        // Registry를 Claimed로 표시
-        await prisma.supplierRegistry.update({
-          where: { id: registry.id },
-          data: { isClaimed: true, claimedBy: user.company!.supplierProfile?.id },
-        });
+        registryMatched = true;
       }
     }
 
@@ -103,6 +102,7 @@ r.post("/signup", async (req, res) => {
       ok: true,
       userId: user.id,
       message: "회원가입이 완료되었습니다.",
+      registryMatched,
     });
   } catch (error: any) {
     console.error("Signup error:", error);

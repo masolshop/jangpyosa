@@ -137,4 +137,110 @@ r.delete("/clear", async (req, res) => {
   }
 });
 
+// ✅ 장바구니에서 도급계약 의뢰서 생성 (공급사별로 분리)
+r.post("/checkout", async (req, res) => {
+  try {
+    const buyer = await getBuyerProfile(req.auth!.sub);
+
+    const schema = z.object({
+      requirements: z.string().optional(),
+      durationMonths: z.number().int().min(1).optional(),
+    });
+    const body = schema.parse(req.body);
+
+    // 장바구니 조회
+    const cart = await prisma.cart.findUnique({
+      where: { buyerId: buyer.id },
+      include: {
+        items: {
+          include: {
+            product: {
+              include: {
+                supplier: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!cart || cart.items.length === 0) {
+      return res.status(400).json({ error: "장바구니가 비어있습니다." });
+    }
+
+    // 공급사별로 그룹화
+    const groupedBySupplier: { [key: string]: typeof cart.items } = {};
+    for (const item of cart.items) {
+      const supplierId = item.product.supplierId;
+      if (!groupedBySupplier[supplierId]) {
+        groupedBySupplier[supplierId] = [];
+      }
+      groupedBySupplier[supplierId].push(item);
+    }
+
+    // 각 공급사별로 ContractRequest 생성
+    const createdContracts = [];
+    for (const [supplierId, items] of Object.entries(groupedBySupplier)) {
+      const totalAmount = items.reduce((sum, item) => sum + item.product.price * item.qty, 0);
+
+      const contract = await prisma.contractRequest.create({
+        data: {
+          buyerId: buyer.id,
+          supplierId,
+          totalAmount,
+          requirements: body.requirements,
+          durationMonths: body.durationMonths,
+          status: "REQUESTED",
+        },
+        include: {
+          supplier: {
+            include: {
+              company: true,
+            },
+          },
+        },
+      });
+
+      createdContracts.push(contract);
+    }
+
+    // 장바구니 비우기
+    await prisma.cartItem.deleteMany({ where: { cartId: cart.id } });
+
+    res.json({
+      ok: true,
+      message: `${createdContracts.length}개의 도급계약 의뢰서가 생성되었습니다.`,
+      contracts: createdContracts,
+    });
+  } catch (error: any) {
+    if (error.name === "ZodError") {
+      return res.status(400).json({ error: "VALIDATION_ERROR", details: error.errors });
+    }
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ✅ 내 계약 목록 조회
+r.get("/my-contracts", async (req, res) => {
+  try {
+    const buyer = await getBuyerProfile(req.auth!.sub);
+
+    const contracts = await prisma.contractRequest.findMany({
+      where: { buyerId: buyer.id },
+      include: {
+        supplier: {
+          include: {
+            company: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    res.json({ ok: true, contracts });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export default r;

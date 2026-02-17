@@ -8,6 +8,7 @@ declare global {
   namespace Express {
     interface Request {
       auth?: AuthUser;
+      user?: { id: string; role: string };
     }
   }
 }
@@ -21,8 +22,21 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
   try {
     const decoded = jwt.verify(token, config.jwtSecret) as AuthUser;
     req.auth = decoded;
+    req.user = { id: decoded.sub, role: decoded.role };
     next();
   } catch (error) {
     return res.status(401).json({ error: "INVALID_TOKEN" });
   }
+}
+
+export function requireRole(...roles: string[]) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    if (!req.user) {
+      return res.status(401).json({ error: "NO_AUTH" });
+    }
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).json({ error: "FORBIDDEN" });
+    }
+    next();
+  };
 }

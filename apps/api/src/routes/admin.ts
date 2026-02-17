@@ -168,4 +168,97 @@ r.get("/stats/pipeline", async (req, res) => {
   }
 });
 
+// ✅ 공급사 목록 조회 (승인 대기 포함)
+r.get("/suppliers", async (req, res) => {
+  try {
+    const page = Number(req.query.page ?? 1);
+    const limit = Number(req.query.limit ?? 20);
+    const approvedOnly = req.query.approved === "true";
+
+    const where: any = {};
+    if (approvedOnly) {
+      where.approved = true;
+    }
+
+    const [suppliers, total] = await Promise.all([
+      prisma.supplierProfile.findMany({
+        where,
+        include: {
+          company: true,
+          registry: true,
+          products: {
+            where: { isActive: true },
+            take: 5,
+          },
+        },
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.supplierProfile.count({ where }),
+    ]);
+
+    res.json({
+      ok: true,
+      suppliers,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ✅ 공급사 승인 API
+r.post("/suppliers/:id/approve", async (req, res) => {
+  try {
+    const supplierId = req.params.id;
+    const { approved } = req.body;
+
+    const supplier = await prisma.supplierProfile.update({
+      where: { id: supplierId },
+      data: { approved: approved === true },
+      include: {
+        company: true,
+      },
+    });
+
+    res.json({
+      ok: true,
+      message: approved ? "공급사가 승인되었습니다." : "공급사 승인이 취소되었습니다.",
+      supplier,
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ✅ 공급사 상세 조회
+r.get("/suppliers/:id", async (req, res) => {
+  try {
+    const supplier = await prisma.supplierProfile.findUnique({
+      where: { id: req.params.id },
+      include: {
+        company: true,
+        registry: true,
+        products: {
+          orderBy: { createdAt: "desc" },
+        },
+      },
+    });
+
+    if (!supplier) {
+      return res.status(404).json({ error: "공급사를 찾을 수 없습니다." });
+    }
+
+    res.json({ ok: true, supplier });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export default r;

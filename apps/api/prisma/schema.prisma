@@ -42,13 +42,22 @@ model Company {
 // ⭐ 830개 업체 엑셀 업로드용 레지스트리 테이블 (유저 없이도 저장 가능)
 model SupplierRegistry {
   id         String   @id @default(cuid())
-  name       String   // 회사명
+  
+  // 기본 정보 (엑셀에서 가져옴)
+  certNo     String?  // 인증번호
+  name       String   // 사업체명
   bizNo      String   @unique // 사업자번호
-  region     String?  // 지역
-  industry   String?  // 업종
-  contactTel String?  // 연락처
-  isClaimed  Boolean  @default(false) // 공급사가 Claim 했는지 여부
-  claimedBy  String?  // Claim한 SupplierProfile ID (optional)
+  region     String?  // 관할지사/소재지
+  representative String? // 대표자
+  address    String?  // 소재지
+  certDate   String?  // 인증일자
+  contactTel String?  // 전화번호
+  industry   String?  // 업종 및 주요생산품
+  companyType String? // 구분 (일반/자회사)
+  
+  // ✅ Claim 관계 설정
+  claimedProfiles SupplierProfile[]
+  
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 }
@@ -63,6 +72,25 @@ model SupplierProfile {
   contactName String?
   contactTel  String?
   approved    Boolean @default(false)
+  
+  // 🆕 도급계약 정보
+  contractDescription String? // 도급계약 방법 및 조건 설명
+  minContractAmount   Int?    // 최소 도급계약 가능 금액 (KRW)
+  maxContractAmount   Int?    // 최대 도급계약 가능 금액 (KRW)
+  
+  // 🆕 대표 이미지 (최대 5개)
+  image1 String? // 이미지 URL
+  image2 String?
+  image3 String?
+  image4 String?
+  image5 String?
+  
+  // 🆕 상세 페이지 콘텐츠
+  detailPageContent String? // HTML 또는 Markdown 형식
+
+  // ✅ Registry 연결 (가입 시 매칭)
+  registryBizNo String?
+  registry      SupplierRegistry? @relation(fields: [registryBizNo], references: [bizNo])
 
   products    Product[]
   contractRequests ContractRequest[]
