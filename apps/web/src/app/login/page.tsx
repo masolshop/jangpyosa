@@ -150,8 +150,37 @@ export default function LoginPage() {
           }}
         >
           <p style={{ fontWeight: 600, marginBottom: 8 }}>💡 테스트 계정</p>
-          <p style={{ margin: 0 }}>슈퍼어드민: 010-1234-5678 / admin1234</p>
-          <p style={{ margin: 0 }}>매니저: 010-9876-5432 / agent1234</p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '4px 8px', fontSize: 11 }}>
+            <span style={{ fontWeight: 600 }}>슈퍼어드민:</span>
+            <span>010-1234-5678 / admin1234</span>
+            
+            <span style={{ fontWeight: 600 }}>매니저 1:</span>
+            <span>010-9876-5432 / agent1234</span>
+            
+            <span style={{ fontWeight: 600 }}>매니저 2:</span>
+            <span>010-8765-4321 / agent1234</span>
+            
+            <span style={{ fontWeight: 600 }}>표준사업장:</span>
+            <span>010-9999-8888 / test1234</span>
+            
+            <span style={{ fontWeight: 600 }}>부담금기업:</span>
+            <span>010-5555-6666 / test1234</span>
+          </div>
+        </div>
+        
+        <div
+          style={{
+            marginTop: 16,
+            padding: 12,
+            background: "#e7f3ff",
+            borderRadius: 8,
+            fontSize: 12,
+            color: "#0070f3",
+          }}
+        >
+          <p style={{ margin: 0, fontWeight: 600 }}>
+            ℹ️ 회원 유형은 가입 시 선택하며, 로그인 후 자동으로 인식됩니다
+          </p>
         </div>
       </div>
     </div>
