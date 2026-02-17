@@ -19,6 +19,7 @@ import supplierRoutes from "./routes/supplier.js";
 import registryRoutes from "./routes/registry.js";
 import publicRoutes from "./routes/public.js";
 import productRoutes from "./routes/product.js";
+import reductionRoutes from "./routes/reduction.js";
 
 export const prisma = new PrismaClient();
 
@@ -41,6 +42,7 @@ app.use("/content", contentRoutes);
 app.use("/supplier", supplierRoutes);
 app.use("/registry", registryRoutes);
 app.use("/products", productRoutes);
+app.use("/reduction", reductionRoutes);
 
 // Error handler
 app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
