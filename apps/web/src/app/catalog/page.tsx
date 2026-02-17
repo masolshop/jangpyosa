@@ -112,29 +112,8 @@ export default function CatalogPage() {
                 )}
               </div>
 
-              {/* 업종 및 주요 생산품 (강조) */}
-              {r.industry && (
-                <div
-                  style={{
-                    padding: 12,
-                    background: "#f8f9fa",
-                    borderRadius: 6,
-                    marginBottom: 12,
-                    borderLeft: "3px solid #0070f3",
-                  }}
-                >
-                  <p style={{ margin: 0, fontSize: 14, color: "#333", fontWeight: 500 }}>
-                    <span style={{ color: "#0070f3", marginRight: 8 }}>📦</span>
-                    <strong>업종 및 주요 생산품:</strong>
-                  </p>
-                  <p style={{ margin: "4px 0 0 24px", fontSize: 14, color: "#555", lineHeight: 1.6 }}>
-                    {r.industry}
-                  </p>
-                </div>
-              )}
-
               {/* 기본 정보 */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: 12 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: 12, marginTop: 12 }}>
                 {r.representative && (
                   <p style={{ margin: 0, fontSize: 14, color: "#666" }}>
                     <strong style={{ color: "#333" }}>대표자:</strong> {r.representative}
@@ -152,6 +131,27 @@ export default function CatalogPage() {
                 <p style={{ margin: "12px 0 0 0", fontSize: 14, color: "#666" }}>
                   <strong style={{ color: "#333" }}>소재지:</strong> {r.address}
                 </p>
+              )}
+
+              {/* 업종 및 주요 생산품 (강조) */}
+              {r.industry && (
+                <div
+                  style={{
+                    padding: 12,
+                    background: "#f8f9fa",
+                    borderRadius: 6,
+                    marginTop: 12,
+                    borderLeft: "3px solid #0070f3",
+                  }}
+                >
+                  <p style={{ margin: 0, fontSize: 14, color: "#333", fontWeight: 500 }}>
+                    <span style={{ color: "#0070f3", marginRight: 8 }}>📦</span>
+                    <strong>업종 및 주요 생산품:</strong>
+                  </p>
+                  <p style={{ margin: "4px 0 0 24px", fontSize: 14, color: "#555", lineHeight: 1.6 }}>
+                    {r.industry}
+                  </p>
+                </div>
               )}
             </div>
           ))}
