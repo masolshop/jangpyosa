@@ -16,6 +16,7 @@ import cartRoutes from "./routes/cart.js";
 import calcRoutes from "./routes/calculators.js";
 import contentRoutes from "./routes/content.js";
 import supplierRoutes from "./routes/supplier.js";
+import registryRoutes from "./routes/registry.js";
 
 export const prisma = new PrismaClient();
 
@@ -35,6 +36,7 @@ app.use("/cart", cartRoutes);
 app.use("/calculators", calcRoutes);
 app.use("/content", contentRoutes);
 app.use("/supplier", supplierRoutes);
+app.use("/registry", registryRoutes);
 
 // Error handler
 app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
