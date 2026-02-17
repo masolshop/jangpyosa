@@ -180,6 +180,154 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        {/* 신고서 다운로드 */}
+        <div
+          style={{
+            marginTop: 24,
+            padding: 20,
+            background: "white",
+            borderRadius: 8,
+            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+          }}
+        >
+          <h2>📋 신고서 / 신청서 관리</h2>
+          <p style={{ marginTop: 8, fontSize: 14, color: "#666" }}>
+            계산기에서 자동 생성된 Excel 파일을 다운로드하여 고용공단에 제출하세요
+          </p>
+          
+          <div style={{ marginTop: 16, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+            {/* 부담금 신고서 */}
+            <div
+              style={{
+                padding: 16,
+                background: "#f9fafb",
+                borderRadius: 8,
+                border: "1px solid #e5e7eb",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <div
+                  style={{
+                    width: 48,
+                    height: 48,
+                    background: "#dbeafe",
+                    borderRadius: 8,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 24,
+                  }}
+                >
+                  💰
+                </div>
+                <div style={{ flex: 1 }}>
+                  <h3 style={{ margin: 0, fontSize: 16 }}>부담금 신고서</h3>
+                  <p style={{ margin: "4px 0 0 0", fontSize: 13, color: "#666" }}>
+                    월별 상세 · 이행수준별 · 분기별 집계
+                  </p>
+                </div>
+              </div>
+              <div
+                style={{
+                  marginTop: 12,
+                  padding: 12,
+                  background: "#e0f2fe",
+                  borderRadius: 6,
+                  fontSize: 13,
+                }}
+              >
+                <p style={{ margin: 0, fontWeight: 600, color: "#0369a1" }}>
+                  📊 예상 부담금: {data.summary.totalLevy.toLocaleString()}원
+                </p>
+              </div>
+              <a href="/calculators/levy-annual" style={{ textDecoration: "none" }}>
+                <button
+                  style={{
+                    marginTop: 12,
+                    width: "100%",
+                    background: "#0070f3",
+                    padding: "10px",
+                    fontSize: 14,
+                  }}
+                >
+                  📥 부담금 계산 & 다운로드
+                </button>
+              </a>
+            </div>
+
+            {/* 장려금 신청서 */}
+            <div
+              style={{
+                padding: 16,
+                background: "#f9fafb",
+                borderRadius: 8,
+                border: "1px solid #e5e7eb",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <div
+                  style={{
+                    width: 48,
+                    height: 48,
+                    background: "#d1fae5",
+                    borderRadius: 8,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 24,
+                  }}
+                >
+                  💸
+                </div>
+                <div style={{ flex: 1 }}>
+                  <h3 style={{ margin: 0, fontSize: 16 }}>장려금 신청서</h3>
+                  <p style={{ margin: "4px 0 0 0", fontSize: 13, color: "#666" }}>
+                    월별 요약 · 지급대상자 · 분기별 집계
+                  </p>
+                </div>
+              </div>
+              <div
+                style={{
+                  marginTop: 12,
+                  padding: 12,
+                  background: "#d1fae5",
+                  borderRadius: 6,
+                  fontSize: 13,
+                }}
+              >
+                <p style={{ margin: 0, fontWeight: 600, color: "#047857" }}>
+                  💰 예상 장려금: +{data.summary.totalIncentive.toLocaleString()}원
+                </p>
+              </div>
+              <a href="/calculators/incentive-annual" style={{ textDecoration: "none" }}>
+                <button
+                  style={{
+                    marginTop: 12,
+                    width: "100%",
+                    background: "#10b981",
+                    padding: "10px",
+                    fontSize: 14,
+                  }}
+                >
+                  📥 장려금 계산 & 다운로드
+                </button>
+              </a>
+            </div>
+          </div>
+
+          <div
+            style={{
+              marginTop: 16,
+              padding: 12,
+              background: "#fef3c7",
+              borderRadius: 6,
+              fontSize: 14,
+            }}
+          >
+            💡 <strong>Tip:</strong> 계산기에서 [📥 불러오기] → [계산하기] → [📊 Excel 다운로드] 순서로 진행하세요
+          </div>
+        </div>
+
         {/* 빠른 링크 */}
         <div style={{ marginTop: 24, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: 16 }}>
           <a href="/calculators/levy-annual" style={{ textDecoration: "none" }}>
