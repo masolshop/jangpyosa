@@ -8,6 +8,7 @@ export default function LevyCalcPage() {
   const [employeeCount, setEmployeeCount] = useState(100);
   const [disabledCount, setDisabledCount] = useState(0);
   const [companyType, setCompanyType] = useState("PRIVATE");
+  const [taxRate, setTaxRate] = useState(22); // 법인세율 (%)
   const [out, setOut] = useState<any>(null);
   const [msg, setMsg] = useState("");
   const [loading, setLoading] = useState(false);
@@ -73,6 +74,19 @@ export default function LevyCalcPage() {
             onChange={(e) => setDisabledCount(Number(e.target.value))}
           />
 
+          <label>법인세율 (%)</label>
+          <input
+            type="number"
+            value={taxRate}
+            onChange={(e) => setTaxRate(Number(e.target.value))}
+            min="0"
+            max="100"
+            step="0.1"
+          />
+          <p style={{ fontSize: 13, color: "#666", marginTop: 4 }}>
+            💡 법인세율 (영리법인: 9~24%, 비영리법인: 10%) - 부담금은 손금불산입되어 법인세가 추가 발생합니다
+          </p>
+
           <button onClick={run} disabled={loading} style={{ width: "100%", marginTop: 16 }}>
             {loading ? "계산 중..." : "계산하기"}
           </button>
@@ -98,7 +112,36 @@ export default function LevyCalcPage() {
                 <strong>미달인원:</strong> {out.shortfall}명
               </p>
               <p style={{ fontSize: 18, color: "#e00", fontWeight: "bold" }}>
-                <strong>예상 부담금:</strong> {Math.round(out.estimated).toLocaleString()}원
+                <strong>부담금:</strong> {Math.round(out.estimated).toLocaleString()}원
+              </p>
+              {taxRate > 0 && (
+                <>
+                  <p style={{ fontSize: 16, color: "#d97706" }}>
+                    <strong>법인세 추가 ({taxRate}%):</strong>{" "}
+                    {Math.round(out.estimated * (taxRate / 100)).toLocaleString()}원
+                  </p>
+                  <p style={{ fontSize: 20, color: "#dc2626", fontWeight: "bold" }}>
+                    <strong>실질 부담액:</strong>{" "}
+                    {Math.round(out.estimated * (1 + taxRate / 100)).toLocaleString()}원
+                  </p>
+                </>
+              )}
+            </div>
+
+            <div
+              style={{
+                marginTop: 16,
+                padding: 12,
+                background: "#fef3c7",
+                borderRadius: 4,
+                fontSize: 14,
+              }}
+            >
+              <p style={{ margin: 0, fontWeight: 600 }}>
+                💡 법인세 손금불산입 안내
+              </p>
+              <p style={{ margin: "8px 0 0 0" }}>
+                부담금은 법인세 계산 시 비용으로 인정되지 않아, 부담금만큼 과세표준이 증가하여 법인세가 추가로 발생합니다.
               </p>
             </div>
 
