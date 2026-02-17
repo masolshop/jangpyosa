@@ -57,6 +57,17 @@ export default function CartPage() {
 
   async function loadCart() {
     try {
+      // 로그인 체크
+      const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
+      if (!token) {
+        setMsg("❌ 로그인이 필요합니다.");
+        // 2초 후 로그인 페이지로 리다이렉트
+        setTimeout(() => {
+          window.location.href = "/login";
+        }, 2000);
+        return;
+      }
+      
       const data = await apiFetch("/cart");
       setItems(data.cart?.items || []);
       const total = (data.cart?.items || []).reduce(
@@ -65,7 +76,15 @@ export default function CartPage() {
       );
       setTotalAmount(total);
     } catch (e: any) {
-      setMsg("장바구니 로드 실패: " + e.message);
+      // NO_TOKEN 에러인 경우 로그인 페이지로 리다이렉트
+      if (e.message.includes("NO_TOKEN") || e.message.includes("UNAUTHORIZED")) {
+        setMsg("❌ 로그인이 필요합니다. 로그인 페이지로 이동합니다...");
+        setTimeout(() => {
+          window.location.href = "/login";
+        }, 2000);
+      } else {
+        setMsg("장바구니 로드 실패: " + e.message);
+      }
     }
   }
 
