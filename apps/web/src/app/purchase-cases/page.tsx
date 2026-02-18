@@ -124,13 +124,13 @@ export default function PurchaseCasesPage() {
       <div className="max-w-7xl mx-auto">
         {/* 헤더 */}
         <div className="mb-6">
-          <div className="flex items-center gap-3 mb-3">
-            <span className="text-3xl md:text-4xl">📦</span>
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-800">
+          <div className="flex items-center gap-4 mb-3">
+            <span className="text-3xl md:text-4xl flex-shrink-0">📦</span>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
               장애인표준사업장생산품 구매 사례
             </h1>
           </div>
-          <p className="text-base md:text-lg text-gray-600">
+          <p className="text-sm md:text-base text-gray-600 ml-0 md:ml-14">
             공공기관 및 지자체의 장애인표준사업장생산품 구매 사례를 확인하세요
           </p>
         </div>
@@ -263,27 +263,27 @@ export default function PurchaseCasesPage() {
             <span className="text-xl md:text-2xl">📌</span>
             <h2 className="text-xl md:text-2xl font-bold text-gray-800">구매 사례 데이터 활용 방법</h2>
           </div>
-          <div className="space-y-3 text-gray-700 text-sm md:text-base">
+          <div className="space-y-4 text-gray-700 text-sm md:text-base">
             <div className="flex gap-3">
-              <span className="text-blue-600 font-bold flex-shrink-0 w-6">1.</span>
+              <span className="text-blue-600 font-bold flex-shrink-0">1단계</span>
               <div className="flex-1">
                 <p><strong>구매 계획 수립:</strong> 다른 기관의 구매 품목과 금액을 참고하여 귀사의 구매 계획을 수립하세요.</p>
               </div>
             </div>
             <div className="flex gap-3">
-              <span className="text-blue-600 font-bold flex-shrink-0 w-6">2.</span>
+              <span className="text-blue-600 font-bold flex-shrink-0">2단계</span>
               <div className="flex-1">
                 <p><strong>예산 책정:</strong> 실제 구매 사례의 금액 정보를 활용하여 예산을 합리적으로 책정할 수 있습니다.</p>
               </div>
             </div>
             <div className="flex gap-3">
-              <span className="text-blue-600 font-bold flex-shrink-0 w-6">3.</span>
+              <span className="text-blue-600 font-bold flex-shrink-0">3단계</span>
               <div className="flex-1">
                 <p><strong>품목 선정:</strong> 공공기관에서 주로 구매하는 품목을 확인하여 구매 품목을 결정하세요.</p>
               </div>
             </div>
             <div className="flex gap-3">
-              <span className="text-blue-600 font-bold flex-shrink-0 w-6">4.</span>
+              <span className="text-blue-600 font-bold flex-shrink-0">4단계</span>
               <div className="flex-1">
                 <p><strong>실적 보고:</strong> 공공기관의 우선구매 실적 작성 시 참고 자료로 활용하세요.</p>
               </div>
