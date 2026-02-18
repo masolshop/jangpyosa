@@ -192,15 +192,16 @@ export default function PurchaseCasesPage() {
                     
                     {/* 확장/축소 아이콘 */}
                     <div className="ml-2 flex-shrink-0 self-center">
-                      <div className={`transition-transform duration-300 ${expandedId === caseItem.id ? 'rotate-180' : ''}`}>
-                        <svg
-                          className="w-4 h-4 text-gray-600"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" />
-                        </svg>
+                      <div className="w-6 h-6 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors">
+                        {expandedId === caseItem.id ? (
+                          <svg className="w-3 h-3 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M20 12H4" />
+                          </svg>
+                        ) : (
+                          <svg className="w-3 h-3 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />
+                          </svg>
+                        )}
                       </div>
                     </div>
                   </div>
