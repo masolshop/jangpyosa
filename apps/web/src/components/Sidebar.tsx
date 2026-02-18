@@ -37,6 +37,15 @@ export default function Sidebar() {
 
   const handleLogout = () => {
     clearToken();
+    // 사용자 정보도 삭제
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("user");
+    }
+    // 상태 즉시 초기화
+    setUserRole(null);
+    setUserName(null);
+    setCompanyName(null);
+    // 홈으로 리다이렉트 (새로고침)
     window.location.href = "/";
   };
 
