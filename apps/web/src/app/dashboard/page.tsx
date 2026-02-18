@@ -22,9 +22,19 @@ type DashboardData = {
   };
 };
 
+type CartItem = {
+  id: string;
+  quantity: number;
+  supplierName: string;
+  supplierBizNo: string;
+  price: number;
+  createdAt: string;
+};
+
 export default function DashboardPage() {
   const router = useRouter();
   const [data, setData] = useState<DashboardData | null>(null);
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -36,6 +46,7 @@ export default function DashboardPage() {
     }
 
     fetchDashboard();
+    fetchCart();
   }, []);
 
   async function fetchDashboard() {
@@ -62,6 +73,26 @@ export default function DashboardPage() {
       setError(e.message);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function fetchCart() {
+    const token = getToken();
+    if (!token) return;
+
+    try {
+      const res = await fetch(`${API_BASE}/cart`, {
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
+      });
+
+      if (res.ok) {
+        const json = await res.json();
+        setCartItems(json.items || []);
+      }
+    } catch (e: any) {
+      console.error("장바구니 조회 실패:", e);
     }
   }
 
@@ -326,6 +357,153 @@ export default function DashboardPage() {
           >
             💡 <strong>Tip:</strong> 계산기에서 [📥 불러오기] → [계산하기] → [📊 Excel 다운로드] 순서로 진행하세요
           </div>
+        </div>
+
+        {/* 장바구니 / 도급계약 */}
+        <div
+          style={{
+            marginTop: 24,
+            padding: 20,
+            background: "white",
+            borderRadius: 8,
+            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+          }}
+        >
+          <h2>🛒 연계고용 도급계약 장바구니</h2>
+          <p style={{ marginTop: 8, fontSize: 14, color: "#666" }}>
+            표준사업장과 도급계약을 체결하여 부담금을 최대 90%까지 감면받으세요
+          </p>
+
+          {cartItems.length === 0 ? (
+            <div
+              style={{
+                marginTop: 16,
+                padding: 40,
+                background: "#f9fafb",
+                borderRadius: 8,
+                textAlign: "center",
+              }}
+            >
+              <div style={{ fontSize: 48, marginBottom: 16 }}>🛒</div>
+              <p style={{ margin: 0, fontSize: 16, color: "#666" }}>
+                장바구니가 비어있습니다
+              </p>
+              <p style={{ margin: "8px 0 0 0", fontSize: 14, color: "#999" }}>
+                표준사업장 카탈로그에서 원하는 사업장을 선택하세요
+              </p>
+              <a href="/catalog" style={{ textDecoration: "none" }}>
+                <button
+                  style={{
+                    marginTop: 16,
+                    background: "#0070f3",
+                    color: "white",
+                    border: "none",
+                    padding: "12px 24px",
+                    borderRadius: 6,
+                    fontSize: 14,
+                    cursor: "pointer",
+                  }}
+                >
+                  🛒 표준사업장 카탈로그 보기
+                </button>
+              </a>
+            </div>
+          ) : (
+            <>
+              <div style={{ marginTop: 16 }}>
+                {cartItems.map((item) => (
+                  <div
+                    key={item.id}
+                    style={{
+                      padding: 16,
+                      marginBottom: 12,
+                      background: "#f9fafb",
+                      borderRadius: 8,
+                      border: "1px solid #e5e7eb",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 16,
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 48,
+                        height: 48,
+                        background: "#dbeafe",
+                        borderRadius: 8,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: 24,
+                      }}
+                    >
+                      🏭
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <h3 style={{ margin: 0, fontSize: 16 }}>{item.supplierName}</h3>
+                      <p style={{ margin: "4px 0 0 0", fontSize: 13, color: "#666" }}>
+                        사업자번호: {item.supplierBizNo} · 수량: {item.quantity}
+                      </p>
+                    </div>
+                    <div style={{ textAlign: "right" }}>
+                      <p style={{ margin: 0, fontSize: 18, fontWeight: "bold", color: "#0070f3" }}>
+                        {(item.price * item.quantity).toLocaleString()}원
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div
+                style={{
+                  marginTop: 16,
+                  padding: 16,
+                  background: "#ecfdf5",
+                  borderRadius: 8,
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <div>
+                  <p style={{ margin: 0, fontSize: 14, color: "#047857" }}>
+                    총 {cartItems.length}개 사업장
+                  </p>
+                  <p style={{ margin: "4px 0 0 0", fontSize: 20, fontWeight: "bold", color: "#047857" }}>
+                    총 도급계약 금액: {cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0).toLocaleString()}원
+                  </p>
+                </div>
+                <a href="/cart" style={{ textDecoration: "none" }}>
+                  <button
+                    style={{
+                      background: "#10b981",
+                      color: "white",
+                      border: "none",
+                      padding: "12px 24px",
+                      borderRadius: 6,
+                      fontSize: 14,
+                      cursor: "pointer",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    📋 장바구니 상세보기 & 계약진행
+                  </button>
+                </a>
+              </div>
+
+              <div
+                style={{
+                  marginTop: 12,
+                  padding: 12,
+                  background: "#fef3c7",
+                  borderRadius: 6,
+                  fontSize: 14,
+                }}
+              >
+                💡 <strong>Tip:</strong> 도급계약 체결 후 부담금 감면 신청을 하면 최대 90%까지 감면받을 수 있습니다
+              </div>
+            </>
+          )}
         </div>
 
         {/* 빠른 링크 */}
