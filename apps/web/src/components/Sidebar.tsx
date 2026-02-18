@@ -99,19 +99,23 @@ export default function Sidebar() {
             </div>
           )}
 
-          {/* 고용계산기 */}
-          <div style={{ marginBottom: 24 }}>
-            <div style={{ fontSize: 20.6, color: "#fff", marginBottom: 12, fontWeight: "bold" }}>
-              고용계산기
-            </div>
-            {(userRole === "BUYER" || userRole === "SUPER_ADMIN") && (
+          {/* 장애인고용직원등록관리 */}
+          {(userRole === "BUYER" || userRole === "SUPER_ADMIN") && (
+            <div style={{ marginBottom: 24 }}>
               <MenuItem
                 href="/dashboard/employees"
                 label="장애인고용직원등록관리"
                 icon="👥"
                 active={isActive("/dashboard/employees")}
               />
-            )}
+            </div>
+          )}
+
+          {/* 고용계산기 */}
+          <div style={{ marginBottom: 24 }}>
+            <div style={{ fontSize: 20.6, color: "#fff", marginBottom: 12, fontWeight: "bold" }}>
+              고용계산기
+            </div>
             <MenuItem
               href="/calculators/levy-annual"
               label="고용부담금계산기"
