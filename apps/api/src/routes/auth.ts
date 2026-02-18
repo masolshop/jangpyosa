@@ -373,6 +373,14 @@ r.post("/signup/buyer", async (req, res) => {
 
     const passwordHash = await bcrypt.hash(body.password, 10);
 
+    // companyType을 buyerType으로 변환
+    let buyerType: string;
+    if (body.companyType === "PRIVATE") {
+      buyerType = "PRIVATE_COMPANY"; // 민간기업 또는 공공기관
+    } else {
+      buyerType = "GOVERNMENT"; // 국가/지자체/교육청
+    }
+
     // User, Company, BuyerProfile 생성
     const user = await prisma.user.create({
       data: {
@@ -380,7 +388,7 @@ r.post("/signup/buyer", async (req, res) => {
         passwordHash,
         name: apickResult.representative || "대표자",
         role: "BUYER",
-        companyType: body.companyType, // 🆕 기업 유형 저장
+        companyType: body.companyType, // User 테이블에도 저장 (호환성)
         referredById: referredBy.id,
         company: {
           create: {
@@ -388,6 +396,7 @@ r.post("/signup/buyer", async (req, res) => {
             bizNo: cleanBizNo,
             representative: apickResult.representative,
             type: "BUYER",
+            buyerType, // 🆕 Company 테이블에 buyerType 저장
             isVerified: true,
             apickData: apickResult.data ? JSON.stringify(apickResult.data) : null,
             buyerProfile: {

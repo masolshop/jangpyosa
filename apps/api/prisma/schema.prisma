@@ -45,6 +45,7 @@ model Company {
   bizNo           String           @unique
   representative  String?
   type            String
+  buyerType       String?          // 🆕 BUYER 전용: PRIVATE_COMPANY, PUBLIC_INSTITUTION, GOVERNMENT
   isVerified      Boolean          @default(false)
   apickData       String?
   ownerUserId     String           @unique
@@ -105,6 +106,7 @@ model BuyerProfile {
   employeeCount       Int                    @default(0)
   disabledCount       Int                    @default(0)
   yearlyEmployeesJson String?
+  hasLevyExemption    Boolean                @default(false)  // 🆕 부담금 면제 여부 (현재는 사용 안 함, 모두 부담금 부과)
   createdAt           DateTime               @default(now())
   updatedAt           DateTime               @updatedAt
   company             Company                @relation(fields: [companyId], references: [id])
