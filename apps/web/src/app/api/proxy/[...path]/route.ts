@@ -8,7 +8,9 @@ export async function GET(
 ) {
   const path = params.path.join('/')
   const searchParams = request.nextUrl.searchParams.toString()
-  const url = `${API_BASE}/${path}${searchParams ? `?${searchParams}` : ''}`
+  // Remove /api prefix if present (backend doesn't use /api prefix)
+  const cleanPath = path.startsWith('api/') ? path.substring(4) : path
+  const url = `${API_BASE}/${cleanPath}${searchParams ? `?${searchParams}` : ''}`
 
   try {
     const response = await fetch(url, {
@@ -37,7 +39,9 @@ export async function POST(
   { params }: { params: { path: string[] } }
 ) {
   const path = params.path.join('/')
-  const url = `${API_BASE}/${path}`
+  // Remove /api prefix if present (backend doesn't use /api prefix)
+  const cleanPath = path.startsWith('api/') ? path.substring(4) : path
+  const url = `${API_BASE}/${cleanPath}`
 
   try {
     const body = await request.json()
@@ -69,7 +73,9 @@ export async function PUT(
   { params }: { params: { path: string[] } }
 ) {
   const path = params.path.join('/')
-  const url = `${API_BASE}/${path}`
+  // Remove /api prefix if present (backend doesn't use /api prefix)
+  const cleanPath = path.startsWith('api/') ? path.substring(4) : path
+  const url = `${API_BASE}/${cleanPath}`
 
   try {
     const body = await request.json()
@@ -101,7 +107,9 @@ export async function DELETE(
   { params }: { params: { path: string[] } }
 ) {
   const path = params.path.join('/')
-  const url = `${API_BASE}/${path}`
+  // Remove /api prefix if present (backend doesn't use /api prefix)
+  const cleanPath = path.startsWith('api/') ? path.substring(4) : path
+  const url = `${API_BASE}/${cleanPath}`
 
   try {
     const response = await fetch(url, {
