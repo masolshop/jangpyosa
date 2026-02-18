@@ -19,7 +19,10 @@ router.get("/", requireAuth, async (req, res) => {
     let company;
     if (userRole === "SUPER_ADMIN") {
       company = await prisma.company.findFirst({
-        where: { type: { in: ["PRIVATE", "PUBLIC_CORP", "GOVERNMENT_OWNED", "OTHER_PUBLIC"] } },
+        where: { 
+          type: "BUYER",
+          buyerProfile: { isNot: null }
+        },
         include: { buyerProfile: true },
       });
     } else {
