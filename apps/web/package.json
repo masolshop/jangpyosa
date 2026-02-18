@@ -1,5 +1,5 @@
 {
-  "name": "@jangpyosa/web",
+  "name": "@jangpyosa/web-fresh",
   "private": true,
   "scripts": {
     "dev": "next dev -p 3000",
