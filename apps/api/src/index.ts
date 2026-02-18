@@ -23,6 +23,7 @@ import reductionRoutes from "./routes/reduction.js";
 import companiesRoutes from "./routes/companies.js";
 import employeesRoutes from "./routes/employees.js";
 import dashboardRoutes from "./routes/dashboard.js";
+import contractsRoutes from "./routes/contracts.js";
 
 export const prisma = new PrismaClient();
 
@@ -49,6 +50,7 @@ app.use("/reduction", reductionRoutes);
 app.use("/companies", companiesRoutes);
 app.use("/employees", employeesRoutes);
 app.use("/dashboard", dashboardRoutes);
+app.use("/contracts", contractsRoutes);
 
 // Error handler
 app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
