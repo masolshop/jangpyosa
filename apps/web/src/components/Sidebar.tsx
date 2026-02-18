@@ -8,9 +8,25 @@ export default function Sidebar() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(true);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string | null>(null);
+  const [companyName, setCompanyName] = useState<string | null>(null);
 
   useEffect(() => {
     setUserRole(getUserRole());
+    
+    // 로그인한 사용자 정보 가져오기
+    if (typeof window !== "undefined") {
+      const userStr = localStorage.getItem("user");
+      if (userStr) {
+        try {
+          const user = JSON.parse(userStr);
+          setUserName(user.name || null);
+          setCompanyName(user.company?.name || null);
+        } catch (e) {
+          console.error("사용자 정보 파싱 실패:", e);
+        }
+      }
+    }
     
     // 페이지 로드 시 사이드바를 맨 위로 스크롤
     const sidebar = document.querySelector('aside');
@@ -69,7 +85,7 @@ export default function Sidebar() {
           href="/" 
           style={{ 
             display: "block",
-            marginBottom: 32, 
+            marginBottom: 16, 
             marginTop: 32,
             textDecoration: "none",
             color: "white",
@@ -90,6 +106,37 @@ export default function Sidebar() {
             연계고용플랫폼
           </p>
         </a>
+
+        {/* 로그인 사용자 정보 */}
+        {(userName || companyName) && (
+          <div style={{
+            marginBottom: 24,
+            padding: "12px 16px",
+            background: "rgba(0, 112, 243, 0.1)",
+            border: "1px solid rgba(0, 112, 243, 0.3)",
+            borderRadius: 8,
+            textAlign: "center"
+          }}>
+            {companyName && (
+              <div style={{
+                fontSize: 16,
+                fontWeight: 600,
+                color: "#0070f3",
+                marginBottom: 4
+              }}>
+                {companyName}
+              </div>
+            )}
+            {userName && (
+              <div style={{
+                fontSize: 14,
+                color: "#999"
+              }}>
+                {userName}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* 메인 메뉴 */}
         <nav>
