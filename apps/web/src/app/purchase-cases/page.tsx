@@ -121,7 +121,7 @@ export default function PurchaseCasesPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
-      <div className="max-w-7xl mx-auto pl-[30%] md:pl-[30%] pt-[30vh]">
+      <div className="max-w-7xl mx-auto pl-[30%] md:pl-[30%] pt-[40vh]">
         {/* 헤더 */}
         <div className="mb-4">
           <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-1">
