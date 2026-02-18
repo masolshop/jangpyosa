@@ -87,52 +87,22 @@ export default function Sidebar() {
 
         {/* 메인 메뉴 */}
         <nav>
-          <div style={{ marginBottom: 24 }}>
-            <div style={{ fontSize: 13.2, color: "#666", marginBottom: 8, fontWeight: "bold" }}>
-              메인
-            </div>
-            {(userRole === "BUYER" || userRole === "SUPER_ADMIN") && (
+          {/* 기업장애인고용관리센터 */}
+          {(userRole === "BUYER" || userRole === "SUPER_ADMIN") && (
+            <div style={{ marginBottom: 24 }}>
               <MenuItem
                 href="/dashboard"
-                label="기업 대시보드"
+                label="기업장애인고용관리센터"
                 icon="📊"
                 active={isActive("/dashboard")}
               />
-            )}
-            <MenuItem
-              href="/catalog"
-              label="도급계약 표준사업장"
-              icon="🛒"
-              active={isActive("/catalog")}
-            />
-            <MenuItem
-              href="/contract-sample"
-              label="표준도급계약서 샘플"
-              icon="📄"
-              active={isActive("/contract-sample")}
-            />
-            {userRole === "BUYER" && (
-              <MenuItem
-                href="/cart"
-                label="장바구니"
-                icon="🛍️"
-                active={isActive("/cart")}
-              />
-            )}
-            {userRole === "SUPPLIER" && (
-              <MenuItem
-                href="/supplier/profile"
-                label="프로필 관리"
-                icon="🏭"
-                active={isActive("/supplier/profile")}
-              />
-            )}
-          </div>
+            </div>
+          )}
 
-          {/* 계산기 */}
+          {/* 고용계산기 */}
           <div style={{ marginBottom: 24 }}>
-            <div style={{ fontSize: 15.84, color: "#666", marginBottom: 8, fontWeight: "bold" }}>
-              계산기
+            <div style={{ fontSize: 20.6, color: "#fff", marginBottom: 12, fontWeight: "bold" }}>
+              고용계산기
             </div>
             {(userRole === "BUYER" || userRole === "SUPER_ADMIN") && (
               <MenuItem
@@ -170,6 +140,41 @@ export default function Sidebar() {
               icon="🎁"
               active={isActive("/calculators/standard-benefit")}
             />
+          </div>
+
+          {/* 연계고용도급계약센터 */}
+          <div style={{ marginBottom: 24 }}>
+            <div style={{ fontSize: 20.6, color: "#fff", marginBottom: 12, fontWeight: "bold" }}>
+              연계고용도급계약센터
+            </div>
+            <MenuItem
+              href="/catalog"
+              label="연계고용감면표준사업장"
+              icon="🛒"
+              active={isActive("/catalog")}
+            />
+            <MenuItem
+              href="/contract-sample"
+              label="표준도급계약서 샘플"
+              icon="📄"
+              active={isActive("/contract-sample")}
+            />
+            {userRole === "BUYER" && (
+              <MenuItem
+                href="/cart"
+                label="장바구니"
+                icon="🛍️"
+                active={isActive("/cart")}
+              />
+            )}
+            {userRole === "SUPPLIER" && (
+              <MenuItem
+                href="/supplier/profile"
+                label="프로필 관리"
+                icon="🏭"
+                active={isActive("/supplier/profile")}
+              />
+            )}
           </div>
 
           {/* 콘텐츠 */}
