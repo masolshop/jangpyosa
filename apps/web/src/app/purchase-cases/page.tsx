@@ -121,24 +121,24 @@ export default function PurchaseCasesPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto pl-[20%] md:pl-[25%]">
         {/* 헤더 */}
-        <div className="mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-2">
+        <div className="mb-4">
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-1">
             장애인표준사업장생산품 구매 사례
           </h1>
-          <p className="text-sm md:text-base text-gray-600">
+          <p className="text-xs md:text-sm text-gray-600">
             공공기관 및 지자체의 장애인표준사업장생산품 구매 사례를 확인하세요
           </p>
         </div>
 
         {/* 안내 메시지 */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-          <div className="flex items-start gap-3">
-            <span className="text-xl md:text-2xl">💡</span>
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+          <div className="flex items-start gap-2">
+            <span className="text-lg md:text-xl">💡</span>
             <div className="flex-1">
-              <p className="font-medium text-blue-900 mb-1">구매 사례 활용 안내</p>
-              <p className="text-xs md:text-sm text-blue-700">
+              <p className="font-medium text-blue-900 mb-0.5 text-sm">구매 사례 활용 안내</p>
+              <p className="text-xs text-blue-700">
                 각 기관명을 클릭하면 상세한 구매 내역을 바로 아래에서 확인하실 수 있습니다.
               </p>
             </div>
@@ -146,7 +146,7 @@ export default function PurchaseCasesPage() {
         </div>
 
         {/* 구매 사례 아코디언 리스트 */}
-        <div className="space-y-4">
+        <div className="space-y-3">
           {purchaseCases.map((caseItem) => (
             <div
               key={caseItem.id}
