@@ -173,26 +173,6 @@ export default function Sidebar() {
             />
           </div>
 
-          {/* 도급계약 관리 */}
-          <div style={{ marginBottom: 24 }}>
-            <MenuItem
-              href="/dashboard/contracts"
-              label="도급계약 이행·결제 관리"
-              icon="📋"
-              active={pathname?.startsWith("/dashboard/contracts")}
-              requiresRole={["BUYER", "SUPER_ADMIN", "SUPPLIER"]}
-              currentRole={userRole}
-            />
-            <MenuItem
-              href="/dashboard/performances"
-              label="월별 실적 관리"
-              icon="📊"
-              active={pathname?.startsWith("/dashboard/performances")}
-              requiresRole={["BUYER", "SUPER_ADMIN", "SUPPLIER"]}
-              currentRole={userRole}
-            />
-          </div>
-
           {/* 고용계산기 */}
           <div style={{ marginBottom: 24 }}>
             <div style={{ fontSize: 20.6, color: "#fff", marginBottom: 12, fontWeight: "bold" }}>
@@ -238,6 +218,22 @@ export default function Sidebar() {
               label="연계고용감면표준사업장"
               icon="🛒"
               active={isActive("/catalog")}
+            />
+            <MenuItem
+              href="/dashboard/contracts"
+              label="도급계약 이행·결제 관리"
+              icon="📋"
+              active={pathname?.startsWith("/dashboard/contracts")}
+              requiresRole={["BUYER", "SUPER_ADMIN", "SUPPLIER"]}
+              currentRole={userRole}
+            />
+            <MenuItem
+              href="/dashboard/performances"
+              label="월별 실적 관리"
+              icon="📊"
+              active={pathname?.startsWith("/dashboard/performances")}
+              requiresRole={["BUYER", "SUPER_ADMIN", "SUPPLIER"]}
+              currentRole={userRole}
             />
             <MenuItem
               href="/purchase-cases"
