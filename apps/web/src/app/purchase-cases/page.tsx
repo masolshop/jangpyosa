@@ -124,13 +124,10 @@ export default function PurchaseCasesPage() {
       <div className="max-w-7xl mx-auto">
         {/* 헤더 */}
         <div className="mb-6">
-          <div className="flex items-center gap-4 mb-3">
-            <span className="text-3xl md:text-4xl flex-shrink-0">📦</span>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
-              장애인표준사업장생산품 구매 사례
-            </h1>
-          </div>
-          <p className="text-sm md:text-base text-gray-600 ml-0 md:ml-14">
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-2">
+            장애인표준사업장생산품 구매 사례
+          </h1>
+          <p className="text-sm md:text-base text-gray-600">
             공공기관 및 지자체의 장애인표준사업장생산품 구매 사례를 확인하세요
           </p>
         </div>
