@@ -2,8 +2,8 @@ module.exports = {
   apps: [
     {
       name: 'jangpyosa-api',
-      script: 'node',
-      args: 'dist/index.js',
+      script: 'npx',
+      args: 'tsx src/index.ts',
       cwd: './apps/api',
       env: {
         NODE_ENV: 'development',

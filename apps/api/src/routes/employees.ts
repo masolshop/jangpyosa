@@ -5,8 +5,8 @@ import { requireAuth } from "../middleware/auth.js";
 import {
   calculateYearlyData,
   calculateMonthlyData,
-  type Employee as CalcEmployee,
-} from "../services/employment-calculator.js";
+  type CalcEmployee,
+} from "../services/employment-calculator-v2";
 
 const router = Router();
 
@@ -354,8 +354,10 @@ router.get("/monthly", requireAuth, async (req, res) => {
         disabledCount: result.disabledCount,
         recognizedCount: result.recognizedCount,
         obligatedCount: result.obligatedCount,
+        incentiveBaselineCount: result.incentiveBaselineCount, // ★ V2 추가
+        incentiveExcludedCount: result.incentiveExcludedCount, // ★ V2 추가
+        incentiveEligibleCount: result.incentiveEligibleCount, // ★ V2 추가
         shortfallCount: result.shortfallCount,
-        surplusCount: result.surplusCount,
         levy: result.levy,
         incentive: result.incentive,
         netAmount: result.netAmount,
@@ -455,7 +457,7 @@ router.put("/monthly", requireAuth, async (req, res) => {
           recognizedCount: result.recognizedCount,
           obligatedCount: result.obligatedCount,
           shortfallCount: result.shortfallCount,
-          surplusCount: result.surplusCount,
+          surplusCount: 0, // V2에서는 사용하지 않음
           levy: result.levy,
           incentive: result.incentive,
           netAmount: result.netAmount,
@@ -470,7 +472,7 @@ router.put("/monthly", requireAuth, async (req, res) => {
           recognizedCount: result.recognizedCount,
           obligatedCount: result.obligatedCount,
           shortfallCount: result.shortfallCount,
-          surplusCount: result.surplusCount,
+          surplusCount: 0, // V2에서는 사용하지 않음
           levy: result.levy,
           incentive: result.incentive,
           netAmount: result.netAmount,
