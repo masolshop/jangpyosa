@@ -50,10 +50,19 @@ router.get("/", requireAuth, async (req, res) => {
       return res.status(404).json({ error: "연도 설정이 없습니다." });
     }
 
-    // 기업 유형에 따른 의무고용률
-    const quotaRate = company.type === "PRIVATE" 
-      ? yearSetting.privateQuotaRate 
-      : yearSetting.publicQuotaRate;
+    // 기업 유형에 따른 의무고용률 (buyerType 기반)
+    let quotaRate = 0.031; // 기본값: 민간기업
+    
+    if (company.buyerType === "PRIVATE_COMPANY") {
+      quotaRate = yearSetting.privateQuotaRate; // 3.1%
+    } else if (company.buyerType === "PUBLIC_INSTITUTION" || company.buyerType === "GOVERNMENT") {
+      quotaRate = yearSetting.publicQuotaRate; // 3.8%
+    } else {
+      // 하위 호환성: company.type으로 판단
+      quotaRate = company.type === "PRIVATE" 
+        ? yearSetting.privateQuotaRate 
+        : yearSetting.publicQuotaRate;
+    }
 
     // 월별 상시근로자 수
     let yearlyEmployees: any = {};

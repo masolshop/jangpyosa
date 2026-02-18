@@ -198,12 +198,12 @@ router.get("/monthly", requireAuth, async (req, res) => {
       monthlyEmployeeCounts[month] = found?.totalEmployeeCount || 0;
     }
 
-    // 자동 계산
+    // 자동 계산 (buyerType 전달)
     const calculatedResults = calculateYearlyData(
       employees,
       monthlyEmployeeCounts,
       year,
-      company.type
+      company.buyerType || "PRIVATE_COMPANY" // 기본값: 민간기업
     );
 
     // 기존 데이터와 병합
@@ -303,13 +303,13 @@ router.put("/monthly", requireAuth, async (req, res) => {
     for (let month = 1; month <= 12; month++) {
       const totalEmployeeCount = monthlyEmployeeCounts[month] || 0;
 
-      // 계산
+      // 계산 (buyerType 전달)
       const result = calculateMonthlyData(
         employees,
         totalEmployeeCount,
         year,
         month,
-        company.type
+        company.buyerType || "PRIVATE_COMPANY" // 기본값: 민간기업
       );
 
       // DB 저장 (upsert)

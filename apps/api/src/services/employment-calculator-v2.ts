@@ -114,11 +114,15 @@ const INCENTIVE_RATES = {
 // 부담금 단가 (월)
 const LEVY_BASE_AMOUNT = 1260000; // 2026년 기준
 
-// 의무고용률
+// 의무고용률 (buyerType 기반)
 const QUOTA_RATES: { [key: string]: number } = {
+  PRIVATE_COMPANY: 0.031,      // 민간기업
+  PUBLIC_INSTITUTION: 0.038,   // 공공기관
+  GOVERNMENT: 0.038,           // 국가/지자체/교육청
+  
+  // 하위 호환성 유지
   PRIVATE: 0.031,
   PUBLIC_CORP: 0.038,
-  GOVERNMENT: 0.038,
   OTHER_PUBLIC: 0.038,
   BUYER: 0.031, // 기본값
 };
