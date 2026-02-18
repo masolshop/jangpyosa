@@ -94,6 +94,7 @@ model SupplierProfile {
   updatedAt           DateTime          @updatedAt
   contractRequests    ContractRequest[]
   products            Product[]
+  contracts           Contract[]        // 도급계약 목록 추가
   registry            SupplierRegistry? @relation(fields: [registryBizNo], references: [bizNo])
   company             Company           @relation(fields: [companyId], references: [id])
 }
@@ -111,6 +112,7 @@ model BuyerProfile {
   contractRequests    ContractRequest[]
   disabledEmployees   DisabledEmployee[]
   calculations        Calculation[]
+  contracts           Contract[]        // 도급계약 목록 추가
 }
 
 model Product {
@@ -245,4 +247,78 @@ model Calculation {
   buyer      BuyerProfile @relation(fields: [buyerId], references: [id], onDelete: Cascade)
 
   @@index([buyerId, year, month, type])
+}
+
+// 도급계약서 (마스터)
+model Contract {
+  id                    String              @id @default(cuid())
+  contractNo            String              @unique // 계약번호 (예: CT-2026-0001)
+  buyerId               String
+  supplierId            String
+  contractName          String              // 계약명
+  startDate             DateTime            // 계약 시작일
+  endDate               DateTime            // 계약 종료일
+  totalAmount           Int                 // 총 계약금액
+  monthlyAmount         Int?                // 월 단위 금액 (고정인 경우)
+  status                String              @default("ACTIVE") // ACTIVE, SUSPENDED, TERMINATED, COMPLETED
+  paymentTerms          String?             // 결제 조건
+  contractFileUrl       String?             // 계약서 파일 URL
+  memo                  String?
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+  buyer                 BuyerProfile        @relation(fields: [buyerId], references: [id])
+  supplier              SupplierProfile     @relation(fields: [supplierId], references: [id])
+  monthlyPerformances   MonthlyPerformance[]
+  
+  @@index([buyerId, status])
+  @@index([supplierId, status])
+  @@index([startDate, endDate])
+}
+
+// 월별 계약 이행 내역
+model MonthlyPerformance {
+  id                   String    @id @default(cuid())
+  contractId           String
+  year                 Int       // 연도 (2026)
+  month                Int       // 월 (1-12)
+  plannedAmount        Int       // 계획금액 (당월 예정액)
+  actualAmount         Int?      // 실제금액 (실제 이행액)
+  performanceRate      Float?    // 이행률 (%)
+  description          String?   // 이행 내역 설명
+  evidenceFileUrls     String?   // 증빙자료 URL (JSON array)
+  inspectionStatus     String    @default("PENDING") // PENDING, PASSED, FAILED, WAIVED
+  inspectionDate       DateTime? // 검수일
+  inspectionNotes      String?   // 검수 메모
+  paymentStatus        String    @default("UNPAID") // UNPAID, PARTIAL, PAID, OVERDUE
+  paymentAmount        Int?      // 실제 지급액
+  paymentDate          DateTime? // 지급일
+  paymentMethod        String?   // 지급 방법 (계좌이체, 어음 등)
+  paymentReference     String?   // 지급 참조번호
+  invoiceNo            String?   // 세금계산서 번호
+  invoiceDate          DateTime? // 세금계산서 발행일
+  invoiceFileUrl       String?   // 세금계산서 파일 URL
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  contract             Contract  @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  
+  @@unique([contractId, year, month])
+  @@index([contractId, year, month])
+  @@index([inspectionStatus, paymentStatus])
+}
+
+// 결제 이력 (상세 로그)
+model PaymentHistory {
+  id              String    @id @default(cuid())
+  performanceId   String    // MonthlyPerformance ID
+  amount          Int       // 결제 금액
+  paymentDate     DateTime  // 결제일
+  paymentMethod   String    // 결제 방법
+  reference       String?   // 참조번호 (거래번호 등)
+  status          String    @default("COMPLETED") // COMPLETED, CANCELLED, REFUNDED
+  memo            String?
+  createdBy       String?   // 처리자 User ID
+  createdAt       DateTime  @default(now())
+  
+  @@index([performanceId])
+  @@index([paymentDate])
 }
