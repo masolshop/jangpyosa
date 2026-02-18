@@ -88,8 +88,9 @@ export default function EmployeesIntegratedPage() {
   const calculateMonthlySalary = (weeklyHours: number): number => {
     if (!weeklyHours || weeklyHours <= 0) return 0;
     const monthlyHours = weeklyHours * 4.345; // 월 평균 주수
-    const salary = Math.round(monthlyHours * MINIMUM_HOURLY_WAGE);
-    return salary;
+    const salary = monthlyHours * MINIMUM_HOURLY_WAGE;
+    // 1,000원 단위로 반올림
+    return Math.round(salary / 1000) * 1000;
   };
 
   // 근로시간 변경 시 급여 자동 계산
@@ -830,7 +831,7 @@ export default function EmployeesIntegratedPage() {
                       required
                     />
                     <p style={{ fontSize: 12, color: "#10b981", marginTop: 4 }}>
-                      ✅ 주 {form.workHoursPerWeek || 0}시간 기준 최저임금: {calculateMonthlySalary(form.workHoursPerWeek || 0).toLocaleString()}원 (자동 계산됨, 수정 가능)
+                      ✅ 주 {form.workHoursPerWeek || 0}시간 기준 최저임금: {calculateMonthlySalary(form.workHoursPerWeek || 0).toLocaleString()}원 (자동 계산됨, 1천원 단위)
                     </p>
                   </div>
 
