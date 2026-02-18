@@ -27,37 +27,15 @@ type Employee = {
   memo?: string;
 };
 
-type MonthlyData = {
-  id?: string;
-  year: number;
-  month: number;
-  totalEmployeeCount: number;
-  disabledCount: number;
-  recognizedCount: number;
-  obligatedCount: number;
-  shortfallCount: number;
-  surplusCount: number;
-  levy: number;
-  incentive: number;
-  netAmount: number;
-  details?: any[];
-};
-
 // ============================================
 // 메인 컴포넌트
 // ============================================
 
-export default function EmployeesIntegratedPage() {
+export default function EmployeesPage() {
   const router = useRouter();
-  const [year, setYear] = useState(2026);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
-
-  // 월별 데이터
-  const [monthlyData, setMonthlyData] = useState<MonthlyData[]>([]);
-  const [companyName, setCompanyName] = useState("");
 
   // 직원 데이터
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -112,151 +90,37 @@ export default function EmployeesIntegratedPage() {
       router.push("/");
       return;
     }
-    fetchData();
-  }, [year]);
-
-  async function fetchData() {
-    setLoading(true);
-    setError("");
-
-    try {
-      await Promise.all([fetchMonthlyData(), fetchEmployees()]);
-    } catch (e: any) {
-      setError(e.message);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  // ============================================
-  // 월별 데이터 API
-  // ============================================
-
-  async function fetchMonthlyData() {
-    const token = getToken();
-    if (!token) {
-      router.push("/login");
-      return;
-    }
-
-    const res = await fetch(`${API_BASE}/employees/monthly?year=${year}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    if (!res.ok) throw new Error("월별 데이터 조회 실패");
-
-    const data = await res.json();
-    setMonthlyData(data.monthlyData);
-    setCompanyName(data.companyName);
-  }
-
-  async function saveMonthlyData() {
-    const token = getToken();
-    if (!token) return;
-
-    setSaving(true);
-    setMessage("");
-    setError("");
-
-    try {
-      // 월별 상시근로자 수 맵 생성
-      const monthlyEmployeeCounts: { [key: number]: number } = {};
-      monthlyData.forEach((data) => {
-        monthlyEmployeeCounts[data.month] = data.totalEmployeeCount;
-      });
-
-      const res = await fetch(`${API_BASE}/employees/monthly`, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          year,
-          monthlyEmployeeCounts,
-        }),
-      });
-
-      if (!res.ok) throw new Error("저장 실패");
-
-      const result = await res.json();
-      setMessage("✅ " + result.message);
-
-      // 데이터 다시 불러오기
-      await fetchMonthlyData();
-
-      setTimeout(() => setMessage(""), 3000);
-    } catch (e: any) {
-      setError(e.message);
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function updateEmployeeCount(month: number, value: string) {
-    const numValue = parseInt(value) || 0;
-    
-    // 1. totalEmployeeCount 업데이트
-    setMonthlyData((prev) =>
-      prev.map((data) => {
-        if (data.month !== month) return data;
-        
-        // 2. 재계산 (간단 버전)
-        const quotaRate = 0.031; // 민간기업 3.1%
-        const obligatedCount = Math.floor(numValue * quotaRate);
-        const shortfallCount = Math.max(0, obligatedCount - data.recognizedCount);
-        const surplusCount = Math.max(0, data.recognizedCount - obligatedCount);
-        const levy = shortfallCount * 1260000; // 2026년 기준 부담금
-        const netAmount = data.incentive - levy;
-        
-        return {
-          ...data,
-          totalEmployeeCount: numValue,
-          obligatedCount,
-          shortfallCount,
-          surplusCount,
-          levy,
-          netAmount,
-        };
-      })
-    );
-  }
-
-  function fillAllMonths() {
-    const firstValue = monthlyData[0]?.totalEmployeeCount || 0;
-    setMonthlyData((prev) =>
-      prev.map((data) => ({ ...data, totalEmployeeCount: firstValue }))
-    );
-  }
-
-  function copyPreviousMonth() {
-    setMonthlyData((prev) => {
-      const newData = [...prev];
-      for (let i = 1; i < newData.length; i++) {
-        if (!newData[i].totalEmployeeCount || newData[i].totalEmployeeCount === 0) {
-          newData[i].totalEmployeeCount = newData[i - 1].totalEmployeeCount;
-        }
-      }
-      return newData;
-    });
-  }
+    fetchEmployees();
+  }, []);
 
   // ============================================
   // 직원 관리 API
   // ============================================
 
   async function fetchEmployees() {
+    setLoading(true);
+    setError("");
+    
     const token = getToken();
-    if (!token) return;
+    if (!token) {
+      router.push("/login");
+      return;
+    }
 
-    const res = await fetch(`${API_BASE}/employees`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    try {
+      const res = await fetch(`${API_BASE}/employees`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-    if (!res.ok) throw new Error("직원 목록 조회 실패");
+      if (!res.ok) throw new Error("직원 목록 조회 실패");
 
-    const json = await res.json();
-    setEmployees(json.employees || []);
+      const json = await res.json();
+      setEmployees(json.employees || []);
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -286,7 +150,7 @@ export default function EmployeesIntegratedPage() {
       if (!res.ok) throw new Error(editingId ? "수정 실패" : "등록 실패");
 
       // 성공 후 데이터 갱신
-      await fetchData();
+      await fetchEmployees();
       resetForm();
       setMessage(editingId ? "✅ 직원 정보가 수정되었습니다." : "✅ 직원이 등록되었습니다.");
       setTimeout(() => setMessage(""), 3000);
@@ -309,7 +173,7 @@ export default function EmployeesIntegratedPage() {
 
       if (!res.ok) throw new Error("삭제 실패");
 
-      await fetchData();
+      await fetchEmployees();
       setMessage("✅ 직원이 삭제되었습니다.");
       setTimeout(() => setMessage(""), 3000);
     } catch (e: any) {
@@ -374,17 +238,19 @@ export default function EmployeesIntegratedPage() {
   const activeEmployees = employees.filter((e) => !e.resignDate);
   const resignedEmployees = employees.filter((e) => e.resignDate);
 
-  // 연간 합계
-  const yearlyLevy = monthlyData.reduce((sum, d) => sum + d.levy, 0);
-  const yearlyIncentive = monthlyData.reduce((sum, d) => sum + d.incentive, 0);
-  const yearlyNet = yearlyIncentive - yearlyLevy;
+  // 통계 계산
+  const totalDisabled = activeEmployees.length;
+  const severeCount = activeEmployees.filter(e => e.severity === "SEVERE").length;
+  const mildCount = activeEmployees.filter(e => e.severity === "MILD").length;
+  const femaleCount = activeEmployees.filter(e => e.gender === "F").length;
+  const maleCount = activeEmployees.filter(e => e.gender === "M").length;
 
   return (
     <div className="container">
       <div className="card" style={{ maxWidth: "100%", margin: "20px auto" }}>
-        <h1>🏢 장애인고용직원등록관리</h1>
+        <h1>👥 장애인 직원 등록·관리</h1>
         <p style={{ color: "#666", marginTop: 8 }}>
-          {companyName} - {year}년 월별 고용 현황 및 정밀 계산
+          장애인 직원 정보를 등록하고 관리합니다. 입사일, 퇴사일 기준으로 월별 계산에 자동 반영됩니다.
         </p>
 
         {/* 메시지 */}
@@ -418,220 +284,41 @@ export default function EmployeesIntegratedPage() {
           </div>
         )}
 
-        {/* 연도 선택 & 저장 버튼 */}
-        <div
-          style={{
-            marginTop: 24,
-            display: "flex",
-            gap: 16,
-            alignItems: "center",
-            flexWrap: "wrap",
-          }}
-        >
-          <div>
-            <label>연도</label>
-            <select
-              value={year}
-              onChange={(e) => setYear(Number(e.target.value))}
-              style={{ marginTop: 8 }}
-            >
-              <option value={2024}>2024년</option>
-              <option value={2025}>2025년</option>
-              <option value={2026}>2026년</option>
-              <option value={2027}>2027년</option>
-            </select>
+        {/* 통계 요약 */}
+        <div style={{
+          marginTop: 24,
+          padding: 20,
+          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+          borderRadius: 12,
+          color: "white"
+        }}>
+          <h3 style={{ margin: 0, fontSize: 18, marginBottom: 16 }}>📊 재직 중인 장애인 현황</h3>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 16 }}>
+            <div style={{ textAlign: "center" }}>
+              <div style={{ fontSize: 32, fontWeight: "bold" }}>{totalDisabled}명</div>
+              <div style={{ fontSize: 14, opacity: 0.9, marginTop: 4 }}>전체</div>
+            </div>
+            <div style={{ textAlign: "center" }}>
+              <div style={{ fontSize: 32, fontWeight: "bold" }}>{severeCount}명</div>
+              <div style={{ fontSize: 14, opacity: 0.9, marginTop: 4 }}>중증</div>
+            </div>
+            <div style={{ textAlign: "center" }}>
+              <div style={{ fontSize: 32, fontWeight: "bold" }}>{mildCount}명</div>
+              <div style={{ fontSize: 14, opacity: 0.9, marginTop: 4 }}>경증</div>
+            </div>
+            <div style={{ textAlign: "center" }}>
+              <div style={{ fontSize: 32, fontWeight: "bold" }}>{femaleCount}명</div>
+              <div style={{ fontSize: 14, opacity: 0.9, marginTop: 4 }}>여성</div>
+            </div>
+            <div style={{ textAlign: "center" }}>
+              <div style={{ fontSize: 32, fontWeight: "bold" }}>{maleCount}명</div>
+              <div style={{ fontSize: 14, opacity: 0.9, marginTop: 4 }}>남성</div>
+            </div>
           </div>
-
-          <div style={{ flex: 1 }} />
-
-          <button
-            onClick={fillAllMonths}
-            style={{
-              padding: "10px 16px",
-              fontSize: 14,
-              background: "#10b981",
-              color: "white",
-              border: "none",
-              borderRadius: 6,
-              cursor: "pointer",
-            }}
-          >
-            📋 1월 값 전체 복사
-          </button>
-
-          <button
-            onClick={copyPreviousMonth}
-            style={{
-              padding: "10px 16px",
-              fontSize: 14,
-              background: "#3b82f6",
-              color: "white",
-              border: "none",
-              borderRadius: 6,
-              cursor: "pointer",
-            }}
-          >
-            ➡️ 이전 달 자동 채우기
-          </button>
-
-          <button
-            onClick={saveMonthlyData}
-            disabled={saving}
-            style={{
-              padding: "10px 20px",
-              fontSize: 16,
-              fontWeight: "bold",
-              background: "#f59e0b",
-              color: "white",
-              border: "none",
-              borderRadius: 6,
-              cursor: saving ? "not-allowed" : "pointer",
-              opacity: saving ? 0.7 : 1,
-            }}
-          >
-            {saving ? "저장 중..." : "💾 전체 저장"}
-          </button>
-        </div>
-
-        {/* 월별 테이블 */}
-        <div style={{ marginTop: 24, overflowX: "auto" }}>
-          <table
-            style={{
-              width: "100%",
-              borderCollapse: "collapse",
-              fontSize: 14,
-              minWidth: 1200,
-            }}
-          >
-            <thead>
-              <tr style={{ background: "#f3f4f6" }}>
-                <th style={tableHeaderStyle}>월</th>
-                <th style={tableHeaderStyle}>상시근로자</th>
-                <th style={tableHeaderStyle}>장애인수</th>
-                <th style={tableHeaderStyle}>의무고용</th>
-                <th style={tableHeaderStyle}>인정수</th>
-                <th style={tableHeaderStyle}>미달/초과</th>
-                <th style={tableHeaderStyle}>부담금</th>
-                <th style={tableHeaderStyle}>장려금</th>
-                <th style={tableHeaderStyle}>순액</th>
-              </tr>
-            </thead>
-            <tbody>
-              {monthlyData.map((data) => (
-                <tr key={data.month} style={{ borderBottom: "1px solid #e5e7eb" }}>
-                  <td style={tableCellStyle}>{data.month}월</td>
-                  <td style={tableCellStyle}>
-                    <input
-                      type="number"
-                      value={data.totalEmployeeCount}
-                      onChange={(e) => updateEmployeeCount(data.month, e.target.value)}
-                      style={{
-                        width: 80,
-                        padding: "6px 8px",
-                        fontSize: 14,
-                        textAlign: "center",
-                        border: "1px solid #d1d5db",
-                        borderRadius: 4,
-                      }}
-                      min="0"
-                    />
-                  </td>
-                  <td style={tableCellStyle}>{data.disabledCount}명</td>
-                  <td style={tableCellStyle}>{data.obligatedCount}명</td>
-                  <td style={tableCellStyle}>{data.recognizedCount.toFixed(1)}명</td>
-                  <td
-                    style={{
-                      ...tableCellStyle,
-                      color: data.shortfallCount > 0 ? "#dc2626" : "#059669",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    {data.shortfallCount > 0
-                      ? `▼${data.shortfallCount}명`
-                      : data.surplusCount > 0
-                      ? `▲${data.surplusCount.toFixed(1)}명`
-                      : "-"}
-                  </td>
-                  <td
-                    style={{
-                      ...tableCellStyle,
-                      color: data.levy > 0 ? "#dc2626" : "#666",
-                    }}
-                  >
-                    {data.levy > 0 ? `-${(data.levy / 10000).toFixed(0)}만` : "-"}
-                  </td>
-                  <td
-                    style={{
-                      ...tableCellStyle,
-                      color: data.incentive > 0 ? "#059669" : "#666",
-                    }}
-                  >
-                    {data.incentive > 0 ? `+${(data.incentive / 10000).toFixed(0)}만` : "-"}
-                  </td>
-                  <td
-                    style={{
-                      ...tableCellStyle,
-                      color: data.netAmount >= 0 ? "#059669" : "#dc2626",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    {data.netAmount >= 0 ? "+" : "-"}
-                    {Math.abs(data.netAmount / 10000).toFixed(0)}만
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-            <tfoot>
-              <tr style={{ background: "#f9fafb", fontWeight: "bold" }}>
-                <td colSpan={6} style={{ ...tableCellStyle, textAlign: "right" }}>
-                  연간 합계
-                </td>
-                <td style={{ ...tableCellStyle, color: "#dc2626" }}>
-                  -{(yearlyLevy / 10000).toFixed(0)}만
-                </td>
-                <td style={{ ...tableCellStyle, color: "#059669" }}>
-                  +{(yearlyIncentive / 10000).toFixed(0)}만
-                </td>
-                <td
-                  style={{
-                    ...tableCellStyle,
-                    color: yearlyNet >= 0 ? "#059669" : "#dc2626",
-                    fontSize: 16,
-                  }}
-                >
-                  {yearlyNet >= 0 ? "+" : "-"}
-                  {Math.abs(yearlyNet / 10000).toFixed(0)}만
-                </td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-
-        {/* 안내 */}
-        <div
-          style={{
-            marginTop: 16,
-            padding: 16,
-            background: "#fef3c7",
-            borderRadius: 8,
-            fontSize: 13,
-          }}
-        >
-          <p style={{ margin: 0, fontWeight: "bold", color: "#92400e" }}>
-            💡 자동 계산 정보
-          </p>
-          <ul style={{ marginTop: 8, paddingLeft: 20, color: "#78350f" }}>
-            <li>장애인 수: 등록된 직원의 입사/퇴사일 기준 자동 계산</li>
-            <li>인정 수: 중증 60시간 이상 2배 인정</li>
-            <li>부담금: 미달 인원 × 126만원 (2026년 기준)</li>
-            <li>
-              장려금: 성별/중증도/연령/근로시간별 정밀 계산 (여성·중증·청년 우대)
-            </li>
-          </ul>
         </div>
 
         {/* 직원 관리 섹션 */}
-        <div style={{ marginTop: 40 }}>
+        <div style={{ marginTop: 32 }}>
           <div
             style={{
               display: "flex",
@@ -639,7 +326,7 @@ export default function EmployeesIntegratedPage() {
               alignItems: "center",
             }}
           >
-            <h2>👥 장애인 직원 관리</h2>
+            <h2 style={{ margin: 0 }}>직원 목록</h2>
             <button
               onClick={() => {
                 resetForm();
@@ -653,9 +340,10 @@ export default function EmployeesIntegratedPage() {
                 borderRadius: 6,
                 fontWeight: "bold",
                 cursor: "pointer",
+                fontSize: 15,
               }}
             >
-              + 직원 추가
+              ➕ 직원 추가
             </button>
           </div>
 
@@ -664,7 +352,7 @@ export default function EmployeesIntegratedPage() {
             <button
               onClick={() => setTab("active")}
               style={{
-                padding: "8px 16px",
+                padding: "10px 20px",
                 background: tab === "active" ? "#3b82f6" : "#e5e7eb",
                 color: tab === "active" ? "white" : "#666",
                 border: "none",
@@ -678,7 +366,7 @@ export default function EmployeesIntegratedPage() {
             <button
               onClick={() => setTab("resigned")}
               style={{
-                padding: "8px 16px",
+                padding: "10px 20px",
                 background: tab === "resigned" ? "#3b82f6" : "#e5e7eb",
                 color: tab === "resigned" ? "white" : "#666",
                 border: "none",
@@ -696,7 +384,7 @@ export default function EmployeesIntegratedPage() {
             <div
               style={{
                 marginTop: 16,
-                padding: 20,
+                padding: 24,
                 background: "#f9fafb",
                 borderRadius: 8,
                 border: "2px solid #3b82f6",
@@ -875,18 +563,19 @@ export default function EmployeesIntegratedPage() {
                   />
                 </div>
 
-                <div style={{ marginTop: 16, display: "flex", gap: 8 }}>
+                <div style={{ marginTop: 20, display: "flex", gap: 8 }}>
                   <button
                     type="submit"
                     style={{
                       flex: 1,
-                      padding: 12,
+                      padding: 14,
                       background: "#3b82f6",
                       color: "white",
                       border: "none",
                       borderRadius: 6,
                       fontWeight: "bold",
                       cursor: "pointer",
+                      fontSize: 15,
                     }}
                   >
                     {editingId ? "✅ 수정 완료" : "➕ 등록하기"}
@@ -895,12 +584,13 @@ export default function EmployeesIntegratedPage() {
                     type="button"
                     onClick={resetForm}
                     style={{
-                      padding: 12,
+                      padding: 14,
                       background: "#6b7280",
                       color: "white",
                       border: "none",
                       borderRadius: 6,
                       cursor: "pointer",
+                      fontSize: 15,
                     }}
                   >
                     취소
@@ -913,19 +603,42 @@ export default function EmployeesIntegratedPage() {
           {/* 직원 목록 */}
           <div style={{ marginTop: 16 }}>
             {(tab === "active" ? activeEmployees : resignedEmployees).length === 0 ? (
-              <p style={{ textAlign: "center", color: "#999", padding: 40 }}>
-                {tab === "active" ? "등록된 직원이 없습니다." : "퇴사한 직원이 없습니다."}
-              </p>
+              <div style={{
+                textAlign: "center",
+                padding: 60,
+                background: "#f9fafb",
+                borderRadius: 8,
+                border: "2px dashed #d1d5db"
+              }}>
+                <div style={{ fontSize: 48, marginBottom: 16 }}>👤</div>
+                <p style={{ color: "#999", margin: 0, fontSize: 16 }}>
+                  {tab === "active" ? "등록된 직원이 없습니다." : "퇴사한 직원이 없습니다."}
+                </p>
+                {tab === "active" && (
+                  <p style={{ color: "#999", margin: "8px 0 0 0", fontSize: 14 }}>
+                    상단의 "➕ 직원 추가" 버튼을 눌러 장애인 직원을 등록하세요.
+                  </p>
+                )}
+              </div>
             ) : (
               <div style={{ display: "grid", gap: 12 }}>
                 {(tab === "active" ? activeEmployees : resignedEmployees).map((emp) => (
                   <div
                     key={emp.id}
                     style={{
-                      padding: 16,
+                      padding: 20,
                       background: "white",
                       border: "1px solid #e5e7eb",
                       borderRadius: 8,
+                      transition: "all 0.2s",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.1)";
+                      e.currentTarget.style.transform = "translateY(-2px)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.boxShadow = "none";
+                      e.currentTarget.style.transform = "translateY(0)";
                     }}
                   >
                     <div
@@ -936,13 +649,12 @@ export default function EmployeesIntegratedPage() {
                       }}
                     >
                       <div style={{ flex: 1 }}>
-                        <h3 style={{ margin: 0, fontSize: 18 }}>
+                        <h3 style={{ margin: 0, fontSize: 20, display: "flex", alignItems: "center", gap: 8 }}>
                           {emp.name}
                           <span
                             style={{
-                              marginLeft: 8,
-                              padding: "2px 8px",
-                              fontSize: 12,
+                              padding: "3px 10px",
+                              fontSize: 13,
                               background:
                                 emp.severity === "SEVERE" ? "#fef3c7" : "#e0e7ff",
                               color: emp.severity === "SEVERE" ? "#92400e" : "#3730a3",
@@ -954,40 +666,46 @@ export default function EmployeesIntegratedPage() {
                           </span>
                           <span
                             style={{
-                              marginLeft: 4,
-                              padding: "2px 8px",
-                              fontSize: 12,
+                              padding: "3px 10px",
+                              fontSize: 13,
                               background: emp.gender === "F" ? "#fce7f3" : "#dbeafe",
                               color: emp.gender === "F" ? "#831843" : "#1e3a8a",
                               borderRadius: 4,
                               fontWeight: "normal",
                             }}
                           >
-                            {emp.gender === "F" ? "여" : "남"}
+                            {emp.gender === "F" ? "여성" : "남성"}
                           </span>
                         </h3>
-                        <p style={{ margin: "8px 0 0 0", fontSize: 14, color: "#666" }}>
-                          {emp.disabilityType}
-                          {emp.disabilityGrade && ` ${emp.disabilityGrade}`} | 주{" "}
-                          {emp.workHoursPerWeek || 40}시간 |{" "}
-                          {emp.monthlySalary.toLocaleString()}원/월
+                        <p style={{ margin: "10px 0 0 0", fontSize: 15, color: "#666" }}>
+                          🏷️ {emp.disabilityType}
+                          {emp.disabilityGrade && ` ${emp.disabilityGrade}`}
                         </p>
-                        <p style={{ margin: "4px 0 0 0", fontSize: 13, color: "#999" }}>
-                          입사: {emp.hireDate.split("T")[0]}
+                        <p style={{ margin: "6px 0 0 0", fontSize: 14, color: "#666" }}>
+                          ⏰ 주 {emp.workHoursPerWeek || 40}시간 | 💰 월 {emp.monthlySalary.toLocaleString()}원
+                        </p>
+                        <p style={{ margin: "6px 0 0 0", fontSize: 14, color: "#999" }}>
+                          📅 입사: {emp.hireDate.split("T")[0]}
                           {emp.resignDate && ` | 퇴사: ${emp.resignDate.split("T")[0]}`}
                         </p>
+                        {emp.memo && (
+                          <p style={{ margin: "10px 0 0 0", fontSize: 13, color: "#666", fontStyle: "italic", padding: "8px 12px", background: "#f9fafb", borderRadius: 4 }}>
+                            💬 {emp.memo}
+                          </p>
+                        )}
                       </div>
                       <div style={{ display: "flex", gap: 8 }}>
                         <button
                           onClick={() => startEdit(emp)}
                           style={{
-                            padding: "6px 12px",
+                            padding: "8px 16px",
                             background: "#3b82f6",
                             color: "white",
                             border: "none",
                             borderRadius: 4,
-                            fontSize: 13,
+                            fontSize: 14,
                             cursor: "pointer",
+                            fontWeight: "bold",
                           }}
                         >
                           수정
@@ -995,13 +713,14 @@ export default function EmployeesIntegratedPage() {
                         <button
                           onClick={() => handleDelete(emp.id)}
                           style={{
-                            padding: "6px 12px",
+                            padding: "8px 16px",
                             background: "#ef4444",
                             color: "white",
                             border: "none",
                             borderRadius: 4,
-                            fontSize: 13,
+                            fontSize: 14,
                             cursor: "pointer",
+                            fontWeight: "bold",
                           }}
                         >
                           삭제
@@ -1014,25 +733,39 @@ export default function EmployeesIntegratedPage() {
             )}
           </div>
         </div>
+
+        {/* 안내 박스 */}
+        <div
+          style={{
+            marginTop: 32,
+            padding: 20,
+            background: "#eff6ff",
+            borderRadius: 8,
+            border: "1px solid #bfdbfe",
+          }}
+        >
+          <h4 style={{ margin: 0, color: "#1e40af", fontSize: 16 }}>
+            💡 직원 등록 안내
+          </h4>
+          <ul style={{ marginTop: 12, paddingLeft: 20, color: "#1e3a8a", fontSize: 14, lineHeight: 1.8 }}>
+            <li>
+              <strong>입사일/퇴사일</strong>을 정확히 입력하면 월별 계산 시 자동으로 재직 여부가 반영됩니다.
+            </li>
+            <li>
+              <strong>근로시간</strong>을 입력하면 최저임금이 자동 계산됩니다 (1,000원 단위 반올림).
+            </li>
+            <li>
+              <strong>중증 장애인</strong>이 주 60시간 이상 근무하면 부담금 인정 시 2배 계산됩니다.
+            </li>
+            <li>
+              장려금은 <strong>성별, 중증도, 연령, 근로시간</strong>에 따라 차등 지급됩니다.
+            </li>
+            <li>
+              등록 완료 후 <strong>"월별 장애인 고용 관리"</strong> 메뉴에서 상시근로자 수를 입력하면 자동 계산됩니다.
+            </li>
+          </ul>
+        </div>
       </div>
     </div>
   );
 }
-
-// ============================================
-// 스타일
-// ============================================
-
-const tableHeaderStyle: React.CSSProperties = {
-  padding: "12px 8px",
-  textAlign: "center",
-  fontWeight: "bold",
-  fontSize: 13,
-  borderBottom: "2px solid #d1d5db",
-};
-
-const tableCellStyle: React.CSSProperties = {
-  padding: "10px 8px",
-  textAlign: "center",
-  fontSize: 13,
-};

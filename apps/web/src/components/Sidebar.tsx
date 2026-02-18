@@ -151,23 +151,30 @@ export default function Sidebar() {
         <nav>
           {/* 기업장애인고용관리센터 */}
           <div style={{ marginBottom: 24 }}>
+            <div style={{ fontSize: 20.6, color: "#fff", marginBottom: 12, fontWeight: "bold" }}>
+              기업장애인고용관리센터
+            </div>
             <MenuItem
               href="/dashboard"
-              label="기업장애인고용관리센터"
+              label="대시보드"
               icon="📊"
               active={isActive("/dashboard")}
               requiresRole={["BUYER", "SUPER_ADMIN"]}
               currentRole={userRole}
             />
-          </div>
-
-          {/* 장애인고용직원등록관리 (통합) */}
-          <div style={{ marginBottom: 24 }}>
             <MenuItem
               href="/dashboard/employees"
-              label="⚠️ 월별 직원수/장애인수 관리"
+              label="장애인 직원 등록·관리"
               icon="👥"
               active={isActive("/dashboard/employees")}
+              requiresRole={["BUYER", "SUPER_ADMIN"]}
+              currentRole={userRole}
+            />
+            <MenuItem
+              href="/dashboard/monthly"
+              label="월별 장애인 고용 관리"
+              icon="📅"
+              active={isActive("/dashboard/monthly")}
               requiresRole={["BUYER", "SUPER_ADMIN"]}
               currentRole={userRole}
             />
