@@ -327,7 +327,8 @@ const signupBuyerSchema = z.object({
   password: z.string().min(8),
   bizNo: z.string().min(10, "사업자등록번호 10자리를 입력하세요"),
   referrerPhone: z.string().min(10, "추천인 매니저 핸드폰 번호는 필수입니다"), // 필수로 변경
-  companyType: z.enum(["PRIVATE", "GOVERNMENT"]).default("PRIVATE"), // 기업 유형 (민간/공공 vs 국가/지자체/교육청)
+  buyerType: z.enum(["PRIVATE_COMPANY", "PUBLIC_INSTITUTION", "GOVERNMENT"]).default("PRIVATE_COMPANY"), // 기업 유형
+  companyType: z.enum(["PRIVATE", "GOVERNMENT"]).optional(), // 호환성 유지
 });
 
 r.post("/signup/buyer", async (req, res) => {
@@ -373,13 +374,8 @@ r.post("/signup/buyer", async (req, res) => {
 
     const passwordHash = await bcrypt.hash(body.password, 10);
 
-    // companyType을 buyerType으로 변환
-    let buyerType: string;
-    if (body.companyType === "PRIVATE") {
-      buyerType = "PRIVATE_COMPANY"; // 민간기업 또는 공공기관
-    } else {
-      buyerType = "GOVERNMENT"; // 국가/지자체/교육청
-    }
+    // buyerType 결정 (신규 필드 우선, 없으면 companyType에서 변환)
+    const buyerType = body.buyerType || (body.companyType === "GOVERNMENT" ? "GOVERNMENT" : "PRIVATE_COMPANY");
 
     // User, Company, BuyerProfile 생성
     const user = await prisma.user.create({
@@ -388,7 +384,7 @@ r.post("/signup/buyer", async (req, res) => {
         passwordHash,
         name: apickResult.representative || "대표자",
         role: "BUYER",
-        companyType: body.companyType, // User 테이블에도 저장 (호환성)
+        companyType: body.companyType || (buyerType === "GOVERNMENT" ? "GOVERNMENT" : "PRIVATE"), // User 테이블에도 저장 (호환성)
         referredById: referredBy.id,
         company: {
           create: {
