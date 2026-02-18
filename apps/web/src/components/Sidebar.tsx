@@ -164,6 +164,18 @@ export default function Sidebar() {
             />
           </div>
 
+          {/* 상시근로자 수 관리 - 추가 */}
+          <div style={{ marginBottom: 24 }}>
+            <MenuItem
+              href="/dashboard/employee-count"
+              label="⚠️ 상시근로자수관리(필수)"
+              icon="📊"
+              active={isActive("/dashboard/employee-count")}
+              requiresRole={["BUYER", "SUPER_ADMIN"]}
+              currentRole={userRole}
+            />
+          </div>
+
           {/* 도급계약 관리 */}
           <div style={{ marginBottom: 24 }}>
             <MenuItem

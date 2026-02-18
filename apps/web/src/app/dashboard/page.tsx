@@ -206,6 +206,34 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        {/* 상시근로자 수 관리 - 가장 중요! */}
+        <div style={{ marginTop: 24, padding: 20, background: "linear-gradient(135deg, #f59e0b 0%, #ef4444 100%)", borderRadius: 8, boxShadow: "0 4px 6px rgba(0,0,0,0.1)", color: "white" }}>
+          <h2 style={{ margin: 0, fontSize: 20 }}>⚠️ 상시근로자 수 관리 (필수)</h2>
+          <p style={{ marginTop: 8, fontSize: 14, opacity: 0.95 }}>
+            부담금 계산의 핵심! 월별 상시근로자 수를 정확히 입력해야 정확한 의무고용인원과 부담금이 계산됩니다.
+          </p>
+          <div style={{ marginTop: 16, display: "flex", gap: 12 }}>
+            <a href="/dashboard/employee-count" style={{ flex: 1 }}>
+              <button style={{ width: "100%", padding: 16, background: "white", color: "#ef4444", fontWeight: "bold", fontSize: 16, border: "none", borderRadius: 6, cursor: "pointer" }}>
+                📊 상시근로자 수 입력/수정
+              </button>
+            </a>
+          </div>
+          <div
+            style={{
+              marginTop: 16,
+              padding: 12,
+              background: "rgba(255,255,255,0.2)",
+              borderRadius: 6,
+              fontSize: 13,
+            }}
+          >
+            💡 <strong>의무고용인원</strong> = 상시근로자 수 × 의무고용률(민간 3.1%, 공공 3.8%)
+            <br />
+            💡 부담금은 의무고용인원에서 실제 장애인 고용인원을 뺀 차이로 계산됩니다
+          </div>
+        </div>
+
         {/* 직원 현황 */}
         <div style={{ marginTop: 24, padding: 20, background: "white", borderRadius: 8, boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }}>
           <h2>👥 장애인 직원 현황</h2>
