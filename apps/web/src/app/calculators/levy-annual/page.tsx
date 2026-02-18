@@ -50,8 +50,9 @@ const LEVEL_COLORS: Record<string, string> = {
 };
 
 export default function LevyAnnualPage() {
-  const [companyType, setCompanyType] = useState<"PRIVATE" | "GOVERNMENT">("PRIVATE");
+  const [companyType, setCompanyType] = useState<"PRIVATE" | "PUBLIC_CORP" | "GOVERNMENT" | "OTHER_PUBLIC">("PRIVATE");
   const [taxRate, setTaxRate] = useState(22); // 법인세율 (%)
+  const [includeLocalTax, setIncludeLocalTax] = useState(true); // 지방소득세 포함 여부
   const [months, setMonths] = useState<MonthData[]>(
     Array.from({ length: 12 }, () => ({
       employees: 100,
@@ -64,6 +65,9 @@ export default function LevyAnnualPage() {
 
   const [results, setResults] = useState<MonthResult[] | null>(null);
   const [loadingEmployees, setLoadingEmployees] = useState(false);
+
+  // 법인세 대상 여부 판별
+  const isTaxable = companyType === "PRIVATE" || companyType === "PUBLIC_CORP";
 
   const quotaRate = companyType === "PRIVATE" ? 0.031 : 0.038;
 
@@ -214,9 +218,14 @@ export default function LevyAnnualPage() {
     }
 
     const currentDate = new Date().toISOString().split("T")[0];
-    const companyTypeText = companyType === "PRIVATE" ? "민간/공공기업" : "국가/지자체/교육청";
-    const totalTax = Math.round(totalLevy * (taxRate / 100));
-    const totalRealBurden = Math.round(totalLevy * (1 + taxRate / 100));
+    const companyTypeText = 
+      companyType === "PRIVATE" ? "민간기업" :
+      companyType === "PUBLIC_CORP" ? "공기업·준정부기관·지방공기업(법인)" :
+      companyType === "GOVERNMENT" ? "국가·지자체·직접 집행기관" :
+      "기타 공공기관";
+    const totalTax = isTaxable ? Math.round(totalLevy * (taxRate / 100)) : 0;
+    const totalLocalTax = (isTaxable && includeLocalTax) ? Math.round(totalTax * 0.1) : 0;
+    const totalRealBurden = totalLevy + totalTax + totalLocalTax;
 
     // 워크북 생성
     const wb = XLSX.utils.book_new();
@@ -225,7 +234,7 @@ export default function LevyAnnualPage() {
     const monthlyData = [
       ["2026년 장애인 고용부담금 월별 계산서"],
       [`기업 유형: ${companyTypeText} (의무고용률 ${companyType === "PRIVATE" ? "3.1%" : "3.8%"})`],
-      [`법인세율: ${taxRate}%`],
+      ...(isTaxable ? [[`법인세율: ${taxRate}%${includeLocalTax ? " (지방소득세 포함)" : ""}`]] : []),
       [`작성일: ${currentDate}`],
       [],
       ["월", "상시근로자", "의무고용", "장애인고용", "미달인원", "이행수준", "부담기초액", "월별부담금"],
@@ -246,9 +255,14 @@ export default function LevyAnnualPage() {
 
     monthlyData.push([]);
     monthlyData.push(["합계", "", totalObligated.toString(), "", totalShortfall.toString(), "", "", totalLevy.toString()]);
-    monthlyData.push([]);
-    monthlyData.push(["법인세 추가", "", "", "", "", "", "", totalTax.toString()]);
-    monthlyData.push(["실질 부담액", "", "", "", "", "", "", totalRealBurden.toString()]);
+    if (isTaxable && totalTax > 0) {
+      monthlyData.push([]);
+      monthlyData.push(["법인세", "", "", "", "", "", "", totalTax.toString()]);
+      if (includeLocalTax && totalLocalTax > 0) {
+        monthlyData.push(["지방소득세", "", "", "", "", "", "", totalLocalTax.toString()]);
+      }
+      monthlyData.push(["실질 부담액", "", "", "", "", "", "", totalRealBurden.toString()]);
+    }
 
     const ws1 = XLSX.utils.aoa_to_sheet(monthlyData);
     ws1["!cols"] = [
@@ -283,8 +297,13 @@ export default function LevyAnnualPage() {
 
     levelData.push([]);
     levelData.push(["연간 총 부담금", "", "", totalLevy.toString()]);
-    levelData.push(["법인세 추가 (" + taxRate + "%)", "", "", totalTax.toString()]);
-    levelData.push(["실질 부담액", "", "", totalRealBurden.toString()]);
+    if (isTaxable && totalTax > 0) {
+      levelData.push(["법인세 (" + taxRate + "%)", "", "", totalTax.toString()]);
+      if (includeLocalTax && totalLocalTax > 0) {
+        levelData.push(["지방소득세 (10%)", "", "", totalLocalTax.toString()]);
+      }
+      levelData.push(["실질 부담액", "", "", totalRealBurden.toString()]);
+    }
 
     const ws2 = XLSX.utils.aoa_to_sheet(levelData);
     ws2["!cols"] = [{ wch: 20 }, { wch: 12 }, { wch: 15 }, { wch: 15 }];
@@ -315,8 +334,13 @@ export default function LevyAnnualPage() {
 
     quarterData.push([]);
     quarterData.push(["연간 총 부담금", "", "", totalLevy.toString()]);
-    quarterData.push(["법인세 추가 (" + taxRate + "%)", "", "", totalTax.toString()]);
-    quarterData.push(["실질 부담액", "", "", totalRealBurden.toString()]);
+    if (isTaxable && totalTax > 0) {
+      quarterData.push(["법인세 (" + taxRate + "%)", "", "", totalTax.toString()]);
+      if (includeLocalTax && totalLocalTax > 0) {
+        quarterData.push(["지방소득세 (10%)", "", "", totalLocalTax.toString()]);
+      }
+      quarterData.push(["실질 부담액", "", "", totalRealBurden.toString()]);
+    }
 
     const ws3 = XLSX.utils.aoa_to_sheet(quarterData);
     ws3["!cols"] = [{ wch: 12 }, { wch: 15 }, { wch: 15 }, { wch: 15 }];
@@ -417,7 +441,7 @@ export default function LevyAnnualPage() {
         }}
       >
         <h2>기본 설정</h2>
-        <div style={{ marginTop: 16, display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
+        <div style={{ marginTop: 16, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
           <div>
             <label style={{ fontWeight: 600 }}>기업 유형</label>
             <select
@@ -425,9 +449,14 @@ export default function LevyAnnualPage() {
               onChange={(e) => setCompanyType(e.target.value as any)}
               style={{ width: "100%", marginTop: 8 }}
             >
-              <option value="PRIVATE">민간/공공기업 (3.1%)</option>
-              <option value="GOVERNMENT">국가/지자체/교육청 (3.8%)</option>
+              <option value="PRIVATE">민간기업 (3.1%)</option>
+              <option value="PUBLIC_CORP">공기업·준정부기관·지방공기업(법인) (3.8%)</option>
+              <option value="GOVERNMENT">국가·지자체·직접 집행기관 (3.8%)</option>
+              <option value="OTHER_PUBLIC">기타 공공기관 (제외/사단 등 비영리) (3.8%)</option>
             </select>
+            <p style={{ fontSize: 12, color: "#666", marginTop: 4 }}>
+              💡 {isTaxable ? "법인세 대상 기관" : "비과세 기관"}
+            </p>
           </div>
           <div>
             <label style={{ fontWeight: 600 }}>월평균 상시근로자 수</label>
@@ -438,22 +467,40 @@ export default function LevyAnnualPage() {
               style={{ width: "100%", marginTop: 8, background: "#f5f5f5" }}
             />
           </div>
-          <div>
-            <label style={{ fontWeight: 600 }}>법인세율 (%)</label>
-            <input
-              type="number"
-              value={taxRate}
-              onChange={(e) => setTaxRate(Number(e.target.value))}
-              min="0"
-              max="100"
-              step="0.1"
-              style={{ width: "100%", marginTop: 8 }}
-            />
-            <p style={{ fontSize: 12, color: "#666", marginTop: 4 }}>
-              💡 영리법인 9~24%, 비영리 10%
-            </p>
-          </div>
         </div>
+
+        {isTaxable && (
+          <div style={{ marginTop: 16, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+            <div>
+              <label style={{ fontWeight: 600 }}>법인세율 (%)</label>
+              <input
+                type="number"
+                value={taxRate}
+                onChange={(e) => setTaxRate(Number(e.target.value))}
+                min="0"
+                max="100"
+                step="0.1"
+                style={{ width: "100%", marginTop: 8 }}
+              />
+              <p style={{ fontSize: 12, color: "#666", marginTop: 4 }}>
+                💡 영리법인 9~24%, 비영리 10%
+              </p>
+            </div>
+            <div>
+              <label style={{ fontWeight: 600, display: "flex", alignItems: "center", gap: 8 }}>
+                <input
+                  type="checkbox"
+                  checked={includeLocalTax}
+                  onChange={(e) => setIncludeLocalTax(e.target.checked)}
+                />
+                <span>지방소득세 10% 포함</span>
+              </label>
+              <p style={{ fontSize: 12, color: "#666", marginTop: 4 }}>
+                💡 법인세에 지방소득세(법인세의 10%)가 추가로 부과됩니다
+              </p>
+            </div>
+          </div>
+        )}
 
         {isSubjectTo ? (
           <div
@@ -670,34 +717,47 @@ export default function LevyAnnualPage() {
                   {totalLevy.toLocaleString()}원
                 </p>
               </div>
-              <div>
-                <p style={{ opacity: 0.9, fontSize: 14 }}>법인세 추가 ({taxRate}%)</p>
-                <p style={{ fontSize: 24, fontWeight: "bold", marginTop: 4, color: "#fbbf24" }}>
-                  +{Math.round(totalLevy * (taxRate / 100)).toLocaleString()}원
-                </p>
-                <p style={{ opacity: 0.9, fontSize: 12, marginTop: 8 }}>실질 부담액</p>
-                <p style={{ fontSize: 32, fontWeight: "bold", marginTop: 4 }}>
-                  {Math.round(totalLevy * (1 + taxRate / 100)).toLocaleString()}원
-                </p>
-              </div>
+              {isTaxable && (
+                <div>
+                  <p style={{ opacity: 0.9, fontSize: 14 }}>법인세 ({taxRate}%)</p>
+                  <p style={{ fontSize: 24, fontWeight: "bold", marginTop: 4, color: "#fbbf24" }}>
+                    +{Math.round(totalLevy * (taxRate / 100)).toLocaleString()}원
+                  </p>
+                  {includeLocalTax && (
+                    <>
+                      <p style={{ opacity: 0.9, fontSize: 12, marginTop: 4 }}>+ 지방소득세 (10%)</p>
+                      <p style={{ fontSize: 20, fontWeight: "bold", marginTop: 2, color: "#fcd34d" }}>
+                        +{Math.round(totalLevy * (taxRate / 100) * 0.1).toLocaleString()}원
+                      </p>
+                    </>
+                  )}
+                  <p style={{ opacity: 0.9, fontSize: 12, marginTop: 8 }}>실질 부담액</p>
+                  <p style={{ fontSize: 32, fontWeight: "bold", marginTop: 4 }}>
+                    {Math.round(totalLevy * (1 + (taxRate / 100) * (includeLocalTax ? 1.1 : 1))).toLocaleString()}원
+                  </p>
+                </div>
+              )}
             </div>
 
-            <div
-              style={{
-                marginTop: 20,
-                padding: 16,
-                background: "rgba(255, 255, 255, 0.1)",
-                borderRadius: 6,
-                fontSize: 14,
-              }}
-            >
-              <p style={{ margin: 0, fontWeight: 600 }}>
-                💡 법인세 손금불산입 안내
-              </p>
-              <p style={{ margin: "8px 0 0 0", opacity: 0.9 }}>
-                부담금은 법인세 계산 시 비용으로 인정되지 않아, 부담금만큼 과세표준이 증가하여 법인세가 추가로 발생합니다.
-              </p>
-            </div>
+            {isTaxable && (
+              <div
+                style={{
+                  marginTop: 20,
+                  padding: 16,
+                  background: "rgba(255, 255, 255, 0.1)",
+                  borderRadius: 6,
+                  fontSize: 14,
+                }}
+              >
+                <p style={{ margin: 0, fontWeight: 600 }}>
+                  💡 법인세 손금불산입 안내
+                </p>
+                <p style={{ margin: "8px 0 0 0", opacity: 0.9 }}>
+                  부담금은 법인세 계산 시 비용으로 인정되지 않아, 부담금만큼 과세표준이 증가하여 법인세가 추가로 발생합니다.
+                  {includeLocalTax && " 법인세에 지방소득세(법인세의 10%)가 추가로 부과됩니다."}
+                </p>
+              </div>
+            )}
           </div>
 
           {/* 구간별 집계 */}

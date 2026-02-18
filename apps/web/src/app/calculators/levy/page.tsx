@@ -9,9 +9,16 @@ export default function LevyCalcPage() {
   const [disabledCount, setDisabledCount] = useState(0);
   const [companyType, setCompanyType] = useState("PRIVATE");
   const [taxRate, setTaxRate] = useState(22); // 법인세율 (%)
+  const [includeLocalTax, setIncludeLocalTax] = useState(true); // 지방소득세 포함 여부
   const [out, setOut] = useState<any>(null);
   const [msg, setMsg] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // 법인세 대상 여부 판별
+  const isTaxable = companyType === "PRIVATE" || companyType === "PUBLIC_CORP";
+  
+  // 의무고용률 계산
+  const quotaRate = companyType === "PRIVATE" ? 0.031 : 0.038;
 
   async function run() {
     setMsg("");
@@ -57,8 +64,13 @@ export default function LevyCalcPage() {
           <label>기업 구분</label>
           <select value={companyType} onChange={(e) => setCompanyType(e.target.value)}>
             <option value="PRIVATE">민간기업 (3.1%)</option>
-            <option value="PUBLIC">공공기관 (3.8%)</option>
+            <option value="PUBLIC_CORP">공기업·준정부기관·지방공기업(법인) (3.8%)</option>
+            <option value="GOVERNMENT">국가·지자체·직접 집행기관 (3.8%)</option>
+            <option value="OTHER_PUBLIC">기타 공공기관 (제외/사단 등 비영리) (3.8%)</option>
           </select>
+          <p style={{ fontSize: 13, color: "#666", marginTop: 4 }}>
+            💡 {isTaxable ? "법인세 대상 기관" : "비과세 기관"}
+          </p>
 
           <label>상시근로자 수 (명)</label>
           <input
@@ -74,18 +86,34 @@ export default function LevyCalcPage() {
             onChange={(e) => setDisabledCount(Number(e.target.value))}
           />
 
-          <label>법인세율 (%)</label>
-          <input
-            type="number"
-            value={taxRate}
-            onChange={(e) => setTaxRate(Number(e.target.value))}
-            min="0"
-            max="100"
-            step="0.1"
-          />
-          <p style={{ fontSize: 13, color: "#666", marginTop: 4 }}>
-            💡 법인세율 (영리법인: 9~24%, 비영리법인: 10%) - 부담금은 손금불산입되어 법인세가 추가 발생합니다
-          </p>
+          {isTaxable && (
+            <>
+              <label>법인세율 (%)</label>
+              <input
+                type="number"
+                value={taxRate}
+                onChange={(e) => setTaxRate(Number(e.target.value))}
+                min="0"
+                max="100"
+                step="0.1"
+              />
+              <p style={{ fontSize: 13, color: "#666", marginTop: 4 }}>
+                💡 법인세율 (영리법인: 9~24%, 비영리법인: 10%) - 부담금은 손금불산입되어 법인세가 추가 발생합니다
+              </p>
+
+              <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 12 }}>
+                <input
+                  type="checkbox"
+                  checked={includeLocalTax}
+                  onChange={(e) => setIncludeLocalTax(e.target.checked)}
+                />
+                <span>지방소득세 10% 포함</span>
+              </label>
+              <p style={{ fontSize: 13, color: "#666", marginTop: 4 }}>
+                💡 법인세에 지방소득세(법인세의 10%)가 추가로 부과됩니다
+              </p>
+            </>
+          )}
 
           <button onClick={run} disabled={loading} style={{ width: "100%", marginTop: 16 }}>
             {loading ? "계산 중..." : "계산하기"}
@@ -114,36 +142,47 @@ export default function LevyCalcPage() {
               <p style={{ fontSize: 18, color: "#e00", fontWeight: "bold" }}>
                 <strong>부담금:</strong> {Math.round(out.estimated).toLocaleString()}원
               </p>
-              {taxRate > 0 && (
+              {isTaxable && taxRate > 0 && (
                 <>
                   <p style={{ fontSize: 16, color: "#d97706" }}>
-                    <strong>법인세 추가 ({taxRate}%):</strong>{" "}
+                    <strong>법인세 ({taxRate}%):</strong>{" "}
                     {Math.round(out.estimated * (taxRate / 100)).toLocaleString()}원
                   </p>
+                  {includeLocalTax && (
+                    <p style={{ fontSize: 15, color: "#f59e0b" }}>
+                      <strong>+ 지방소득세 (법인세의 10%):</strong>{" "}
+                      {Math.round(out.estimated * (taxRate / 100) * 0.1).toLocaleString()}원
+                    </p>
+                  )}
                   <p style={{ fontSize: 20, color: "#dc2626", fontWeight: "bold" }}>
                     <strong>실질 부담액:</strong>{" "}
-                    {Math.round(out.estimated * (1 + taxRate / 100)).toLocaleString()}원
+                    {Math.round(
+                      out.estimated * (1 + (taxRate / 100) * (includeLocalTax ? 1.1 : 1))
+                    ).toLocaleString()}원
                   </p>
                 </>
               )}
             </div>
 
-            <div
-              style={{
-                marginTop: 16,
-                padding: 12,
-                background: "#fef3c7",
-                borderRadius: 4,
-                fontSize: 14,
-              }}
-            >
-              <p style={{ margin: 0, fontWeight: 600 }}>
-                💡 법인세 손금불산입 안내
-              </p>
-              <p style={{ margin: "8px 0 0 0" }}>
-                부담금은 법인세 계산 시 비용으로 인정되지 않아, 부담금만큼 과세표준이 증가하여 법인세가 추가로 발생합니다.
-              </p>
-            </div>
+            {isTaxable && taxRate > 0 && (
+              <div
+                style={{
+                  marginTop: 16,
+                  padding: 12,
+                  background: "#fef3c7",
+                  borderRadius: 4,
+                  fontSize: 14,
+                }}
+              >
+                <p style={{ margin: 0, fontWeight: 600 }}>
+                  💡 법인세 손금불산입 안내
+                </p>
+                <p style={{ margin: "8px 0 0 0" }}>
+                  부담금은 법인세 계산 시 비용으로 인정되지 않아, 부담금만큼 과세표준이 증가하여 법인세가 추가로 발생합니다.
+                  {includeLocalTax && " 법인세에 지방소득세(법인세의 10%)가 추가로 부과됩니다."}
+                </p>
+              </div>
+            )}
 
             <div
               style={{
