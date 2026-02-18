@@ -299,10 +299,10 @@ export default function Sidebar() {
             color: "#666",
             borderTop: "1px solid #333",
             paddingTop: 12,
+            textAlign: "center",
           }}
         >
           <p style={{ margin: 0 }}>© 2026 장표사닷컴</p>
-          <p style={{ margin: "4px 0 0 0" }}>한국장애인고용공단 협력</p>
         </div>
       </aside>
     </>
