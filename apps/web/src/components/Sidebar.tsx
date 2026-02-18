@@ -176,6 +176,12 @@ export default function Sidebar() {
               active={isActive("/catalog")}
             />
             <MenuItem
+              href="/purchase-cases"
+              label="장애인표준사업장생산품 구매 사례"
+              icon="📦"
+              active={isActive("/purchase-cases")}
+            />
+            <MenuItem
               href="/contract-sample"
               label="표준도급계약서 샘플"
               icon="📄"
