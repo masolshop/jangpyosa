@@ -11,7 +11,13 @@ export default function Sidebar() {
 
   useEffect(() => {
     setUserRole(getUserRole());
-  }, []);
+    
+    // 페이지 로드 시 사이드바를 맨 위로 스크롤
+    const sidebar = document.querySelector('aside');
+    if (sidebar) {
+      sidebar.scrollTop = 0;
+    }
+  }, [pathname]);
 
   const handleLogout = () => {
     clearToken();
