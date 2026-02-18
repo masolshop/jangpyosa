@@ -128,6 +128,247 @@ router.post("/", requireAuth, async (req, res) => {
   }
 });
 
+// ============================================
+// 월별 데이터 API (/:id 보다 먼저 등록해야 함)
+// ============================================
+
+/**
+ * GET /employees/monthly
+ * 월별 고용 데이터 조회
+ */
+router.get("/monthly", requireAuth, async (req, res) => {
+  try {
+    const userId = req.user!.id;
+    const userRole = req.user!.role;
+    const year = parseInt(req.query.year as string) || new Date().getFullYear();
+
+    if (userRole !== "BUYER" && userRole !== "SUPER_ADMIN") {
+      return res.status(403).json({ error: "부담금기업만 접근 가능합니다." });
+    }
+
+    // 회사 조회
+    let company;
+    if (userRole === "SUPER_ADMIN") {
+      company = await prisma.company.findFirst({
+        where: { type: "BUYER", buyerProfile: { isNot: null } },
+        include: { buyerProfile: true },
+      });
+    } else {
+      company = await prisma.company.findUnique({
+        where: { ownerUserId: userId },
+        include: { buyerProfile: true },
+      });
+    }
+
+    if (!company || !company.buyerProfile) {
+      return res.status(404).json({ error: "기업 정보가 없습니다." });
+    }
+
+    // 장애인 직원 목록 조회
+    const dbEmployees = await prisma.disabledEmployee.findMany({
+      where: { buyerId: company.buyerProfile.id },
+      orderBy: { hireDate: "asc" },
+    });
+
+    // 타입 변환
+    const employees: CalcEmployee[] = dbEmployees.map((emp) => ({
+      id: emp.id,
+      name: emp.name,
+      severity: emp.severity as "SEVERE" | "MILD",
+      gender: emp.gender as "M" | "F",
+      birthDate: emp.birthDate || undefined,
+      hireDate: emp.hireDate,
+      resignDate: emp.resignDate || undefined,
+      workHoursPerWeek: emp.workHoursPerWeek || 40,
+      monthlySalary: emp.monthlySalary,
+      meetsMinimumWage: emp.meetsMinimumWage,
+      hasEmploymentInsurance: emp.hasEmploymentInsurance,
+    }));
+
+    // 기존 월별 데이터 조회
+    const existingData = await prisma.monthlyEmployeeData.findMany({
+      where: { buyerId: company.buyerProfile.id, year },
+      orderBy: { month: "asc" },
+    });
+
+    // 월별 상시근로자 수 맵 생성
+    const monthlyEmployeeCounts: { [month: number]: number } = {};
+    for (let month = 1; month <= 12; month++) {
+      const found = existingData.find((d) => d.month === month);
+      monthlyEmployeeCounts[month] = found?.totalEmployeeCount || 0;
+    }
+
+    // 자동 계산
+    const calculatedResults = calculateYearlyData(
+      employees,
+      monthlyEmployeeCounts,
+      year,
+      company.type
+    );
+
+    // 기존 데이터와 병합
+    const monthlyData = calculatedResults.map((result) => {
+      const existing = existingData.find((d) => d.month === result.month);
+      return {
+        id: existing?.id,
+        year: result.year,
+        month: result.month,
+        totalEmployeeCount: result.totalEmployeeCount,
+        disabledCount: result.disabledCount,
+        recognizedCount: result.recognizedCount,
+        obligatedCount: result.obligatedCount,
+        incentiveBaselineCount: result.incentiveBaselineCount,
+        incentiveExcludedCount: result.incentiveExcludedCount,
+        incentiveEligibleCount: result.incentiveEligibleCount,
+        shortfallCount: result.shortfallCount,
+        levy: result.levy,
+        incentive: result.incentive,
+        netAmount: result.netAmount,
+        details: result.details,
+      };
+    });
+
+    return res.json({
+      year,
+      companyName: company.name,
+      companyType: company.type,
+      monthlyData,
+    });
+  } catch (error: any) {
+    console.error("월별 데이터 조회 실패:", error);
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * PUT /employees/monthly
+ * 월별 상시근로자 수 업데이트 (일괄)
+ */
+router.put("/monthly", requireAuth, async (req, res) => {
+  try {
+    const userId = req.user!.id;
+    const userRole = req.user!.role;
+    const { year, monthlyEmployeeCounts } = req.body;
+
+    console.log("PUT /employees/monthly - userId:", userId, "role:", userRole);
+    console.log("year:", year, "monthlyEmployeeCounts:", monthlyEmployeeCounts);
+
+    if (userRole !== "BUYER" && userRole !== "SUPER_ADMIN") {
+      return res.status(403).json({ error: "부담금기업만 접근 가능합니다." });
+    }
+
+    // 회사 조회
+    let company;
+    if (userRole === "SUPER_ADMIN") {
+      company = await prisma.company.findFirst({
+        where: { type: "BUYER", buyerProfile: { isNot: null } },
+        include: { buyerProfile: true },
+      });
+    } else {
+      company = await prisma.company.findUnique({
+        where: { ownerUserId: userId },
+        include: { buyerProfile: true },
+      });
+    }
+
+    console.log("회사:", company?.name, "buyerProfileId:", company?.buyerProfile?.id);
+
+    if (!company || !company.buyerProfile) {
+      return res.status(404).json({ error: "기업 정보가 없습니다." });
+    }
+
+    // 장애인 직원 목록 조회
+    const dbEmployees = await prisma.disabledEmployee.findMany({
+      where: { buyerId: company.buyerProfile.id },
+    });
+
+    console.log("직원 수:", dbEmployees.length);
+
+    const employees: CalcEmployee[] = dbEmployees.map((emp) => ({
+      id: emp.id,
+      name: emp.name,
+      severity: emp.severity as "SEVERE" | "MILD",
+      gender: emp.gender as "M" | "F",
+      birthDate: emp.birthDate || undefined,
+      hireDate: emp.hireDate,
+      resignDate: emp.resignDate || undefined,
+      workHoursPerWeek: emp.workHoursPerWeek || 40,
+      monthlySalary: emp.monthlySalary,
+      meetsMinimumWage: emp.meetsMinimumWage,
+      hasEmploymentInsurance: emp.hasEmploymentInsurance,
+    }));
+
+    // 월별 계산 및 저장
+    const savedData = [];
+    for (let month = 1; month <= 12; month++) {
+      const totalEmployeeCount = monthlyEmployeeCounts[month] || 0;
+
+      // 계산
+      const result = calculateMonthlyData(
+        employees,
+        totalEmployeeCount,
+        year,
+        month,
+        company.type
+      );
+
+      // DB 저장 (upsert)
+      const saved = await prisma.monthlyEmployeeData.upsert({
+        where: {
+          buyerId_year_month: {
+            buyerId: company.buyerProfile.id,
+            year,
+            month,
+          },
+        },
+        update: {
+          totalEmployeeCount: result.totalEmployeeCount,
+          disabledCount: result.disabledCount,
+          recognizedCount: result.recognizedCount,
+          obligatedCount: result.obligatedCount,
+          shortfallCount: result.shortfallCount,
+          surplusCount: 0,
+          levy: result.levy,
+          incentive: result.incentive,
+          netAmount: result.netAmount,
+          detailJson: JSON.stringify(result.details),
+        },
+        create: {
+          buyerId: company.buyerProfile.id,
+          year,
+          month,
+          totalEmployeeCount: result.totalEmployeeCount,
+          disabledCount: result.disabledCount,
+          recognizedCount: result.recognizedCount,
+          obligatedCount: result.obligatedCount,
+          shortfallCount: result.shortfallCount,
+          surplusCount: 0,
+          levy: result.levy,
+          incentive: result.incentive,
+          netAmount: result.netAmount,
+          detailJson: JSON.stringify(result.details),
+        },
+      });
+
+      savedData.push(saved);
+    }
+
+    console.log("저장 완료:", savedData.length, "건");
+
+    return res.json({
+      message: "월별 데이터가 저장되었습니다.",
+      savedCount: savedData.length,
+    });
+  } catch (error: any) {
+    console.error("월별 데이터 저장 실패:", error);
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================
+// 직원 개별 관리 API
+// ============================================
+
 // 직원 수정
 router.put("/:id", requireAuth, async (req, res) => {
   try {
@@ -268,230 +509,5 @@ router.delete("/:id", requireAuth, async (req, res) => {
 // ============================================
 // 월별 데이터 관리 API
 // ============================================
-
-/**
- * GET /employees/monthly?year=2026
- * 월별 고용 데이터 조회 (자동 계산 포함)
- */
-router.get("/monthly", requireAuth, async (req, res) => {
-  try {
-    const userId = req.user!.id;
-    const userRole = req.user!.role;
-    const year = parseInt(req.query.year as string) || new Date().getFullYear();
-
-    if (userRole !== "BUYER" && userRole !== "SUPER_ADMIN") {
-      return res.status(403).json({ error: "부담금기업만 접근 가능합니다." });
-    }
-
-    // 회사 조회
-    let company;
-    if (userRole === "SUPER_ADMIN") {
-      company = await prisma.company.findFirst({
-        where: { type: "BUYER", buyerProfile: { isNot: null } },
-        include: { buyerProfile: true },
-      });
-    } else {
-      company = await prisma.company.findUnique({
-        where: { ownerUserId: userId },
-        include: { buyerProfile: true },
-      });
-    }
-
-    if (!company || !company.buyerProfile) {
-      return res.status(404).json({ error: "기업 정보가 없습니다." });
-    }
-
-    // 장애인 직원 목록 조회
-    const dbEmployees = await prisma.disabledEmployee.findMany({
-      where: { buyerId: company.buyerProfile.id },
-      orderBy: { hireDate: "asc" },
-    });
-
-    // 타입 변환
-    const employees: CalcEmployee[] = dbEmployees.map((emp) => ({
-      id: emp.id,
-      name: emp.name,
-      severity: emp.severity as "SEVERE" | "MILD",
-      gender: emp.gender as "M" | "F",
-      birthDate: emp.birthDate || undefined,
-      hireDate: emp.hireDate,
-      resignDate: emp.resignDate || undefined,
-      workHoursPerWeek: emp.workHoursPerWeek || 40,
-      monthlySalary: emp.monthlySalary,
-      meetsMinimumWage: emp.meetsMinimumWage,
-      hasEmploymentInsurance: emp.hasEmploymentInsurance,
-    }));
-
-    // 기존 월별 데이터 조회
-    const existingData = await prisma.monthlyEmployeeData.findMany({
-      where: { buyerId: company.buyerProfile.id, year },
-      orderBy: { month: "asc" },
-    });
-
-    // 월별 상시근로자 수 맵 생성
-    const monthlyEmployeeCounts: { [month: number]: number } = {};
-    for (let month = 1; month <= 12; month++) {
-      const found = existingData.find((d) => d.month === month);
-      monthlyEmployeeCounts[month] = found?.totalEmployeeCount || 0;
-    }
-
-    // 자동 계산
-    const calculatedResults = calculateYearlyData(
-      employees,
-      monthlyEmployeeCounts,
-      year,
-      company.type
-    );
-
-    // 기존 데이터와 병합
-    const monthlyData = calculatedResults.map((result) => {
-      const existing = existingData.find((d) => d.month === result.month);
-      return {
-        id: existing?.id,
-        year: result.year,
-        month: result.month,
-        totalEmployeeCount: result.totalEmployeeCount,
-        disabledCount: result.disabledCount,
-        recognizedCount: result.recognizedCount,
-        obligatedCount: result.obligatedCount,
-        incentiveBaselineCount: result.incentiveBaselineCount, // ★ V2 추가
-        incentiveExcludedCount: result.incentiveExcludedCount, // ★ V2 추가
-        incentiveEligibleCount: result.incentiveEligibleCount, // ★ V2 추가
-        shortfallCount: result.shortfallCount,
-        levy: result.levy,
-        incentive: result.incentive,
-        netAmount: result.netAmount,
-        details: result.details,
-      };
-    });
-
-    return res.json({
-      year,
-      companyName: company.name,
-      companyType: company.type,
-      monthlyData,
-    });
-  } catch (error: any) {
-    console.error("월별 데이터 조회 실패:", error);
-    return res.status(500).json({ error: error.message });
-  }
-});
-
-/**
- * PUT /employees/monthly
- * 월별 상시근로자 수 업데이트 (일괄)
- */
-router.put("/monthly", requireAuth, async (req, res) => {
-  try {
-    const userId = req.user!.id;
-    const userRole = req.user!.role;
-    const { year, monthlyEmployeeCounts } = req.body; // { 1: 120, 2: 120, ... }
-
-    if (userRole !== "BUYER" && userRole !== "SUPER_ADMIN") {
-      return res.status(403).json({ error: "부담금기업만 접근 가능합니다." });
-    }
-
-    // 회사 조회
-    let company;
-    if (userRole === "SUPER_ADMIN") {
-      company = await prisma.company.findFirst({
-        where: { type: "BUYER", buyerProfile: { isNot: null } },
-        include: { buyerProfile: true },
-      });
-    } else {
-      company = await prisma.company.findUnique({
-        where: { ownerUserId: userId },
-        include: { buyerProfile: true },
-      });
-    }
-
-    if (!company || !company.buyerProfile) {
-      return res.status(404).json({ error: "기업 정보가 없습니다." });
-    }
-
-    // 장애인 직원 목록 조회
-    const dbEmployees = await prisma.disabledEmployee.findMany({
-      where: { buyerId: company.buyerProfile.id },
-    });
-
-    const employees: CalcEmployee[] = dbEmployees.map((emp) => ({
-      id: emp.id,
-      name: emp.name,
-      severity: emp.severity as "SEVERE" | "MILD",
-      gender: emp.gender as "M" | "F",
-      birthDate: emp.birthDate || undefined,
-      hireDate: emp.hireDate,
-      resignDate: emp.resignDate || undefined,
-      workHoursPerWeek: emp.workHoursPerWeek || 40,
-      monthlySalary: emp.monthlySalary,
-      meetsMinimumWage: emp.meetsMinimumWage,
-      hasEmploymentInsurance: emp.hasEmploymentInsurance,
-    }));
-
-    // 월별 계산 및 저장
-    const savedData = [];
-    for (let month = 1; month <= 12; month++) {
-      const totalEmployeeCount = monthlyEmployeeCounts[month] || 0;
-
-      // 계산
-      const result = calculateMonthlyData(
-        employees,
-        totalEmployeeCount,
-        year,
-        month,
-        company.type
-      );
-
-      // DB 저장 (upsert)
-      const saved = await prisma.monthlyEmployeeData.upsert({
-        where: {
-          buyerId_year_month: {
-            buyerId: company.buyerProfile.id,
-            year,
-            month,
-          },
-        },
-        update: {
-          totalEmployeeCount: result.totalEmployeeCount,
-          disabledCount: result.disabledCount,
-          recognizedCount: result.recognizedCount,
-          obligatedCount: result.obligatedCount,
-          shortfallCount: result.shortfallCount,
-          surplusCount: 0, // V2에서는 사용하지 않음
-          levy: result.levy,
-          incentive: result.incentive,
-          netAmount: result.netAmount,
-          detailJson: JSON.stringify(result.details),
-        },
-        create: {
-          buyerId: company.buyerProfile.id,
-          year,
-          month,
-          totalEmployeeCount: result.totalEmployeeCount,
-          disabledCount: result.disabledCount,
-          recognizedCount: result.recognizedCount,
-          obligatedCount: result.obligatedCount,
-          shortfallCount: result.shortfallCount,
-          surplusCount: 0, // V2에서는 사용하지 않음
-          levy: result.levy,
-          incentive: result.incentive,
-          netAmount: result.netAmount,
-          detailJson: JSON.stringify(result.details),
-        },
-      });
-
-      savedData.push(saved);
-    }
-
-    return res.json({
-      success: true,
-      message: "월별 데이터가 업데이트되었습니다.",
-      data: savedData,
-    });
-  } catch (error: any) {
-    console.error("월별 데이터 업데이트 실패:", error);
-    return res.status(500).json({ error: error.message });
-  }
-});
 
 export default router;
