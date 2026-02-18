@@ -206,16 +206,16 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* 상시근로자 수 관리 - 가장 중요! */}
+        {/* 월별 고용 관리 - 가장 중요! */}
         <div style={{ marginTop: 24, padding: 20, background: "linear-gradient(135deg, #f59e0b 0%, #ef4444 100%)", borderRadius: 8, boxShadow: "0 4px 6px rgba(0,0,0,0.1)", color: "white" }}>
-          <h2 style={{ margin: 0, fontSize: 20 }}>⚠️ 상시근로자 수 관리 (필수)</h2>
+          <h2 style={{ margin: 0, fontSize: 20 }}>⚠️ 월별 직원수/장애인수 통합 관리 (핵심!)</h2>
           <p style={{ marginTop: 8, fontSize: 14, opacity: 0.95 }}>
-            부담금 계산의 핵심! 월별 상시근로자 수를 정확히 입력해야 정확한 의무고용인원과 부담금이 계산됩니다.
+            월별 상시근로자 수 입력 + 장애인 직원 등록 → 부담금/장려금 자동 정밀 계산!
           </p>
           <div style={{ marginTop: 16, display: "flex", gap: 12 }}>
-            <a href="/dashboard/employee-count" style={{ flex: 1 }}>
+            <a href="/dashboard/employees" style={{ flex: 1 }}>
               <button style={{ width: "100%", padding: 16, background: "white", color: "#ef4444", fontWeight: "bold", fontSize: 16, border: "none", borderRadius: 6, cursor: "pointer" }}>
-                📊 상시근로자 수 입력/수정
+                📊 월별 관리 페이지로 이동
               </button>
             </a>
           </div>
@@ -228,9 +228,11 @@ export default function DashboardPage() {
               fontSize: 13,
             }}
           >
-            💡 <strong>의무고용인원</strong> = 상시근로자 수 × 의무고용률(민간 3.1%, 공공 3.8%)
+            💡 <strong>통합 기능</strong>: 월별 상시근로자 수 + 장애인 직원 관리 + 자동 계산
             <br />
-            💡 부담금은 의무고용인원에서 실제 장애인 고용인원을 뺀 차이로 계산됩니다
+            💡 <strong>정밀 계산</strong>: 성별/중증도/연령/근로시간별 장려금 정밀 계산
+            <br />
+            💡 <strong>실시간 반영</strong>: 직원 등록/퇴사 시 월별 데이터 자동 업데이트
           </div>
         </div>
 

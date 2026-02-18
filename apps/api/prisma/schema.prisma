@@ -100,19 +100,54 @@ model SupplierProfile {
 }
 
 model BuyerProfile {
-  id                  String            @id @default(cuid())
-  companyId           String            @unique
-  employeeCount       Int               @default(0)
-  disabledCount       Int               @default(0)
+  id                  String                 @id @default(cuid())
+  companyId           String                 @unique
+  employeeCount       Int                    @default(0)
+  disabledCount       Int                    @default(0)
   yearlyEmployeesJson String?
-  createdAt           DateTime          @default(now())
-  updatedAt           DateTime          @updatedAt
-  company             Company           @relation(fields: [companyId], references: [id])
+  createdAt           DateTime               @default(now())
+  updatedAt           DateTime               @updatedAt
+  company             Company                @relation(fields: [companyId], references: [id])
   carts               Cart?
   contractRequests    ContractRequest[]
   disabledEmployees   DisabledEmployee[]
   calculations        Calculation[]
-  contracts           Contract[]        // 도급계약 목록 추가
+  contracts           Contract[]             // 도급계약 목록 추가
+  monthlyData         MonthlyEmployeeData[]  // 월별 데이터 추가
+}
+
+// 월별 고용 데이터 (정밀 계산)
+model MonthlyEmployeeData {
+  id                    String       @id @default(cuid())
+  buyerId               String
+  year                  Int
+  month                 Int
+  
+  // 입력 데이터
+  totalEmployeeCount    Int          @default(0)  // 상시근로자 수 (수동 입력)
+  
+  // 자동 계산 데이터
+  disabledCount         Int          @default(0)  // 장애인 수 (자동)
+  recognizedCount       Float        @default(0)  // 인정 장애인 수 (중증 2배 포함)
+  obligatedCount        Int          @default(0)  // 의무고용인원 (자동)
+  shortfallCount        Int          @default(0)  // 미달 인원
+  surplusCount          Float        @default(0)  // 초과 인원
+  
+  // 결과
+  levy                  Int          @default(0)  // 부담금 (원)
+  incentive             Int          @default(0)  // 장려금 (원)
+  netAmount             Int          @default(0)  // 순액 (장려금 - 부담금)
+  
+  // 상세 내역 (JSON)
+  detailJson            String?      // 직원별 상세 계산 내역
+  
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
+  
+  buyer                 BuyerProfile @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+  
+  @@unique([buyerId, year, month])
+  @@index([buyerId, year])
 }
 
 model Product {
@@ -222,6 +257,7 @@ model DisabledEmployee {
   disabilityGrade        String?
   severity               String
   gender                 String
+  birthDate              DateTime?    // 생년월일 추가 (연령별 장려금 계산용)
   hireDate               DateTime
   resignDate             DateTime?
   monthlySalary          Int
