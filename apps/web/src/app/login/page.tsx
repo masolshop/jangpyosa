@@ -103,6 +103,7 @@ export default function LoginPage() {
         <p style={{ marginTop: 8, color: "#666" }}>장표사닷컴에 오신 것을 환영합니다</p>
 
         <div style={{ marginTop: 24 }}>
+          <form onSubmit={(e) => { e.preventDefault(); onLogin(); }}>
           {/* 회원 유형 선택 */}
           <label style={{ fontWeight: 600, marginBottom: 8 }}>
             회원 유형
@@ -219,6 +220,7 @@ export default function LoginPage() {
               {msg}
             </p>
           )}
+          </form>
         </div>
 
         <div style={{ marginTop: 24, textAlign: "center", fontSize: 14 }}>
