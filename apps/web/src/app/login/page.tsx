@@ -104,7 +104,19 @@ export default function LoginPage() {
 
         <div style={{ marginTop: 24 }}>
           {/* 회원 유형 선택 */}
-          <label style={{ fontWeight: 600, marginBottom: 8 }}>회원 유형</label>
+          <label style={{ fontWeight: 600, marginBottom: 8 }}>
+            회원 유형
+            {userType && (
+              <span style={{ 
+                marginLeft: 8, 
+                fontSize: 14, 
+                color: "#0070f3",
+                fontWeight: 400 
+              }}>
+                (선택됨: {getUserTypeLabel(userType)})
+              </span>
+            )}
+          </label>
           <div style={{ 
             display: "grid", 
             gridTemplateColumns: "repeat(3, 1fr)", 
