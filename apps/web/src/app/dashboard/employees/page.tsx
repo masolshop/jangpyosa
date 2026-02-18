@@ -172,12 +172,32 @@ export default function EmployeesIntegratedPage() {
     }
   }
 
-  function updateEmployeeCount(month: number, value: string) {
+  async function updateEmployeeCount(month: number, value: string) {
     const numValue = parseInt(value) || 0;
+    
+    // 1. totalEmployeeCount 업데이트
     setMonthlyData((prev) =>
-      prev.map((data) =>
-        data.month === month ? { ...data, totalEmployeeCount: numValue } : data
-      )
+      prev.map((data) => {
+        if (data.month !== month) return data;
+        
+        // 2. 재계산 (간단 버전)
+        const quotaRate = 0.031; // 민간기업 3.1%
+        const obligatedCount = Math.floor(numValue * quotaRate);
+        const shortfallCount = Math.max(0, obligatedCount - data.recognizedCount);
+        const surplusCount = Math.max(0, data.recognizedCount - obligatedCount);
+        const levy = shortfallCount * 1260000; // 2026년 기준 부담금
+        const netAmount = data.incentive - levy;
+        
+        return {
+          ...data,
+          totalEmployeeCount: numValue,
+          obligatedCount,
+          shortfallCount,
+          surplusCount,
+          levy,
+          netAmount,
+        };
+      })
     );
   }
 
