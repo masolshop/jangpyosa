@@ -11,14 +11,23 @@ router.get("/", requireAuth, async (req, res) => {
     const userRole = req.user!.role;
     const year = parseInt(req.query.year as string) || 2026;
 
-    if (userRole !== "BUYER") {
+    if (userRole !== "BUYER" && userRole !== "SUPER_ADMIN") {
       return res.status(403).json({ error: "부담금기업만 접근 가능합니다." });
     }
 
-    const company = await prisma.company.findUnique({
-      where: { ownerUserId: userId },
-      include: { buyerProfile: true },
-    });
+    // SUPER_ADMIN일 경우 첫 번째 BUYER 회사 데이터 조회
+    let company;
+    if (userRole === "SUPER_ADMIN") {
+      company = await prisma.company.findFirst({
+        where: { type: { in: ["PRIVATE", "PUBLIC_CORP", "GOVERNMENT_OWNED", "OTHER_PUBLIC"] } },
+        include: { buyerProfile: true },
+      });
+    } else {
+      company = await prisma.company.findUnique({
+        where: { ownerUserId: userId },
+        include: { buyerProfile: true },
+      });
+    }
 
     if (!company || !company.buyerProfile) {
       return res.status(404).json({ error: "기업 정보가 없습니다." });
