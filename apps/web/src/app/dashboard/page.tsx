@@ -31,10 +31,24 @@ type CartItem = {
   createdAt: string;
 };
 
+type ContractStats = {
+  totalContracts: number;
+  activeContracts: number;
+  completedContracts: number;
+  currentMonth: {
+    planned: number;
+    actual: number;
+    paid: number;
+    performanceRate: number;
+  };
+  unpaidAmount: number;
+};
+
 export default function DashboardPage() {
   const router = useRouter();
   const [data, setData] = useState<DashboardData | null>(null);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [contractStats, setContractStats] = useState<ContractStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -47,6 +61,7 @@ export default function DashboardPage() {
 
     fetchDashboard();
     fetchCart();
+    fetchContractStats();
   }, []);
 
   async function fetchDashboard() {
@@ -93,6 +108,27 @@ export default function DashboardPage() {
       }
     } catch (e: any) {
       console.error("장바구니 조회 실패:", e);
+    }
+  }
+
+  async function fetchContractStats() {
+    const token = getToken();
+    if (!token) return;
+
+    try {
+      const currentYear = new Date().getFullYear();
+      const res = await fetch(`${API_BASE}/contracts/stats?year=${currentYear}`, {
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
+      });
+
+      if (res.ok) {
+        const json = await res.json();
+        setContractStats(json);
+      }
+    } catch (e: any) {
+      console.error("계약 통계 조회 실패:", e);
     }
   }
 
@@ -358,6 +394,162 @@ export default function DashboardPage() {
             💡 <strong>Tip:</strong> 계산기에서 [📥 불러오기] → [계산하기] → [📊 Excel 다운로드] 순서로 진행하세요
           </div>
         </div>
+
+        {/* 도급계약 관리 현황 */}
+        {contractStats && (
+          <div
+            style={{
+              marginTop: 24,
+              padding: 20,
+              background: "white",
+              borderRadius: 8,
+              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+              <h2 style={{ margin: 0 }}>📊 도급계약 관리 현황</h2>
+              <a href="/dashboard/contracts" style={{ textDecoration: "none" }}>
+                <button
+                  style={{
+                    background: "#0070f3",
+                    color: "white",
+                    border: "none",
+                    padding: "8px 16px",
+                    borderRadius: 6,
+                    fontSize: 14,
+                    cursor: "pointer",
+                  }}
+                >
+                  📋 계약 목록 보기
+                </button>
+              </a>
+            </div>
+
+            {/* 계약 통계 그리드 */}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+                gap: 16,
+                marginBottom: 20,
+              }}
+            >
+              <div
+                style={{
+                  padding: 16,
+                  background: "#f0f9ff",
+                  borderRadius: 8,
+                  border: "1px solid #bae6fd",
+                }}
+              >
+                <p style={{ margin: 0, fontSize: 13, color: "#0369a1" }}>총 계약 수</p>
+                <p style={{ margin: "8px 0 0 0", fontSize: 24, fontWeight: "bold", color: "#0369a1" }}>
+                  {contractStats.totalContracts}건
+                </p>
+              </div>
+
+              <div
+                style={{
+                  padding: 16,
+                  background: "#ecfdf5",
+                  borderRadius: 8,
+                  border: "1px solid #6ee7b7",
+                }}
+              >
+                <p style={{ margin: 0, fontSize: 13, color: "#047857" }}>진행중</p>
+                <p style={{ margin: "8px 0 0 0", fontSize: 24, fontWeight: "bold", color: "#047857" }}>
+                  {contractStats.activeContracts}건
+                </p>
+              </div>
+
+              <div
+                style={{
+                  padding: 16,
+                  background: "#f3f4f6",
+                  borderRadius: 8,
+                  border: "1px solid #d1d5db",
+                }}
+              >
+                <p style={{ margin: 0, fontSize: 13, color: "#6b7280" }}>완료</p>
+                <p style={{ margin: "8px 0 0 0", fontSize: 24, fontWeight: "bold", color: "#6b7280" }}>
+                  {contractStats.completedContracts}건
+                </p>
+              </div>
+
+              <div
+                style={{
+                  padding: 16,
+                  background: "#fef3c7",
+                  borderRadius: 8,
+                  border: "1px solid #fde68a",
+                }}
+              >
+                <p style={{ margin: 0, fontSize: 13, color: "#d97706" }}>미지급액</p>
+                <p style={{ margin: "8px 0 0 0", fontSize: 24, fontWeight: "bold", color: "#d97706" }}>
+                  {contractStats.unpaidAmount.toLocaleString()}원
+                </p>
+              </div>
+            </div>
+
+            {/* 당월 이행 현황 */}
+            <div
+              style={{
+                padding: 16,
+                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                borderRadius: 8,
+                color: "white",
+              }}
+            >
+              <h3 style={{ margin: 0, fontSize: 16, marginBottom: 12 }}>
+                💼 당월 이행 현황 ({new Date().getMonth() + 1}월)
+              </h3>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+                  gap: 12,
+                }}
+              >
+                <div style={{ padding: 12, background: "rgba(255,255,255,0.15)", borderRadius: 6 }}>
+                  <p style={{ margin: 0, fontSize: 12, opacity: 0.9 }}>계획금액</p>
+                  <p style={{ margin: "6px 0 0 0", fontSize: 18, fontWeight: "bold" }}>
+                    {contractStats.currentMonth.planned.toLocaleString()}원
+                  </p>
+                </div>
+                <div style={{ padding: 12, background: "rgba(255,255,255,0.15)", borderRadius: 6 }}>
+                  <p style={{ margin: 0, fontSize: 12, opacity: 0.9 }}>실제금액</p>
+                  <p style={{ margin: "6px 0 0 0", fontSize: 18, fontWeight: "bold", color: "#60a5fa" }}>
+                    {contractStats.currentMonth.actual.toLocaleString()}원
+                  </p>
+                </div>
+                <div style={{ padding: 12, background: "rgba(255,255,255,0.15)", borderRadius: 6 }}>
+                  <p style={{ margin: 0, fontSize: 12, opacity: 0.9 }}>지급액</p>
+                  <p style={{ margin: "6px 0 0 0", fontSize: 18, fontWeight: "bold", color: "#34d399" }}>
+                    {contractStats.currentMonth.paid.toLocaleString()}원
+                  </p>
+                </div>
+                <div style={{ padding: 12, background: "rgba(255,255,255,0.2)", borderRadius: 6 }}>
+                  <p style={{ margin: 0, fontSize: 12, opacity: 0.9 }}>이행률</p>
+                  <p style={{ margin: "6px 0 0 0", fontSize: 18, fontWeight: "bold" }}>
+                    {contractStats.currentMonth.performanceRate.toFixed(1)}%
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div
+              style={{
+                marginTop: 12,
+                padding: 12,
+                background: "#dbeafe",
+                borderRadius: 6,
+                fontSize: 14,
+              }}
+            >
+              💡 <strong>Tip:</strong> 계약 목록에서 각 계약의 월별 실적을 입력하고 검수·결제 처리를 할 수 있습니다
+            </div>
+          </div>
+        )}
 
         {/* 장바구니 / 도급계약 */}
         <div
