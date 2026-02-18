@@ -166,7 +166,30 @@ export default function SignupPage() {
         window.location.href = "/login";
       }, 2000);
     } catch (error: any) {
-      setMsg(`❌ 가입 실패: ${error.message || "알 수 없는 오류"}`);
+      console.error("Signup error:", error);
+      
+      // 에러 메시지 개선
+      let errorMsg = "알 수 없는 오류가 발생했습니다";
+      
+      if (error.error === "PHONE_ALREADY_EXISTS") {
+        errorMsg = "이미 가입된 핸드폰 번호입니다. 로그인하거나 다른 번호를 사용하세요.";
+      } else if (error.error === "BIZNO_ALREADY_REGISTERED") {
+        errorMsg = "이미 가입된 사업자번호입니다. 담당자 추가 기능을 이용하세요. (동일 사업자번호로 추가 가입 가능)";
+      } else if (error.error === "BIZNO_VERIFICATION_FAILED") {
+        errorMsg = "사업자번호 인증에 실패했습니다. 번호를 확인하거나 관리자에게 문의하세요.";
+      } else if (error.error === "REFERRER_NOT_FOUND") {
+        errorMsg = "추천인 매니저를 찾을 수 없습니다. 핸드폰 번호를 확인하거나 매니저에게 문의하세요.";
+      } else if (error.error === "BRANCH_NOT_FOUND") {
+        errorMsg = "선택한 지사를 찾을 수 없습니다. 관리자에게 문의하세요.";
+      } else if (error.error === "REFCODE_ALREADY_EXISTS") {
+        errorMsg = "이미 사용 중인 추천코드입니다. 다른 코드를 입력하세요.";
+      } else if (error.error === "VALIDATION_ERROR") {
+        errorMsg = "입력 정보를 확인하세요. 필수 항목이 누락되었거나 형식이 잘못되었습니다.";
+      } else if (error.message) {
+        errorMsg = error.message;
+      }
+      
+      setMsg(`❌ 가입 실패: ${errorMsg}`);
     } finally {
       setLoading(false);
     }
@@ -178,6 +201,24 @@ export default function SignupPage() {
         <div className="card" style={{ maxWidth: 720, margin: "40px auto" }}>
           <h1>✍️ 회원가입</h1>
           <p style={{ marginTop: 8, color: "#666" }}>가입할 계정 유형을 선택하세요</p>
+          
+          <div style={{
+            marginTop: 20,
+            padding: 16,
+            background: "#f8f9fa",
+            borderRadius: 8,
+            fontSize: 14,
+            lineHeight: 1.6,
+            color: "#333"
+          }}>
+            <p style={{ margin: 0, fontWeight: 600, marginBottom: 8 }}>📋 가입 전 안내사항</p>
+            <ul style={{ margin: 0, paddingLeft: 20 }}>
+              <li><strong>고용부담금 기업</strong>: 3가지 유형(민간기업, 공공기관, 국가/지자체/교육청)이 있으며, 유형에 따라 의무고용률과 감면 계산식이 다릅니다.</li>
+              <li><strong>표준사업장 기업</strong>: 장애인표준사업장 인증을 받은 기업만 가입 가능합니다.</li>
+              <li><strong>매니저</strong>: 소속 지사를 선택하고, 기업 추천 시 사용할 추천코드를 등록합니다.</li>
+              <li style={{ marginTop: 8, color: "#0070f3", fontWeight: 600 }}>💡 이미 가입한 기업의 담당자는 동일한 사업자번호로 추가 가입 가능합니다.</li>
+            </ul>
+          </div>
 
           <div
             style={{
@@ -221,9 +262,10 @@ export default function SignupPage() {
                   textAlign: "left",
                 }}
               >
-                <li>표준사업장 검색</li>
-                <li>도급계약 견적 의뢰</li>
-                <li>부담금 감면 계산</li>
+                <li>📊 장애인 직원 등록 및 관리</li>
+                <li>💰 고용부담금/장려금 자동 계산</li>
+                <li>🏭 표준사업장 검색 및 도급계약</li>
+                <li>📉 연계고용 감면 계산</li>
               </ul>
             </div>
 
@@ -261,9 +303,10 @@ export default function SignupPage() {
                   textAlign: "left",
                 }}
               >
-                <li>상품/서비스 등록</li>
-                <li>도급계약 수주</li>
-                <li>프로필 관리</li>
+                <li>🛍️ 상품/서비스 등록 및 관리</li>
+                <li>📑 도급계약 견적서 제출</li>
+                <li>🤝 월별 이행 내역 관리</li>
+                <li>💳 결제/정산 관리</li>
               </ul>
             </div>
 
@@ -301,9 +344,9 @@ export default function SignupPage() {
                   textAlign: "left",
                 }}
               >
-                <li>기업 추천 및 매칭</li>
-                <li>추천코드 관리</li>
-                <li>실적 관리</li>
+                <li>🎯 기업 추천 및 매칭</li>
+                <li>🔑 추천코드 관리</li>
+                <li>📈 실적 및 수수료 관리</li>
               </ul>
             </div>
           </div>
@@ -345,6 +388,41 @@ export default function SignupPage() {
           {type === "supplier" && "🏭 표준사업장 기업 가입"}
           {type === "buyer" && "🏢 고용부담금 기업 가입"}
         </h1>
+        
+        {/* 가입 안내 */}
+        <div style={{
+          marginTop: 16,
+          padding: 14,
+          background: "#e7f3ff",
+          borderLeft: "4px solid #0070f3",
+          borderRadius: 4,
+          fontSize: 13,
+          lineHeight: 1.6
+        }}>
+          {type === "agent" && (
+            <p style={{ margin: 0 }}>
+              💡 <strong>매니저 가입 안내</strong><br/>
+              소속 지사를 선택하고, 기업 추천 시 사용할 고유한 추천코드를 등록하세요.
+            </p>
+          )}
+          {type === "supplier" && (
+            <p style={{ margin: 0 }}>
+              💡 <strong>표준사업장 가입 안내</strong><br/>
+              사업자번호 입력 시 APICK API로 자동 인증되며, 기업명과 대표자명이 자동으로 입력됩니다.<br/>
+              <span style={{ color: "#d32f2f", fontWeight: 600 }}>⚠️ 동일한 사업자번호로 중복 가입 시 에러가 발생합니다.</span>
+            </p>
+          )}
+          {type === "buyer" && (
+            <p style={{ margin: 0 }}>
+              💡 <strong>고용부담금 기업 가입 안내</strong><br/>
+              <strong>기업 유형</strong>을 정확히 선택하세요. 유형에 따라 의무고용률(3.1% 또는 3.8%)과 감면 계산식이 달라집니다.<br/>
+              • <strong>민간기업</strong>: 의무고용률 3.1%, 기본 감면 계산식 적용<br/>
+              • <strong>공공기관</strong>: 의무고용률 3.8%, 기본 감면 계산식 적용<br/>
+              • <strong>국가/지자체/교육청</strong>: 의무고용률 3.8%, 초과액 반영 특별 계산식 적용<br/>
+              <span style={{ color: "#d32f2f", fontWeight: 600 }}>⚠️ 유형 선택을 잘못하면 계산 결과가 부정확합니다.</span>
+            </p>
+          )}
+        </div>
 
         <div style={{ marginTop: 24 }}>
           {/* 공통: 핸드폰 번호 */}
@@ -434,9 +512,11 @@ export default function SignupPage() {
                         fontSize: 14,
                         fontWeight: companyType === "PRIVATE" ? "bold" : "normal",
                         color: companyType === "PRIVATE" ? "#0070f3" : "#666",
+                        textAlign: "left"
                       }}
                     >
-                      🏢 민간/공공기관
+                      🏢 <strong>민간/공공기관</strong><br/>
+                      <span style={{ fontSize: 11, fontWeight: "normal", color: "#888" }}>의무고용률: 3.1% / 3.8%</span>
                     </button>
                     <button
                       type="button"
@@ -451,16 +531,42 @@ export default function SignupPage() {
                         fontSize: 14,
                         fontWeight: companyType === "GOVERNMENT" ? "bold" : "normal",
                         color: companyType === "GOVERNMENT" ? "#0070f3" : "#666",
+                        textAlign: "left"
                       }}
                     >
-                      🏛️ 국가/지자체/교육청
+                      🏛️ <strong>국가/지자체/교육청</strong><br/>
+                      <span style={{ fontSize: 11, fontWeight: "normal", color: "#888" }}>의무고용률: 3.8%</span>
                     </button>
                   </div>
-                  <p style={{ fontSize: 12, color: "#666", margin: "4px 0 16px 0" }}>
-                    💡 {companyType === "PRIVATE" 
-                      ? "일반 기업 및 공공기관 (부담금 감면 기본 계산식 적용)"
-                      : "국가기관, 지자체, 교육청 (표준사업장 우선구매 초과액 반영)"}
-                  </p>
+                  <div style={{ 
+                    fontSize: 12, 
+                    padding: 12,
+                    background: "#f8f9fa",
+                    borderRadius: 6,
+                    marginBottom: 16,
+                    lineHeight: 1.5
+                  }}>
+                    {companyType === "PRIVATE" ? (
+                      <>
+                        <p style={{ margin: 0, fontWeight: 600, color: "#333" }}>📌 민간/공공기관 유형</p>
+                        <ul style={{ margin: "8px 0 0 0", paddingLeft: 20, color: "#666" }}>
+                          <li><strong>민간기업</strong>: 의무고용률 3.1%, 고용부담금/장려금 모두 적용</li>
+                          <li><strong>공공기관</strong>: 의무고용률 3.8%, 고용부담금/장려금 모두 적용</li>
+                          <li>연계고용 감면: 인정비율 50~90% 적용 (기본 계산식)</li>
+                        </ul>
+                      </>
+                    ) : (
+                      <>
+                        <p style={{ margin: 0, fontWeight: 600, color: "#333" }}>📌 국가/지자체/교육청 유형</p>
+                        <ul style={{ margin: "8px 0 0 0", paddingLeft: 20, color: "#666" }}>
+                          <li>의무고용률: 3.8%</li>
+                          <li>고용부담금/장려금 모두 적용</li>
+                          <li>연계고용 감면: 인정비율 50~90% 적용 (특별 계산식 - 초과액 반영)</li>
+                          <li style={{ color: "#d32f2f", fontWeight: 600 }}>⚠️ 감면 계산식이 민간/공공기관과 다릅니다!</li>
+                        </ul>
+                      </>
+                    )}
+                  </div>
                 </>
               )}
 

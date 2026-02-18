@@ -78,12 +78,20 @@ export default function LoginPage() {
         }
       }, 1000);
     } catch (e: any) {
-      // USER_TYPE_MISMATCH 에러는 백엔드 메시지 표시
+      console.error("Login error:", e);
+      
+      // 에러 메시지 개선
+      let errorMsg = "로그인에 실패했습니다. 다시 시도해주세요.";
+      
       if (e.data?.error === "USER_TYPE_MISMATCH") {
-        setMsg("❌ " + (e.data.message || "회원 유형이 일치하지 않습니다"));
-      } else {
-        setMsg("❌ 로그인 실패: " + (e.message || "핸드폰 번호 또는 비밀번호를 확인하세요"));
+        errorMsg = e.data.message || "회원 유형이 일치하지 않습니다. 올바른 유형 버튼을 선택하세요.";
+      } else if (e.data?.error === "INVALID_CREDENTIALS") {
+        errorMsg = "핸드폰 번호 또는 비밀번호가 일치하지 않습니다. 다시 확인해주세요.";
+      } else if (e.message) {
+        errorMsg = e.message;
       }
+      
+      setMsg(`❌ ${errorMsg}`);
     } finally {
       setLoading(false);
     }
@@ -258,18 +266,26 @@ export default function LoginPage() {
             color: "#666",
           }}
         >
-          <p style={{ marginBottom: 8, fontWeight: 600 }}>💡 안내</p>
-          <p style={{ marginBottom: 4 }}>
-            • 회원가입 시 선택한 회원 유형을 정확히 선택해주세요
+          <p style={{ marginBottom: 8, fontWeight: 600 }}>💡 회원 유형 안내</p>
+          <p style={{ marginBottom: 8 }}>
+            <strong>🏢 고용의무기업 (BUYER)</strong><br/>
+            • 장애인 고용부담금 납부 대상 기업<br/>
+            • 3가지 유형: 민간기업(3.1%), 공공기관(3.8%), 국가/지자체/교육청(3.8%)<br/>
+            • 장애인 직원 등록, 고용부담금/장려금 자동 계산, 연계고용 감면 관리
           </p>
-          <p style={{ marginBottom: 4 }}>
-            • 매니저: 지사 관리 및 회원 관리
-          </p>
-          <p style={{ marginBottom: 4 }}>
-            • 표준사업장: 상품 등록 및 계약 관리
+          <p style={{ marginBottom: 8 }}>
+            <strong>🏭 표준사업장 (SUPPLIER)</strong><br/>
+            • 장애인표준사업장 인증을 받은 기업<br/>
+            • 상품/서비스 등록, 도급계약 수주, 월별 이행 내역 관리
           </p>
           <p>
-            • 고용의무기업: 상품 구매 및 계약 요청
+            <strong>👔 매니저 (AGENT)</strong><br/>
+            • 지사 소속 영업 담당자<br/>
+            • 기업 추천 및 매칭, 추천코드 관리, 실적 관리
+          </p>
+          <p style={{ marginTop: 12, padding: 10, background: "#fff3cd", borderRadius: 6, color: "#856404" }}>
+            ⚠️ 가입 시 선택한 <strong>회원 유형</strong>과 동일한 버튼을 눌러 로그인하세요!<br/>
+            유형이 다르면 "회원 유형 불일치" 오류가 발생합니다.
           </p>
         </div>
 
