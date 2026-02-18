@@ -94,46 +94,48 @@ export default function Sidebar() {
         {/* 메인 메뉴 */}
         <nav>
           {/* 기업장애인고용관리센터 */}
-          {(userRole === "BUYER" || userRole === "SUPER_ADMIN") && (
-            <div style={{ marginBottom: 24 }}>
-              <MenuItem
-                href="/dashboard"
-                label="기업장애인고용관리센터"
-                icon="📊"
-                active={isActive("/dashboard")}
-              />
-            </div>
-          )}
+          <div style={{ marginBottom: 24 }}>
+            <MenuItem
+              href="/dashboard"
+              label="기업장애인고용관리센터"
+              icon="📊"
+              active={isActive("/dashboard")}
+              requiresRole={["BUYER", "SUPER_ADMIN"]}
+              currentRole={userRole}
+            />
+          </div>
 
           {/* 장애인고용직원등록관리 */}
-          {(userRole === "BUYER" || userRole === "SUPER_ADMIN") && (
-            <div style={{ marginBottom: 24 }}>
-              <MenuItem
-                href="/dashboard/employees"
-                label="장애인고용직원등록관리"
-                icon="👥"
-                active={isActive("/dashboard/employees")}
-              />
-            </div>
-          )}
+          <div style={{ marginBottom: 24 }}>
+            <MenuItem
+              href="/dashboard/employees"
+              label="장애인고용직원등록관리"
+              icon="👥"
+              active={isActive("/dashboard/employees")}
+              requiresRole={["BUYER", "SUPER_ADMIN"]}
+              currentRole={userRole}
+            />
+          </div>
 
           {/* 도급계약 관리 */}
-          {(userRole === "BUYER" || userRole === "SUPER_ADMIN" || userRole === "SUPPLIER") && (
-            <div style={{ marginBottom: 24 }}>
-              <MenuItem
-                href="/dashboard/contracts"
-                label="도급계약 이행·결제 관리"
-                icon="📋"
-                active={pathname?.startsWith("/dashboard/contracts")}
-              />
-              <MenuItem
-                href="/dashboard/performances"
-                label="월별 실적 관리"
-                icon="📊"
-                active={pathname?.startsWith("/dashboard/performances")}
-              />
-            </div>
-          )}
+          <div style={{ marginBottom: 24 }}>
+            <MenuItem
+              href="/dashboard/contracts"
+              label="도급계약 이행·결제 관리"
+              icon="📋"
+              active={pathname?.startsWith("/dashboard/contracts")}
+              requiresRole={["BUYER", "SUPER_ADMIN", "SUPPLIER"]}
+              currentRole={userRole}
+            />
+            <MenuItem
+              href="/dashboard/performances"
+              label="월별 실적 관리"
+              icon="📊"
+              active={pathname?.startsWith("/dashboard/performances")}
+              requiresRole={["BUYER", "SUPER_ADMIN", "SUPPLIER"]}
+              currentRole={userRole}
+            />
+          </div>
 
           {/* 고용계산기 */}
           <div style={{ marginBottom: 24 }}>
@@ -328,6 +330,8 @@ function MenuItem({
   active = false,
   onClick,
   subItems,
+  requiresRole,
+  currentRole,
 }: {
   href: string;
   label: string;
@@ -335,11 +339,26 @@ function MenuItem({
   active?: boolean;
   onClick?: () => void;
   subItems?: { href: string; label: string }[];
+  requiresRole?: string[];
+  currentRole?: string | null;
 }) {
   const pathname = usePathname();
   const [isExpanded, setIsExpanded] = useState(false);
 
   const handleClick = (e: React.MouseEvent) => {
+    // 권한이 필요한 메뉴인 경우
+    if (requiresRole && requiresRole.length > 0) {
+      if (!currentRole || !requiresRole.includes(currentRole)) {
+        e.preventDefault();
+        alert(`이 메뉴는 로그인이 필요합니다.\n\n필요한 권한: ${
+          requiresRole.includes("BUYER") ? "부담금기업" :
+          requiresRole.includes("SUPPLIER") ? "표준사업장" :
+          requiresRole.includes("SUPER_ADMIN") ? "관리자" : "특정 권한"
+        }`);
+        return;
+      }
+    }
+
     if (onClick) {
       e.preventDefault();
       onClick();
@@ -348,6 +367,8 @@ function MenuItem({
       setIsExpanded(!isExpanded);
     }
   };
+
+  const hasAccess = !requiresRole || (currentRole && requiresRole.includes(currentRole));
 
   return (
     <>
@@ -361,19 +382,21 @@ function MenuItem({
           marginBottom: 4,
           borderRadius: 6,
           textDecoration: "none",
-          color: active ? "white" : "#ccc",
+          color: active ? "white" : (hasAccess ? "#ccc" : "#666"),
           background: active ? "#0070f3" : "transparent",
           fontSize: 20.16,
           transition: "all 0.2s",
+          opacity: hasAccess ? 1 : 0.6,
+          cursor: hasAccess ? "pointer" : "not-allowed",
         }}
         onMouseEnter={(e) => {
-          if (!active) {
+          if (!active && hasAccess) {
             e.currentTarget.style.background = "#2a2a2a";
             e.currentTarget.style.color = "white";
           }
         }}
         onMouseLeave={(e) => {
-          if (!active) {
+          if (!active && hasAccess) {
             e.currentTarget.style.background = "transparent";
             e.currentTarget.style.color = "#ccc";
           }
@@ -381,6 +404,9 @@ function MenuItem({
       >
         <span style={{ marginRight: 10 }}>{icon}</span>
         <span style={{ flex: 1 }}>{label}</span>
+        {!hasAccess && (
+          <span style={{ fontSize: 14, marginLeft: 4 }}>🔒</span>
+        )}
         {subItems && (
           <span style={{ fontSize: 12, marginLeft: 4 }}>
             {isExpanded ? "▼" : "▶"}
