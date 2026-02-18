@@ -257,7 +257,7 @@ export default function Sidebar() {
                     userRole === "SUPER_ADMIN" ? "슈퍼관리자" :
                     userRole === "AGENT" ? "매니저" :
                     userRole === "SUPPLIER" ? "표준사업장" :
-                    userRole === "BUYER" ? "부담금기업" :
+                    userRole === "BUYER" ? "고용의무기업" :
                     userRole
                   })
                 </div>
@@ -351,7 +351,7 @@ function MenuItem({
       if (!currentRole || !requiresRole.includes(currentRole)) {
         e.preventDefault();
         alert(`이 메뉴는 로그인이 필요합니다.\n\n필요한 권한: ${
-          requiresRole.includes("BUYER") ? "부담금기업" :
+          requiresRole.includes("BUYER") ? "고용의무기업" :
           requiresRole.includes("SUPPLIER") ? "표준사업장" :
           requiresRole.includes("SUPER_ADMIN") ? "관리자" : "특정 권한"
         }`);

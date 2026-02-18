@@ -74,7 +74,7 @@ export default function IncentiveAnnualPage() {
     const role = getUserRole();
 
     if (role !== "BUYER") {
-      alert("부담금기업만 이용 가능합니다.");
+      alert("고용의무기업만 이용 가능합니다.");
       return;
     }
 

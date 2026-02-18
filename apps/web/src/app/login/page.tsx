@@ -91,7 +91,7 @@ export default function LoginPage() {
     switch (type) {
       case "AGENT": return "매니저";
       case "SUPPLIER": return "표준사업장";
-      case "BUYER": return "부담금기업";
+      case "BUYER": return "고용의무기업";
       default: return "";
     }
   };
@@ -172,7 +172,7 @@ export default function LoginPage() {
                 transition: "all 0.2s"
               }}
             >
-              🏢 부담금기업
+              🏢 고용의무기업
             </button>
           </div>
 
@@ -259,7 +259,7 @@ export default function LoginPage() {
             • 표준사업장: 상품 등록 및 계약 관리
           </p>
           <p>
-            • 부담금기업: 상품 구매 및 계약 요청
+            • 고용의무기업: 상품 구매 및 계약 요청
           </p>
         </div>
 
@@ -291,11 +291,11 @@ export default function LoginPage() {
             <span>010-9999-8888</span>
             <span>test1234</span>
             
-            <strong>부담금기업(민간):</strong>
+            <strong>고용의무기업(민간):</strong>
             <span>010-5555-6666</span>
             <span>test1234</span>
             
-            <strong>부담금기업(국가):</strong>
+            <strong>고용의무기업(국가):</strong>
             <span>010-7777-8888</span>
             <span>test1234</span>
           </div>
