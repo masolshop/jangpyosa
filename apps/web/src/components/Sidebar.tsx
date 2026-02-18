@@ -120,6 +120,12 @@ export default function Sidebar() {
                 icon="📋"
                 active={pathname?.startsWith("/dashboard/contracts")}
               />
+              <MenuItem
+                href="/dashboard/performances"
+                label="월별 실적 관리"
+                icon="📊"
+                active={pathname?.startsWith("/dashboard/performances")}
+              />
             </div>
           )}
 
