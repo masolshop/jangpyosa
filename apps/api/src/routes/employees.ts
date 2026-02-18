@@ -60,18 +60,18 @@ router.post("/", requireAuth, async (req, res) => {
 
     const schema = z.object({
       name: z.string().min(1),
-      registrationNumber: z.string().optional(),
+      registrationNumber: z.string().nullable().optional(),
       disabilityType: z.string().min(1),
-      disabilityGrade: z.string().optional(),
+      disabilityGrade: z.string().nullable().optional(),
       severity: z.enum(["MILD", "SEVERE"]),
       gender: z.enum(["M", "F"]),
       hireDate: z.string(), // ISO date
-      resignDate: z.string().optional(),
+      resignDate: z.string().nullable().optional(),
       monthlySalary: z.number().int().positive(),
       hasEmploymentInsurance: z.boolean(),
       meetsMinimumWage: z.boolean(),
-      workHoursPerWeek: z.number().int().optional(),
-      memo: z.string().optional(),
+      workHoursPerWeek: z.number().int().nullable().optional(),
+      memo: z.string().nullable().optional(),
     });
 
     const body = schema.parse(req.body);
@@ -136,18 +136,18 @@ router.put("/:id", requireAuth, async (req, res) => {
 
     const schema = z.object({
       name: z.string().min(1).optional(),
-      registrationNumber: z.string().optional(),
+      registrationNumber: z.string().nullable().optional(),
       disabilityType: z.string().min(1).optional(),
-      disabilityGrade: z.string().optional(),
+      disabilityGrade: z.string().nullable().optional(),
       severity: z.enum(["MILD", "SEVERE"]).optional(),
       gender: z.enum(["M", "F"]).optional(),
       hireDate: z.string().optional(),
-      resignDate: z.string().optional().nullable(),
+      resignDate: z.string().nullable().optional(),
       monthlySalary: z.number().int().positive().optional(),
       hasEmploymentInsurance: z.boolean().optional(),
       meetsMinimumWage: z.boolean().optional(),
-      workHoursPerWeek: z.number().int().optional().nullable(),
-      memo: z.string().optional().nullable(),
+      workHoursPerWeek: z.number().int().nullable().optional(),
+      memo: z.string().nullable().optional(),
     });
 
     const body = schema.parse(req.body);
