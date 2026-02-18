@@ -81,6 +81,26 @@ export default function EmployeesIntegratedPage() {
     memo: "",
   });
 
+  // 2026년 최저시급
+  const MINIMUM_HOURLY_WAGE = 10030;
+
+  // 근로시간으로 월급 자동 계산 (주 근로시간 × 4.345주 × 최저시급)
+  const calculateMonthlySalary = (weeklyHours: number): number => {
+    if (!weeklyHours || weeklyHours <= 0) return 0;
+    const monthlyHours = weeklyHours * 4.345; // 월 평균 주수
+    const salary = Math.round(monthlyHours * MINIMUM_HOURLY_WAGE);
+    return salary;
+  };
+
+  // 근로시간 변경 시 급여 자동 계산
+  const handleWorkHoursChange = (hours: number) => {
+    setForm({
+      ...form,
+      workHoursPerWeek: hours,
+      monthlySalary: calculateMonthlySalary(hours),
+    });
+  };
+
   // ============================================
   // 초기 로드
   // ============================================
@@ -787,9 +807,7 @@ export default function EmployeesIntegratedPage() {
                     <input
                       type="number"
                       value={form.workHoursPerWeek}
-                      onChange={(e) =>
-                        setForm({ ...form, workHoursPerWeek: Number(e.target.value) })
-                      }
+                      onChange={(e) => handleWorkHoursChange(Number(e.target.value))}
                       min="1"
                       max="80"
                       required
@@ -811,6 +829,9 @@ export default function EmployeesIntegratedPage() {
                       step="1000"
                       required
                     />
+                    <p style={{ fontSize: 12, color: "#10b981", marginTop: 4 }}>
+                      ✅ 주 {form.workHoursPerWeek || 0}시간 기준 최저임금: {calculateMonthlySalary(form.workHoursPerWeek || 0).toLocaleString()}원 (자동 계산됨, 수정 가능)
+                    </p>
                   </div>
 
                   <div>
