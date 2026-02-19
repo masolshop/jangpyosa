@@ -810,6 +810,33 @@ export default function DashboardPage() {
               </p>
             </div>
           </a>
+
+          <a href="/calculators/linkage" style={{ textDecoration: "none" }}>
+            <div
+              style={{
+                padding: 20,
+                background: "white",
+                borderRadius: 8,
+                boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                transition: "all 0.2s",
+                cursor: "pointer",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "translateY(-4px)";
+                e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.15)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
+              }}
+            >
+              <div style={{ fontSize: 32 }}>📉</div>
+              <h3 style={{ margin: "8px 0 0 0", fontSize: 16 }}>월별 도급계약감면관리</h3>
+              <p style={{ margin: "4px 0 0 0", fontSize: 13, color: "#666" }}>
+                연계고용 감면액 계산
+              </p>
+            </div>
+          </a>
         </div>
       </div>
     </div>
