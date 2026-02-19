@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { apiFetch } from "@/lib/api";
 import { setToken, setUserRole } from "@/lib/auth";
 
@@ -12,6 +12,14 @@ export default function LoginPage() {
   const [password, setPw] = useState("");
   const [msg, setMsg] = useState("");
   const [loading, setLoading] = useState(false);
+  
+  // 🔥 클라이언트 전용 렌더링 - 브라우저에서만 실행되도록 강제
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) return null; // SSR 스킵, 클라이언트에서만 렌더링
 
   // 핸드폰 번호 포맷팅 (010-1234-5678)
   const formatPhone = (value: string) => {
@@ -104,66 +112,9 @@ export default function LoginPage() {
     }
   };
 
-  // 인라인 스타일 정의
-  const styles = {
-    container: {
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      padding: '20px',
-    },
-    card: {
-      maxWidth: '420px',
-      margin: '40px auto',
-      background: 'white',
-      borderRadius: '12px',
-      padding: '32px',
-      boxShadow: '0 10px 40px rgba(0, 0, 0, 0.1)',
-    },
-    label: {
-      display: 'block',
-      marginBottom: '8px',
-      marginTop: '16px',
-      fontWeight: 500,
-      color: '#333',
-    },
-    input: {
-      width: '100%',
-      padding: '12px',
-      border: '1px solid #ddd',
-      borderRadius: '6px',
-      fontSize: '14px',
-      boxSizing: 'border-box' as const,
-    },
-    button: {
-      padding: '12px 24px',
-      background: '#0070f3',
-      color: 'white',
-      border: 'none',
-      borderRadius: '6px',
-      fontSize: '16px',
-      fontWeight: 600,
-      cursor: 'pointer',
-      transition: 'all 0.2s',
-    },
-    buttonDisabled: {
-      padding: '12px 24px',
-      background: '#ccc',
-      color: 'white',
-      border: 'none',
-      borderRadius: '6px',
-      fontSize: '16px',
-      fontWeight: 600,
-      cursor: 'not-allowed',
-      transition: 'all 0.2s',
-    },
-  };
-
   return (
-    <div style={styles.container}>
-      <div style={styles.card}>
+    <div className="container">
+      <div className="card" style={{ maxWidth: 420, margin: "40px auto" }}>
         <h1>🔑 로그인</h1>
         <p style={{ marginTop: 8, color: "#666" }}>장표사닷컴에 오신 것을 환영합니다</p>
 
@@ -242,7 +193,7 @@ export default function LoginPage() {
             </button>
           </div>
 
-          <label style={styles.label}>핸드폰 번호</label>
+          <label>핸드폰 번호</label>
           <input
             type="tel"
             placeholder="010-1234-5678"
@@ -250,27 +201,23 @@ export default function LoginPage() {
             onChange={handlePhoneChange}
             onKeyPress={handleKeyPress}
             maxLength={13}
-            style={{ ...styles.input, fontSize: 16 }}
+            style={{ fontSize: 16 }}
           />
 
-          <label style={styles.label}>비밀번호</label>
+          <label>비밀번호</label>
           <input
             type="password"
             placeholder="비밀번호 (8자 이상)"
             value={password}
             onChange={(e) => setPw(e.target.value)}
             onKeyPress={handleKeyPress}
-            style={{ ...styles.input, fontSize: 16 }}
+            style={{ fontSize: 16 }}
           />
 
           <button
             onClick={onLogin}
             disabled={loading || !phone || !password || !userType}
-            style={{ 
-              ...(loading || !phone || !password || !userType ? styles.buttonDisabled : styles.button),
-              width: "100%", 
-              marginTop: 16 
-            }}
+            style={{ width: "100%", marginTop: 16 }}
           >
             {loading ? "로그인 중..." : "로그인"}
           </button>
@@ -380,6 +327,59 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
+
+      <style jsx>{`
+        .container {
+          min-height: 100vh;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          padding: 20px;
+        }
+        .card {
+          background: white;
+          border-radius: 12px;
+          padding: 32px;
+          box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        }
+        label {
+          display: block;
+          margin-bottom: 8px;
+          margin-top: 16px;
+          font-weight: 500;
+          color: #333;
+        }
+        input {
+          width: 100%;
+          padding: 12px;
+          border: 1px solid #ddd;
+          border-radius: 6px;
+          font-size: 14px;
+        }
+        input:focus {
+          outline: none;
+          border-color: #0070f3;
+        }
+        button {
+          padding: 12px 24px;
+          background: #0070f3;
+          color: white;
+          border: none;
+          border-radius: 6px;
+          font-size: 16px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        button:hover:not(:disabled) {
+          background: #0051cc;
+        }
+        button:disabled {
+          background: #ccc;
+          cursor: not-allowed;
+        }
+      `}</style>
     </div>
   );
 }
