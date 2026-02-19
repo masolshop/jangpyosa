@@ -284,35 +284,64 @@ export default function EmployeesPage() {
           </div>
         )}
 
-        {/* 통계 요약 */}
-        <div style={{
-          marginTop: 24,
-          padding: 20,
-          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-          borderRadius: 12,
-          color: "white"
+        {/* 통계 요약 - 3개 섹션으로 분리 */}
+        <div style={{ 
+          marginTop: 24, 
+          display: "grid", 
+          gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", 
+          gap: 20 
         }}>
-          <h3 style={{ margin: 0, fontSize: 18, marginBottom: 16 }}>📊 재직 중인 장애인 현황</h3>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 16 }}>
+          {/* 전체 */}
+          <div style={{
+            padding: 20,
+            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+            borderRadius: 12,
+            color: "white"
+          }}>
+            <h3 style={{ margin: 0, fontSize: 18, marginBottom: 16 }}>📊 재직 중인 장애인 현황</h3>
             <div style={{ textAlign: "center" }}>
-              <div style={{ fontSize: 32, fontWeight: "bold" }}>{totalDisabled}명</div>
-              <div style={{ fontSize: 14, opacity: 0.9, marginTop: 4 }}>전체</div>
+              <div style={{ fontSize: 48, fontWeight: "bold" }}>{totalDisabled}명</div>
+              <div style={{ fontSize: 16, opacity: 0.9, marginTop: 8 }}>전체</div>
             </div>
-            <div style={{ textAlign: "center" }}>
-              <div style={{ fontSize: 32, fontWeight: "bold" }}>{severeCount}명</div>
-              <div style={{ fontSize: 14, opacity: 0.9, marginTop: 4 }}>중증</div>
+          </div>
+
+          {/* 중증/경증 */}
+          <div style={{
+            padding: 20,
+            background: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+            borderRadius: 12,
+            color: "white"
+          }}>
+            <h3 style={{ margin: 0, fontSize: 18, marginBottom: 16 }}>🏥 중증도별 현황</h3>
+            <div style={{ display: "flex", justifyContent: "space-around" }}>
+              <div style={{ textAlign: "center" }}>
+                <div style={{ fontSize: 40, fontWeight: "bold" }}>{severeCount}명</div>
+                <div style={{ fontSize: 14, opacity: 0.9, marginTop: 4 }}>중증</div>
+              </div>
+              <div style={{ textAlign: "center" }}>
+                <div style={{ fontSize: 40, fontWeight: "bold" }}>{mildCount}명</div>
+                <div style={{ fontSize: 14, opacity: 0.9, marginTop: 4 }}>경증</div>
+              </div>
             </div>
-            <div style={{ textAlign: "center" }}>
-              <div style={{ fontSize: 32, fontWeight: "bold" }}>{mildCount}명</div>
-              <div style={{ fontSize: 14, opacity: 0.9, marginTop: 4 }}>경증</div>
-            </div>
-            <div style={{ textAlign: "center" }}>
-              <div style={{ fontSize: 32, fontWeight: "bold" }}>{femaleCount}명</div>
-              <div style={{ fontSize: 14, opacity: 0.9, marginTop: 4 }}>여성</div>
-            </div>
-            <div style={{ textAlign: "center" }}>
-              <div style={{ fontSize: 32, fontWeight: "bold" }}>{maleCount}명</div>
-              <div style={{ fontSize: 14, opacity: 0.9, marginTop: 4 }}>남성</div>
+          </div>
+
+          {/* 남성/여성 */}
+          <div style={{
+            padding: 20,
+            background: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+            borderRadius: 12,
+            color: "white"
+          }}>
+            <h3 style={{ margin: 0, fontSize: 18, marginBottom: 16 }}>👥 성별 현황</h3>
+            <div style={{ display: "flex", justifyContent: "space-around" }}>
+              <div style={{ textAlign: "center" }}>
+                <div style={{ fontSize: 40, fontWeight: "bold" }}>{maleCount}명</div>
+                <div style={{ fontSize: 14, opacity: 0.9, marginTop: 4 }}>남성</div>
+              </div>
+              <div style={{ textAlign: "center" }}>
+                <div style={{ fontSize: 40, fontWeight: "bold" }}>{femaleCount}명</div>
+                <div style={{ fontSize: 14, opacity: 0.9, marginTop: 4 }}>여성</div>
+              </div>
             </div>
           </div>
         </div>
