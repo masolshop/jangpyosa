@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { setToken, setUserRole } from "@/lib/auth";
 
@@ -12,14 +12,6 @@ export default function LoginPage() {
   const [password, setPw] = useState("");
   const [msg, setMsg] = useState("");
   const [loading, setLoading] = useState(false);
-  
-  // 🔥 클라이언트 전용 렌더링 - 브라우저에서만 실행되도록 강제
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) return null; // SSR 스킵, 클라이언트에서만 렌더링
 
   // 핸드폰 번호 포맷팅 (010-1234-5678)
   const formatPhone = (value: string) => {
@@ -328,7 +320,7 @@ export default function LoginPage() {
         </div>
       </div>
 
-      <style jsx>{`
+      <style>{`
         .container {
           min-height: 100vh;
           display: flex;
