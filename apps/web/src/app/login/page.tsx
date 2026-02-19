@@ -290,32 +290,75 @@ export default function LoginPage() {
             fontSize: 13,
           }}
         >
-          <p style={{ marginBottom: 8, fontWeight: 600 }}>🧪 테스트 계정</p>
-          <div style={{ 
-            display: "grid", 
-            gridTemplateColumns: "auto 1fr 1fr",
-            gap: "8px",
-            fontSize: 12
-          }}>
-            <strong>슈퍼어드민:</strong>
-            <span>010-1234-5678</span>
-            <span>admin1234</span>
-            
-            <strong>매니저:</strong>
-            <span>010-9876-5432</span>
-            <span>agent1234</span>
-            
-            <strong>표준사업장:</strong>
-            <span>010-9999-8888</span>
-            <span>test1234</span>
-            
-            <strong>고용의무기업(민간):</strong>
-            <span>010-5555-6666</span>
-            <span>test1234</span>
-            
-            <strong>고용의무기업(국가):</strong>
-            <span>010-7777-8888</span>
-            <span>test1234</span>
+          <p style={{ marginBottom: 12, fontWeight: 600, color: "#856404" }}>🧪 테스트 계정</p>
+          
+          {/* 슈퍼어드민 & 매니저 */}
+          <div style={{ marginBottom: 16 }}>
+            <p style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, color: "#666" }}>관리자 계정</p>
+            <div style={{ 
+              display: "grid", 
+              gridTemplateColumns: "auto 1fr 1fr",
+              gap: "6px",
+              fontSize: 12
+            }}>
+              <strong>슈퍼어드민:</strong>
+              <span>010-1234-5678</span>
+              <span>admin1234</span>
+              
+              <strong>매니저:</strong>
+              <span>010-9876-5432</span>
+              <span>agent1234</span>
+            </div>
+          </div>
+
+          {/* 표준사업장 */}
+          <div style={{ marginBottom: 16 }}>
+            <p style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, color: "#666" }}>표준사업장 계정</p>
+            <div style={{ 
+              display: "grid", 
+              gridTemplateColumns: "auto 1fr 1fr",
+              gap: "6px",
+              fontSize: 12
+            }}>
+              <strong>표준사업장:</strong>
+              <span>010-9999-8888</span>
+              <span>test1234</span>
+            </div>
+          </div>
+
+          {/* 고용의무기업 */}
+          <div>
+            <p style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, color: "#666" }}>고용의무기업 계정</p>
+            <div style={{ 
+              display: "grid", 
+              gridTemplateColumns: "auto 1fr 1fr",
+              gap: "6px",
+              fontSize: 12
+            }}>
+              <strong style={{ color: "#0070f3" }}>민간1 (3.1%):</strong>
+              <span>010-5555-6666</span>
+              <span>test1234</span>
+              
+              <strong style={{ color: "#0070f3" }}>민간2 (3.1%):</strong>
+              <span>010-1111-2222</span>
+              <span>test1234</span>
+              
+              <strong style={{ color: "#059669" }}>공공1 (3.8%):</strong>
+              <span>010-7777-8888</span>
+              <span>test1234</span>
+              
+              <strong style={{ color: "#059669" }}>공공2 (3.8%):</strong>
+              <span>010-4444-5555</span>
+              <span>test1234</span>
+              
+              <strong style={{ color: "#dc2626" }}>국가1 (3.8%+감면):</strong>
+              <span>010-9999-0000</span>
+              <span>test1234</span>
+              
+              <strong style={{ color: "#dc2626" }}>국가2 (3.8%+감면):</strong>
+              <span>010-9888-9999</span>
+              <span>test1234</span>
+            </div>
           </div>
         </div>
       </div>
