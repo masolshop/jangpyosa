@@ -29,6 +29,8 @@ export default function SignupPage() {
 
   const [msg, setMsg] = useState("");
   const [loading, setLoading] = useState(false);
+  const [companyInfo, setCompanyInfo] = useState<{name: string; ceo: string} | null>(null);
+  const [verifying, setVerifying] = useState(false);
 
   // 지사 목록 로드 (매니저용)
   useEffect(() => {
@@ -71,6 +73,47 @@ export default function SignupPage() {
 
   const handleBizNoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setBizNo(formatBizNo(e.target.value));
+  };
+
+  // APICK 사업자번호 자동 인증
+  async function verifyBizNo() {
+    const cleanBizNo = bizNo.replace(/\D/g, "");
+    if (cleanBizNo.length !== 10) {
+      setMsg("사업자번호 10자리를 입력하세요");
+      return;
+    }
+    
+    setVerifying(true);
+    setMsg("");
+    setCompanyInfo(null);
+    
+    try {
+      const response = await fetch(`/api/bizno/verify?bizNo=${cleanBizNo}`);
+      const data = await response.json();
+      
+      if (!response.ok) {
+        setMsg(`❌ ${data.message || "사업자번호 인증 실패"}`);
+        return;
+      }
+      
+      setCompanyInfo({
+        name: data.companyName || "회사명 확인 필요",
+        ceo: data.ceoName || "대표자명 확인 필요"
+      });
+      setMsg("✅ 사업자번호 인증 완료");
+    } catch (error) {
+      console.error("BizNo verification error:", error);
+      setMsg("❌ 사업자번호 인증 중 오류 발생");
+    } finally {
+      setVerifying(false);
+    }
+  }
+
+  const handleBizNoKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      verifyBizNo();
+    }
   };
 
   const handleTypeSelect = (selectedType: SignupType) => {
@@ -429,33 +472,6 @@ export default function SignupPage() {
         </div>
 
         <div style={{ marginTop: 24 }}>
-          {/* 공통: 핸드폰 번호 */}
-          <label>핸드폰 번호 (아이디) *</label>
-          <input
-            type="tel"
-            placeholder="010-1234-5678"
-            value={phone}
-            onChange={handlePhoneChange}
-            maxLength={13}
-          />
-
-          {/* 공통: 비밀번호 */}
-          <label>비밀번호 *</label>
-          <input
-            type="password"
-            placeholder="8자 이상"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-
-          <label>비밀번호 확인 *</label>
-          <input
-            type="password"
-            placeholder="비밀번호 재입력"
-            value={passwordConfirm}
-            onChange={(e) => setPasswordConfirm(e.target.value)}
-          />
-
           {/* 매니저 전용 필드 */}
           {type === "agent" && (
             <>
@@ -492,13 +508,40 @@ export default function SignupPage() {
                 value={refCode}
                 onChange={(e) => setRefCode(e.target.value.toUpperCase())}
               />
+              
+              {/* 공통: 핸드폰 번호 */}
+              <label>핸드폰 번호 (아이디) *</label>
+              <input
+                type="tel"
+                placeholder="010-1234-5678"
+                value={phone}
+                onChange={handlePhoneChange}
+                maxLength={13}
+              />
+
+              {/* 공통: 비밀번호 */}
+              <label>비밀번호 *</label>
+              <input
+                type="password"
+                placeholder="8자 이상"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+
+              <label>비밀번호 확인 *</label>
+              <input
+                type="password"
+                placeholder="비밀번호 재입력"
+                value={passwordConfirm}
+                onChange={(e) => setPasswordConfirm(e.target.value)}
+              />
             </>
           )}
 
-          {/* 기업 전용 필드 */}
+          {/* 기업 전용 필드 (buyer, supplier) */}
           {(type === "supplier" || type === "buyer") && (
             <>
-              {/* BUYER 전용: 기업 유형 선택 (3가지) */}
+              {/* BUYER 전용: 기업 유형 선택 (3가지) - 맨 위로 */}
               {type === "buyer" && (
                 <>
                   <label>기업 유형 *</label>
@@ -614,18 +657,87 @@ export default function SignupPage() {
                 </>
               )}
 
+              {/* 사업자등록번호 */}
               <label>사업자등록번호 *</label>
-              <input
-                type="text"
-                placeholder="123-45-67890"
-                value={bizNo}
-                onChange={handleBizNoChange}
-                maxLength={12}
-              />
-              <p style={{ fontSize: 12, color: "#666", margin: "4px 0 12px 0" }}>
-                💡 APICK API로 자동 인증되며, 상호명과 대표자명이 자동 입력됩니다
+              <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+                <input
+                  type="text"
+                  placeholder="123-45-67890"
+                  value={bizNo}
+                  onChange={handleBizNoChange}
+                  onKeyDown={handleBizNoKeyDown}
+                  maxLength={12}
+                  style={{ flex: 1 }}
+                />
+                <button
+                  type="button"
+                  onClick={verifyBizNo}
+                  disabled={verifying || bizNo.replace(/\D/g, "").length !== 10}
+                  style={{
+                    padding: "10px 16px",
+                    background: verifying ? "#ccc" : "#0070f3",
+                    color: "white",
+                    border: "none",
+                    borderRadius: 6,
+                    cursor: verifying ? "not-allowed" : "pointer",
+                    fontSize: 14,
+                    fontWeight: 600,
+                    whiteSpace: "nowrap"
+                  }}
+                >
+                  {verifying ? "인증 중..." : "인증"}
+                </button>
+              </div>
+              <p style={{ fontSize: 12, color: "#666", margin: "4px 0 0 0" }}>
+                💡 사업자번호를 입력하고 <strong>엔터</strong> 또는 <strong>인증 버튼</strong>을 클릭하세요
               </p>
+              
+              {/* APICK 인증 결과 */}
+              {companyInfo && (
+                <div style={{
+                  marginTop: 12,
+                  padding: 12,
+                  background: "#e7f3ff",
+                  borderRadius: 6,
+                  fontSize: 13,
+                  lineHeight: 1.6
+                }}>
+                  <p style={{ margin: 0, fontWeight: 600, color: "#0070f3" }}>✅ APICK 인증 완료</p>
+                  <p style={{ margin: "8px 0 0 0", color: "#333" }}>
+                    <strong>상호명:</strong> {companyInfo.name}<br/>
+                    <strong>대표자명:</strong> {companyInfo.ceo}
+                  </p>
+                </div>
+              )}
 
+              {/* 공통: 핸드폰 번호 */}
+              <label>핸드폰 번호 (아이디) *</label>
+              <input
+                type="tel"
+                placeholder="010-1234-5678"
+                value={phone}
+                onChange={handlePhoneChange}
+                maxLength={13}
+              />
+
+              {/* 공통: 비밀번호 */}
+              <label>비밀번호 *</label>
+              <input
+                type="password"
+                placeholder="8자 이상"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+
+              <label>비밀번호 확인 *</label>
+              <input
+                type="password"
+                placeholder="비밀번호 재입력"
+                value={passwordConfirm}
+                onChange={(e) => setPasswordConfirm(e.target.value)}
+              />
+
+              {/* 추천인 매니저 핸드폰 번호 - 마지막 */}
               <label>추천인 매니저 핸드폰 번호 *</label>
               <input
                 type="tel"
