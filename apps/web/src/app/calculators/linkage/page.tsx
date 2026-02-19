@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { formatCurrencyWithKorean } from "@/lib/currency";
 
 type CompanyType = "PRIVATE" | "GOVERNMENT";
 
@@ -31,11 +32,11 @@ export default function LinkageCalcPage() {
   const [companyType, setCompanyType] = useState<CompanyType>("PRIVATE");
   
   // 공통 입력
-  const [year, setYear] = useState(2025);
-  const [baseAmount, setBaseAmount] = useState(1258000); // 2025년 부담기초액
-  const [annualLevy, setAnnualLevy] = useState(20000000); // 연간 발생 부담금
-  const [supplierTotalSales, setSupplierTotalSales] = useState(120000000); // 표준사업장 연간 총매출
-  const [annualRecipientAmount, setAnnualRecipientAmount] = useState(12000000); // 연간 수급액 (도급액)
+  const [year, setYear] = useState("");
+  const [baseAmount, setBaseAmount] = useState(""); // 2025년 부담기초액
+  const [annualLevy, setAnnualLevy] = useState(""); // 연간 발생 부담금
+  const [supplierTotalSales, setSupplierTotalSales] = useState(""); // 표준사업장 연간 총매출
+  const [annualRecipientAmount, setAnnualRecipientAmount] = useState(""); // 연간 수급액 (도급액)
   
   // 월별 장애인 근로자 데이터 (12개월)
   const [monthlyData, setMonthlyData] = useState<MonthData[]>(
@@ -46,8 +47,8 @@ export default function LinkageCalcPage() {
   );
   
   // 국가/지자체/교육청 전용 입력
-  const [purchaseTarget, setPurchaseTarget] = useState(100000000); // 표준사업장 생산품 구매목표
-  const [actualPurchase, setActualPurchase] = useState(150000000); // 실제 구매액
+  const [purchaseTarget, setPurchaseTarget] = useState(""); // 표준사업장 생산품 구매목표
+  const [actualPurchase, setActualPurchase] = useState(""); // 실제 구매액
   
   const [result, setResult] = useState<CalculationResult | null>(null);
   
@@ -63,7 +64,7 @@ export default function LinkageCalcPage() {
   // 민간/공공기관 계산
   const calculatePrivate = () => {
     // 수급액 비율 = 연간 수급액 / 표준사업장 연간 총매출
-    const recipientRatio = Math.round((annualRecipientAmount / supplierTotalSales) * 10000) / 10000;
+    const recipientRatio = Math.round((Number(annualRecipientAmount || 0) / Number(supplierTotalSales || 1)) * 10000) / 10000;
     
     // 월별 감면액 계산
     const monthlyReduction = monthlyData.map((month) => {
@@ -71,7 +72,7 @@ export default function LinkageCalcPage() {
       const appliedWorkers = month.severeDisabled * 2 + (month.disabledWorkers - month.severeDisabled);
       
       // 월별 감면액 = 수급액 비율 × 부담기초액 × 2배수 적용 인원
-      const reduction = Math.floor((recipientRatio * baseAmount * appliedWorkers) / 10) * 10;
+      const reduction = Math.floor((recipientRatio * Number(baseAmount || 0) * appliedWorkers) / 10) * 10;
       return reduction;
     });
     
@@ -80,10 +81,10 @@ export default function LinkageCalcPage() {
     
     // 감면 한도 계산
     // 1. 부담금의 90% 이내
-    const maxBy90Percent = Math.floor(annualLevy * 0.9);
+    const maxBy90Percent = Math.floor(Number(annualLevy || 0) * 0.9);
     
     // 2. 도급액의 50% 이내
-    const maxBy50Percent = Math.floor(annualRecipientAmount * 0.5);
+    const maxBy50Percent = Math.floor(Number(annualRecipientAmount || 0) * 0.5);
     
     // 최종 감면액 = MIN(계산값, 부담금 90%, 도급액 50%)
     const finalReduction = Math.min(
@@ -93,7 +94,7 @@ export default function LinkageCalcPage() {
     );
     
     // 감면 후 납부 부담금
-    const levyAfterReduction = annualLevy - finalReduction;
+    const levyAfterReduction = Number(annualLevy || 0) - finalReduction;
     
     setResult({
       monthlyReduction,
@@ -109,18 +110,18 @@ export default function LinkageCalcPage() {
   // 국가/지자체/교육청 계산
   const calculateGovernment = () => {
     // 우선구매 초과액 = 실제 구매액 - 구매목표
-    const excessAmount = Math.max(0, actualPurchase - purchaseTarget);
+    const excessAmount = Math.max(0, Number(actualPurchase || 0) - Number(purchaseTarget || 0));
     
     // 적용 가능한 수급액 = MIN(연간 수급액, 우선구매 초과액)
-    const applicableRecipientAmount = Math.min(annualRecipientAmount, excessAmount);
+    const applicableRecipientAmount = Math.min(Number(annualRecipientAmount || 0), excessAmount);
     
     // 수급액 비율 = 적용 가능한 수급액 / 표준사업장 연간 총매출
-    const recipientRatio = Math.round((applicableRecipientAmount / supplierTotalSales) * 10000) / 10000;
+    const recipientRatio = Math.round((applicableRecipientAmount / Number(supplierTotalSales || 1)) * 10000) / 10000;
     
     // 월별 감면액 계산
     const monthlyReduction = monthlyData.map((month) => {
       const appliedWorkers = month.severeDisabled * 2 + (month.disabledWorkers - month.severeDisabled);
-      const reduction = Math.floor((recipientRatio * baseAmount * appliedWorkers) / 10) * 10;
+      const reduction = Math.floor((recipientRatio * Number(baseAmount || 0) * appliedWorkers) / 10) * 10;
       return reduction;
     });
     
@@ -128,13 +129,13 @@ export default function LinkageCalcPage() {
     const totalReductionCalculated = monthlyReduction.reduce((sum, val) => sum + val, 0);
     
     // 감면 한도: 부담금의 90% 이내 (국가/지자체는 도급액 50% 제한 없음)
-    const maxBy90Percent = Math.floor(annualLevy * 0.9);
+    const maxBy90Percent = Math.floor(Number(annualLevy || 0) * 0.9);
     
     // 최종 감면액
     const finalReduction = Math.min(totalReductionCalculated, maxBy90Percent);
     
     // 감면 후 납부 부담금
-    const levyAfterReduction = annualLevy - finalReduction;
+    const levyAfterReduction = Number(annualLevy || 0) - finalReduction;
     
     setResult({
       monthlyReduction,
@@ -237,7 +238,8 @@ export default function LinkageCalcPage() {
             <input
               type="number"
               value={year}
-              onChange={(e) => setYear(Number(e.target.value))}
+              onChange={(e) => setYear(e.target.value)}
+              placeholder="2025"
               style={{ width: "100%", padding: "10px", border: "1px solid #ddd", borderRadius: 6 }}
             />
           </div>
@@ -249,7 +251,8 @@ export default function LinkageCalcPage() {
             <input
               type="number"
               value={baseAmount}
-              onChange={(e) => setBaseAmount(Number(e.target.value))}
+              onChange={(e) => setBaseAmount(e.target.value)}
+              placeholder="1258000"
               style={{ width: "100%", padding: "10px", border: "1px solid #ddd", borderRadius: 6 }}
             />
             <p style={{ fontSize: 12, color: "#666", margin: "4px 0 0 0" }}>
@@ -264,9 +267,9 @@ export default function LinkageCalcPage() {
             <input
               type="number"
               value={annualLevy}
-              onChange={(e) => setAnnualLevy(Number(e.target.value))}
+              onChange={(e) => setAnnualLevy(e.target.value)}
+              placeholder="20000000"
               style={{ width: "100%", padding: "10px", border: "1px solid #ddd", borderRadius: 6 }}
-              placeholder="부담금 계산기에서 계산"
             />
           </div>
           
@@ -277,7 +280,8 @@ export default function LinkageCalcPage() {
             <input
               type="number"
               value={supplierTotalSales}
-              onChange={(e) => setSupplierTotalSales(Number(e.target.value))}
+              onChange={(e) => setSupplierTotalSales(e.target.value)}
+              placeholder="120000000"
               style={{ width: "100%", padding: "10px", border: "1px solid #ddd", borderRadius: 6 }}
             />
           </div>
@@ -289,7 +293,8 @@ export default function LinkageCalcPage() {
             <input
               type="number"
               value={annualRecipientAmount}
-              onChange={(e) => setAnnualRecipientAmount(Number(e.target.value))}
+              onChange={(e) => setAnnualRecipientAmount(e.target.value)}
+              placeholder="12000000"
               style={{ width: "100%", padding: "10px", border: "1px solid #ddd", borderRadius: 6 }}
             />
           </div>
@@ -303,7 +308,8 @@ export default function LinkageCalcPage() {
                 <input
                   type="number"
                   value={purchaseTarget}
-                  onChange={(e) => setPurchaseTarget(Number(e.target.value))}
+                  onChange={(e) => setPurchaseTarget(e.target.value)}
+                  placeholder="100000000"
                   style={{ width: "100%", padding: "10px", border: "1px solid #ddd", borderRadius: 6 }}
                 />
               </div>
@@ -315,7 +321,8 @@ export default function LinkageCalcPage() {
                 <input
                   type="number"
                   value={actualPurchase}
-                  onChange={(e) => setActualPurchase(Number(e.target.value))}
+                  onChange={(e) => setActualPurchase(e.target.value)}
+                  placeholder="150000000"
                   style={{ width: "100%", padding: "10px", border: "1px solid #ddd", borderRadius: 6 }}
                 />
               </div>
@@ -436,14 +443,14 @@ export default function LinkageCalcPage() {
                 <div style={{ padding: 16, background: "white", borderRadius: 8 }}>
                   <p style={{ fontSize: 14, color: "#666", marginBottom: 8 }}>부담금 90% 한도</p>
                   <p style={{ fontSize: 18, fontWeight: "bold" }}>
-                    {result.maxBy90Percent!.toLocaleString()}원
+                    {formatCurrencyWithKorean(result.maxBy90Percent!)}
                   </p>
                 </div>
                 
                 <div style={{ padding: 16, background: "white", borderRadius: 8 }}>
                   <p style={{ fontSize: 14, color: "#666", marginBottom: 8 }}>도급액 50% 한도</p>
                   <p style={{ fontSize: 18, fontWeight: "bold" }}>
-                    {result.maxBy50Percent!.toLocaleString()}원
+                    {formatCurrencyWithKorean(result.maxBy50Percent!)}
                   </p>
                 </div>
               </div>
@@ -457,14 +464,14 @@ export default function LinkageCalcPage() {
                 <div style={{ padding: 16, background: "white", borderRadius: 8 }}>
                   <p style={{ fontSize: 14, color: "#666", marginBottom: 8 }}>우선구매 초과액</p>
                   <p style={{ fontSize: 18, fontWeight: "bold", color: "#28a745" }}>
-                    {result.excessAmount!.toLocaleString()}원
+                    {formatCurrencyWithKorean(result.excessAmount!)}
                   </p>
                 </div>
                 
                 <div style={{ padding: 16, background: "white", borderRadius: 8 }}>
                   <p style={{ fontSize: 14, color: "#666", marginBottom: 8 }}>적용 가능 수급액</p>
                   <p style={{ fontSize: 18, fontWeight: "bold" }}>
-                    {result.applicableRecipientAmount!.toLocaleString()}원
+                    {formatCurrencyWithKorean(result.applicableRecipientAmount!)}
                   </p>
                 </div>
               </div>
@@ -476,21 +483,21 @@ export default function LinkageCalcPage() {
             <div style={{ padding: 20, background: "white", borderRadius: 8 }}>
               <p style={{ fontSize: 14, color: "#666", marginBottom: 8 }}>연간 감면액 계산값</p>
               <p style={{ fontSize: 20, fontWeight: "bold" }}>
-                {result.totalReductionCalculated.toLocaleString()}원
+                {formatCurrencyWithKorean(result.totalReductionCalculated)}
               </p>
             </div>
             
             <div style={{ padding: 20, background: "#28a745", borderRadius: 8, color: "white" }}>
               <p style={{ fontSize: 14, opacity: 0.9, marginBottom: 8 }}>✅ 최종 감면액</p>
               <p style={{ fontSize: 24, fontWeight: "bold" }}>
-                {result.finalReduction.toLocaleString()}원
+                {formatCurrencyWithKorean(result.finalReduction)}
               </p>
             </div>
             
             <div style={{ padding: 20, background: "white", borderRadius: 8 }}>
               <p style={{ fontSize: 14, color: "#666", marginBottom: 8 }}>감면 후 납부 부담금</p>
               <p style={{ fontSize: 20, fontWeight: "bold" }}>
-                {result.levyAfterReduction.toLocaleString()}원
+                {formatCurrencyWithKorean(result.levyAfterReduction)}
               </p>
             </div>
           </div>
@@ -522,7 +529,7 @@ export default function LinkageCalcPage() {
                         <td style={{ padding: "8px", textAlign: "right" }}>{month.severeDisabled}명</td>
                         <td style={{ padding: "8px", textAlign: "right", fontWeight: 600 }}>{applied}명</td>
                         <td style={{ padding: "8px", textAlign: "right", fontWeight: 600, color: "#0070f3" }}>
-                          {reduction.toLocaleString()}원
+                          {formatCurrencyWithKorean(reduction)}
                         </td>
                       </tr>
                     );
