@@ -149,10 +149,10 @@ export default function Sidebar() {
 
         {/* 메인 메뉴 */}
         <nav>
-          {/* 기업장애인고용관리센터 */}
+          {/* 기업장애인고용관리_실무자용 */}
           <div style={{ marginBottom: 24 }}>
             <div style={{ fontSize: 20.6, color: "#fff", marginBottom: 12, fontWeight: "bold" }}>
-              기업장애인고용관리센터
+              기업장애인고용관리_실무자용
             </div>
             <MenuItem
               href="/dashboard/employees"
