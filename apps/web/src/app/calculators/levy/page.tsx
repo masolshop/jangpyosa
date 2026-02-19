@@ -56,10 +56,10 @@ function formatCurrency(amount: number): { formatted: string; korean: string } {
 
 export default function LevyCalcPage() {
   const [year, setYear] = useState(2026);
-  const [employeeCount, setEmployeeCount] = useState(100);
-  const [disabledCount, setDisabledCount] = useState(0);
+  const [employeeCount, setEmployeeCount] = useState("");
+  const [disabledCount, setDisabledCount] = useState("");
   const [companyType, setCompanyType] = useState("PRIVATE");
-  const [taxRate, setTaxRate] = useState(22); // 법인세율 (%)
+  const [taxRate, setTaxRate] = useState(""); // 법인세율 (%)
   const [includeLocalTax, setIncludeLocalTax] = useState(true); // 지방소득세 포함 여부
   const [out, setOut] = useState<any>(null);
   const [msg, setMsg] = useState("");
@@ -78,7 +78,12 @@ export default function LevyCalcPage() {
       const res = await fetch(`${API_BASE}/calculators/levy`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ year, employeeCount, disabledCount, companyType }),
+        body: JSON.stringify({ 
+          year, 
+          employeeCount: Number(employeeCount) || 0, 
+          disabledCount: Number(disabledCount) || 0, 
+          companyType 
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -127,14 +132,16 @@ export default function LevyCalcPage() {
           <input
             type="number"
             value={employeeCount}
-            onChange={(e) => setEmployeeCount(Number(e.target.value))}
+            onChange={(e) => setEmployeeCount(e.target.value)}
+            placeholder="100"
           />
 
           <label>장애인 고용인원 (명)</label>
           <input
             type="number"
             value={disabledCount}
-            onChange={(e) => setDisabledCount(Number(e.target.value))}
+            onChange={(e) => setDisabledCount(e.target.value)}
+            placeholder="0"
           />
 
           {isTaxable && (
@@ -143,10 +150,11 @@ export default function LevyCalcPage() {
               <input
                 type="number"
                 value={taxRate}
-                onChange={(e) => setTaxRate(Number(e.target.value))}
+                onChange={(e) => setTaxRate(e.target.value)}
                 min="0"
                 max="100"
                 step="0.1"
+                placeholder="22"
               />
               <p style={{ fontSize: 13, color: "#666", marginTop: 4 }}>
                 💡 법인세율 (영리법인: 9~24%, 비영리법인: 10%) - 부담금은 손금불산입되어 법인세가 추가 발생합니다
@@ -197,12 +205,12 @@ export default function LevyCalcPage() {
                   return `${formatted}원 ${korean}`;
                 })()}
               </p>
-              {isTaxable && taxRate > 0 && (
+              {isTaxable && Number(taxRate) > 0 && (
                 <>
                   <p style={{ fontSize: 16, color: "#d97706" }}>
                     <strong>법인세 ({taxRate}%):</strong>{" "}
                     {(() => {
-                      const { formatted, korean } = formatCurrency(out.estimated * (taxRate / 100));
+                      const { formatted, korean } = formatCurrency(out.estimated * (Number(taxRate) / 100));
                       return `${formatted}원 ${korean}`;
                     })()}
                   </p>
@@ -210,7 +218,7 @@ export default function LevyCalcPage() {
                     <p style={{ fontSize: 15, color: "#f59e0b" }}>
                       <strong>+ 지방소득세 (법인세의 10%):</strong>{" "}
                       {(() => {
-                        const { formatted, korean } = formatCurrency(out.estimated * (taxRate / 100) * 0.1);
+                        const { formatted, korean } = formatCurrency(out.estimated * (Number(taxRate) / 100) * 0.1);
                         return `${formatted}원 ${korean}`;
                       })()}
                     </p>
@@ -219,7 +227,7 @@ export default function LevyCalcPage() {
                     <strong>실질 부담액:</strong>{" "}
                     {(() => {
                       const { formatted, korean } = formatCurrency(
-                        out.estimated * (1 + (taxRate / 100) * (includeLocalTax ? 1.1 : 1))
+                        out.estimated * (1 + (Number(taxRate) / 100) * (includeLocalTax ? 1.1 : 1))
                       );
                       return `${formatted}원 ${korean}`;
                     })()}
@@ -228,7 +236,7 @@ export default function LevyCalcPage() {
               )}
             </div>
 
-            {isTaxable && taxRate > 0 && (
+            {isTaxable && Number(taxRate) > 0 && (
               <div
                 style={{
                   marginTop: 16,
