@@ -8,22 +8,34 @@ datasource db {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  phone        String   @unique
-  email        String?
-  passwordHash String
-  name         String
-  role         String
-  branchId     String?
-  refCode      String?  @unique
-  referredById String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  companyType  String?
-  company      Company?
-  referredBy   User?    @relation("Referrals", fields: [referredById], references: [id])
-  referrals    User[]   @relation("Referrals")
-  branch       Branch?  @relation(fields: [branchId], references: [id])
+  id                String   @id @default(cuid())
+  phone             String   @unique
+  username          String?  @unique       // 🆕 기업 로그인 ID (영문+숫자)
+  email             String?
+  passwordHash      String
+  name              String
+  role              String
+  branchId          String?
+  refCode           String?  @unique
+  referredById      String?
+  
+  // 🆕 기업 담당자 정보 (SUPPLIER, BUYER 전용)
+  managerName       String?                // 담당자 성함
+  managerTitle      String?                // 담당자 직함
+  managerEmail      String?                // 담당자 이메일
+  managerPhone      String?                // 담당자 핸드폰 (알림톡용)
+  
+  // 🆕 개인정보 동의
+  privacyAgreed     Boolean  @default(false)
+  privacyAgreedAt   DateTime?
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  companyType       String?
+  company           Company?
+  referredBy        User?    @relation("Referrals", fields: [referredById], references: [id])
+  referrals         User[]   @relation("Referrals")
+  branch            Branch?  @relation(fields: [branchId], references: [id])
 }
 
 model Branch {

@@ -13,6 +13,7 @@ export default function SignupPage() {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
+  const [privacyAgreed, setPrivacyAgreed] = useState(false); // 🆕 개인정보 동의
 
   // 매니저 전용
   const [name, setName] = useState("");
@@ -22,10 +23,16 @@ export default function SignupPage() {
   const [branches, setBranches] = useState<any[]>([]);
 
   // 기업 전용
+  const [username, setUsername] = useState(""); // 🆕 로그인 ID
   const [bizNo, setBizNo] = useState("");
   const [referrerPhone, setReferrerPhone] = useState("");
-  // buyerType: PRIVATE_COMPANY, PUBLIC_INSTITUTION, GOVERNMENT
   const [buyerType, setBuyerType] = useState<"PRIVATE_COMPANY" | "PUBLIC_INSTITUTION" | "GOVERNMENT">("PRIVATE_COMPANY");
+  
+  // 🆕 기업 담당자 정보
+  const [managerName, setManagerName] = useState("");
+  const [managerTitle, setManagerTitle] = useState("");
+  const [managerEmail, setManagerEmail] = useState("");
+  const [managerPhone, setManagerPhone] = useState("");
 
   const [msg, setMsg] = useState("");
   const [loading, setLoading] = useState(false);

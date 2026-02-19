@@ -31,11 +31,11 @@ function normalizePhone(phone: string): string {
 }
 
 // ========================================
-// 📱 핸드폰 번호 기반 로그인
+// 📱 로그인 (핸드폰 번호 또는 username)
 // ========================================
 
 const loginSchema = z.object({
-  phone: z.string().min(10, "핸드폰 번호를 입력하세요"),
+  identifier: z.string().min(1, "핸드폰 번호 또는 ID를 입력하세요"), // phone 또는 username
   password: z.string().min(1, "비밀번호를 입력하세요"),
   userType: z.enum(["AGENT", "SUPPLIER", "BUYER"]).optional(),
 });
@@ -43,20 +43,33 @@ const loginSchema = z.object({
 r.post("/login", async (req, res) => {
   try {
     const body = loginSchema.parse(req.body);
-    const cleanPhone = normalizePhone(body.phone);
-
-    const user = await prisma.user.findUnique({
-      where: { phone: cleanPhone },
-      include: { company: true, branch: true },
-    });
+    
+    // identifier가 숫자로만 이루어졌으면 핸드폰 번호, 아니면 username
+    const isPhone = /^\d+$/.test(body.identifier.replace(/\D/g, ""));
+    
+    let user;
+    if (isPhone) {
+      // 핸드폰 번호로 로그인 (매니저용)
+      const cleanPhone = normalizePhone(body.identifier);
+      user = await prisma.user.findUnique({
+        where: { phone: cleanPhone },
+        include: { company: true, branch: true },
+      });
+    } else {
+      // username으로 로그인 (기업용)
+      user = await prisma.user.findUnique({
+        where: { username: body.identifier },
+        include: { company: true, branch: true },
+      });
+    }
 
     if (!user) {
-      return res.status(401).json({ error: "INVALID_CREDENTIALS" });
+      return res.status(401).json({ error: "INVALID_CREDENTIALS", message: "아이디 또는 비밀번호가 일치하지 않습니다" });
     }
 
     const ok = await bcrypt.compare(body.password, user.passwordHash);
     if (!ok) {
-      return res.status(401).json({ error: "INVALID_CREDENTIALS" });
+      return res.status(401).json({ error: "INVALID_CREDENTIALS", message: "아이디 또는 비밀번호가 일치하지 않습니다" });
     }
 
     // 회원 유형 검증 (선택된 경우)
@@ -123,6 +136,9 @@ const signupAgentSchema = z.object({
   email: z.string().email().optional(),
   branchId: z.string().min(1, "지사를 선택하세요"),
   refCode: z.string().optional(), // 추천코드 (매니저가 생성하는 고유코드)
+  
+  // 🆕 개인정보 동의
+  privacyAgreed: z.boolean().refine(val => val === true, "개인정보 활용 동의는 필수입니다"),
 });
 
 r.post("/signup/agent", async (req, res) => {
@@ -161,6 +177,10 @@ r.post("/signup/agent", async (req, res) => {
         role: "AGENT",
         branchId: body.branchId,
         refCode: body.refCode,
+        
+        // 🆕 개인정보 동의
+        privacyAgreed: body.privacyAgreed,
+        privacyAgreedAt: new Date(),
       },
       include: { branch: true },
     });
@@ -190,22 +210,31 @@ r.post("/signup/agent", async (req, res) => {
 // ========================================
 
 const signupSupplierSchema = z.object({
-  phone: z.string().min(10),
+  username: z.string().min(4).max(20).regex(/^[a-zA-Z0-9]+$/, "영문+숫자만 사용 가능합니다"), // 🆕 로그인 ID
   password: z.string().min(8),
   bizNo: z.string().min(10, "사업자등록번호 10자리를 입력하세요"),
-  referrerPhone: z.string().min(10, "추천인 매니저 핸드폰 번호는 필수입니다"), // 필수로 변경
+  referrerPhone: z.string().min(10, "추천인 매니저 핸드폰 번호는 필수입니다"),
+  
+  // 🆕 담당자 정보
+  managerName: z.string().min(1, "담당자 성함은 필수입니다"),
+  managerTitle: z.string().min(1, "담당자 직함은 필수입니다"),
+  managerEmail: z.string().email("올바른 이메일 주소를 입력하세요"),
+  managerPhone: z.string().min(10, "담당자 핸드폰 번호는 필수입니다"),
+  
+  // 🆕 개인정보 동의
+  privacyAgreed: z.boolean().refine(val => val === true, "개인정보 활용 동의는 필수입니다"),
 });
 
 r.post("/signup/supplier", async (req, res) => {
   try {
     const body = signupSupplierSchema.parse(req.body);
-    const cleanPhone = normalizePhone(body.phone);
     const cleanBizNo = body.bizNo.replace(/\D/g, "");
+    const cleanManagerPhone = normalizePhone(body.managerPhone);
 
-    // 핸드폰 번호 중복 체크
-    const existingUser = await prisma.user.findUnique({ where: { phone: cleanPhone } });
-    if (existingUser) {
-      return res.status(400).json({ error: "PHONE_ALREADY_EXISTS" });
+    // username 중복 체크
+    const existingUsername = await prisma.user.findUnique({ where: { username: body.username } });
+    if (existingUsername) {
+      return res.status(400).json({ error: "USERNAME_ALREADY_EXISTS", message: "이미 사용 중인 ID입니다" });
     }
 
     // 사업자번호 중복 체크 (1기업 1계정)
@@ -242,11 +271,23 @@ r.post("/signup/supplier", async (req, res) => {
     // User, Company, SupplierProfile 생성
     const user = await prisma.user.create({
       data: {
-        phone: cleanPhone,
+        phone: cleanManagerPhone, // 담당자 핸드폰 (알림톡용, unique 제약 때문에 여기 저장)
+        username: body.username,
         passwordHash,
         name: apickResult.representative || "대표자",
         role: "SUPPLIER",
         referredById: referredBy.id,
+        
+        // 🆕 담당자 정보
+        managerName: body.managerName,
+        managerTitle: body.managerTitle,
+        managerEmail: body.managerEmail,
+        managerPhone: cleanManagerPhone,
+        
+        // 🆕 개인정보 동의
+        privacyAgreed: body.privacyAgreed,
+        privacyAgreedAt: new Date(),
+        
         company: {
           create: {
             name: apickResult.name!,
@@ -323,24 +364,33 @@ r.post("/signup/supplier", async (req, res) => {
 // ========================================
 
 const signupBuyerSchema = z.object({
-  phone: z.string().min(10),
+  username: z.string().min(4).max(20).regex(/^[a-zA-Z0-9]+$/, "영문+숫자만 사용 가능합니다"), // 🆕 로그인 ID
   password: z.string().min(8),
   bizNo: z.string().min(10, "사업자등록번호 10자리를 입력하세요"),
-  referrerPhone: z.string().min(10, "추천인 매니저 핸드폰 번호는 필수입니다"), // 필수로 변경
+  referrerPhone: z.string().min(10, "추천인 매니저 핸드폰 번호는 필수입니다"),
   buyerType: z.enum(["PRIVATE_COMPANY", "PUBLIC_INSTITUTION", "GOVERNMENT"]).default("PRIVATE_COMPANY"), // 기업 유형
   companyType: z.enum(["PRIVATE", "GOVERNMENT"]).optional(), // 호환성 유지
+  
+  // 🆕 담당자 정보
+  managerName: z.string().min(1, "담당자 성함은 필수입니다"),
+  managerTitle: z.string().min(1, "담당자 직함은 필수입니다"),
+  managerEmail: z.string().email("올바른 이메일 주소를 입력하세요"),
+  managerPhone: z.string().min(10, "담당자 핸드폰 번호는 필수입니다"),
+  
+  // 🆕 개인정보 동의
+  privacyAgreed: z.boolean().refine(val => val === true, "개인정보 활용 동의는 필수입니다"),
 });
 
 r.post("/signup/buyer", async (req, res) => {
   try {
     const body = signupBuyerSchema.parse(req.body);
-    const cleanPhone = normalizePhone(body.phone);
     const cleanBizNo = body.bizNo.replace(/\D/g, "");
+    const cleanManagerPhone = normalizePhone(body.managerPhone);
 
-    // 핸드폰 번호 중복 체크
-    const existingUser = await prisma.user.findUnique({ where: { phone: cleanPhone } });
-    if (existingUser) {
-      return res.status(400).json({ error: "PHONE_ALREADY_EXISTS" });
+    // username 중복 체크
+    const existingUsername = await prisma.user.findUnique({ where: { username: body.username } });
+    if (existingUsername) {
+      return res.status(400).json({ error: "USERNAME_ALREADY_EXISTS", message: "이미 사용 중인 ID입니다" });
     }
 
     // 사업자번호 중복 체크 (1기업 1계정)
@@ -380,12 +430,24 @@ r.post("/signup/buyer", async (req, res) => {
     // User, Company, BuyerProfile 생성
     const user = await prisma.user.create({
       data: {
-        phone: cleanPhone,
+        phone: cleanManagerPhone, // 담당자 핸드폰 (알림톡용, unique 제약 때문에 여기 저장)
+        username: body.username,
         passwordHash,
         name: apickResult.representative || "대표자",
         role: "BUYER",
         companyType: body.companyType || (buyerType === "GOVERNMENT" ? "GOVERNMENT" : "PRIVATE"), // User 테이블에도 저장 (호환성)
         referredById: referredBy.id,
+        
+        // 🆕 담당자 정보
+        managerName: body.managerName,
+        managerTitle: body.managerTitle,
+        managerEmail: body.managerEmail,
+        managerPhone: cleanManagerPhone,
+        
+        // 🆕 개인정보 동의
+        privacyAgreed: body.privacyAgreed,
+        privacyAgreedAt: new Date(),
+        
         company: {
           create: {
             name: apickResult.name!,
