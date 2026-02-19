@@ -573,6 +573,102 @@ r.post("/reset-password", async (req, res) => {
 });
 
 // ========================================
+// 🔍 ID 찾기 (매니저는 핸드폰, 기업은 사업자번호+담당자 핸드폰)
+// ========================================
+
+const findIdSchema = z.object({
+  userType: z.enum(["AGENT", "SUPPLIER", "BUYER"]),
+  phone: z.string().min(10).optional(), // 매니저용
+  bizNo: z.string().min(10).optional(), // 기업용
+  managerPhone: z.string().min(10).optional(), // 기업 담당자 핸드폰
+});
+
+r.post("/find-id", async (req, res) => {
+  try {
+    const body = findIdSchema.parse(req.body);
+    
+    if (body.userType === "AGENT") {
+      // 매니저: 핸드폰 번호로 찾기
+      if (!body.phone) {
+        return res.status(400).json({ error: "PHONE_REQUIRED", message: "핸드폰 번호를 입력하세요" });
+      }
+      
+      const cleanPhone = normalizePhone(body.phone);
+      const user = await prisma.user.findUnique({ 
+        where: { phone: cleanPhone },
+        select: { phone: true, role: true, name: true, createdAt: true }
+      });
+      
+      if (!user || user.role !== "AGENT") {
+        return res.status(404).json({ error: "USER_NOT_FOUND", message: "해당 정보로 등록된 매니저 계정을 찾을 수 없습니다" });
+      }
+      
+      return res.json({
+        type: "AGENT",
+        identifier: user.phone,
+        name: user.name,
+        createdAt: user.createdAt,
+        message: "매니저는 핸드폰 번호로 로그인하세요"
+      });
+      
+    } else {
+      // 기업: 사업자번호 + 담당자 핸드폰으로 찾기
+      if (!body.bizNo || !body.managerPhone) {
+        return res.status(400).json({ 
+          error: "BIZNO_AND_PHONE_REQUIRED", 
+          message: "사업자번호와 담당자 핸드폰 번호를 입력하세요" 
+        });
+      }
+      
+      const cleanBizNo = body.bizNo.replace(/\D/g, "");
+      const cleanManagerPhone = normalizePhone(body.managerPhone);
+      
+      const user = await prisma.user.findFirst({
+        where: {
+          role: body.userType,
+          managerPhone: cleanManagerPhone,
+          company: {
+            bizNo: cleanBizNo
+          }
+        },
+        select: {
+          username: true,
+          role: true,
+          managerName: true,
+          createdAt: true,
+          company: {
+            select: { name: true, bizNo: true }
+          }
+        }
+      });
+      
+      if (!user) {
+        return res.status(404).json({ 
+          error: "USER_NOT_FOUND", 
+          message: "해당 정보로 등록된 기업 계정을 찾을 수 없습니다" 
+        });
+      }
+      
+      return res.json({
+        type: user.role,
+        identifier: user.username,
+        companyName: user.company?.name,
+        managerName: user.managerName,
+        createdAt: user.createdAt,
+        message: `아이디는 "${user.username}" 입니다`
+      });
+    }
+    
+  } catch (error: any) {
+    console.error("Find ID error:", error);
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: "VALIDATION_ERROR", details: error.errors });
+    }
+    return res.status(500).json({ error: "INTERNAL_ERROR" });
+  }
+});
+
+// ========================================
 // 🔄 토큰 갱신
 // ========================================
 
