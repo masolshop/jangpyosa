@@ -271,7 +271,7 @@ export default function PerformancesPage() {
     <div className="p-8 max-w-7xl mx-auto">
       {/* 헤더 */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-800">📊 월별 실적 관리</h1>
+        <h1 className="text-3xl font-bold text-gray-800">📊 월별 도급계약감면관리</h1>
         <p className="text-gray-600 mt-2">모든 계약의 월별 이행실적을 한눈에 확인하고 관리하세요</p>
       </div>
 

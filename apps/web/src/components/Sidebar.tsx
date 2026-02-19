@@ -236,7 +236,7 @@ export default function Sidebar() {
             />
             <MenuItem
               href="/dashboard/performances"
-              label="월별 실적 관리"
+              label="월별 도급계약감면관리"
               icon="📊"
               active={pathname?.startsWith("/dashboard/performances")}
               requiresRole={["BUYER", "SUPER_ADMIN", "SUPPLIER"]}
