@@ -226,6 +226,14 @@ export default function Sidebar() {
               icon="🛒"
               active={isActive("/catalog")}
             />
+            {userRole === "BUYER" && (
+              <MenuItem
+                href="/cart"
+                label="도급계약장바구니"
+                icon="🛍️"
+                active={isActive("/cart")}
+              />
+            )}
             <MenuItem
               href="/dashboard/contracts"
               label="도급계약 이행·결제 관리"
@@ -254,14 +262,6 @@ export default function Sidebar() {
               icon="📄"
               active={isActive("/contract-sample")}
             />
-            {userRole === "BUYER" && (
-              <MenuItem
-                href="/cart"
-                label="장바구니"
-                icon="🛍️"
-                active={isActive("/cart")}
-              />
-            )}
             {userRole === "SUPPLIER" && (
               <MenuItem
                 href="/supplier/profile"
