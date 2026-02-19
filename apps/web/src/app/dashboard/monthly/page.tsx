@@ -64,6 +64,34 @@ export default function MonthlyManagementPage() {
   }, [year]);
 
   // ============================================
+  // 부담기초액 계산 함수 (2026년 기준)
+  // ============================================
+  
+  /**
+   * 고용수준에 따른 월 부담기초액 계산
+   * @param obligatedCount 의무고용인원
+   * @param actualCount 실제 고용인원
+   * @returns 월 부담기초액
+   */
+  function getMonthlyLevyBase(obligatedCount: number, actualCount: number): number {
+    if (obligatedCount === 0) return 0;
+    
+    const employmentRate = actualCount / obligatedCount;
+    
+    if (actualCount === 0) {
+      return 2156880; // 장애인 0명 고용
+    } else if (employmentRate < 0.25) {
+      return 1813000; // 1/4 미만
+    } else if (employmentRate < 0.5) {
+      return 1554000; // 1/4 ~ 1/2 미만
+    } else if (employmentRate < 0.75) {
+      return 1372700; // 1/2 ~ 3/4 미만
+    } else {
+      return 1295000; // 3/4 이상 (미달 시에도 적용)
+    }
+  }
+
+  // ============================================
   // 월별 데이터 API
   // ============================================
 
@@ -175,7 +203,10 @@ export default function MonthlyManagementPage() {
         const obligatedCount = Math.floor(numValue * companyInfo.quotaRate);
         const shortfallCount = Math.max(0, obligatedCount - data.recognizedCount);
         const surplusCount = Math.max(0, data.recognizedCount - obligatedCount);
-        const levy = shortfallCount * 1260000; // 2026년 기준 부담금
+        
+        // 고용수준별 부담기초액 적용
+        const monthlyLevyBase = getMonthlyLevyBase(obligatedCount, data.recognizedCount);
+        const levy = shortfallCount * monthlyLevyBase;
         const netAmount = data.incentive - levy;
         
         return {
@@ -198,7 +229,10 @@ export default function MonthlyManagementPage() {
         const obligatedCount = Math.floor(firstValue * companyInfo.quotaRate);
         const shortfallCount = Math.max(0, obligatedCount - data.recognizedCount);
         const surplusCount = Math.max(0, data.recognizedCount - obligatedCount);
-        const levy = shortfallCount * 1260000;
+        
+        // 고용수준별 부담기초액 적용
+        const monthlyLevyBase = getMonthlyLevyBase(obligatedCount, data.recognizedCount);
+        const levy = shortfallCount * monthlyLevyBase;
         const netAmount = data.incentive - levy;
         
         return {
@@ -223,7 +257,10 @@ export default function MonthlyManagementPage() {
           const obligatedCount = Math.floor(previousCount * companyInfo.quotaRate);
           const shortfallCount = Math.max(0, obligatedCount - newData[i].recognizedCount);
           const surplusCount = Math.max(0, newData[i].recognizedCount - obligatedCount);
-          const levy = shortfallCount * 1260000;
+          
+          // 고용수준별 부담기초액 적용
+          const monthlyLevyBase = getMonthlyLevyBase(obligatedCount, newData[i].recognizedCount);
+          const levy = shortfallCount * monthlyLevyBase;
           const netAmount = newData[i].incentive - levy;
           
           newData[i] = {
@@ -530,7 +567,11 @@ export default function MonthlyManagementPage() {
               <strong>인정 수</strong>: 중증 60시간 이상 2배 인정
             </li>
             <li>
-              <strong>부담금</strong>: 미달 인원 × 126만원 (2026년 기준)
+              <strong>부담금</strong>: 고용수준별 차등 적용 (2026년 기준)
+              <br />
+              <span style={{ fontSize: 13, color: "#666", marginLeft: 8 }}>
+                • 3/4 이상: 129.5만원/월 | 1/2~3/4: 137.3만원/월 | 1/4~1/2: 155.4만원/월 | 1/4 미만: 181.3만원/월 | 0명: 215.7만원/월
+              </span>
             </li>
             <li>
               <strong>장려금</strong>: 성별/중증도/연령/근로시간별 정밀 계산 (여성·중증·청년 우대)
