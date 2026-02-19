@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { API_BASE } from "@/lib/api";
 import { getToken, getUserRole } from "@/lib/auth";
+import * as XLSX from "xlsx";
 
 // ============================================
 // 타입 정의
@@ -36,6 +37,7 @@ export default function EmployeesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // 직원 데이터
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -222,6 +224,270 @@ export default function EmployeesPage() {
   }
 
   // ============================================
+  // 엑셀 업로드 및 다운로드
+  // ============================================
+
+  // 엑셀 샘플 다운로드
+  function downloadExcelSample() {
+    const sampleData = [
+      [
+        "성명*",
+        "장애유형*",
+        "장애등급",
+        "중증여부*",
+        "성별*",
+        "생년월일",
+        "입사일*",
+        "퇴사일",
+        "월급여*",
+        "고용보험*",
+        "최저임금*",
+        "주근로시간",
+        "메모",
+      ],
+      [
+        "홍길동",
+        "지체",
+        "3급",
+        "중증",
+        "남",
+        "1985-03-15",
+        "2020-01-01",
+        "",
+        "2500000",
+        "가입",
+        "이상",
+        "40",
+        "샘플 데이터",
+      ],
+      [
+        "김영희",
+        "시각",
+        "2급",
+        "중증",
+        "여",
+        "1990-07-20",
+        "2021-06-01",
+        "",
+        "2800000",
+        "가입",
+        "이상",
+        "40",
+        "",
+      ],
+      [
+        "이철수",
+        "청각",
+        "5급",
+        "경증",
+        "남",
+        "1988-11-30",
+        "2022-03-15",
+        "",
+        "2200000",
+        "가입",
+        "이상",
+        "35",
+        "",
+      ],
+    ];
+
+    const sampleNotes = [
+      [],
+      [],
+      [],
+      [],
+      ["📋 작성 안내"],
+      ["* 표시가 있는 항목은 필수 입력 항목입니다."],
+      [],
+      ["[중증여부]"],
+      ["- 중증: 장애 1~3급 또는 중증 판정을 받은 경우"],
+      ["- 경증: 장애 4~6급 또는 경증 판정을 받은 경우"],
+      [],
+      ["[성별]"],
+      ["- 남 또는 여로 입력"],
+      [],
+      ["[날짜 형식]"],
+      ["- YYYY-MM-DD 형식으로 입력 (예: 2020-01-01)"],
+      ["- 생년월일, 퇴사일은 선택사항입니다"],
+      [],
+      ["[고용보험]"],
+      ["- 가입 또는 미가입으로 입력"],
+      [],
+      ["[최저임금]"],
+      ["- 이상 또는 미만으로 입력"],
+      [],
+      ["[주근로시간]"],
+      ["- 주당 근로시간을 숫자로 입력 (예: 40)"],
+      ["- 입력하지 않으면 40시간으로 자동 설정됩니다"],
+    ];
+
+    // 워크북 생성
+    const wb = XLSX.utils.book_new();
+    
+    // 데이터 시트
+    const ws = XLSX.utils.aoa_to_sheet(sampleData);
+    ws["!cols"] = [
+      { wch: 10 },
+      { wch: 12 },
+      { wch: 10 },
+      { wch: 10 },
+      { wch: 8 },
+      { wch: 12 },
+      { wch: 12 },
+      { wch: 12 },
+      { wch: 12 },
+      { wch: 10 },
+      { wch: 10 },
+      { wch: 12 },
+      { wch: 20 },
+    ];
+    XLSX.utils.book_append_sheet(wb, ws, "직원 데이터");
+
+    // 작성 안내 시트
+    const wsNotes = XLSX.utils.aoa_to_sheet(sampleNotes);
+    wsNotes["!cols"] = [{ wch: 50 }];
+    XLSX.utils.book_append_sheet(wb, wsNotes, "작성 안내");
+
+    // 파일 다운로드
+    const currentDate = new Date().toISOString().split("T")[0];
+    XLSX.writeFile(wb, `장애인직원_엑셀샘플_${currentDate}.xlsx`);
+  }
+
+  // 엑셀 파일 업로드 처리
+  async function handleExcelUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setLoading(true);
+      setError("");
+      setMessage("");
+
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data);
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
+
+      if (jsonData.length < 2) {
+        setError("엑셀 파일에 데이터가 없습니다.");
+        return;
+      }
+
+      // 헤더 확인 (첫 번째 행)
+      const headers = jsonData[0];
+      const dataRows = jsonData.slice(1);
+
+      let successCount = 0;
+      let failCount = 0;
+      const errors: string[] = [];
+
+      const token = getToken();
+      if (!token) {
+        router.push("/login");
+        return;
+      }
+
+      // 각 행을 직원으로 등록
+      for (let i = 0; i < dataRows.length; i++) {
+        const row = dataRows[i];
+        if (!row || row.length === 0 || !row[0]) continue; // 빈 행 스킵
+
+        try {
+          // 데이터 매핑
+          const employeeData = {
+            name: row[0]?.toString().trim() || "",
+            disabilityType: row[1]?.toString().trim() || "",
+            disabilityGrade: row[2]?.toString().trim() || "",
+            severity: (row[3]?.toString().trim() === "중증" ? "SEVERE" : "MILD") as "SEVERE" | "MILD",
+            gender: (row[4]?.toString().trim() === "여" ? "F" : "M") as "M" | "F",
+            birthDate: row[5] ? formatExcelDate(row[5]) : "",
+            hireDate: row[6] ? formatExcelDate(row[6]) : "",
+            resignDate: row[7] ? formatExcelDate(row[7]) : "",
+            monthlySalary: Number(row[8]) || 2060740,
+            hasEmploymentInsurance: row[9]?.toString().trim() === "가입",
+            meetsMinimumWage: row[10]?.toString().trim() === "이상",
+            workHoursPerWeek: Number(row[11]) || 40,
+            memo: row[12]?.toString().trim() || "",
+          };
+
+          // 필수 항목 검증
+          if (!employeeData.name || !employeeData.disabilityType || !employeeData.hireDate) {
+            errors.push(`${i + 2}행: 필수 항목 누락 (성명, 장애유형, 입사일)`);
+            failCount++;
+            continue;
+          }
+
+          // API 호출
+          const res = await fetch(`${API_BASE}/employees`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(employeeData),
+          });
+
+          if (res.ok) {
+            successCount++;
+          } else {
+            const errorData = await res.json();
+            errors.push(`${i + 2}행 (${employeeData.name}): ${errorData.error || "등록 실패"}`);
+            failCount++;
+          }
+        } catch (e: any) {
+          errors.push(`${i + 2}행: ${e.message}`);
+          failCount++;
+        }
+      }
+
+      // 결과 메시지
+      if (successCount > 0) {
+        setMessage(`✅ ${successCount}명 등록 성공${failCount > 0 ? `, ${failCount}명 실패` : ""}`);
+        fetchEmployees(); // 목록 새로고침
+      } else {
+        setError(`모든 등록 실패: ${failCount}명`);
+      }
+
+      if (errors.length > 0) {
+        console.error("엑셀 업로드 오류:", errors);
+        alert(`업로드 중 오류 발생:\n\n${errors.slice(0, 5).join("\n")}${errors.length > 5 ? `\n... 외 ${errors.length - 5}건` : ""}`);
+      }
+    } catch (e: any) {
+      setError("엑셀 파일 읽기 실패: " + e.message);
+    } finally {
+      setLoading(false);
+      // 파일 input 초기화
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  }
+
+  // 엑셀 날짜 형식 변환
+  function formatExcelDate(value: any): string {
+    if (!value) return "";
+    
+    // 이미 문자열 형식이면 그대로 반환
+    if (typeof value === "string") {
+      return value.trim();
+    }
+    
+    // 엑셀 날짜 숫자 형식인 경우 변환
+    if (typeof value === "number") {
+      const date = XLSX.SSF.parse_date_code(value);
+      if (date) {
+        const year = date.y;
+        const month = String(date.m).padStart(2, "0");
+        const day = String(date.d).padStart(2, "0");
+        return `${year}-${month}-${day}`;
+      }
+    }
+    
+    return "";
+  }
+
+  // ============================================
   // 렌더링
   // ============================================
 
@@ -356,24 +622,64 @@ export default function EmployeesPage() {
             }}
           >
             <h2 style={{ margin: 0 }}>직원 목록</h2>
-            <button
-              onClick={() => {
-                resetForm();
-                setShowForm(true);
-              }}
-              style={{
-                padding: "10px 20px",
-                background: "#10b981",
-                color: "white",
-                border: "none",
-                borderRadius: 6,
-                fontWeight: "bold",
-                cursor: "pointer",
-                fontSize: 15,
-              }}
-            >
-              ➕ 직원 추가
-            </button>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button
+                onClick={downloadExcelSample}
+                style={{
+                  padding: "10px 20px",
+                  background: "#6366f1",
+                  color: "white",
+                  border: "none",
+                  borderRadius: 6,
+                  fontWeight: "bold",
+                  cursor: "pointer",
+                  fontSize: 15,
+                }}
+              >
+                📥 엑셀 샘플
+              </button>
+              <label
+                style={{
+                  padding: "10px 20px",
+                  background: "#8b5cf6",
+                  color: "white",
+                  border: "none",
+                  borderRadius: 6,
+                  fontWeight: "bold",
+                  cursor: "pointer",
+                  fontSize: 15,
+                  display: "inline-flex",
+                  alignItems: "center",
+                }}
+              >
+                📤 엑셀 업로드
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".xlsx,.xls"
+                  onChange={handleExcelUpload}
+                  style={{ display: "none" }}
+                />
+              </label>
+              <button
+                onClick={() => {
+                  resetForm();
+                  setShowForm(true);
+                }}
+                style={{
+                  padding: "10px 20px",
+                  background: "#10b981",
+                  color: "white",
+                  border: "none",
+                  borderRadius: 6,
+                  fontWeight: "bold",
+                  cursor: "pointer",
+                  fontSize: 15,
+                }}
+              >
+                ➕ 직원 추가
+              </button>
+            </div>
           </div>
 
           {/* 탭 */}
