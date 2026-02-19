@@ -2,11 +2,12 @@
 
 import { useMemo, useState } from "react";
 import { API_BASE } from "@/lib/api";
+import { formatCurrencyWithKorean } from "@/lib/currency";
 
 export default function StandardBenefitCalculatorV2() {
-  const [disabledEmployees, setDisabledEmployees] = useState(10);
-  const [newDisabledHires, setNewDisabledHires] = useState(10);
-  const [keadAssessedAmount, setKeadAssessedAmount] = useState(500_000_000);
+  const [disabledEmployees, setDisabledEmployees] = useState("");
+  const [newDisabledHires, setNewDisabledHires] = useState("");
+  const [keadAssessedAmount, setKeadAssessedAmount] = useState("");
 
   // 무상지원 항목(적격 체크 포함)
   const [grantItems, setGrantItems] = useState({
@@ -40,9 +41,9 @@ export default function StandardBenefitCalculatorV2() {
   async function calc() {
     setMsg("");
     const payload = {
-      disabledEmployees,
-      newDisabledHires,
-      keadAssessedAmount,
+      disabledEmployees: Number(disabledEmployees || 0),
+      newDisabledHires: Number(newDisabledHires || 0),
+      keadAssessedAmount: Number(keadAssessedAmount || 0),
       grantItems,
       expert,
       tax: taxMode === "array"
@@ -63,9 +64,9 @@ export default function StandardBenefitCalculatorV2() {
   async function downloadPdf() {
     setMsg("");
     const payload = {
-      disabledEmployees,
-      newDisabledHires,
-      keadAssessedAmount,
+      disabledEmployees: Number(disabledEmployees || 0),
+      newDisabledHires: Number(newDisabledHires || 0),
+      keadAssessedAmount: Number(keadAssessedAmount || 0),
       grantItems,
       expert,
       tax: taxMode === "array"
@@ -127,13 +128,13 @@ export default function StandardBenefitCalculatorV2() {
         <h2>기본 입력</h2>
         <div style={{ display: "grid", gridTemplateColumns: "240px 1fr", gap: 12, marginTop: 16 }}>
           <label style={{ fontWeight: 600 }}>장애인 상시근로자 수</label>
-          <input type="number" value={disabledEmployees} onChange={(e) => setDisabledEmployees(Number(e.target.value))} />
+          <input type="number" value={disabledEmployees} onChange={(e) => setDisabledEmployees(e.target.value)} placeholder="10" />
 
           <label style={{ fontWeight: 600 }}>신규 장애인 고용 인원</label>
-          <input type="number" value={newDisabledHires} onChange={(e) => setNewDisabledHires(Number(e.target.value))} />
+          <input type="number" value={newDisabledHires} onChange={(e) => setNewDisabledHires(e.target.value)} placeholder="10" />
 
           <label style={{ fontWeight: 600 }}>공단 산정금액(원)</label>
-          <input type="number" value={keadAssessedAmount} onChange={(e) => setKeadAssessedAmount(Number(e.target.value))} />
+          <input type="number" value={keadAssessedAmount} onChange={(e) => setKeadAssessedAmount(e.target.value)} placeholder="500000000" />
         </div>
       </div>
 
@@ -303,12 +304,12 @@ export default function StandardBenefitCalculatorV2() {
           >
             <h3>💰 무상지원금(추정)</h3>
             <div style={{ lineHeight: 2 }}>
-              <div>적격 합계: <b>{n(result.grant.eligibleSum)}원</b></div>
-              <div>지원 산정기준(min(적격합계, 공단산정)): <b>{n(result.grant.baseForSupport)}원</b></div>
-              <div>시설/장비 등 지원: <b>{n(result.grant.facilityGrant)}원</b></div>
-              <div>전문가 지원: <b>{n(result.grant.expertSupport)}원</b></div>
+              <div>적격 합계: <b>{formatCurrencyWithKorean(result.grant.eligibleSum)}</b></div>
+              <div>지원 산정기준(min(적격합계, 공단산정)): <b>{formatCurrencyWithKorean(result.grant.baseForSupport)}</b></div>
+              <div>시설/장비 등 지원: <b>{formatCurrencyWithKorean(result.grant.facilityGrant)}</b></div>
+              <div>전문가 지원: <b>{formatCurrencyWithKorean(result.grant.expertSupport)}</b></div>
               <div style={{ marginTop: 8, fontSize: 18, color: "#10b981" }}>
-                무상지원 합계: <b>{n(result.grant.grantTotal)}원</b>
+                무상지원 합계: <b>{formatCurrencyWithKorean(result.grant.grantTotal)}</b>
               </div>
             </div>
             <p style={{ marginTop: 8, fontSize: 13, color: "#666" }}>{result.grant.rule}</p>
@@ -325,9 +326,9 @@ export default function StandardBenefitCalculatorV2() {
           >
             <h3>💸 세액감면(추정, 10년)</h3>
             <div style={{ lineHeight: 2 }}>
-              <div>연도별 감면 한도: <b>{n(result.tax.annualCap)}원</b></div>
+              <div>연도별 감면 한도: <b>{formatCurrencyWithKorean(result.tax.annualCap)}</b></div>
               <div style={{ marginTop: 8, fontSize: 18, color: "#3b82f6" }}>
-                10년 세액감면 합계: <b>{n(result.tax.taxReductionTotal)}원</b>
+                10년 세액감면 합계: <b>{formatCurrencyWithKorean(result.tax.taxReductionTotal)}</b>
               </div>
             </div>
             <details style={{ marginTop: 12 }}>
@@ -354,7 +355,7 @@ export default function StandardBenefitCalculatorV2() {
           >
             <h3 style={{ color: "white" }}>🎯 총 혜택(추정)</h3>
             <div style={{ fontSize: 32, fontWeight: "bold", marginTop: 8 }}>
-              {n(result.totalBenefit)}원
+              {formatCurrencyWithKorean(result.totalBenefit)}
             </div>
             <p style={{ marginTop: 12, fontSize: 14, opacity: 0.9 }}>{result.disclaimer}</p>
           </div>
