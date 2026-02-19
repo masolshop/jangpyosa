@@ -263,15 +263,19 @@ export function calculateMonthlyData(
     let excludeReason: string | undefined;
     let incentiveAmount = 0;
 
-    if (!emp.hasEmploymentInsurance) {
+    // 장려금 지급 대상 판정: 기준인원을 초과한 사람만 지급 대상
+    // 공식: 월별 지급인원 = [장애인근로자수 - 제외인원 - 기준인원]
+    if (isWithinBaseline) {
+      // 기준인원 이내는 장려금 대상 아님
+      excludeReason = "기준인원 이내 (장려금 대상 아님)";
+    } else if (!emp.hasEmploymentInsurance) {
+      // 기준인원 초과이지만 고용보험 미가입
       excludeReason = "고용보험 미가입";
       excludedCount++;
     } else if (!emp.meetsMinimumWage) {
+      // 기준인원 초과이지만 최저임금 미만
       excludeReason = "최저임금 미만";
       excludedCount++;
-    } else if (!isWithinBaseline) {
-      excludeReason = "기준인원 초과";
-      // 기준인원 초과는 제외인원에 포함하지 않음
     } else {
       // 지원 기간 확인
       const maxPeriod = SUPPORT_PERIOD_MONTHS[emp.severity];
@@ -281,7 +285,7 @@ export function calculateMonthlyData(
       }
     }
 
-    // 장려금 계산 (자격이 있는 경우만)
+    // 장려금 계산 (기준인원 초과 + 자격이 있는 경우만)
     const baseRate = getBaseIncentiveRate(emp.severity, emp.gender, age);
     const salaryLimit = emp.severity === "SEVERE" ? Math.round(emp.monthlySalary * 0.6) : 0;
     let finalRate = baseRate;
@@ -290,7 +294,8 @@ export function calculateMonthlyData(
       finalRate = Math.min(baseRate, salaryLimit);
     }
 
-    if (!excludeReason) {
+    // 장려금 지급: 기준인원 초과 && 제외사유 없음
+    if (!isWithinBaseline && !excludeReason) {
       incentiveAmount = finalRate;
       totalIncentive += incentiveAmount;
     }
@@ -329,8 +334,10 @@ export function calculateMonthlyData(
   const shortfallCount = Math.max(0, obligatedCount - totalRecognizedCount);
   const levy = Math.round(shortfallCount * LEVY_BASE_AMOUNT);
 
-  // 6. 순액
-  const netAmount = totalIncentive - levy;
+  // 6. 지급인원 및 순액 계산
+  // 공식: 지급인원 = 장애인근로자수 - 기준인원 - 제외인원
+  const eligibleCount = Math.max(0, activeEmployees.length - incentiveBaselineCount - excludedCount);
+  const netAmount = totalIncentive - levy; // 순액 = 장려금 - 부담금
 
   return {
     year,
@@ -342,7 +349,7 @@ export function calculateMonthlyData(
     obligatedCount,
     incentiveBaselineCount, // ★ 올림 처리된 기준인원
     incentiveExcludedCount: excludedCount,
-    incentiveEligibleCount: Math.max(0, activeEmployees.length - excludedCount - Math.max(0, activeEmployees.length - incentiveBaselineCount)),
+    incentiveEligibleCount: eligibleCount, // ★ 수정된 계산식
     shortfallCount: Math.max(0, shortfallCount),
     levy,
     incentive: totalIncentive,

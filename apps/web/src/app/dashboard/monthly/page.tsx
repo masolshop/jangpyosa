@@ -574,7 +574,31 @@ export default function MonthlyManagementPage() {
               </span>
             </li>
             <li>
-              <strong>장려금</strong>: 성별/중증도/연령/근로시간별 정밀 계산 (여성·중증·청년 우대)
+              <strong>장려금 계산식 (2026년 기준)</strong>:
+              <div style={{ marginTop: 8, padding: 12, background: "#eff6ff", borderRadius: 6, border: "1px solid #bfdbfe" }}>
+                <p style={{ margin: "4px 0", fontWeight: 600, color: "#1e40af" }}>
+                  고용장려금 = (월별 지급인원 × 지급단가)의 합계액
+                </p>
+                <p style={{ margin: "4px 0", color: "#1e293b" }}>
+                  <strong>월별 지급인원</strong> = [장애인근로자수 - 제외인원 - 기준인원]
+                </p>
+                <p style={{ margin: "4px 0", color: "#1e293b" }}>
+                  <strong>기준인원 (2026년)</strong> = 상시근로자수 × 의무고용률 (소수점 올림)
+                </p>
+                <ul style={{ margin: "4px 0 4px 20px", color: "#64748b", fontSize: 13 }}>
+                  <li>민간/공공기업: 3.1%</li>
+                  <li>국가/지자체/교육청: 3.8%</li>
+                </ul>
+                <p style={{ margin: "4px 0", color: "#1e293b" }}>
+                  <strong>기준인원 산입 순서</strong>: 입사일 순 → 동일시 경증·남성·임금 낮은 순
+                </p>
+                <p style={{ margin: "4px 0", color: "#1e293b" }}>
+                  <strong>제외인원</strong>: 고용보험 미가입자 또는 최저임금 미만자
+                </p>
+                <p style={{ margin: "4px 0", color: "#64748b", fontSize: 13 }}>
+                  💡 성별/중증도/연령별 지급단가 자동 적용 (여성·중증·청년 우대)
+                </p>
+              </div>
             </li>
           </ul>
         </div>
