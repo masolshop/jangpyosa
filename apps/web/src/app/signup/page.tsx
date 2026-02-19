@@ -24,7 +24,8 @@ export default function SignupPage() {
   // 기업 전용
   const [bizNo, setBizNo] = useState("");
   const [referrerPhone, setReferrerPhone] = useState("");
-  const [companyType, setCompanyType] = useState<"PRIVATE" | "GOVERNMENT">("PRIVATE");
+  // buyerType: PRIVATE_COMPANY, PUBLIC_INSTITUTION, GOVERNMENT
+  const [buyerType, setBuyerType] = useState<"PRIVATE_COMPANY" | "PUBLIC_INSTITUTION" | "GOVERNMENT">("PRIVATE_COMPANY");
 
   const [msg, setMsg] = useState("");
   const [loading, setLoading] = useState(false);
@@ -114,7 +115,7 @@ export default function SignupPage() {
         setMsg("추천인 매니저 핸드폰 번호를 입력하세요");
         return;
       }
-      if (type === "buyer" && !companyType) {
+      if (type === "buyer" && !buyerType) {
         setMsg("기업 유형을 선택하세요");
         return;
       }
@@ -151,7 +152,7 @@ export default function SignupPage() {
           ...body,
           bizNo: bizNo.replace(/\D/g, ""),
           referrerPhone: referrerPhone.replace(/\D/g, ""),
-          companyType,
+          buyerType,
         };
       }
 
@@ -413,14 +414,17 @@ export default function SignupPage() {
             </p>
           )}
           {type === "buyer" && (
-            <p style={{ margin: 0 }}>
-              💡 <strong>고용부담금 기업 가입 안내</strong><br/>
-              <strong>기업 유형</strong>을 정확히 선택하세요. 유형에 따라 의무고용률(3.1% 또는 3.8%)과 감면 계산식이 달라집니다.<br/>
-              • <strong>민간기업</strong>: 의무고용률 3.1%, 기본 감면 계산식 적용<br/>
-              • <strong>공공기관</strong>: 의무고용률 3.8%, 기본 감면 계산식 적용<br/>
-              • <strong>국가/지자체/교육청</strong>: 의무고용률 3.8%, 초과액 반영 특별 계산식 적용<br/>
-              <span style={{ color: "#d32f2f", fontWeight: 600 }}>⚠️ 유형 선택을 잘못하면 계산 결과가 부정확합니다.</span>
-            </p>
+            <>
+              <p style={{ margin: 0 }}>
+                💡 <strong>고용부담금 기업 가입 안내</strong>
+              </p>
+              <ul style={{ margin: "8px 0 0 0", paddingLeft: 20, fontSize: 13, lineHeight: 1.6 }}>
+                <li><strong>기업 유형</strong>을 정확히 선택하세요. 유형에 따라 의무고용률과 감면 계산식이 달라집니다.</li>
+                <li><strong>사업자등록번호</strong> 입력 시 APICK API로 상호명과 대표자명이 자동 출력됩니다.</li>
+                <li><strong>추천인 매니저</strong>의 핸드폰 번호를 입력해야 가입 가능합니다.</li>
+                <li style={{ color: "#d32f2f", fontWeight: 600 }}>⚠️ 매니저를 통해서만 가입 가능합니다.</li>
+              </ul>
+            </>
           )}
         </div>
 
@@ -494,50 +498,79 @@ export default function SignupPage() {
           {/* 기업 전용 필드 */}
           {(type === "supplier" || type === "buyer") && (
             <>
-              {/* BUYER 전용: 기업 유형 선택 */}
+              {/* BUYER 전용: 기업 유형 선택 (3가지) */}
               {type === "buyer" && (
                 <>
                   <label>기업 유형 *</label>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 16 }}>
+                    {/* 민간기업 */}
                     <button
                       type="button"
-                      onClick={() => setCompanyType("PRIVATE")}
+                      onClick={() => setBuyerType("PRIVATE_COMPANY")}
                       style={{
                         padding: "16px 12px",
-                        border: companyType === "PRIVATE" ? "2px solid #0070f3" : "2px solid #ddd",
+                        border: buyerType === "PRIVATE_COMPANY" ? "2px solid #0070f3" : "2px solid #ddd",
                         borderRadius: 8,
-                        background: companyType === "PRIVATE" ? "#e7f3ff" : "white",
+                        background: buyerType === "PRIVATE_COMPANY" ? "#e7f3ff" : "white",
                         cursor: "pointer",
                         transition: "all 0.2s",
-                        fontSize: 14,
-                        fontWeight: companyType === "PRIVATE" ? "bold" : "normal",
-                        color: companyType === "PRIVATE" ? "#0070f3" : "#666",
-                        textAlign: "left"
+                        fontSize: 13,
+                        fontWeight: buyerType === "PRIVATE_COMPANY" ? "bold" : "normal",
+                        color: buyerType === "PRIVATE_COMPANY" ? "#0070f3" : "#666",
+                        textAlign: "center"
                       }}
                     >
-                      🏢 <strong>민간/공공기관</strong><br/>
-                      <span style={{ fontSize: 11, fontWeight: "normal", color: "#888" }}>의무고용률: 3.1% / 3.8%</span>
+                      🏢<br/>
+                      <strong>민간기업</strong><br/>
+                      <span style={{ fontSize: 11, fontWeight: "normal", color: "#888" }}>의무고용률 3.1%</span>
                     </button>
+                    
+                    {/* 공공기관 */}
                     <button
                       type="button"
-                      onClick={() => setCompanyType("GOVERNMENT")}
+                      onClick={() => setBuyerType("PUBLIC_INSTITUTION")}
                       style={{
                         padding: "16px 12px",
-                        border: companyType === "GOVERNMENT" ? "2px solid #0070f3" : "2px solid #ddd",
+                        border: buyerType === "PUBLIC_INSTITUTION" ? "2px solid #0070f3" : "2px solid #ddd",
                         borderRadius: 8,
-                        background: companyType === "GOVERNMENT" ? "#e7f3ff" : "white",
+                        background: buyerType === "PUBLIC_INSTITUTION" ? "#e7f3ff" : "white",
                         cursor: "pointer",
                         transition: "all 0.2s",
-                        fontSize: 14,
-                        fontWeight: companyType === "GOVERNMENT" ? "bold" : "normal",
-                        color: companyType === "GOVERNMENT" ? "#0070f3" : "#666",
-                        textAlign: "left"
+                        fontSize: 13,
+                        fontWeight: buyerType === "PUBLIC_INSTITUTION" ? "bold" : "normal",
+                        color: buyerType === "PUBLIC_INSTITUTION" ? "#0070f3" : "#666",
+                        textAlign: "center"
                       }}
                     >
-                      🏛️ <strong>국가/지자체/교육청</strong><br/>
-                      <span style={{ fontSize: 11, fontWeight: "normal", color: "#888" }}>의무고용률: 3.8%</span>
+                      🏛️<br/>
+                      <strong>공공기관</strong><br/>
+                      <span style={{ fontSize: 11, fontWeight: "normal", color: "#888" }}>의무고용률 3.8%</span>
+                    </button>
+                    
+                    {/* 국가/지자체/교육청 */}
+                    <button
+                      type="button"
+                      onClick={() => setBuyerType("GOVERNMENT")}
+                      style={{
+                        padding: "16px 12px",
+                        border: buyerType === "GOVERNMENT" ? "2px solid #0070f3" : "2px solid #ddd",
+                        borderRadius: 8,
+                        background: buyerType === "GOVERNMENT" ? "#e7f3ff" : "white",
+                        cursor: "pointer",
+                        transition: "all 0.2s",
+                        fontSize: 13,
+                        fontWeight: buyerType === "GOVERNMENT" ? "bold" : "normal",
+                        color: buyerType === "GOVERNMENT" ? "#0070f3" : "#666",
+                        textAlign: "center"
+                      }}
+                    >
+                      🏫<br/>
+                      <strong>국가/지자체<br/>교육청</strong><br/>
+                      <span style={{ fontSize: 11, fontWeight: "normal", color: "#888" }}>의무고용률 3.8%</span>
                     </button>
                   </div>
+                  
+                  {/* 선택된 유형 설명 */}
                   <div style={{ 
                     fontSize: 12, 
                     padding: 12,
@@ -546,23 +579,34 @@ export default function SignupPage() {
                     marginBottom: 16,
                     lineHeight: 1.5
                   }}>
-                    {companyType === "PRIVATE" ? (
+                    {buyerType === "PRIVATE_COMPANY" && (
                       <>
-                        <p style={{ margin: 0, fontWeight: 600, color: "#333" }}>📌 민간/공공기관 유형</p>
+                        <p style={{ margin: 0, fontWeight: 600, color: "#333" }}>📌 민간기업 유형</p>
                         <ul style={{ margin: "8px 0 0 0", paddingLeft: 20, color: "#666" }}>
-                          <li><strong>민간기업</strong>: 의무고용률 3.1%, 고용부담금/장려금 모두 적용</li>
-                          <li><strong>공공기관</strong>: 의무고용률 3.8%, 고용부담금/장려금 모두 적용</li>
-                          <li>연계고용 감면: 인정비율 50~90% 적용 (기본 계산식)</li>
+                          <li>의무고용률: 3.1%</li>
+                          <li>고용부담금/장려금 모두 적용</li>
+                          <li>연계고용 감면: 인정비율 50~90% 적용</li>
                         </ul>
                       </>
-                    ) : (
+                    )}
+                    {buyerType === "PUBLIC_INSTITUTION" && (
+                      <>
+                        <p style={{ margin: 0, fontWeight: 600, color: "#333" }}>📌 공공기관 유형</p>
+                        <ul style={{ margin: "8px 0 0 0", paddingLeft: 20, color: "#666" }}>
+                          <li>의무고용률: 3.8%</li>
+                          <li>고용부담금/장려금 모두 적용</li>
+                          <li>연계고용 감면: 인정비율 50~90% 적용</li>
+                        </ul>
+                      </>
+                    )}
+                    {buyerType === "GOVERNMENT" && (
                       <>
                         <p style={{ margin: 0, fontWeight: 600, color: "#333" }}>📌 국가/지자체/교육청 유형</p>
                         <ul style={{ margin: "8px 0 0 0", paddingLeft: 20, color: "#666" }}>
                           <li>의무고용률: 3.8%</li>
                           <li>고용부담금/장려금 모두 적용</li>
-                          <li>연계고용 감면: 인정비율 50~90% 적용 (특별 계산식 - 초과액 반영)</li>
-                          <li style={{ color: "#d32f2f", fontWeight: 600 }}>⚠️ 감면 계산식이 민간/공공기관과 다릅니다!</li>
+                          <li>연계고용 감면: 인정비율 50~90% 적용</li>
+                          <li style={{ color: "#d32f2f", fontWeight: 600 }}>⚠️ 특별 계산식 적용 (초과액 반영)</li>
                         </ul>
                       </>
                     )}
@@ -590,8 +634,8 @@ export default function SignupPage() {
                 onChange={handleReferrerPhoneChange}
                 maxLength={13}
               />
-              <p style={{ fontSize: 12, color: "#666", margin: "4px 0 12px 0" }}>
-                💡 추천인 매니저의 핸드폰 번호를 입력하세요 (필수)
+              <p style={{ fontSize: 12, color: "#d32f2f", fontWeight: 600, margin: "4px 0 12px 0" }}>
+                ⚠️ 매니저를 통해서만 가입 가능합니다. 매니저의 핸드폰 번호를 입력하세요.
               </p>
             </>
           )}
