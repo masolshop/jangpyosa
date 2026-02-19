@@ -317,8 +317,8 @@ export default function LoginPage() {
               gap: "6px",
               fontSize: 12
             }}>
-              <strong>표준사업장:</strong>
-              <span>010-9999-8888</span>
+              <strong>ID:</strong>
+              <span>supplier01</span>
               <span>test1234</span>
             </div>
           </div>
@@ -333,27 +333,27 @@ export default function LoginPage() {
               fontSize: 12
             }}>
               <strong style={{ color: "#0070f3" }}>민간1 (3.1%):</strong>
-              <span>010-5555-6666</span>
+              <span>buyer01</span>
               <span>test1234</span>
               
               <strong style={{ color: "#0070f3" }}>민간2 (3.1%):</strong>
-              <span>010-1111-2222</span>
+              <span>buyer02</span>
               <span>test1234</span>
               
               <strong style={{ color: "#059669" }}>공공1 (3.8%):</strong>
-              <span>010-7777-8888</span>
+              <span>buyer03</span>
               <span>test1234</span>
               
               <strong style={{ color: "#059669" }}>공공2 (3.8%):</strong>
-              <span>010-4444-5555</span>
+              <span>buyer04</span>
               <span>test1234</span>
               
               <strong style={{ color: "#dc2626" }}>국가1 (3.8%+감면):</strong>
-              <span>010-9999-0000</span>
+              <span>buyer05</span>
               <span>test1234</span>
               
               <strong style={{ color: "#dc2626" }}>국가2 (3.8%+감면):</strong>
-              <span>010-9888-9999</span>
+              <span>buyer06</span>
               <span>test1234</span>
             </div>
           </div>
