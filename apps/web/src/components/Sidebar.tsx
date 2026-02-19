@@ -149,37 +149,6 @@ export default function Sidebar() {
 
         {/* 메인 메뉴 */}
         <nav>
-          {/* 기업장애인고용관리센터 */}
-          <div style={{ marginBottom: 24 }}>
-            <div style={{ fontSize: 20.6, color: "#fff", marginBottom: 12, fontWeight: "bold" }}>
-              기업장애인고용관리센터
-            </div>
-            <MenuItem
-              href="/dashboard"
-              label="대시보드"
-              icon="📊"
-              active={isActive("/dashboard")}
-              requiresRole={["BUYER", "SUPER_ADMIN"]}
-              currentRole={userRole}
-            />
-            <MenuItem
-              href="/dashboard/employees"
-              label="장애인 직원 등록·관리"
-              icon="👥"
-              active={isActive("/dashboard/employees")}
-              requiresRole={["BUYER", "SUPER_ADMIN"]}
-              currentRole={userRole}
-            />
-            <MenuItem
-              href="/dashboard/monthly"
-              label="월별 장애인 고용 관리"
-              icon="📅"
-              active={isActive("/dashboard/monthly")}
-              requiresRole={["BUYER", "SUPER_ADMIN"]}
-              currentRole={userRole}
-            />
-          </div>
-
           {/* 고용계산기 */}
           <div style={{ marginBottom: 24 }}>
             <div style={{ fontSize: 20.6, color: "#fff", marginBottom: 12, fontWeight: "bold" }}>
@@ -270,31 +239,6 @@ export default function Sidebar() {
                 active={isActive("/supplier/profile")}
               />
             )}
-          </div>
-
-          {/* 콘텐츠 */}
-          <div style={{ marginBottom: 24 }}>
-            <div style={{ fontSize: 13.2, color: "#666", marginBottom: 8, fontWeight: "bold" }}>
-              안내
-            </div>
-            <MenuItem
-              href="/content/establishment"
-              label="표준사업장 설립"
-              icon="📄"
-              active={isActive("/content/establishment")}
-            />
-            <MenuItem
-              href="/content/linkage"
-              label="연계사업 안내"
-              icon="📋"
-              active={isActive("/content/linkage")}
-            />
-            <MenuItem
-              href="/content/health-voucher"
-              label="헬스바우처"
-              icon="🏥"
-              active={isActive("/content/health-voucher")}
-            />
           </div>
 
           {/* 계정 */}
