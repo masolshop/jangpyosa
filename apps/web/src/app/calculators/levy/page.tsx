@@ -3,6 +3,57 @@
 import { useState } from "react";
 import { API_BASE } from "@/lib/api";
 
+// 숫자를 한글 금액으로 변환하는 함수
+function toKoreanCurrency(num: number): string {
+  const units = ['', '만', '억', '조'];
+  const smallUnits = ['', '천', '백', '십'];
+  
+  if (num === 0) return '';
+  
+  let result = '';
+  let unitIndex = 0;
+  
+  while (num > 0) {
+    const part = num % 10000;
+    if (part > 0) {
+      let partStr = '';
+      let tempPart = part;
+      let smallUnitIndex = 0;
+      
+      while (tempPart > 0) {
+        const digit = tempPart % 10;
+        if (digit > 0) {
+          if (digit === 1 && smallUnitIndex > 0) {
+            partStr = smallUnits[smallUnitIndex] + partStr;
+          } else {
+            partStr = digit + smallUnits[smallUnitIndex] + partStr;
+          }
+        }
+        tempPart = Math.floor(tempPart / 10);
+        smallUnitIndex++;
+      }
+      
+      result = partStr + units[unitIndex] + result;
+    }
+    num = Math.floor(num / 10000);
+    unitIndex++;
+  }
+  
+  return result;
+}
+
+// 금액 포맷팅 함수 (천단위 구분 + 한글)
+function formatCurrency(amount: number): { formatted: string; korean: string } {
+  const roundedAmount = Math.round(amount);
+  const formatted = roundedAmount.toLocaleString();
+  const korean = toKoreanCurrency(roundedAmount);
+  
+  return {
+    formatted,
+    korean: korean ? `(${korean}원)` : ''
+  };
+}
+
 export default function LevyCalcPage() {
   const [year, setYear] = useState(2026);
   const [employeeCount, setEmployeeCount] = useState(100);
@@ -140,25 +191,38 @@ export default function LevyCalcPage() {
                 <strong>미달인원:</strong> {out.shortfall}명
               </p>
               <p style={{ fontSize: 18, color: "#e00", fontWeight: "bold" }}>
-                <strong>부담금:</strong> {Math.round(out.estimated).toLocaleString()}원
+                <strong>부담금:</strong>{" "}
+                {(() => {
+                  const { formatted, korean } = formatCurrency(out.estimated);
+                  return `${formatted}원 ${korean}`;
+                })()}
               </p>
               {isTaxable && taxRate > 0 && (
                 <>
                   <p style={{ fontSize: 16, color: "#d97706" }}>
                     <strong>법인세 ({taxRate}%):</strong>{" "}
-                    {Math.round(out.estimated * (taxRate / 100)).toLocaleString()}원
+                    {(() => {
+                      const { formatted, korean } = formatCurrency(out.estimated * (taxRate / 100));
+                      return `${formatted}원 ${korean}`;
+                    })()}
                   </p>
                   {includeLocalTax && (
                     <p style={{ fontSize: 15, color: "#f59e0b" }}>
                       <strong>+ 지방소득세 (법인세의 10%):</strong>{" "}
-                      {Math.round(out.estimated * (taxRate / 100) * 0.1).toLocaleString()}원
+                      {(() => {
+                        const { formatted, korean } = formatCurrency(out.estimated * (taxRate / 100) * 0.1);
+                        return `${formatted}원 ${korean}`;
+                      })()}
                     </p>
                   )}
                   <p style={{ fontSize: 20, color: "#dc2626", fontWeight: "bold" }}>
                     <strong>실질 부담액:</strong>{" "}
-                    {Math.round(
-                      out.estimated * (1 + (taxRate / 100) * (includeLocalTax ? 1.1 : 1))
-                    ).toLocaleString()}원
+                    {(() => {
+                      const { formatted, korean } = formatCurrency(
+                        out.estimated * (1 + (taxRate / 100) * (includeLocalTax ? 1.1 : 1))
+                      );
+                      return `${formatted}원 ${korean}`;
+                    })()}
                   </p>
                 </>
               )}
