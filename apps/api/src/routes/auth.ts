@@ -669,6 +669,107 @@ r.post("/find-id", async (req, res) => {
 });
 
 // ========================================
+// ✏️ 회원정보 수정
+// ========================================
+
+const updateProfileSchema = z.object({
+  name: z.string().min(1).optional(),
+  email: z.string().email().optional(),
+  managerName: z.string().min(1).optional(),
+  managerTitle: z.string().optional(),
+  managerEmail: z.string().email().optional(),
+  managerPhone: z.string().min(10).optional(),
+  currentPassword: z.string().min(8).optional(),
+  newPassword: z.string().min(8).optional(),
+});
+
+r.post("/update-profile", async (req, res) => {
+  try {
+    // 인증 토큰 확인
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ error: "UNAUTHORIZED", message: "로그인이 필요합니다" });
+    }
+    
+    const token = authHeader.split(" ")[1];
+    let decoded;
+    try {
+      decoded = jwt.verify(token, config.jwtSecret) as { userId: string };
+    } catch (error) {
+      return res.status(401).json({ error: "INVALID_TOKEN", message: "유효하지 않은 토큰입니다" });
+    }
+    
+    const body = updateProfileSchema.parse(req.body);
+    
+    // 현재 사용자 조회 (비밀번호 포함)
+    const user = await prisma.user.findUnique({ 
+      where: { id: decoded.userId }
+    });
+    
+    if (!user) {
+      return res.status(404).json({ error: "USER_NOT_FOUND", message: "사용자를 찾을 수 없습니다" });
+    }
+    
+    // 비밀번호 변경 시 현재 비밀번호 확인
+    if (body.newPassword) {
+      if (!body.currentPassword) {
+        return res.status(400).json({ 
+          error: "CURRENT_PASSWORD_REQUIRED", 
+          message: "현재 비밀번호를 입력하세요" 
+        });
+      }
+      
+      const passwordMatch = await bcrypt.compare(body.currentPassword, user.passwordHash);
+      if (!passwordMatch) {
+        return res.status(400).json({ 
+          error: "INCORRECT_PASSWORD", 
+          message: "현재 비밀번호가 일치하지 않습니다" 
+        });
+      }
+    }
+    
+    // 업데이트 데이터 준비
+    const updateData: any = {};
+    
+    if (body.name) updateData.name = body.name;
+    if (body.email) updateData.email = body.email;
+    if (body.managerName) updateData.managerName = body.managerName;
+    if (body.managerTitle !== undefined) updateData.managerTitle = body.managerTitle;
+    if (body.managerEmail) updateData.managerEmail = body.managerEmail;
+    if (body.managerPhone) {
+      updateData.managerPhone = normalizePhone(body.managerPhone);
+    }
+    
+    // 새 비밀번호가 있으면 해시화
+    if (body.newPassword) {
+      updateData.passwordHash = await bcrypt.hash(body.newPassword, 10);
+    }
+    
+    // 사용자 정보 업데이트
+    const updatedUser = await prisma.user.update({
+      where: { id: decoded.userId },
+      data: updateData,
+      include: { company: true, branch: true }
+    });
+    
+    // 비밀번호 제외하고 반환
+    const { passwordHash: _, ...userWithoutPassword } = updatedUser;
+    
+    return res.json({
+      message: "회원정보가 수정되었습니다",
+      user: userWithoutPassword
+    });
+    
+  } catch (error: any) {
+    console.error("Update profile error:", error);
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: "VALIDATION_ERROR", details: error.errors });
+    }
+    return res.status(500).json({ error: "INTERNAL_ERROR", message: "회원정보 수정 실패" });
+  }
+});
+
+// ========================================
 // 🔄 토큰 갱신
 // ========================================
 
