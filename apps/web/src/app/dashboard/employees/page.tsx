@@ -57,7 +57,7 @@ export default function EmployeesPage() {
     monthlySalary: 2060740,
     hasEmploymentInsurance: true,
     meetsMinimumWage: true,
-    workHoursPerWeek: 40,
+    workHoursPerWeek: 60,
     memo: "",
   });
 
@@ -216,7 +216,7 @@ export default function EmployeesPage() {
       monthlySalary: 2060740,
       hasEmploymentInsurance: true,
       meetsMinimumWage: true,
-      workHoursPerWeek: 40,
+      workHoursPerWeek: 60,
       memo: "",
     });
     setEditingId(null);
@@ -257,7 +257,7 @@ export default function EmployeesPage() {
         "2500000",
         "가입",
         "이상",
-        "40",
+        "60",
         "샘플 데이터",
       ],
       [
@@ -272,7 +272,7 @@ export default function EmployeesPage() {
         "2800000",
         "가입",
         "이상",
-        "40",
+        "60",
         "",
       ],
       [
@@ -287,7 +287,7 @@ export default function EmployeesPage() {
         "2200000",
         "가입",
         "이상",
-        "35",
+        "60",
         "",
       ],
     ];
@@ -318,8 +318,9 @@ export default function EmployeesPage() {
       ["- 이상 또는 미만으로 입력"],
       [],
       ["[주근로시간]"],
-      ["- 주당 근로시간을 숫자로 입력 (예: 40)"],
-      ["- 입력하지 않으면 40시간으로 자동 설정됩니다"],
+      ["- 주당 근로시간을 숫자로 입력 (예: 60)"],
+      ["- 입력하지 않으면 60시간으로 자동 설정됩니다"],
+      ["- 60시간이 최소 근무시간입니다"],
     ];
 
     // 워크북 생성
@@ -407,7 +408,7 @@ export default function EmployeesPage() {
             monthlySalary: Number(row[8]) || 2060740,
             hasEmploymentInsurance: row[9]?.toString().trim() === "가입",
             meetsMinimumWage: row[10]?.toString().trim() === "이상",
-            workHoursPerWeek: Number(row[11]) || 40,
+            workHoursPerWeek: Number(row[11]) || 60,
             memo: row[12]?.toString().trim() || "",
           };
 
