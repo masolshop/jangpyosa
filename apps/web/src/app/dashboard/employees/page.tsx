@@ -1146,7 +1146,7 @@ export default function EmployeesPage() {
               장려금은 <strong>성별, 중증도, 연령, 근로시간</strong>에 따라 차등 지급됩니다.
             </li>
             <li>
-              등록 완료 후 <strong>"월별 장애인 고용 관리"</strong> 메뉴에서 상시근로자 수를 입력하면 자동 계산됩니다.
+              등록 완료 후 <strong>"월별 고용장려금부담금 관리"</strong> 메뉴에서 상시근로자 수를 입력하면 자동 계산됩니다.
             </li>
           </ul>
         </div>

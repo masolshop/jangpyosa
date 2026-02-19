@@ -164,7 +164,7 @@ export default function Sidebar() {
             />
             <MenuItem
               href="/dashboard/monthly"
-              label="월별 장애인 고용 관리"
+              label="월별 고용장려금부담금 관리"
               icon="📅"
               active={isActive("/dashboard/monthly")}
               requiresRole={["BUYER", "SUPER_ADMIN"]}

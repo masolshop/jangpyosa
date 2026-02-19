@@ -309,7 +309,7 @@ export default function MonthlyManagementPage() {
   return (
     <div className="container">
       <div className="card" style={{ maxWidth: "100%", margin: "20px auto" }}>
-        <h1>📅 월별 장애인 고용 관리</h1>
+        <h1>📅 월별 고용장려금부담금 관리</h1>
         <div style={{ marginTop: 8, padding: 16, background: "#f0f9ff", borderRadius: 8, border: "1px solid #bae6fd" }}>
           <p style={{ margin: 0, fontSize: 16, color: "#0c4a6e" }}>
             <strong>{companyInfo.name}</strong> | {buyerTypeLabel} (의무고용률 <strong>{quotaRatePercent}%</strong>) | {year}년 월별 고용 현황 및 정밀 계산
