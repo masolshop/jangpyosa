@@ -613,47 +613,6 @@ export default function SignupPage() {
                     </button>
                   </div>
                   
-                  {/* 선택된 유형 설명 */}
-                  <div style={{ 
-                    fontSize: 12, 
-                    padding: 12,
-                    background: "#f8f9fa",
-                    borderRadius: 6,
-                    marginBottom: 16,
-                    lineHeight: 1.5
-                  }}>
-                    {buyerType === "PRIVATE_COMPANY" && (
-                      <>
-                        <p style={{ margin: 0, fontWeight: 600, color: "#333" }}>📌 민간기업 유형</p>
-                        <ul style={{ margin: "8px 0 0 0", paddingLeft: 20, color: "#666" }}>
-                          <li>의무고용률: 3.1%</li>
-                          <li>고용부담금/장려금 모두 적용</li>
-                          <li>연계고용 감면: 인정비율 50~90% 적용</li>
-                        </ul>
-                      </>
-                    )}
-                    {buyerType === "PUBLIC_INSTITUTION" && (
-                      <>
-                        <p style={{ margin: 0, fontWeight: 600, color: "#333" }}>📌 공공기관 유형</p>
-                        <ul style={{ margin: "8px 0 0 0", paddingLeft: 20, color: "#666" }}>
-                          <li>의무고용률: 3.8%</li>
-                          <li>고용부담금/장려금 모두 적용</li>
-                          <li>연계고용 감면: 인정비율 50~90% 적용</li>
-                        </ul>
-                      </>
-                    )}
-                    {buyerType === "GOVERNMENT" && (
-                      <>
-                        <p style={{ margin: 0, fontWeight: 600, color: "#333" }}>📌 국가/지자체/교육청 유형</p>
-                        <ul style={{ margin: "8px 0 0 0", paddingLeft: 20, color: "#666" }}>
-                          <li>의무고용률: 3.8%</li>
-                          <li>고용부담금/장려금 모두 적용</li>
-                          <li>연계고용 감면: 인정비율 50~90% 적용</li>
-                          <li style={{ color: "#d32f2f", fontWeight: 600 }}>⚠️ 특별 계산식 적용 (초과액 반영)</li>
-                        </ul>
-                      </>
-                    )}
-                  </div>
                 </>
               )}
 
