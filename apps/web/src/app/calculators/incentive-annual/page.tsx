@@ -454,6 +454,42 @@ export default function IncentiveAnnualPage() {
       <p style={{ color: "#666", marginTop: 8 }}>
         의무고용률을 초과하여 장애인을 고용한 사업주에게 지급되는 장려금을 계산하세요
       </p>
+      
+      {/* 계산식 안내 */}
+      <div
+        style={{
+          marginTop: 16,
+          padding: 16,
+          background: "#eff6ff",
+          borderRadius: 8,
+          border: "1px solid #bfdbfe",
+        }}
+      >
+        <h3 style={{ margin: 0, color: "#1e40af", fontSize: 15, marginBottom: 12 }}>
+          📐 고용장려금 계산식 (2026년 기준)
+        </h3>
+        <div style={{ fontSize: 14, lineHeight: 1.8, color: "#1e293b" }}>
+          <p style={{ margin: "4px 0", fontWeight: 600 }}>
+            고용장려금 = (월별 지급인원 × 지급단가)의 합계액
+          </p>
+          <p style={{ margin: "4px 0" }}>
+            <strong>월별 지급인원</strong> = [장애인근로자수 - 제외인원 - 기준인원]
+          </p>
+          <p style={{ margin: "4px 0" }}>
+            <strong>기준인원 (2026년)</strong> = 상시근로자수 × 의무고용률 (소수점 올림)
+          </p>
+          <ul style={{ margin: "8px 0", paddingLeft: 20 }}>
+            <li>민간/공공기업: 3.1%</li>
+            <li>국가/지자체/교육청: 3.8%</li>
+          </ul>
+          <p style={{ margin: "4px 0" }}>
+            <strong>기준인원 산입 순서</strong>: 입사일 순 → 입사일 동일시 경증·남성·임금 낮은 순
+          </p>
+          <p style={{ margin: "4px 0" }}>
+            <strong>제외인원</strong>: 고용보험 미가입자 또는 최저임금 미만자
+          </p>
+        </div>
+      </div>
 
       {/* 직원 데이터 불러오기 버튼 */}
       <div
