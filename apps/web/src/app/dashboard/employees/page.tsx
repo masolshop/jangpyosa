@@ -39,6 +39,10 @@ export default function EmployeesPage() {
   const [message, setMessage] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // 사용자 정보
+  const [companyName, setCompanyName] = useState<string>("");
+  const [userName, setUserName] = useState<string>("");
+
   // 직원 데이터
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [showForm, setShowForm] = useState(false);
@@ -92,6 +96,21 @@ export default function EmployeesPage() {
       router.push("/");
       return;
     }
+
+    // 로그인한 사용자 정보 가져오기
+    if (typeof window !== "undefined") {
+      const userStr = localStorage.getItem("user");
+      if (userStr) {
+        try {
+          const user = JSON.parse(userStr);
+          setCompanyName(user.company?.name || "");
+          setUserName(user.name || "");
+        } catch (e) {
+          console.error("사용자 정보 파싱 실패:", e);
+        }
+      }
+    }
+
     fetchEmployees();
   }, []);
 
@@ -516,7 +535,37 @@ export default function EmployeesPage() {
     <div className="container">
       <div className="card" style={{ maxWidth: "100%", margin: "20px auto" }}>
         <h1>👥 장애인 직원 등록·관리</h1>
-        <p style={{ color: "#666", marginTop: 8 }}>
+
+        {/* 기업명 표시 */}
+        {companyName && (
+          <div style={{
+            marginTop: 16,
+            padding: "16px 24px",
+            background: "linear-gradient(135deg, #0070f3 0%, #0051cc 100%)",
+            borderRadius: 12,
+            textAlign: "center",
+            boxShadow: "0 4px 12px rgba(0, 112, 243, 0.3)",
+          }}>
+            <div style={{
+              fontSize: 14,
+              color: "rgba(255, 255, 255, 0.9)",
+              marginBottom: 4,
+              fontWeight: 500,
+            }}>
+              관리 기업
+            </div>
+            <div style={{
+              fontSize: 24,
+              fontWeight: 700,
+              color: "white",
+              letterSpacing: "-0.5px",
+            }}>
+              🏢 {companyName}
+            </div>
+          </div>
+        )}
+
+        <p style={{ color: "#666", marginTop: 16 }}>
           장애인 직원 정보를 등록하고 관리합니다. 입사일, 퇴사일 기준으로 월별 계산에 자동 반영됩니다.
         </p>
 
