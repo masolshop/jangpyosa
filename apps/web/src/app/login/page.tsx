@@ -8,23 +8,10 @@ type UserType = "AGENT" | "SUPPLIER" | "BUYER" | "";
 
 export default function LoginPage() {
   const [userType, setUserType] = useState<UserType>("");
-  const [phone, setPhone] = useState("");
+  const [identifier, setIdentifier] = useState(""); // phone 또는 username
   const [password, setPw] = useState("");
   const [msg, setMsg] = useState("");
   const [loading, setLoading] = useState(false);
-
-  // 핸드폰 번호 포맷팅 (010-1234-5678)
-  const formatPhone = (value: string) => {
-    const cleaned = value.replace(/\D/g, "");
-    if (cleaned.length <= 3) return cleaned;
-    if (cleaned.length <= 7) return `${cleaned.slice(0, 3)}-${cleaned.slice(3)}`;
-    return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 7)}-${cleaned.slice(7, 11)}`;
-  };
-
-  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatPhone(e.target.value);
-    setPhone(formatted);
-  };
 
   async function onLogin() {
     if (!userType) {
@@ -32,16 +19,18 @@ export default function LoginPage() {
       return;
     }
 
+    if (!identifier || !password) {
+      setMsg("❌ 아이디/핸드폰 번호와 비밀번호를 입력하세요");
+      return;
+    }
+
     setMsg("");
     setLoading(true);
     try {
-      // 하이픈 제거
-      const cleanPhone = phone.replace(/\D/g, "");
-      
       const out = await apiFetch("/auth/login", {
         method: "POST",
         body: JSON.stringify({ 
-          phone: cleanPhone, 
+          identifier, // phone 또는 username
           password,
           userType // 선택한 유저 타입 전송
         }),
@@ -185,14 +174,22 @@ export default function LoginPage() {
             </button>
           </div>
 
-          <label>핸드폰 번호</label>
+          <label>
+            {userType === "AGENT" ? "핸드폰 번호 (로그인 ID)" : "아이디"}
+            {!userType && "아이디 또는 핸드폰 번호"}
+          </label>
           <input
-            type="tel"
-            placeholder="010-1234-5678"
-            value={phone}
-            onChange={handlePhoneChange}
+            type="text"
+            placeholder={
+              userType === "AGENT" 
+                ? "010-1234-5678" 
+                : userType === "SUPPLIER" || userType === "BUYER"
+                ? "영문+숫자 조합 ID"
+                : "핸드폰 번호 또는 ID"
+            }
+            value={identifier}
+            onChange={(e) => setIdentifier(e.target.value)}
             onKeyPress={handleKeyPress}
-            maxLength={13}
             style={{ fontSize: 16 }}
           />
 
@@ -208,7 +205,7 @@ export default function LoginPage() {
 
           <button
             onClick={onLogin}
-            disabled={loading || !phone || !password || !userType}
+            disabled={loading || !identifier || !password || !userType}
             style={{ width: "100%", marginTop: 16 }}
           >
             {loading ? "로그인 중..." : "로그인"}

@@ -131,9 +131,9 @@ export default function SignupPage() {
   async function onSignup() {
     setMsg("");
 
-    // 유효성 검사
-    if (!phone || !password) {
-      setMsg("필수 항목을 입력하세요");
+    // 공통 유효성 검사
+    if (!password) {
+      setMsg("비밀번호를 입력하세요");
       return;
     }
 
@@ -147,24 +147,44 @@ export default function SignupPage() {
       return;
     }
 
-    const cleanPhone = phone.replace(/\D/g, "");
+    // 개인정보 동의 체크
+    if (!privacyAgreed) {
+      setMsg("개인정보 활용 동의는 필수입니다");
+      return;
+    }
 
+    // 매니저 유효성 검사
     if (type === "agent") {
-      if (!name || !branchId) {
-        setMsg("이름과 지사를 선택하세요");
+      if (!phone || !name || !branchId) {
+        setMsg("필수 항목을 입력하세요 (핸드폰, 이름, 지사)");
         return;
       }
     }
 
+    // 기업 유효성 검사
     if (type === "supplier" || type === "buyer") {
-      if (!bizNo) {
-        setMsg("사업자등록번호를 입력하세요");
+      if (!username || !bizNo || !referrerPhone || !managerName || !managerTitle || !managerEmail || !managerPhone) {
+        setMsg("필수 항목을 모두 입력하세요");
         return;
       }
-      if (!referrerPhone) {
-        setMsg("추천인 매니저 핸드폰 번호를 입력하세요");
+
+      // username 유효성 검사 (영문+숫자만)
+      if (!/^[a-zA-Z0-9]+$/.test(username)) {
+        setMsg("로그인 ID는 영문+숫자만 사용 가능합니다");
         return;
       }
+
+      if (username.length < 4 || username.length > 20) {
+        setMsg("로그인 ID는 4~20자로 입력하세요");
+        return;
+      }
+
+      // 이메일 유효성 검사
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(managerEmail)) {
+        setMsg("올바른 이메일 주소를 입력하세요");
+        return;
+      }
+
       if (type === "buyer" && !buyerType) {
         setMsg("기업 유형을 선택하세요");
         return;
@@ -175,34 +195,46 @@ export default function SignupPage() {
 
     try {
       let endpoint = "";
-      let body: any = {
-        phone: cleanPhone,
-        password,
-      };
+      let body: any = {};
 
       if (type === "agent") {
         endpoint = "/auth/signup/agent";
+        const cleanPhone = phone.replace(/\D/g, "");
         body = {
-          ...body,
+          phone: cleanPhone,
+          password,
           name,
           email: email || undefined,
           branchId,
           refCode: refCode || undefined,
+          privacyAgreed,
         };
       } else if (type === "supplier") {
         endpoint = "/auth/signup/supplier";
         body = {
-          ...body,
+          username,
+          password,
           bizNo: bizNo.replace(/\D/g, ""),
           referrerPhone: referrerPhone.replace(/\D/g, ""),
+          managerName,
+          managerTitle,
+          managerEmail,
+          managerPhone: managerPhone.replace(/\D/g, ""),
+          privacyAgreed,
         };
       } else if (type === "buyer") {
         endpoint = "/auth/signup/buyer";
         body = {
-          ...body,
+          username,
+          password,
           bizNo: bizNo.replace(/\D/g, ""),
           referrerPhone: referrerPhone.replace(/\D/g, ""),
           buyerType,
+          managerName,
+          managerTitle,
+          managerEmail,
+          managerPhone: managerPhone.replace(/\D/g, ""),
+          privacyAgreed,
         };
       }
 
@@ -222,7 +254,9 @@ export default function SignupPage() {
       // 에러 메시지 개선
       let errorMsg = "알 수 없는 오류가 발생했습니다";
       
-      if (error.error === "PHONE_ALREADY_EXISTS") {
+      if (error.error === "USERNAME_ALREADY_EXISTS") {
+        errorMsg = "이미 사용 중인 로그인 ID입니다. 다른 ID를 입력하세요.";
+      } else if (error.error === "PHONE_ALREADY_EXISTS") {
         errorMsg = "이미 가입된 핸드폰 번호입니다. 로그인하거나 다른 번호를 사용하세요.";
       } else if (error.error === "BIZNO_ALREADY_REGISTERED") {
         errorMsg = "이미 가입된 사업자번호입니다. 담당자 추가 기능을 이용하세요. (동일 사업자번호로 추가 가입 가능)";
@@ -542,6 +576,47 @@ export default function SignupPage() {
                 value={passwordConfirm}
                 onChange={(e) => setPasswordConfirm(e.target.value)}
               />
+
+              {/* 개인정보 동의 */}
+              <div style={{ 
+                marginTop: 20, 
+                padding: 16, 
+                background: "#f9fafb", 
+                borderRadius: 8,
+                border: "1px solid #e5e7eb"
+              }}>
+                <label style={{ 
+                  display: "flex", 
+                  alignItems: "center", 
+                  cursor: "pointer",
+                  marginBottom: 0
+                }}>
+                  <input
+                    type="checkbox"
+                    checked={privacyAgreed}
+                    onChange={(e) => setPrivacyAgreed(e.target.checked)}
+                    style={{ 
+                      marginRight: 8, 
+                      width: 18, 
+                      height: 18, 
+                      cursor: "pointer" 
+                    }}
+                  />
+                  <span style={{ fontSize: 14 }}>
+                    개인정보 활용에 동의합니다 (필수)
+                  </span>
+                </label>
+                <p style={{ 
+                  margin: "8px 0 0 26px", 
+                  fontSize: 12, 
+                  color: "#6b7280",
+                  lineHeight: 1.5
+                }}>
+                  수집 항목: 이름, 핸드폰 번호, 이메일<br/>
+                  이용 목적: 회원 가입 및 서비스 제공, 알림톡 발송<br/>
+                  보유 기간: 회원 탈퇴 시까지
+                </p>
+              </div>
             </>
           )}
 
@@ -676,17 +751,20 @@ export default function SignupPage() {
                 </div>
               )}
 
-              {/* 공통: 핸드폰 번호 */}
-              <label>핸드폰 번호 (아이디) *</label>
+              {/* 로그인 ID */}
+              <label>로그인 ID * <span style={{ fontSize: 12, color: "#888" }}>(영문+숫자, 4~20자)</span></label>
               <input
-                type="tel"
-                placeholder="010-1234-5678"
-                value={phone}
-                onChange={handlePhoneChange}
-                maxLength={13}
+                type="text"
+                placeholder="예: company2026"
+                value={username}
+                onChange={(e) => setUsername(e.target.value.toLowerCase())}
+                maxLength={20}
               />
+              <p style={{ fontSize: 12, color: "#666", margin: "4px 0 0 0" }}>
+                💡 직원 퇴사 시에도 로그인 가능하도록 회사 대표 ID를 만드세요
+              </p>
 
-              {/* 공통: 비밀번호 */}
+              {/* 비밀번호 */}
               <label>비밀번호 *</label>
               <input
                 type="password"
@@ -703,7 +781,69 @@ export default function SignupPage() {
                 onChange={(e) => setPasswordConfirm(e.target.value)}
               />
 
-              {/* 추천인 매니저 핸드폰 번호 - 마지막 */}
+              {/* 구분선 */}
+              <div style={{
+                margin: "32px 0 24px 0",
+                padding: 16,
+                background: "#f9fafb",
+                borderRadius: 8,
+                border: "1px solid #e5e7eb"
+              }}>
+                <p style={{ 
+                  margin: 0, 
+                  fontSize: 15, 
+                  fontWeight: 600, 
+                  color: "#374151" 
+                }}>
+                  📝 담당자 정보 (필수)
+                </p>
+                <p style={{ 
+                  margin: "4px 0 0 0", 
+                  fontSize: 12, 
+                  color: "#6b7280" 
+                }}>
+                  담당자 핸드폰 번호는 알림톡 발송에 사용됩니다
+                </p>
+              </div>
+
+              {/* 담당자 성함 */}
+              <label>담당자 성함 *</label>
+              <input
+                type="text"
+                placeholder="홍길동"
+                value={managerName}
+                onChange={(e) => setManagerName(e.target.value)}
+              />
+
+              {/* 담당자 직함 */}
+              <label>담당자 직함 *</label>
+              <input
+                type="text"
+                placeholder="예: 인사팀 대리, 총무부장"
+                value={managerTitle}
+                onChange={(e) => setManagerTitle(e.target.value)}
+              />
+
+              {/* 담당자 이메일 */}
+              <label>담당자 이메일 *</label>
+              <input
+                type="email"
+                placeholder="example@company.com"
+                value={managerEmail}
+                onChange={(e) => setManagerEmail(e.target.value)}
+              />
+
+              {/* 담당자 핸드폰 */}
+              <label>담당자 핸드폰 번호 * <span style={{ fontSize: 12, color: "#888" }}>(알림톡 수신용)</span></label>
+              <input
+                type="tel"
+                placeholder="010-1234-5678"
+                value={managerPhone}
+                onChange={(e) => setManagerPhone(formatPhone(e.target.value))}
+                maxLength={13}
+              />
+
+              {/* 추천인 매니저 핸드폰 */}
               <label>추천인 매니저 핸드폰 번호 *</label>
               <input
                 type="tel"
@@ -712,9 +852,50 @@ export default function SignupPage() {
                 onChange={handleReferrerPhoneChange}
                 maxLength={13}
               />
-              <p style={{ fontSize: 12, color: "#d32f2f", fontWeight: 600, margin: "4px 0 12px 0" }}>
-                ⚠️ 매니저를 통해서만 가입 가능합니다. 매니저의 핸드폰 번호를 입력하세요.
+              <p style={{ fontSize: 12, color: "#666", margin: "4px 0 0 0" }}>
+                💡 담당 매니저에게 핸드폰 번호를 문의하세요
               </p>
+
+              {/* 개인정보 동의 */}
+              <div style={{ 
+                marginTop: 20, 
+                padding: 16, 
+                background: "#f9fafb", 
+                borderRadius: 8,
+                border: "1px solid #e5e7eb"
+              }}>
+                <label style={{ 
+                  display: "flex", 
+                  alignItems: "center", 
+                  cursor: "pointer",
+                  marginBottom: 0
+                }}>
+                  <input
+                    type="checkbox"
+                    checked={privacyAgreed}
+                    onChange={(e) => setPrivacyAgreed(e.target.checked)}
+                    style={{ 
+                      marginRight: 8, 
+                      width: 18, 
+                      height: 18, 
+                      cursor: "pointer" 
+                    }}
+                  />
+                  <span style={{ fontSize: 14 }}>
+                    개인정보 활용에 동의합니다 (필수)
+                  </span>
+                </label>
+                <p style={{ 
+                  margin: "8px 0 0 26px", 
+                  fontSize: 12, 
+                  color: "#6b7280",
+                  lineHeight: 1.5
+                }}>
+                  수집 항목: 담당자 성함, 직함, 이메일, 핸드폰 번호<br/>
+                  이용 목적: 회원 가입 및 서비스 제공, 알림톡 발송<br/>
+                  보유 기간: 회원 탈퇴 시까지
+                </p>
+              </div>
             </>
           )}
 
