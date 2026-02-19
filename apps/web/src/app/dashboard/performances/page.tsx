@@ -73,6 +73,12 @@ export default function PerformancesPage() {
       if (!contractsRes.ok) throw new Error("계약 목록을 불러올 수 없습니다")
       const contracts = await contractsRes.json()
 
+      // contracts가 배열인지 확인
+      if (!Array.isArray(contracts)) {
+        console.error("contracts is not an array:", contracts)
+        throw new Error("계약 목록 형식이 올바르지 않습니다")
+      }
+
       // 각 계약의 실적 가져오기
       const allPerformances: PerformanceItem[] = []
       for (const contract of contracts) {
@@ -80,7 +86,9 @@ export default function PerformancesPage() {
           headers: { Authorization: `Bearer ${token}` }
         })
         if (perfRes.ok) {
-          const perfs = await perfRes.json()
+          const data = await perfRes.json()
+          const perfs = data.performances || []
+          
           perfs.forEach((perf: any) => {
             allPerformances.push({
               ...perf,
