@@ -25,6 +25,7 @@ import employeesRoutes from "./routes/employees.js";
 import dashboardRoutes from "./routes/dashboard.js";
 import contractsRoutes from "./routes/contracts.js";
 import performancesRoutes from "./routes/performances.js";
+import apickRoutes from "./routes/apick.js";
 
 export const prisma = new PrismaClient();
 
@@ -52,6 +53,7 @@ app.use("/companies", companiesRoutes);
 app.use("/employees", employeesRoutes);
 app.use("/dashboard", dashboardRoutes);
 app.use("/contracts", contractsRoutes);
+app.use("/apick", apickRoutes);
 app.use("/", performancesRoutes); // performances와 contracts 엔드포인트 모두 포함
 
 // Error handler
