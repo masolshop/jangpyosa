@@ -27,6 +27,9 @@ export default function EmployeeAttendancePage() {
   const [error, setError] = useState("");
   const [workType, setWorkType] = useState<"OFFICE" | "REMOTE">("OFFICE");
   const [location, setLocation] = useState("");
+  const [isLocationDetected, setIsLocationDetected] = useState(false);
+  const [isDetectingLocation, setIsDetectingLocation] = useState(false);
+  const [locationError, setLocationError] = useState("");
   const [note, setNote] = useState("");
   const [todayRecord, setTodayRecord] = useState<AttendanceRecord | null>(null);
   const [recentRecords, setRecentRecords] = useState<AttendanceRecord[]>([]);
@@ -116,38 +119,60 @@ export default function EmployeeAttendancePage() {
    * 1순위: GPS (Geolocation API)
    * 2순위: IP 기반 위치 추정
    */
-  async function getAutoLocation(): Promise<string> {
+  async function detectLocation() {
+    setIsDetectingLocation(true);
+    setLocationError("");
+    
     try {
       // 1순위: GPS (정확도 높음)
       if (navigator.geolocation) {
-        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject, {
-            enableHighAccuracy: true,
-            timeout: 5000,
-            maximumAge: 0,
+        try {
+          const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+              enableHighAccuracy: true,
+              timeout: 5000,
+              maximumAge: 0,
+            });
           });
-        });
 
-        const { latitude, longitude, accuracy } = position.coords;
-        return `GPS: ${latitude.toFixed(6)}, ${longitude.toFixed(6)} (정확도: ${Math.round(accuracy)}m)`;
+          const { latitude, longitude, accuracy } = position.coords;
+          const detectedLocation = `GPS: ${latitude.toFixed(6)}, ${longitude.toFixed(6)} (정확도: ${Math.round(accuracy)}m)`;
+          setLocation(detectedLocation);
+          setIsLocationDetected(true);
+          setIsDetectingLocation(false);
+          return detectedLocation;
+        } catch (gpsError) {
+          console.warn("GPS 위치 가져오기 실패:", gpsError);
+        }
       }
-    } catch (gpsError) {
-      console.warn("GPS 위치 가져오기 실패:", gpsError);
-    }
 
-    try {
       // 2순위: IP 기반 위치 (GPS 실패 시)
-      const ipRes = await fetch("https://ipapi.co/json/");
-      if (ipRes.ok) {
-        const ipData = await ipRes.json();
-        return `IP: ${ipData.city || "알 수 없음"}, ${ipData.country_name || ""} (${ipData.ip})`;
+      try {
+        const ipRes = await fetch("https://ipapi.co/json/");
+        if (ipRes.ok) {
+          const ipData = await ipRes.json();
+          const detectedLocation = `IP: ${ipData.city || "알 수 없음"}, ${ipData.country_name || ""} (${ipData.ip})`;
+          setLocation(detectedLocation);
+          setIsLocationDetected(true);
+          setIsDetectingLocation(false);
+          return detectedLocation;
+        }
+      } catch (ipError) {
+        console.warn("IP 위치 가져오기 실패:", ipError);
       }
-    } catch (ipError) {
-      console.warn("IP 위치 가져오기 실패:", ipError);
-    }
 
-    // 3순위: 수동 입력 (모두 실패 시)
-    return location || "위치 정보 없음";
+      // 3순위: 수동 입력 필요
+      setLocationError("위치 감지 실패. 수동으로 입력해주세요.");
+      setIsLocationDetected(false);
+      setIsDetectingLocation(false);
+      return location || "위치 정보 없음";
+    } catch (error) {
+      console.error("위치 감지 오류:", error);
+      setLocationError("위치 감지 중 오류가 발생했습니다.");
+      setIsLocationDetected(false);
+      setIsDetectingLocation(false);
+      return location || "위치 정보 없음";
+    }
   }
 
   async function handleClockIn() {
@@ -161,8 +186,12 @@ export default function EmployeeAttendancePage() {
         throw new Error("로그인이 필요합니다.");
       }
 
-      // 위치 자동 감지
-      const autoLocation = await getAutoLocation();
+      // 위치가 비어있으면 자동 감지 시도
+      let finalLocation = location;
+      if (!location) {
+        finalLocation = await detectLocation();
+      }
+      const autoLocation = finalLocation;
 
       const res = await fetch(`${API_BASE}/attendance/clock-in`, {
         method: "POST",
@@ -206,8 +235,12 @@ export default function EmployeeAttendancePage() {
         throw new Error("로그인이 필요합니다.");
       }
 
-      // 위치 자동 감지
-      const autoLocation = await getAutoLocation();
+      // 위치가 비어있으면 자동 감지 시도
+      let finalLocation = location;
+      if (!location) {
+        finalLocation = await detectLocation();
+      }
+      const autoLocation = finalLocation;
 
       const res = await fetch(`${API_BASE}/attendance/clock-out`, {
         method: "POST",
@@ -473,19 +506,56 @@ export default function EmployeeAttendancePage() {
           <label style={{ display: "block", marginBottom: 8, fontWeight: "600" }}>
             위치 (자동 감지)
           </label>
-          <input
-            type="text"
-            value={location}
-            readOnly
-            placeholder="출근/퇴근 시 자동으로 위치가 감지됩니다"
-            style={{
-              background: "#f9fafb",
-              cursor: "not-allowed",
-            }}
-          />
-          <p style={{ fontSize: 12, color: "#6b7280", marginTop: 4 }}>
-            💡 GPS 또는 IP 기반으로 위치가 자동 기록됩니다
-          </p>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <input
+              type="text"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              placeholder={isDetectingLocation ? "위치 감지 중..." : "출근/퇴근 시 자동으로 감지되거나 수동 입력"}
+              disabled={isDetectingLocation}
+              style={{
+                flex: 1,
+                padding: "12px",
+                border: "1px solid #d1d5db",
+                borderRadius: 8,
+                fontSize: 14,
+                background: isDetectingLocation ? "#f9fafb" : "white",
+              }}
+            />
+            <button
+              type="button"
+              onClick={detectLocation}
+              disabled={isDetectingLocation}
+              style={{
+                padding: "12px 16px",
+                background: isDetectingLocation ? "#9ca3af" : "#3b82f6",
+                color: "white",
+                border: "none",
+                borderRadius: 8,
+                fontSize: 14,
+                fontWeight: "600",
+                cursor: isDetectingLocation ? "not-allowed" : "pointer",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {isDetectingLocation ? "감지 중..." : "📍 위치 감지"}
+            </button>
+          </div>
+          {isLocationDetected && location && (
+            <p style={{ fontSize: 12, color: "#059669", marginTop: 6, fontWeight: "600" }}>
+              ✅ 감지된 위치: {location}
+            </p>
+          )}
+          {locationError && (
+            <p style={{ fontSize: 12, color: "#dc2626", marginTop: 6 }}>
+              ⚠️ {locationError}
+            </p>
+          )}
+          {!isLocationDetected && !locationError && (
+            <p style={{ fontSize: 12, color: "#6b7280", marginTop: 6 }}>
+              💡 GPS 또는 IP 기반으로 위치가 자동 기록되거나 직접 입력할 수 있습니다
+            </p>
+          )}
         </div>
 
         <div style={{ marginBottom: 20 }}>
@@ -580,6 +650,7 @@ export default function EmployeeAttendancePage() {
                     근무시간
                   </th>
                   <th style={{ padding: 12, textAlign: "left", fontWeight: 600 }}>형태</th>
+                  <th style={{ padding: 12, textAlign: "left", fontWeight: 600 }}>위치</th>
                 </tr>
               </thead>
               <tbody>
@@ -593,6 +664,19 @@ export default function EmployeeAttendancePage() {
                     </td>
                     <td style={{ padding: 12 }}>
                       {record.workType === "OFFICE" ? "🏢" : "🏠"}
+                    </td>
+                    <td style={{ padding: 12, fontSize: 12, color: "#6b7280", maxWidth: 200 }}>
+                      {record.location ? (
+                        <div style={{ 
+                          overflow: "hidden", 
+                          textOverflow: "ellipsis", 
+                          whiteSpace: "nowrap",
+                          cursor: "help"
+                        }} title={record.location}>
+                          {record.location.startsWith("GPS:") ? "📍 " : "🌐 "}
+                          {record.location}
+                        </div>
+                      ) : "-"}
                     </td>
                   </tr>
                 ))}
