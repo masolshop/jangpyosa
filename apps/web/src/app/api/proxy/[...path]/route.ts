@@ -44,7 +44,17 @@ export async function POST(
   const url = `${API_BASE}/${cleanPath}`
 
   try {
-    const body = await request.json()
+    // Try to read body if present, otherwise send empty object
+    let body = {}
+    try {
+      const text = await request.text()
+      if (text) {
+        body = JSON.parse(text)
+      }
+    } catch {
+      // No body or invalid JSON - use empty object
+      body = {}
+    }
 
     const response = await fetch(url, {
       method: 'POST',
@@ -78,7 +88,17 @@ export async function PUT(
   const url = `${API_BASE}/${cleanPath}`
 
   try {
-    const body = await request.json()
+    // Try to read body if present, otherwise send empty object
+    let body = {}
+    try {
+      const text = await request.text()
+      if (text) {
+        body = JSON.parse(text)
+      }
+    } catch {
+      // No body or invalid JSON - use empty object
+      body = {}
+    }
 
     const response = await fetch(url, {
       method: 'PUT',
