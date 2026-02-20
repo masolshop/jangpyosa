@@ -379,8 +379,14 @@ export default function EmployeeAttendancePage() {
    */
   async function markAnnouncementAsRead(announcementId: string) {
     try {
+      setError("");
       const token = getToken();
-      if (!token) return;
+      if (!token) {
+        setError("로그인이 필요합니다");
+        return;
+      }
+
+      console.log("공지사항 읽음 처리 시작:", announcementId);
 
       const res = await fetch(`${API_BASE}/announcements/${announcementId}/read`, {
         method: "POST",
@@ -389,15 +395,24 @@ export default function EmployeeAttendancePage() {
         },
       });
 
+      console.log("API 응답 상태:", res.status);
+
       if (res.ok) {
+        const data = await res.json();
+        console.log("API 응답:", data);
+        
         // 공지사항 목록 새로고침
         await loadAnnouncements();
         setMessage("✅ 공지사항 확인완료");
         setTimeout(() => setMessage(""), 3000);
+      } else {
+        const errorData = await res.json();
+        console.error("API 에러:", errorData);
+        setError(errorData.error || "공지사항 확인 처리에 실패했습니다");
       }
     } catch (e: any) {
       console.error("공지사항 읽음 처리 실패:", e);
-      setError(e.message);
+      setError(e.message || "공지사항 확인 중 오류가 발생했습니다");
     }
   }
 
