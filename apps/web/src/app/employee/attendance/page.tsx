@@ -392,7 +392,7 @@ export default function EmployeeAttendancePage() {
       if (res.ok) {
         // 공지사항 목록 새로고침
         await loadAnnouncements();
-        setMessage("✅ 공지사항을 확인했습니다");
+        setMessage("✅ 공지사항 확인완료");
         setTimeout(() => setMessage(""), 3000);
       }
     } catch (e: any) {
@@ -522,7 +522,7 @@ export default function EmployeeAttendancePage() {
                       whiteSpace: "nowrap",
                       marginLeft: 12,
                     }}>
-                      ✓ 읽음
+                      ✓ 확인완료됨
                     </span>
                   ) : (
                     <button
@@ -540,7 +540,7 @@ export default function EmployeeAttendancePage() {
                         marginLeft: 12,
                       }}
                     >
-                      확인했습니다
+                      확인완료
                     </button>
                   )}
                 </div>
