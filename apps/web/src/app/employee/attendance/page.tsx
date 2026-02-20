@@ -13,7 +13,7 @@ type TodayStatus = {
   today: string;
   record: {
     id: string;
-    workType: "OFFICE" | "REMOTE";
+    workType: "OFFICE" | "REMOTE" | "HYBRID";
     clockIn: string;
     clockOut: string | null;
     workHours: number | null;
@@ -33,7 +33,7 @@ export default function EmployeeAttendancePage() {
   const [message, setMessage] = useState("");
 
   const [todayStatus, setTodayStatus] = useState<TodayStatus | null>(null);
-  const [selectedWorkType, setSelectedWorkType] = useState<"OFFICE" | "REMOTE">("OFFICE");
+  const [selectedWorkType, setSelectedWorkType] = useState<"OFFICE" | "REMOTE" | "HYBRID">("OFFICE");
 
   const [userName, setUserName] = useState<string>("");
   const [companyName, setCompanyName] = useState<string>("");
@@ -295,7 +295,9 @@ export default function EmployeeAttendancePage() {
                   <div>
                     <div style={{ fontSize: 14, color: "#999", marginBottom: 4 }}>근무형태</div>
                     <div style={{ fontSize: 18, fontWeight: "bold" }}>
-                      {todayStatus.record.workType === "OFFICE" ? "🏢 회사 근무" : "🏠 재택 근무"}
+                      {todayStatus.record.workType === "OFFICE" ? "🏢 회사 근무" : 
+                       todayStatus.record.workType === "REMOTE" ? "🏠 재택 근무" : 
+                       "🔄 하이브리드"}
                     </div>
                   </div>
                   <div>
@@ -377,7 +379,7 @@ export default function EmployeeAttendancePage() {
               <label style={{ display: "block", marginBottom: 8, fontWeight: "600" }}>
                 근무형태 선택
               </label>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
                 <button
                   onClick={() => setSelectedWorkType("OFFICE")}
                   style={{
@@ -386,7 +388,7 @@ export default function EmployeeAttendancePage() {
                     color: selectedWorkType === "OFFICE" ? "white" : "#666",
                     border: selectedWorkType === "OFFICE" ? "2px solid #3b82f6" : "2px solid #e5e7eb",
                     borderRadius: 12,
-                    fontSize: 18,
+                    fontSize: 16,
                     fontWeight: "bold",
                     cursor: "pointer",
                     transition: "all 0.2s",
@@ -402,13 +404,29 @@ export default function EmployeeAttendancePage() {
                     color: selectedWorkType === "REMOTE" ? "white" : "#666",
                     border: selectedWorkType === "REMOTE" ? "2px solid #f59e0b" : "2px solid #e5e7eb",
                     borderRadius: 12,
-                    fontSize: 18,
+                    fontSize: 16,
                     fontWeight: "bold",
                     cursor: "pointer",
                     transition: "all 0.2s",
                   }}
                 >
                   🏠<br />재택 근무
+                </button>
+                <button
+                  onClick={() => setSelectedWorkType("HYBRID")}
+                  style={{
+                    padding: "20px",
+                    background: selectedWorkType === "HYBRID" ? "#8b5cf6" : "white",
+                    color: selectedWorkType === "HYBRID" ? "white" : "#666",
+                    border: selectedWorkType === "HYBRID" ? "2px solid #8b5cf6" : "2px solid #e5e7eb",
+                    borderRadius: 12,
+                    fontSize: 16,
+                    fontWeight: "bold",
+                    cursor: "pointer",
+                    transition: "all 0.2s",
+                  }}
+                >
+                  🔄<br />하이브리드
                 </button>
               </div>
             </div>

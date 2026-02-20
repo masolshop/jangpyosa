@@ -12,7 +12,7 @@ import { getToken, getUserRole } from "@/lib/auth";
 type Employee = {
   id: string;
   name: string;
-  workType: string;
+  workType: "OFFICE" | "REMOTE" | "HYBRID";
   disabilityType: string;
   severity: string;
 };
@@ -21,7 +21,7 @@ type AttendanceRecord = {
   id: string;
   employeeId: string;
   date: string;
-  workType: "OFFICE" | "REMOTE";
+  workType: "OFFICE" | "REMOTE" | "HYBRID";
   clockIn: string | null;
   clockOut: string | null;
   workHours: number | null;
@@ -317,8 +317,14 @@ export default function AttendancePage() {
                           style={{
                             padding: "3px 10px",
                             fontSize: 13,
-                            background: empStat.employee.workType === "OFFICE" ? "#dbeafe" : "#fef3c7",
-                            color: empStat.employee.workType === "OFFICE" ? "#1e3a8a" : "#92400e",
+                            background: 
+                              empStat.employee.workType === "OFFICE" ? "#dbeafe" : 
+                              empStat.employee.workType === "REMOTE" ? "#fef3c7" : 
+                              "#e0e7ff",
+                            color: 
+                              empStat.employee.workType === "OFFICE" ? "#1e3a8a" : 
+                              empStat.employee.workType === "REMOTE" ? "#92400e" : 
+                              "#4338ca",
                             borderRadius: 4,
                             fontWeight: "normal",
                           }}
