@@ -101,7 +101,8 @@ export default function EmployeeAttendancePage() {
 
       if (res.ok) {
         const data = await res.json();
-        setRecentRecords(data);
+        // API는 { records: [], stats: {} } 형태로 반환
+        setRecentRecords(data.records || []);
       }
     } catch (e) {
       console.error("최근 출퇴근 기록 로딩 실패:", e);
