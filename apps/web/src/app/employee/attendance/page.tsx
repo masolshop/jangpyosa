@@ -111,6 +111,45 @@ export default function EmployeeAttendancePage() {
     }
   }
 
+  /**
+   * 위치 자동 감지
+   * 1순위: GPS (Geolocation API)
+   * 2순위: IP 기반 위치 추정
+   */
+  async function getAutoLocation(): Promise<string> {
+    try {
+      // 1순위: GPS (정확도 높음)
+      if (navigator.geolocation) {
+        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: true,
+            timeout: 5000,
+            maximumAge: 0,
+          });
+        });
+
+        const { latitude, longitude, accuracy } = position.coords;
+        return `GPS: ${latitude.toFixed(6)}, ${longitude.toFixed(6)} (정확도: ${Math.round(accuracy)}m)`;
+      }
+    } catch (gpsError) {
+      console.warn("GPS 위치 가져오기 실패:", gpsError);
+    }
+
+    try {
+      // 2순위: IP 기반 위치 (GPS 실패 시)
+      const ipRes = await fetch("https://ipapi.co/json/");
+      if (ipRes.ok) {
+        const ipData = await ipRes.json();
+        return `IP: ${ipData.city || "알 수 없음"}, ${ipData.country_name || ""} (${ipData.ip})`;
+      }
+    } catch (ipError) {
+      console.warn("IP 위치 가져오기 실패:", ipError);
+    }
+
+    // 3순위: 수동 입력 (모두 실패 시)
+    return location || "위치 정보 없음";
+  }
+
   async function handleClockIn() {
     setMessage("");
     setError("");
@@ -122,6 +161,9 @@ export default function EmployeeAttendancePage() {
         throw new Error("로그인이 필요합니다.");
       }
 
+      // 위치 자동 감지
+      const autoLocation = await getAutoLocation();
+
       const res = await fetch(`${API_BASE}/attendance/clock-in`, {
         method: "POST",
         headers: {
@@ -130,7 +172,7 @@ export default function EmployeeAttendancePage() {
         },
         body: JSON.stringify({
           workType,
-          location,
+          location: autoLocation,
           note,
         }),
       });
@@ -143,7 +185,7 @@ export default function EmployeeAttendancePage() {
 
       setMessage(`✅ ${data.message}`);
       setNote("");
-      setLocation("");
+      setLocation(autoLocation); // 감지된 위치 표시
       await loadTodayRecord();
       await loadRecentRecords();
     } catch (e: any) {
@@ -164,6 +206,9 @@ export default function EmployeeAttendancePage() {
         throw new Error("로그인이 필요합니다.");
       }
 
+      // 위치 자동 감지
+      const autoLocation = await getAutoLocation();
+
       const res = await fetch(`${API_BASE}/attendance/clock-out`, {
         method: "POST",
         headers: {
@@ -171,7 +216,7 @@ export default function EmployeeAttendancePage() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          location,
+          location: autoLocation,
           note,
         }),
       });
@@ -184,13 +229,77 @@ export default function EmployeeAttendancePage() {
 
       setMessage(`✅ ${data.message}`);
       setNote("");
-      setLocation("");
+      setLocation(autoLocation); // 감지된 위치 표시
       await loadTodayRecord();
       await loadRecentRecords();
     } catch (e: any) {
       setError(e.message);
     } finally {
       setLoading(false);
+    }
+  }
+
+  /**
+   * 출퇴근 데이터 엑셀 다운로드
+   */
+  async function downloadExcel() {
+    try {
+      const token = getToken();
+      if (!token) {
+        throw new Error("로그인이 필요합니다.");
+      }
+
+      setMessage("📥 엑셀 다운로드 중...");
+
+      const res = await fetch(`${API_BASE}/attendance/my-records`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) {
+        throw new Error("데이터 조회 실패");
+      }
+
+      const data = await res.json();
+      const records = data.records || [];
+
+      if (records.length === 0) {
+        setError("다운로드할 출퇴근 기록이 없습니다.");
+        return;
+      }
+
+      // CSV 생성 (엑셀에서 열 수 있음)
+      const headers = ["날짜", "출근시간", "퇴근시간", "근무시간", "근무형태", "위치", "메모"];
+      const csvRows = [
+        headers.join(","),
+        ...records.map((record: AttendanceRecord) => {
+          const workTypeLabel = record.workType === "OFFICE" ? "사무실" : "재택";
+          return [
+            record.date,
+            record.clockIn || "-",
+            record.clockOut || "-",
+            record.workHours ? `${record.workHours}h` : "-",
+            workTypeLabel,
+            record.location || "-",
+            record.note || "-",
+          ].join(",");
+        }),
+      ];
+
+      const csvContent = "\uFEFF" + csvRows.join("\n"); // BOM 추가 (한글 깨짐 방지)
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `출퇴근기록_${employeeInfo?.name || "직원"}_${new Date().toISOString().split("T")[0]}.csv`;
+      link.click();
+      URL.revokeObjectURL(url);
+
+      setMessage("✅ 엑셀 다운로드 완료!");
+      setTimeout(() => setMessage(""), 3000);
+    } catch (e: any) {
+      setError(e.message);
     }
   }
 
@@ -362,14 +471,21 @@ export default function EmployeeAttendancePage() {
 
         <div style={{ marginBottom: 16 }}>
           <label style={{ display: "block", marginBottom: 8, fontWeight: "600" }}>
-            위치 (선택)
+            위치 (자동 감지)
           </label>
           <input
             type="text"
             value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            placeholder="예: 서울시 강남구 테헤란로 123"
+            readOnly
+            placeholder="출근/퇴근 시 자동으로 위치가 감지됩니다"
+            style={{
+              background: "#f9fafb",
+              cursor: "not-allowed",
+            }}
           />
+          <p style={{ fontSize: 12, color: "#6b7280", marginTop: 4 }}>
+            💡 GPS 또는 IP 기반으로 위치가 자동 기록됩니다
+          </p>
         </div>
 
         <div style={{ marginBottom: 20 }}>
@@ -425,7 +541,29 @@ export default function EmployeeAttendancePage() {
 
       {/* 최근 7일 출퇴근 기록 */}
       <div className="card">
-        <h3 style={{ marginTop: 0 }}>📊 최근 출퇴근 기록</h3>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+          <h3 style={{ margin: 0 }}>📊 최근 출퇴근 기록</h3>
+          {recentRecords.length > 0 && (
+            <button
+              onClick={downloadExcel}
+              style={{
+                padding: "8px 16px",
+                background: "#059669",
+                color: "white",
+                border: "none",
+                borderRadius: 6,
+                fontSize: 14,
+                fontWeight: "600",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+              }}
+            >
+              📥 엑셀 다운로드
+            </button>
+          )}
+        </div>
         {recentRecords.length === 0 ? (
           <p style={{ textAlign: "center", color: "#999", padding: "40px 0" }}>
             아직 출퇴근 기록이 없습니다.
