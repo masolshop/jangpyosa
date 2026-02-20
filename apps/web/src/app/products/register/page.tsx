@@ -9,17 +9,20 @@ const CONTRACT_TYPES = [
   { 
     value: 'MANUFACTURING', 
     label: '제조 도급', 
-    desc: ['인쇄, 판촉물, 식품, 조립', '제과·제빵, 가구 등']
+    line1: '인쇄, 판촉물, 식품, 조립',
+    line2: '제과·제빵, 가구 등'
   },
   { 
     value: 'SERVICE', 
     label: '용역 도급', 
-    desc: ['청소, 세탁, 시설관리', '문서작업, 콜센터 등']
+    line1: '청소, 세탁, 시설관리',
+    line2: '문서작업, 콜센터 등'
   },
   { 
     value: 'CONSTRUCTION', 
     label: '공사 도급', 
-    desc: ['단순 시공, 내부 환경개선', '편의시설 설치 등']
+    line1: '단순 시공, 내부 환경개선',
+    line2: '편의시설 설치 등'
   }
 ]
 
@@ -368,17 +371,10 @@ export default function ProductRegisterPage() {
                 />
                 <div className={styles.radioContent}>
                   <strong>{type.label}</strong>
-                  <small style={{ 
-                    display: 'block',
-                    wordBreak: 'keep-all',
-                    overflowWrap: 'break-word'
-                  }}>
-                    {type.desc.map((line, idx) => (
-                      <span key={idx}>
-                        {line}
-                        {idx < type.desc.length - 1 && <br />}
-                      </span>
-                    ))}
+                  <small>
+                    {type.line1}
+                    <br />
+                    {type.line2}
                   </small>
                 </div>
               </label>
