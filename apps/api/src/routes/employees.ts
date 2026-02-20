@@ -208,6 +208,15 @@ router.get("/monthly", requireAuth, async (req, res) => {
       company.buyerType || "PRIVATE_COMPANY" // 기본값: 민간기업
     );
 
+    console.log("📊 1월 계산 결과:", {
+      month: calculatedResults[0].month,
+      totalEmployeeCount: calculatedResults[0].totalEmployeeCount,
+      disabledCount: calculatedResults[0].disabledCount,
+      incentive: calculatedResults[0].incentive,
+      levy: calculatedResults[0].levy,
+      detailsCount: calculatedResults[0].details?.length || 0
+    });
+
     // 기존 데이터와 병합
     const monthlyData = calculatedResults.map((result) => {
       const existing = existingData.find((d) => d.month === result.month);

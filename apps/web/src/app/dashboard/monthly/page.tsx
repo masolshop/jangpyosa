@@ -140,10 +140,13 @@ export default function MonthlyManagementPage() {
       if (!res.ok) throw new Error("월별 데이터 조회 실패");
 
       const data = await res.json();
+      console.log("📊 백엔드 응답 데이터:", data);
+      console.log("📊 첫 번째 월 데이터:", data.monthlyData?.[0]);
       
       // 월별 데이터에 여성 장려금 정보 추가
       const enrichedMonthlyData = data.monthlyData.map((monthData: MonthlyData) => {
         const { count, amount } = calculateFemaleIncentive(monthData.details);
+        console.log(`📊 ${monthData.month}월 - 장려금: ${monthData.incentive}, 여성: ${count}명/${amount}원`);
         return {
           ...monthData,
           femaleIncentiveCount: count,
@@ -151,6 +154,7 @@ export default function MonthlyManagementPage() {
         };
       });
       
+      console.log("📊 최종 월별 데이터:", enrichedMonthlyData[0]);
       setMonthlyData(enrichedMonthlyData);
       
       // 회사 정보 및 buyerType 기반 quotaRate 설정
@@ -548,14 +552,14 @@ export default function MonthlyManagementPage() {
                     }}
                   >
                     {data.incentive > 0 ? (
-                      <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                        <div>+{(data.incentive / 10000).toFixed(0)}만</div>
+                      <>
+                        +{(data.incentive / 10000).toFixed(0)}만
                         {data.femaleIncentiveCount && data.femaleIncentiveCount > 0 && (
-                          <div style={{ fontSize: 11, color: "#9ca3af" }}>
+                          <><br /><span style={{ fontSize: 11, color: "#9ca3af" }}>
                             (여성 {data.femaleIncentiveCount}명: +{(data.femaleIncentiveAmount! / 10000).toFixed(0)}만)
-                          </div>
+                          </span></>
                         )}
-                      </div>
+                      </>
                     ) : (
                       "-"
                     )}
