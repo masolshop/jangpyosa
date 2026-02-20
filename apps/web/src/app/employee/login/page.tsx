@@ -37,8 +37,10 @@ export default function EmployeeLoginPage() {
 
       // 토큰 저장
       localStorage.setItem("token", json.accessToken);
+      localStorage.setItem("accessToken", json.accessToken); // getToken()용
       localStorage.setItem("refreshToken", json.refreshToken);
       localStorage.setItem("user", JSON.stringify(json.user));
+      localStorage.setItem("userRole", json.user.role); // getUserRole()용
 
       alert(`✅ ${json.user.name}님, 환영합니다!`);
       router.push("/employee/attendance");
