@@ -6,9 +6,21 @@ import styles from './ProductRegister.module.css'
 
 // 계약 유형
 const CONTRACT_TYPES = [
-  { value: 'MANUFACTURING', label: '제조 도급', desc: '인쇄, 판촉물, 식품, 조립, 제과·제빵, 가구 등' },
-  { value: 'SERVICE', label: '용역 도급', desc: '청소, 세탁, 시설관리, 문서작업, 콜센터 등' },
-  { value: 'CONSTRUCTION', label: '공사 도급', desc: '단순 시공, 내부 환경개선, 편의시설 설치 등' }
+  { 
+    value: 'MANUFACTURING', 
+    label: '제조 도급', 
+    desc: '인쇄, 판촉물, 식품, 조립\n제과·제빵, 가구 등' 
+  },
+  { 
+    value: 'SERVICE', 
+    label: '용역 도급', 
+    desc: '청소, 세탁, 시설관리\n문서작업, 콜센터 등' 
+  },
+  { 
+    value: 'CONSTRUCTION', 
+    label: '공사 도급', 
+    desc: '단순 시공, 내부 환경개선\n편의시설 설치 등' 
+  }
 ]
 
 // 상품 카테고리 (계약 유형별)
@@ -358,7 +370,7 @@ export default function ProductRegisterPage() {
                   <strong>{type.label}</strong>
                   <small style={{ 
                     display: 'block',
-                    whiteSpace: 'normal',
+                    whiteSpace: 'pre-line',
                     wordBreak: 'keep-all',
                     overflowWrap: 'break-word',
                     writingMode: 'horizontal-tb'
