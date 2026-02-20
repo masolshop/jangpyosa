@@ -50,6 +50,13 @@ export default function AnnouncementsPage() {
   const [content, setContent] = useState("");
   const [priority, setPriority] = useState("NORMAL");
   
+  // 공지 수정 모달
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editContent, setEditContent] = useState("");
+  const [editPriority, setEditPriority] = useState("NORMAL");
+  
   // 공지 상세 모달
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<AnnouncementDetail | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
@@ -145,6 +152,62 @@ export default function AnnouncementsPage() {
       }
     } catch (e) {
       console.error("공지사항 상세 로드 실패:", e);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function openEditModal(announcement: Announcement) {
+    setEditingAnnouncement(announcement);
+    setEditTitle(announcement.title);
+    setEditContent(announcement.content);
+    setEditPriority(announcement.priority);
+    setIsEditModalOpen(true);
+  }
+
+  async function updateAnnouncement() {
+    if (!editTitle || !editContent) {
+      setError("제목과 내용을 입력해주세요");
+      return;
+    }
+
+    if (!editingAnnouncement) return;
+
+    try {
+      setLoading(true);
+      setError("");
+      
+      const token = getToken();
+      if (!token) return;
+
+      const res = await fetch(`${API_BASE}/announcements/${editingAnnouncement.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          title: editTitle,
+          content: editContent,
+          priority: editPriority,
+        }),
+      });
+
+      if (res.ok) {
+        setMessage("✅ 공지사항이 수정되었습니다");
+        setIsEditModalOpen(false);
+        setEditingAnnouncement(null);
+        setEditTitle("");
+        setEditContent("");
+        setEditPriority("NORMAL");
+        await loadAnnouncements();
+        setTimeout(() => setMessage(""), 3000);
+      } else {
+        const data = await res.json();
+        throw new Error(data.error || "공지사항 수정 실패");
+      }
+    } catch (e: any) {
+      setError(e.message);
     } finally {
       setLoading(false);
     }
@@ -308,7 +371,22 @@ export default function AnnouncementsPage() {
                         cursor: "pointer",
                       }}
                     >
-                      상세보기
+                      공지확인리스트
+                    </button>
+                    <button
+                      onClick={() => openEditModal(announcement)}
+                      style={{
+                        padding: "8px 16px",
+                        background: "#10b981",
+                        color: "white",
+                        border: "none",
+                        borderRadius: 6,
+                        fontSize: 14,
+                        fontWeight: "600",
+                        cursor: "pointer",
+                      }}
+                    >
+                      수정
                     </button>
                     <button
                       onClick={() => deleteAnnouncement(announcement.id)}
@@ -455,6 +533,135 @@ export default function AnnouncementsPage() {
                 }}
               >
                 {loading ? "등록 중..." : "등록"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 공지 수정 모달 */}
+      {isEditModalOpen && editingAnnouncement && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: "rgba(0,0,0,0.5)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 1000,
+        }}>
+          <div style={{
+            background: "white",
+            borderRadius: 12,
+            padding: 32,
+            maxWidth: 600,
+            width: "90%",
+            maxHeight: "90vh",
+            overflowY: "auto",
+          }}>
+            <h2 style={{ marginTop: 0, marginBottom: 24 }}>✏️ 공지사항 수정</h2>
+            
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ display: "block", marginBottom: 8, fontWeight: "600" }}>
+                우선순위
+              </label>
+              <select
+                value={editPriority}
+                onChange={(e) => setEditPriority(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: 12,
+                  border: "1px solid #d1d5db",
+                  borderRadius: 8,
+                  fontSize: 14,
+                }}
+              >
+                <option value="NORMAL">일반</option>
+                <option value="URGENT">긴급</option>
+                <option value="LOW">낮음</option>
+              </select>
+            </div>
+
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ display: "block", marginBottom: 8, fontWeight: "600" }}>
+                제목
+              </label>
+              <input
+                type="text"
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                placeholder="공지사항 제목을 입력하세요"
+                style={{
+                  width: "100%",
+                  padding: 12,
+                  border: "1px solid #d1d5db",
+                  borderRadius: 8,
+                  fontSize: 14,
+                }}
+              />
+            </div>
+
+            <div style={{ marginBottom: 24 }}>
+              <label style={{ display: "block", marginBottom: 8, fontWeight: "600" }}>
+                내용
+              </label>
+              <textarea
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+                placeholder="공지사항 내용을 입력하세요"
+                rows={10}
+                style={{
+                  width: "100%",
+                  padding: 12,
+                  border: "1px solid #d1d5db",
+                  borderRadius: 8,
+                  fontSize: 14,
+                  resize: "vertical",
+                }}
+              />
+            </div>
+
+            <div style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}>
+              <button
+                onClick={() => {
+                  setIsEditModalOpen(false);
+                  setEditingAnnouncement(null);
+                  setEditTitle("");
+                  setEditContent("");
+                  setEditPriority("NORMAL");
+                  setError("");
+                }}
+                style={{
+                  padding: "12px 24px",
+                  background: "#6b7280",
+                  color: "white",
+                  border: "none",
+                  borderRadius: 8,
+                  fontSize: 14,
+                  fontWeight: "600",
+                  cursor: "pointer",
+                }}
+              >
+                취소
+              </button>
+              <button
+                onClick={updateAnnouncement}
+                disabled={loading}
+                style={{
+                  padding: "12px 24px",
+                  background: loading ? "#9ca3af" : "#10b981",
+                  color: "white",
+                  border: "none",
+                  borderRadius: 8,
+                  fontSize: 14,
+                  fontWeight: "600",
+                  cursor: loading ? "not-allowed" : "pointer",
+                }}
+              >
+                {loading ? "수정 중..." : "수정 완료"}
               </button>
             </div>
           </div>
