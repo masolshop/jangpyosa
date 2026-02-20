@@ -14,7 +14,7 @@ model User {
   email             String?
   passwordHash      String
   name              String
-  role              String
+  role              String                 // BUYER, SUPPLIER, AGENT, SUPER_ADMIN, EMPLOYEE
   branchId          String?
   refCode           String?  @unique
   referredById      String?
@@ -24,6 +24,10 @@ model User {
   managerTitle      String?                // 담당자 직함
   managerEmail      String?                // 담당자 이메일
   managerPhone      String?                // 담당자 핸드폰 (알림톡용)
+  
+  // 🆕 직원 계정 전용 필드 (EMPLOYEE 역할)
+  employeeId        String?  @unique       // DisabledEmployee ID (매칭용)
+  companyBizNo      String?                // 소속 기업 사업자등록번호
   
   // 🆕 개인정보 동의
   privacyAgreed     Boolean  @default(false)
@@ -263,7 +267,7 @@ model Page {
 }
 
 model DisabledEmployee {
-  id                     String       @id @default(cuid())
+  id                     String             @id @default(cuid())
   buyerId                String
   name                   String
   registrationNumber     String?
@@ -271,17 +275,19 @@ model DisabledEmployee {
   disabilityGrade        String?
   severity               String
   gender                 String
-  birthDate              DateTime?    // 생년월일 추가 (연령별 장려금 계산용)
+  birthDate              DateTime?          // 생년월일 추가 (연령별 장려금 계산용)
   hireDate               DateTime
   resignDate             DateTime?
   monthlySalary          Int
-  hasEmploymentInsurance Boolean      @default(true)
-  meetsMinimumWage       Boolean      @default(true)
+  hasEmploymentInsurance Boolean            @default(true)
+  meetsMinimumWage       Boolean            @default(true)
   workHoursPerWeek       Int?
+  workType               String             @default("OFFICE") // 근무형태: OFFICE, REMOTE, HYBRID
   memo                   String?
-  createdAt              DateTime     @default(now())
-  updatedAt              DateTime     @updatedAt
-  buyer                  BuyerProfile @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+  buyer                  BuyerProfile       @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+  attendanceRecords      AttendanceRecord[]
 
   @@index([buyerId, resignDate])
 }
@@ -371,4 +377,24 @@ model PaymentHistory {
   
   @@index([performanceId])
   @@index([paymentDate])
+}
+
+// 출퇴근 기록
+model AttendanceRecord {
+  id           String           @id @default(cuid())
+  employeeId   String           // DisabledEmployee ID
+  date         String           // YYYY-MM-DD 형식
+  workType     String           // OFFICE (회사 출근), REMOTE (재택 근무)
+  clockIn      String?          // 출근 시간 (HH:MM:SS)
+  clockOut     String?          // 퇴근 시간 (HH:MM:SS)
+  workHours    Float?           // 근무 시간 (시간 단위, 소수점 2자리)
+  location     String?          // GPS 좌표 또는 위치 정보 (선택)
+  note         String?          // 메모
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  employee     DisabledEmployee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  
+  @@unique([employeeId, date])
+  @@index([employeeId, date])
+  @@index([date])
 }

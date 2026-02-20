@@ -801,4 +801,197 @@ r.post("/refresh", async (req, res) => {
   }
 });
 
+// ========================================
+// 👷 직원(EMPLOYEE) 계정 회원가입
+// ========================================
+
+const signupEmployeeSchema = z.object({
+  phone: z.string().min(10, "핸드폰 번호를 입력하세요"),
+  password: z.string().min(8, "비밀번호는 8자 이상이어야 합니다"),
+  name: z.string().min(1, "이름을 입력하세요"),
+  companyBizNo: z.string().min(10, "소속 기업 사업자등록번호를 입력하세요"),
+  registrationNumber: z.string().min(1, "주민등록번호 앞자리 또는 인증번호를 입력하세요"), // 직원 매칭용
+  privacyAgreed: z.boolean().refine(val => val === true, "개인정보 활용 동의는 필수입니다"),
+});
+
+r.post("/signup/employee", async (req, res) => {
+  try {
+    const body = signupEmployeeSchema.parse(req.body);
+    const cleanPhone = normalizePhone(body.phone);
+    const cleanBizNo = body.companyBizNo.replace(/\D/g, "");
+
+    // 핸드폰 번호 중복 체크
+    const existing = await prisma.user.findUnique({ where: { phone: cleanPhone } });
+    if (existing) {
+      return res.status(400).json({ 
+        error: "PHONE_ALREADY_EXISTS", 
+        message: "이미 가입된 핸드폰 번호입니다" 
+      });
+    }
+
+    // 소속 기업 확인 (사업자등록번호로 검색)
+    const company = await prisma.company.findUnique({
+      where: { bizNo: cleanBizNo },
+      include: { buyerProfile: true },
+    });
+
+    if (!company || !company.buyerProfile) {
+      return res.status(404).json({ 
+        error: "COMPANY_NOT_FOUND", 
+        message: "해당 사업자등록번호로 등록된 기업이 없습니다" 
+      });
+    }
+
+    // 장애인 직원 매칭 (이름 + 주민등록번호)
+    const employee = await prisma.disabledEmployee.findFirst({
+      where: {
+        buyerId: company.buyerProfile.id,
+        name: body.name,
+        registrationNumber: body.registrationNumber,
+        resignDate: null, // 재직 중인 직원만
+      },
+    });
+
+    if (!employee) {
+      return res.status(404).json({ 
+        error: "EMPLOYEE_NOT_FOUND", 
+        message: "기업에 등록된 장애인 직원 정보를 찾을 수 없습니다. 이름과 인증번호를 확인하세요." 
+      });
+    }
+
+    // 이미 계정이 연결된 직원인지 확인
+    const existingEmployeeAccount = await prisma.user.findUnique({
+      where: { employeeId: employee.id },
+    });
+
+    if (existingEmployeeAccount) {
+      return res.status(400).json({ 
+        error: "EMPLOYEE_ACCOUNT_EXISTS", 
+        message: "이미 계정이 연결된 직원입니다" 
+      });
+    }
+
+    const passwordHash = await bcrypt.hash(body.password, 10);
+
+    // 직원 계정 생성
+    const user = await prisma.user.create({
+      data: {
+        phone: cleanPhone,
+        passwordHash,
+        name: body.name,
+        role: "EMPLOYEE",
+        employeeId: employee.id,
+        companyBizNo: cleanBizNo,
+        privacyAgreed: body.privacyAgreed,
+        privacyAgreedAt: new Date(),
+      },
+    });
+
+    return res.json({
+      message: "직원 계정이 생성되었습니다",
+      user: {
+        id: user.id,
+        phone: user.phone,
+        name: user.name,
+        role: user.role,
+        companyName: company.name,
+      },
+    });
+  } catch (error: any) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: "VALIDATION_ERROR", details: error.errors });
+    }
+    console.error("Employee signup error:", error);
+    return res.status(500).json({ error: "INTERNAL_ERROR", message: "회원가입 실패" });
+  }
+});
+
+// ========================================
+// 🔑 직원(EMPLOYEE) 로그인
+// ========================================
+
+r.post("/login/employee", async (req, res) => {
+  try {
+    const body = z.object({
+      phone: z.string().min(10),
+      password: z.string().min(1),
+    }).parse(req.body);
+
+    const cleanPhone = normalizePhone(body.phone);
+
+    // 직원 계정 조회
+    const user = await prisma.user.findFirst({
+      where: { 
+        phone: cleanPhone,
+        role: "EMPLOYEE",
+      },
+    });
+
+    if (!user) {
+      return res.status(401).json({ 
+        error: "INVALID_CREDENTIALS", 
+        message: "핸드폰 번호 또는 비밀번호가 일치하지 않습니다" 
+      });
+    }
+
+    const ok = await bcrypt.compare(body.password, user.passwordHash);
+    if (!ok) {
+      return res.status(401).json({ 
+        error: "INVALID_CREDENTIALS", 
+        message: "핸드폰 번호 또는 비밀번호가 일치하지 않습니다" 
+      });
+    }
+
+    // 직원 정보 및 기업 정보 조회
+    let employee = null;
+    let company = null;
+    
+    if (user.employeeId) {
+      employee = await prisma.disabledEmployee.findUnique({
+        where: { id: user.employeeId },
+        include: { buyer: { include: { company: true } } },
+      });
+      company = employee?.buyer.company;
+    }
+
+    const accessToken = jwt.sign(
+      { userId: user.id, role: user.role, employeeId: user.employeeId },
+      config.jwtSecret,
+      { expiresIn: "7d" }
+    );
+
+    const refreshToken = jwt.sign(
+      { userId: user.id },
+      config.jwtRefreshSecret,
+      { expiresIn: "30d" }
+    );
+
+    return res.json({
+      accessToken,
+      refreshToken,
+      user: {
+        id: user.id,
+        phone: user.phone,
+        name: user.name,
+        role: user.role,
+        employeeId: user.employeeId,
+        companyName: company?.name,
+        companyBizNo: user.companyBizNo,
+        employee: employee ? {
+          id: employee.id,
+          name: employee.name,
+          workType: employee.workType,
+          disabilityType: employee.disabilityType,
+        } : null,
+      },
+    });
+  } catch (error: any) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: "VALIDATION_ERROR", details: error.errors });
+    }
+    console.error("Employee login error:", error);
+    return res.status(500).json({ error: "INTERNAL_ERROR" });
+  }
+});
+
 export default r;

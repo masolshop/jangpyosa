@@ -170,6 +170,14 @@ export default function Sidebar() {
               requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]}
               currentRole={userRole}
             />
+            <MenuItem
+              href="/dashboard/attendance"
+              label="장애인직원근태관리"
+              icon="⏰"
+              active={isActive("/dashboard/attendance")}
+              requiresRole={["BUYER", "SUPER_ADMIN"]}
+              currentRole={userRole}
+            />
           </div>
 
           {/* 고용계산기 */}
