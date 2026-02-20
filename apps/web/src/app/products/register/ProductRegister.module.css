@@ -269,7 +269,7 @@
   font-weight: 600;
 }
 
-.radioContent small {
+.radioList {
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
@@ -278,7 +278,7 @@
   line-height: 1.5;
 }
 
-.radioContent small div {
+.radioList div {
   display: block;
   width: 100%;
 }

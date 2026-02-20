@@ -368,11 +368,11 @@ export default function ProductRegisterPage() {
                 />
                 <div className={styles.radioContent}>
                   <strong>{type.label}</strong>
-                  <small>
+                  <div className={styles.radioList}>
                     {type.items.map((item, idx) => (
                       <div key={idx}>{item}</div>
                     ))}
-                  </small>
+                  </div>
                 </div>
               </label>
             ))}
