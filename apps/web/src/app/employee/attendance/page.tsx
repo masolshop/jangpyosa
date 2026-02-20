@@ -21,6 +21,16 @@ interface EmployeeInfo {
   phone: string;
 }
 
+interface Announcement {
+  id: string;
+  title: string;
+  content: string;
+  priority: string;
+  createdAt: string;
+  isRead: boolean;
+  readAt: string | null;
+}
+
 export default function EmployeeAttendancePage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -35,12 +45,15 @@ export default function EmployeeAttendancePage() {
   const [recentRecords, setRecentRecords] = useState<AttendanceRecord[]>([]);
   const [employeeInfo, setEmployeeInfo] = useState<EmployeeInfo | null>(null);
   const [isMounted, setIsMounted] = useState(false);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     setIsMounted(true);
     loadEmployeeInfo();
     loadTodayRecord();
     loadRecentRecords();
+    loadAnnouncements();
   }, []);
 
   async function loadEmployeeInfo() {
@@ -336,6 +349,58 @@ export default function EmployeeAttendancePage() {
     }
   }
 
+  /**
+   * 공지사항 로드
+   */
+  async function loadAnnouncements() {
+    try {
+      const token = getToken();
+      if (!token) return;
+
+      const res = await fetch(`${API_BASE}/announcements/my-announcements`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setAnnouncements(data.announcements || []);
+        const unread = data.announcements?.filter((a: Announcement) => !a.isRead).length || 0;
+        setUnreadCount(unread);
+      }
+    } catch (e) {
+      console.error("공지사항 로드 실패:", e);
+    }
+  }
+
+  /**
+   * 공지사항 읽음 처리
+   */
+  async function markAnnouncementAsRead(announcementId: string) {
+    try {
+      const token = getToken();
+      if (!token) return;
+
+      const res = await fetch(`${API_BASE}/announcements/${announcementId}/read`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (res.ok) {
+        // 공지사항 목록 새로고침
+        await loadAnnouncements();
+        setMessage("✅ 공지사항을 확인했습니다");
+        setTimeout(() => setMessage(""), 3000);
+      }
+    } catch (e: any) {
+      console.error("공지사항 읽음 처리 실패:", e);
+      setError(e.message);
+    }
+  }
+
   // 현재 시각
   const [currentTime, setCurrentTime] = useState(new Date());
   useEffect(() => {
@@ -392,6 +457,116 @@ export default function EmployeeAttendancePage() {
           {isMounted ? formatDate(currentTime) : "로딩 중..."}
         </div>
       </div>
+
+      {/* 회사 공지사항 */}
+      {announcements.length > 0 && (
+        <div className="card" style={{ marginBottom: 30 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+            <h3 style={{ margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
+              📢 회사 공지사항
+              {unreadCount > 0 && (
+                <span style={{
+                  background: "#ef4444",
+                  color: "white",
+                  fontSize: 12,
+                  fontWeight: "bold",
+                  padding: "4px 10px",
+                  borderRadius: 12,
+                }}>
+                  안 읽음 {unreadCount}
+                </span>
+              )}
+            </h3>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {announcements.map((announcement) => (
+              <div
+                key={announcement.id}
+                style={{
+                  border: announcement.isRead ? "1px solid #e5e7eb" : "2px solid #3b82f6",
+                  borderRadius: 8,
+                  padding: 16,
+                  background: announcement.isRead ? "#fafafa" : "#eff6ff",
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: 8 }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                      {announcement.priority === "URGENT" && (
+                        <span style={{
+                          background: "#ef4444",
+                          color: "white",
+                          fontSize: 11,
+                          fontWeight: "bold",
+                          padding: "2px 8px",
+                          borderRadius: 4,
+                        }}>
+                          긴급
+                        </span>
+                      )}
+                      <h4 style={{ margin: 0, fontSize: 16, fontWeight: "600" }}>
+                        {announcement.title}
+                      </h4>
+                    </div>
+                    <p style={{ fontSize: 12, color: "#6b7280", margin: 0 }}>
+                      {new Date(announcement.createdAt).toLocaleString("ko-KR")}
+                    </p>
+                  </div>
+                  
+                  {announcement.isRead ? (
+                    <span style={{
+                      fontSize: 12,
+                      color: "#10b981",
+                      fontWeight: "600",
+                      whiteSpace: "nowrap",
+                      marginLeft: 12,
+                    }}>
+                      ✓ 읽음
+                    </span>
+                  ) : (
+                    <button
+                      onClick={() => markAnnouncementAsRead(announcement.id)}
+                      style={{
+                        padding: "6px 14px",
+                        background: "#3b82f6",
+                        color: "white",
+                        border: "none",
+                        borderRadius: 6,
+                        fontSize: 13,
+                        fontWeight: "600",
+                        cursor: "pointer",
+                        whiteSpace: "nowrap",
+                        marginLeft: 12,
+                      }}
+                    >
+                      확인했습니다
+                    </button>
+                  )}
+                </div>
+
+                <div style={{
+                  padding: 12,
+                  background: "white",
+                  borderRadius: 6,
+                  fontSize: 14,
+                  lineHeight: 1.6,
+                  whiteSpace: "pre-wrap",
+                  wordBreak: "break-word",
+                }}>
+                  {announcement.content}
+                </div>
+
+                {announcement.isRead && announcement.readAt && (
+                  <p style={{ fontSize: 11, color: "#9ca3af", marginTop: 8, marginBottom: 0 }}>
+                    읽은 시간: {new Date(announcement.readAt).toLocaleString("ko-KR")}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* 오늘의 출퇴근 현황 */}
       {todayRecord && (

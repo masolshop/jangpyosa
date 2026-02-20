@@ -398,3 +398,37 @@ model AttendanceRecord {
   @@index([employeeId, date])
   @@index([date])
 }
+
+// 회사 공지사항
+model CompanyAnnouncement {
+  id          String                     @id @default(cuid())
+  companyId   String                     // Company ID (바이어 회사)
+  buyerId     String                     // BuyerProfile ID
+  title       String                     // 공지 제목
+  content     String                     // 공지 내용
+  priority    String                     @default("NORMAL") // URGENT, NORMAL, LOW
+  isActive    Boolean                    @default(true)
+  createdById String                     // 작성자 User ID
+  createdAt   DateTime                   @default(now())
+  updatedAt   DateTime                   @updatedAt
+  readLogs    AnnouncementReadLog[]
+  
+  @@index([companyId, isActive])
+  @@index([buyerId, isActive])
+  @@index([createdAt])
+}
+
+// 공지 읽음 기록
+model AnnouncementReadLog {
+  id              String              @id @default(cuid())
+  announcementId  String
+  employeeId      String              // DisabledEmployee ID
+  userId          String              // User ID (직원 계정)
+  readAt          DateTime            @default(now())
+  announcement    CompanyAnnouncement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  
+  @@unique([announcementId, employeeId])
+  @@index([announcementId])
+  @@index([employeeId])
+  @@index([userId])
+}
