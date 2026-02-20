@@ -21,7 +21,8 @@ export default function Sidebar() {
         try {
           const user = JSON.parse(userStr);
           setUserName(user.name || null);
-          setCompanyName(user.company?.name || null);
+          // 기업 로그인: company.name, 직원 로그인: companyName
+          setCompanyName(user.company?.name || user.companyName || null);
         } catch (e) {
           console.error("사용자 정보 파싱 실패:", e);
         }
