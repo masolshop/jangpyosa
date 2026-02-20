@@ -51,6 +51,7 @@ export default function EmployeesPage() {
 
   const [form, setForm] = useState({
     name: "",
+    registrationNumber: "",
     disabilityType: "",
     disabilityGrade: "",
     severity: "MILD" as "MILD" | "SEVERE",
@@ -205,6 +206,7 @@ export default function EmployeesPage() {
   function startEdit(emp: Employee) {
     setForm({
       name: emp.name,
+      registrationNumber: emp.registrationNumber || "",
       disabilityType: emp.disabilityType,
       disabilityGrade: emp.disabilityGrade || "",
       severity: emp.severity,
@@ -225,6 +227,7 @@ export default function EmployeesPage() {
   function resetForm() {
     setForm({
       name: "",
+      registrationNumber: "",
       disabilityType: "",
       disabilityGrade: "",
       severity: "MILD",
@@ -251,6 +254,7 @@ export default function EmployeesPage() {
     const sampleData = [
       [
         "성명*",
+        "주민번호앞자리*",
         "장애유형*",
         "장애등급",
         "중증여부*",
@@ -266,6 +270,7 @@ export default function EmployeesPage() {
       ],
       [
         "홍길동",
+        "850315",
         "지체",
         "3급",
         "중증",
@@ -281,6 +286,7 @@ export default function EmployeesPage() {
       ],
       [
         "김영희",
+        "900720",
         "시각",
         "2급",
         "중증",
@@ -296,6 +302,7 @@ export default function EmployeesPage() {
       ],
       [
         "이철수",
+        "881130",
         "청각",
         "5급",
         "경증",
@@ -318,6 +325,11 @@ export default function EmployeesPage() {
       [],
       ["📋 작성 안내"],
       ["* 표시가 있는 항목은 필수 입력 항목입니다."],
+      [],
+      ["[주민번호 앞자리]"],
+      ["- 주민등록번호 앞 6자리를 입력합니다 (예: 850315)"],
+      ["- 직원 회원가입 시 본인 인증에 사용됩니다"],
+      ["- 생년월일과 일치해야 합니다"],
       [],
       ["[중증여부]"],
       ["- 중증: 장애 1~3급 또는 중증 판정을 받은 경우"],
@@ -348,19 +360,20 @@ export default function EmployeesPage() {
     // 데이터 시트
     const ws = XLSX.utils.aoa_to_sheet(sampleData);
     ws["!cols"] = [
-      { wch: 10 },
-      { wch: 12 },
-      { wch: 10 },
-      { wch: 10 },
-      { wch: 8 },
-      { wch: 12 },
-      { wch: 12 },
-      { wch: 12 },
-      { wch: 12 },
-      { wch: 10 },
-      { wch: 10 },
-      { wch: 12 },
-      { wch: 20 },
+      { wch: 10 },  // 성명
+      { wch: 15 },  // 주민번호앞자리
+      { wch: 12 },  // 장애유형
+      { wch: 10 },  // 장애등급
+      { wch: 10 },  // 중증여부
+      { wch: 8 },   // 성별
+      { wch: 12 },  // 생년월일
+      { wch: 12 },  // 입사일
+      { wch: 12 },  // 퇴사일
+      { wch: 12 },  // 월급여
+      { wch: 10 },  // 고용보험
+      { wch: 10 },  // 최저임금
+      { wch: 12 },  // 주근로시간
+      { wch: 20 },  // 메모
     ];
     XLSX.utils.book_append_sheet(wb, ws, "직원 데이터");
 
@@ -417,23 +430,24 @@ export default function EmployeesPage() {
           // 데이터 매핑
           const employeeData = {
             name: row[0]?.toString().trim() || "",
-            disabilityType: row[1]?.toString().trim() || "",
-            disabilityGrade: row[2]?.toString().trim() || "",
-            severity: (row[3]?.toString().trim() === "중증" ? "SEVERE" : "MILD") as "SEVERE" | "MILD",
-            gender: (row[4]?.toString().trim() === "여" ? "F" : "M") as "M" | "F",
-            birthDate: row[5] ? formatExcelDate(row[5]) : "",
-            hireDate: row[6] ? formatExcelDate(row[6]) : "",
-            resignDate: row[7] ? formatExcelDate(row[7]) : "",
-            monthlySalary: Number(row[8]) || 2060740,
-            hasEmploymentInsurance: row[9]?.toString().trim() === "가입",
-            meetsMinimumWage: row[10]?.toString().trim() === "이상",
-            workHoursPerWeek: Number(row[11]) || 60,
-            memo: row[12]?.toString().trim() || "",
+            registrationNumber: row[1]?.toString().trim() || "",
+            disabilityType: row[2]?.toString().trim() || "",
+            disabilityGrade: row[3]?.toString().trim() || "",
+            severity: (row[4]?.toString().trim() === "중증" ? "SEVERE" : "MILD") as "SEVERE" | "MILD",
+            gender: (row[5]?.toString().trim() === "여" ? "F" : "M") as "M" | "F",
+            birthDate: row[6] ? formatExcelDate(row[6]) : "",
+            hireDate: row[7] ? formatExcelDate(row[7]) : "",
+            resignDate: row[8] ? formatExcelDate(row[8]) : "",
+            monthlySalary: Number(row[9]) || 2060740,
+            hasEmploymentInsurance: row[10]?.toString().trim() === "가입",
+            meetsMinimumWage: row[11]?.toString().trim() === "이상",
+            workHoursPerWeek: Number(row[12]) || 60,
+            memo: row[13]?.toString().trim() || "",
           };
 
           // 필수 항목 검증
-          if (!employeeData.name || !employeeData.disabilityType || !employeeData.hireDate) {
-            errors.push(`${i + 2}행: 필수 항목 누락 (성명, 장애유형, 입사일)`);
+          if (!employeeData.name || !employeeData.registrationNumber || !employeeData.disabilityType || !employeeData.hireDate) {
+            errors.push(`${i + 2}행: 필수 항목 누락 (성명, 주민번호앞자리, 장애유형, 입사일)`);
             failCount++;
             continue;
           }
@@ -793,6 +807,22 @@ export default function EmployeesPage() {
                   </div>
 
                   <div>
+                    <label>주민번호 앞자리 * (직원 인증용)</label>
+                    <input
+                      type="text"
+                      value={form.registrationNumber}
+                      onChange={(e) => setForm({ ...form, registrationNumber: e.target.value })}
+                      placeholder="예: 850315"
+                      maxLength={6}
+                      pattern="[0-9]{6}"
+                      required
+                    />
+                    <p style={{ fontSize: 12, color: "#666", marginTop: 4 }}>
+                      💡 직원 회원가입 시 본인 인증에 사용됩니다
+                    </p>
+                  </div>
+
+                  <div>
                     <label>장애 유형 *</label>
                     <input
                       type="text"
@@ -1066,6 +1096,11 @@ export default function EmployeesPage() {
                           🏷️ {emp.disabilityType}
                           {emp.disabilityGrade && ` ${emp.disabilityGrade}`}
                         </p>
+                        {emp.registrationNumber && (
+                          <p style={{ margin: "6px 0 0 0", fontSize: 14, color: "#666" }}>
+                            🆔 주민번호: {emp.registrationNumber.substring(0, 3)}***
+                          </p>
+                        )}
                         <p style={{ margin: "6px 0 0 0", fontSize: 14, color: "#666" }}>
                           ⏰ 주 {emp.workHoursPerWeek || 40}시간 | 💰 월 {emp.monthlySalary.toLocaleString()}원
                         </p>
