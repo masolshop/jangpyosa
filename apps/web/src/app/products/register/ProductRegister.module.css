@@ -260,12 +260,14 @@
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
+  writing-mode: horizontal-tb !important;
 }
 
 .radioContent strong {
   display: block;
   font-size: 1.05rem;
   color: #333;
+  writing-mode: horizontal-tb !important;
 }
 
 .radioContent small {
@@ -273,6 +275,9 @@
   color: #666;
   font-size: 0.85rem;
   line-height: 1.5;
+  writing-mode: horizontal-tb !important;
+  text-orientation: mixed !important;
+  direction: ltr !important;
 }
 
 .badge {

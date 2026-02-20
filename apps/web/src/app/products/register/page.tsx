@@ -369,9 +369,9 @@ export default function ProductRegisterPage() {
                   })}
                   required
                 />
-                <div className={styles.radioContent}>
-                  <strong>{type.label}</strong>
-                  <small>
+                <div className={styles.radioContent} style={{ writingMode: 'horizontal-tb', direction: 'ltr' }}>
+                  <strong style={{ writingMode: 'horizontal-tb' }}>{type.label}</strong>
+                  <small style={{ writingMode: 'horizontal-tb', textOrientation: 'mixed', direction: 'ltr' }}>
                     {type.line1}
                     <br />
                     {type.line2}
