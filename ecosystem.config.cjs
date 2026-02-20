@@ -7,7 +7,8 @@ module.exports = {
       cwd: './apps/api',
       env: {
         NODE_ENV: 'development',
-        PORT: 4000
+        PORT: 4000,
+        DATABASE_URL: 'file:./prisma/dev.db'
       },
       watch: false,
       instances: 1,

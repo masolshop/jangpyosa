@@ -44,8 +44,10 @@ r.post("/login", async (req, res) => {
   try {
     const body = loginSchema.parse(req.body);
     
-    // identifier가 숫자로만 이루어졌으면 핸드폰 번호, 아니면 username
-    const isPhone = /^\d+$/.test(body.identifier.replace(/\D/g, ""));
+    // identifier가 순수하게 숫자로만 이루어졌으면 핸드폰 번호, 아니면 username
+    // 하이픈 제거 후 10~11자리 숫자면 핸드폰으로 간주
+    const cleanIdentifier = body.identifier.replace(/\D/g, "");
+    const isPhone = /^\d{10,11}$/.test(cleanIdentifier);
     
     let user;
     if (isPhone) {
