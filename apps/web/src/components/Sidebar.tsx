@@ -274,6 +274,21 @@ export default function Sidebar() {
             />
           </div>
 
+          {/* 직원용 메뉴 (EMPLOYEE 역할인 경우) */}
+          {userRole === "EMPLOYEE" && (
+            <div style={{ marginBottom: 24 }}>
+              <div style={{ fontSize: 20.6, color: "#fff", marginBottom: 12, fontWeight: "bold" }}>
+                직원 메뉴
+              </div>
+              <MenuItem
+                href="/employee/attendance"
+                label="출퇴근 관리"
+                icon="⏰"
+                active={isActive("/employee/attendance")}
+              />
+            </div>
+          )}
+
           {/* 계정 */}
           <div style={{ marginBottom: 24 }}>
             <div style={{ fontSize: 13.2, color: "#666", marginBottom: 8, fontWeight: "bold" }}>
@@ -294,6 +309,7 @@ export default function Sidebar() {
                     userRole === "AGENT" ? "매니저" :
                     userRole === "SUPPLIER" ? "표준사업장" :
                     userRole === "BUYER" ? "고용의무기업" :
+                    userRole === "EMPLOYEE" ? "직원" :
                     userRole
                   })
                 </div>
@@ -308,16 +324,34 @@ export default function Sidebar() {
               <>
                 <MenuItem
                   href="/login"
-                  label="로그인"
+                  label="기업 로그인"
                   icon="🔑"
                   active={isActive("/login")}
                 />
                 <MenuItem
                   href="/signup"
-                  label="회원가입"
+                  label="기업 회원가입"
                   icon="✍️"
                   active={isActive("/signup")}
                 />
+                <div style={{ 
+                  borderTop: "1px solid #333", 
+                  marginTop: 12, 
+                  paddingTop: 12,
+                }}>
+                  <MenuItem
+                    href="/employee/login"
+                    label="직원 로그인"
+                    icon="👷"
+                    active={isActive("/employee/login")}
+                  />
+                  <MenuItem
+                    href="/employee/signup"
+                    label="직원 회원가입"
+                    icon="📝"
+                    active={isActive("/employee/signup")}
+                  />
+                </div>
               </>
             )}
           </div>
