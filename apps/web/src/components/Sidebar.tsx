@@ -181,6 +181,21 @@ export default function Sidebar() {
             />
           </div>
 
+          {/* 직원용 메뉴 (EMPLOYEE 역할인 경우) */}
+          {userRole === "EMPLOYEE" && (
+            <div style={{ marginBottom: 24 }}>
+              <div style={{ fontSize: 20.6, color: "#fff", marginBottom: 12, fontWeight: "bold" }}>
+                직원 메뉴
+              </div>
+              <MenuItem
+                href="/employee/attendance"
+                label="출퇴근 관리"
+                icon="⏰"
+                active={isActive("/employee/attendance")}
+              />
+            </div>
+          )}
+
           {/* 고용계산기 */}
           <div style={{ marginBottom: 24 }}>
             <div style={{ fontSize: 20.6, color: "#fff", marginBottom: 12, fontWeight: "bold" }}>
@@ -274,21 +289,6 @@ export default function Sidebar() {
               active={isActive("/contract-sample")}
             />
           </div>
-
-          {/* 직원용 메뉴 (EMPLOYEE 역할인 경우) */}
-          {userRole === "EMPLOYEE" && (
-            <div style={{ marginBottom: 24 }}>
-              <div style={{ fontSize: 20.6, color: "#fff", marginBottom: 12, fontWeight: "bold" }}>
-                직원 메뉴
-              </div>
-              <MenuItem
-                href="/employee/attendance"
-                label="출퇴근 관리"
-                icon="⏰"
-                active={isActive("/employee/attendance")}
-              />
-            </div>
-          )}
 
           {/* 계정 */}
           <div style={{ marginBottom: 24 }}>
