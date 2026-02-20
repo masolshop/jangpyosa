@@ -9,20 +9,17 @@ const CONTRACT_TYPES = [
   { 
     value: 'MANUFACTURING', 
     label: '제조 도급', 
-    line1: '인쇄, 판촉물, 식품, 조립',
-    line2: '제과·제빵, 가구 등'
+    items: ['인쇄', '판촉물', '식품', '조립', '제과·제빵', '가구']
   },
   { 
     value: 'SERVICE', 
     label: '용역 도급', 
-    line1: '청소, 세탁, 시설관리',
-    line2: '문서작업, 콜센터 등'
+    items: ['청소', '세탁', '시설관리', '문서작업', '콜센터']
   },
   { 
     value: 'CONSTRUCTION', 
     label: '공사 도급', 
-    line1: '단순 시공, 내부 환경개선',
-    line2: '편의시설 설치 등'
+    items: ['단순 시공', '내부 환경개선', '편의시설 설치']
   }
 ]
 
@@ -372,9 +369,11 @@ export default function ProductRegisterPage() {
                 <div className={styles.radioContent} style={{ writingMode: 'horizontal-tb', direction: 'ltr' }}>
                   <strong style={{ writingMode: 'horizontal-tb' }}>{type.label}</strong>
                   <small style={{ writingMode: 'horizontal-tb', textOrientation: 'mixed', direction: 'ltr' }}>
-                    {type.line1}
-                    <br />
-                    {type.line2}
+                    {type.items.map((item, idx) => (
+                      <span key={idx} style={{ display: 'block' }}>
+                        {item}
+                      </span>
+                    ))}
                   </small>
                 </div>
               </label>
