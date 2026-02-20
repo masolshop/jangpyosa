@@ -43,7 +43,8 @@ export default function EmployeeLoginPage() {
       localStorage.setItem("userRole", json.user.role); // getUserRole()용
 
       alert(`✅ ${json.user.name}님, 환영합니다!`);
-      router.push("/employee/attendance");
+      // 페이지 새로고침을 통해 Sidebar가 userRole을 다시 읽도록 함
+      window.location.href = "/employee/attendance";
     } catch (e: any) {
       setError(e.message);
     } finally {
