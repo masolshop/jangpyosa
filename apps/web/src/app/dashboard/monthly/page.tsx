@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { API_BASE } from "@/lib/api";
 import { getToken, getUserRole } from "@/lib/auth";
@@ -76,6 +76,9 @@ export default function MonthlyManagementPage() {
     name: "",
     quotaRate: 0.031,
   });
+
+  // 자동 저장을 위한 타이머 ref
+  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // ============================================
   // 초기 로드
@@ -229,15 +232,48 @@ export default function MonthlyManagementPage() {
     }
   }
 
+  // 자동 저장 (조용히 백그라운드에서)
+  async function saveMonthlyDataSilently() {
+    const token = getToken();
+    if (!token) return;
+
+    try {
+      // 월별 상시근로자 수 맵 생성
+      const monthlyEmployeeCounts: { [key: number]: number } = {};
+      monthlyData.forEach((data) => {
+        monthlyEmployeeCounts[data.month] = data.totalEmployeeCount;
+      });
+
+      const res = await fetch(`${API_BASE}/employees/monthly`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          year,
+          monthlyEmployeeCounts,
+        }),
+      });
+
+      if (!res.ok) throw new Error("자동 저장 실패");
+
+      // 데이터 다시 불러오기 (장려금 재계산 포함)
+      await fetchMonthlyData();
+    } catch (e: any) {
+      console.error("자동 저장 오류:", e.message);
+    }
+  }
+
   async function updateEmployeeCount(month: number, value: string) {
     const numValue = parseInt(value) || 0;
     
-    // 1. totalEmployeeCount 업데이트
+    // 1. totalEmployeeCount 업데이트 (즉시)
     setMonthlyData((prev) =>
       prev.map((data) => {
         if (data.month !== month) return data;
         
-        // 2. 재계산 (buyerType 기반 quotaRate 적용)
+        // 2. 임시 재계산 (buyerType 기반 quotaRate 적용) - 부담금만
         const obligatedCount = Math.floor(numValue * companyInfo.quotaRate);
         const shortfallCount = Math.max(0, obligatedCount - data.recognizedCount);
         const surplusCount = Math.max(0, data.recognizedCount - obligatedCount);
@@ -258,6 +294,18 @@ export default function MonthlyManagementPage() {
         };
       })
     );
+
+    // 3. 자동 저장 타이머 설정 (1.5초 후)
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+    }
+
+    autoSaveTimerRef.current = setTimeout(async () => {
+      setMessage("⏳ 자동 계산 중...");
+      await saveMonthlyDataSilently();
+      setMessage("✅ 자동 계산 완료");
+      setTimeout(() => setMessage(""), 2000);
+    }, 1500);
   }
 
   function fillAllMonths() {
