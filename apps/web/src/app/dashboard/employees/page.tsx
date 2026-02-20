@@ -71,13 +71,16 @@ export default function EmployeesPage() {
   // 2026년 최저시급
   const MINIMUM_HOURLY_WAGE = 10030;
 
-  // 근로시간으로 월급 자동 계산 (주 근로시간 × 4.345주 × 최저시급)
+  // 근로시간으로 월급 자동 계산
+  // 주 60시간 기준: 약 260만원 (월 최저임금 기준)
   const calculateMonthlySalary = (weeklyHours: number): number => {
     if (!weeklyHours || weeklyHours <= 0) return 0;
-    const monthlyHours = weeklyHours * 4.345; // 월 평균 주수
-    const salary = monthlyHours * MINIMUM_HOURLY_WAGE;
-    // 1,000원 단위로 반올림
-    return Math.round(salary / 1000) * 1000;
+    // 주 60시간 = 월 260만원 기준으로 비율 계산
+    const baseSalary = 2600000; // 주 60시간 기준
+    const baseHours = 60;
+    const salary = (weeklyHours / baseHours) * baseSalary;
+    // 10,000원 단위로 반올림
+    return Math.round(salary / 10000) * 10000;
   };
 
   // 근로시간 변경 시 급여 자동 계산
@@ -939,7 +942,7 @@ export default function EmployeesPage() {
                       required
                     />
                     <p style={{ fontSize: 12, color: "#666", marginTop: 4 }}>
-                      💡 중증 60시간 이상: 부담금 2배 인정
+                      💡 중증 60시간 이상: 의무고용 인원 계산에서 2명으로 인정
                     </p>
                   </div>
 
@@ -956,7 +959,7 @@ export default function EmployeesPage() {
                       required
                     />
                     <p style={{ fontSize: 12, color: "#10b981", marginTop: 4 }}>
-                      ✅ 주 {form.workHoursPerWeek || 0}시간 기준 최저임금: {calculateMonthlySalary(form.workHoursPerWeek || 0).toLocaleString()}원 (자동 계산됨, 1천원 단위)
+                      ✅ 주 {form.workHoursPerWeek || 0}시간 기준 월급여: {calculateMonthlySalary(form.workHoursPerWeek || 0).toLocaleString()}원 (자동 계산됨)
                     </p>
                   </div>
 
