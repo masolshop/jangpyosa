@@ -223,24 +223,36 @@ export default function MonthlyManagementPage() {
   }
 
   function fillAllMonths() {
-    const firstValue = monthlyData[0]?.totalEmployeeCount || 0;
+    const firstMonth = monthlyData[0];
+    if (!firstMonth) return;
+    
+    const firstValue = firstMonth.totalEmployeeCount || 0;
+    const firstIncentive = firstMonth.incentive || 0;
+    const firstRecognized = firstMonth.recognizedCount || 0;
+    const firstFemaleIncentiveCount = firstMonth.femaleIncentiveCount || 0;
+    const firstFemaleIncentiveAmount = firstMonth.femaleIncentiveAmount || 0;
+    
     setMonthlyData((prev) =>
       prev.map((data) => {
         const obligatedCount = Math.floor(firstValue * companyInfo.quotaRate);
-        const shortfallCount = Math.max(0, obligatedCount - data.recognizedCount);
-        const surplusCount = Math.max(0, data.recognizedCount - obligatedCount);
+        const shortfallCount = Math.max(0, obligatedCount - firstRecognized);
+        const surplusCount = Math.max(0, firstRecognized - obligatedCount);
         
         // 고용수준별 부담기초액 적용
-        const monthlyLevyBase = getMonthlyLevyBase(obligatedCount, data.recognizedCount);
+        const monthlyLevyBase = getMonthlyLevyBase(obligatedCount, firstRecognized);
         const levy = shortfallCount * monthlyLevyBase;
-        const netAmount = data.incentive - levy;
+        const netAmount = firstIncentive - levy;
         
         return {
           ...data,
           totalEmployeeCount: firstValue,
+          recognizedCount: firstRecognized,
           obligatedCount,
           shortfallCount,
           surplusCount,
+          incentive: firstIncentive,
+          femaleIncentiveCount: firstFemaleIncentiveCount,
+          femaleIncentiveAmount: firstFemaleIncentiveAmount,
           levy,
           netAmount,
         };
