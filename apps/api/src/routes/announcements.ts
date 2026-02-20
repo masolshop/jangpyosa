@@ -1,26 +1,27 @@
-import { Hono } from 'hono';
-import { prisma } from '../db.js';
-import { authenticateToken } from '../middleware/auth.js';
+import { Router } from 'express';
+import { prisma } from '../index.js';
+import { requireAuth } from '../middleware/auth.js';
 
-const app = new Hono();
+const router = Router();
 
 // 공지사항 목록 조회 (바이어)
-app.get('/list', authenticateToken, async (c) => {
+router.get('/list', requireAuth, async (req, res) => {
   try {
-    const user = c.get('user');
+    const userId = req.user!.id;
+    const userRole = req.user!.role;
     
-    if (user.role !== 'BUYER') {
-      return c.json({ error: '바이어만 접근 가능합니다' }, 403);
+    if (userRole !== 'BUYER') {
+      return res.status(403).json({ error: '바이어만 접근 가능합니다' });
     }
 
     // 바이어의 회사 정보 가져오기
     const company = await prisma.company.findUnique({
-      where: { ownerUserId: user.userId },
+      where: { ownerUserId: userId },
       include: { buyerProfile: true }
     });
 
     if (!company || !company.buyerProfile) {
-      return c.json({ error: '회사 정보를 찾을 수 없습니다' }, 404);
+      return res.status(404).json({ error: '회사 정보를 찾을 수 없습니다' });
     }
 
     const announcements = await prisma.companyAnnouncement.findMany({
@@ -59,21 +60,22 @@ app.get('/list', authenticateToken, async (c) => {
       })
     );
 
-    return c.json({ announcements: announcementsWithStats });
+    return res.json({ announcements: announcementsWithStats });
   } catch (error: any) {
     console.error('공지사항 목록 조회 오류:', error);
-    return c.json({ error: error.message }, 500);
+    return res.status(500).json({ error: error.message });
   }
 });
 
 // 공지사항 상세 조회 (읽은 직원 리스트 포함)
-app.get('/:id/readers', authenticateToken, async (c) => {
+router.get('/:id/readers', requireAuth, async (req, res) => {
   try {
-    const user = c.get('user');
-    const announcementId = c.req.param('id');
+    const userId = req.user!.id;
+    const userRole = req.user!.role;
+    const announcementId = req.params.id;
     
-    if (user.role !== 'BUYER') {
-      return c.json({ error: '바이어만 접근 가능합니다' }, 403);
+    if (userRole !== 'BUYER') {
+      return res.status(403).json({ error: '바이어만 접근 가능합니다' });
     }
 
     const announcement = await prisma.companyAnnouncement.findUnique({
@@ -88,17 +90,17 @@ app.get('/:id/readers', authenticateToken, async (c) => {
     });
 
     if (!announcement) {
-      return c.json({ error: '공지사항을 찾을 수 없습니다' }, 404);
+      return res.status(404).json({ error: '공지사항을 찾을 수 없습니다' });
     }
 
     // 회사의 모든 장애인 직원 조회
     const company = await prisma.company.findUnique({
-      where: { ownerUserId: user.userId },
+      where: { ownerUserId: userId },
       include: { buyerProfile: true }
     });
 
     if (!company || !company.buyerProfile) {
-      return c.json({ error: '회사 정보를 찾을 수 없습니다' }, 404);
+      return res.status(404).json({ error: '회사 정보를 찾을 수 없습니다' });
     }
 
     const allEmployees = await prisma.disabledEmployee.findMany({
@@ -118,7 +120,7 @@ app.get('/:id/readers', authenticateToken, async (c) => {
 
     const unreadEmployees = allEmployees.filter(emp => !readEmployeeIds.has(emp.id));
 
-    return c.json({
+    return res.json({
       announcement,
       readEmployees,
       unreadEmployees,
@@ -133,34 +135,34 @@ app.get('/:id/readers', authenticateToken, async (c) => {
     });
   } catch (error: any) {
     console.error('공지사항 상세 조회 오류:', error);
-    return c.json({ error: error.message }, 500);
+    return res.status(500).json({ error: error.message });
   }
 });
 
 // 공지사항 작성 (바이어)
-app.post('/create', authenticateToken, async (c) => {
+router.post('/create', requireAuth, async (req, res) => {
   try {
-    const user = c.get('user');
+    const userId = req.user!.id;
+    const userRole = req.user!.role;
     
-    if (user.role !== 'BUYER') {
-      return c.json({ error: '바이어만 접근 가능합니다' }, 403);
+    if (userRole !== 'BUYER') {
+      return res.status(403).json({ error: '바이어만 접근 가능합니다' });
     }
 
-    const body = await c.req.json();
-    const { title, content, priority = 'NORMAL' } = body;
+    const { title, content, priority = 'NORMAL' } = req.body;
 
     if (!title || !content) {
-      return c.json({ error: '제목과 내용은 필수입니다' }, 400);
+      return res.status(400).json({ error: '제목과 내용은 필수입니다' });
     }
 
     // 바이어의 회사 정보 가져오기
     const company = await prisma.company.findUnique({
-      where: { ownerUserId: user.userId },
+      where: { ownerUserId: userId },
       include: { buyerProfile: true }
     });
 
     if (!company || !company.buyerProfile) {
-      return c.json({ error: '회사 정보를 찾을 수 없습니다' }, 404);
+      return res.status(404).json({ error: '회사 정보를 찾을 수 없습니다' });
     }
 
     const announcement = await prisma.companyAnnouncement.create({
@@ -170,32 +172,32 @@ app.post('/create', authenticateToken, async (c) => {
         title,
         content,
         priority,
-        createdById: user.userId
+        createdById: userId
       }
     });
 
-    return c.json({ 
+    return res.json({ 
       message: '공지사항이 등록되었습니다',
       announcement 
     });
   } catch (error: any) {
     console.error('공지사항 작성 오류:', error);
-    return c.json({ error: error.message }, 500);
+    return res.status(500).json({ error: error.message });
   }
 });
 
 // 공지사항 수정 (바이어)
-app.put('/:id', authenticateToken, async (c) => {
+router.put('/:id', requireAuth, async (req, res) => {
   try {
-    const user = c.get('user');
-    const announcementId = c.req.param('id');
+    const userId = req.user!.id;
+    const userRole = req.user!.role;
+    const announcementId = req.params.id;
     
-    if (user.role !== 'BUYER') {
-      return c.json({ error: '바이어만 접근 가능합니다' }, 403);
+    if (userRole !== 'BUYER') {
+      return res.status(403).json({ error: '바이어만 접근 가능합니다' });
     }
 
-    const body = await c.req.json();
-    const { title, content, priority, isActive } = body;
+    const { title, content, priority, isActive } = req.body;
 
     const announcement = await prisma.companyAnnouncement.update({
       where: { id: announcementId },
@@ -207,48 +209,55 @@ app.put('/:id', authenticateToken, async (c) => {
       }
     });
 
-    return c.json({ 
+    return res.json({ 
       message: '공지사항이 수정되었습니다',
       announcement 
     });
   } catch (error: any) {
     console.error('공지사항 수정 오류:', error);
-    return c.json({ error: error.message }, 500);
+    return res.status(500).json({ error: error.message });
   }
 });
 
 // 공지사항 삭제 (바이어)
-app.delete('/:id', authenticateToken, async (c) => {
+router.delete('/:id', requireAuth, async (req, res) => {
   try {
-    const user = c.get('user');
-    const announcementId = c.req.param('id');
+    const userId = req.user!.id;
+    const userRole = req.user!.role;
+    const announcementId = req.params.id;
     
-    if (user.role !== 'BUYER') {
-      return c.json({ error: '바이어만 접근 가능합니다' }, 403);
+    if (userRole !== 'BUYER') {
+      return res.status(403).json({ error: '바이어만 접근 가능합니다' });
     }
 
     await prisma.companyAnnouncement.delete({
       where: { id: announcementId }
     });
 
-    return c.json({ message: '공지사항이 삭제되었습니다' });
+    return res.json({ message: '공지사항이 삭제되었습니다' });
   } catch (error: any) {
     console.error('공지사항 삭제 오류:', error);
-    return c.json({ error: error.message }, 500);
+    return res.status(500).json({ error: error.message });
   }
 });
 
 // 공지사항 조회 (직원)
-app.get('/my-announcements', authenticateToken, async (c) => {
+router.get('/my-announcements', requireAuth, async (req, res) => {
   try {
-    const user = c.get('user');
+    const userId = req.user!.id;
+    const userRole = req.user!.role;
     
-    if (user.role !== 'EMPLOYEE') {
-      return c.json({ error: '직원만 접근 가능합니다' }, 403);
+    if (userRole !== 'EMPLOYEE') {
+      return res.status(403).json({ error: '직원만 접근 가능합니다' });
     }
 
-    if (!user.employeeId) {
-      return c.json({ error: '직원 정보를 찾을 수 없습니다' }, 404);
+    // 사용자 정보 조회
+    const user = await prisma.user.findUnique({
+      where: { id: userId }
+    });
+
+    if (!user || !user.employeeId) {
+      return res.status(404).json({ error: '직원 정보를 찾을 수 없습니다' });
     }
 
     // 직원의 회사 BuyerProfile ID 가져오기
@@ -257,7 +266,7 @@ app.get('/my-announcements', authenticateToken, async (c) => {
     });
 
     if (!employee) {
-      return c.json({ error: '직원 정보를 찾을 수 없습니다' }, 404);
+      return res.status(404).json({ error: '직원 정보를 찾을 수 없습니다' });
     }
 
     // 활성화된 공지사항만 조회
@@ -286,25 +295,31 @@ app.get('/my-announcements', authenticateToken, async (c) => {
       readAt: announcement.readLogs[0]?.readAt || null
     }));
 
-    return c.json({ announcements: announcementsWithReadStatus });
+    return res.json({ announcements: announcementsWithReadStatus });
   } catch (error: any) {
     console.error('직원 공지사항 조회 오류:', error);
-    return c.json({ error: error.message }, 500);
+    return res.status(500).json({ error: error.message });
   }
 });
 
 // 공지사항 읽음 처리 (직원)
-app.post('/:id/read', authenticateToken, async (c) => {
+router.post('/:id/read', requireAuth, async (req, res) => {
   try {
-    const user = c.get('user');
-    const announcementId = c.req.param('id');
+    const userId = req.user!.id;
+    const userRole = req.user!.role;
+    const announcementId = req.params.id;
     
-    if (user.role !== 'EMPLOYEE') {
-      return c.json({ error: '직원만 접근 가능합니다' }, 403);
+    if (userRole !== 'EMPLOYEE') {
+      return res.status(403).json({ error: '직원만 접근 가능합니다' });
     }
 
-    if (!user.employeeId) {
-      return c.json({ error: '직원 정보를 찾을 수 없습니다' }, 404);
+    // 사용자 정보 조회
+    const user = await prisma.user.findUnique({
+      where: { id: userId }
+    });
+
+    if (!user || !user.employeeId) {
+      return res.status(404).json({ error: '직원 정보를 찾을 수 없습니다' });
     }
 
     // 이미 읽었는지 확인
@@ -318,7 +333,7 @@ app.post('/:id/read', authenticateToken, async (c) => {
     });
 
     if (existingLog) {
-      return c.json({ 
+      return res.json({ 
         message: '이미 읽은 공지사항입니다',
         readLog: existingLog 
       });
@@ -329,18 +344,18 @@ app.post('/:id/read', authenticateToken, async (c) => {
       data: {
         announcementId,
         employeeId: user.employeeId,
-        userId: user.userId
+        userId: userId
       }
     });
 
-    return c.json({ 
+    return res.json({ 
       message: '공지사항을 읽음으로 처리했습니다',
       readLog 
     });
   } catch (error: any) {
     console.error('공지사항 읽음 처리 오류:', error);
-    return c.json({ error: error.message }, 500);
+    return res.status(500).json({ error: error.message });
   }
 });
 
-export default app;
+export default router;
