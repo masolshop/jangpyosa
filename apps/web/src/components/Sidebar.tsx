@@ -159,7 +159,7 @@ export default function Sidebar() {
               label="장애인 직원 등록·관리"
               icon="👥"
               active={isActive("/dashboard/employees")}
-              requiresRole={["BUYER", "SUPER_ADMIN"]}
+              requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]}
               currentRole={userRole}
             />
             <MenuItem
@@ -167,7 +167,7 @@ export default function Sidebar() {
               label="월별 고용장려금부담금 관리"
               icon="📅"
               active={isActive("/dashboard/monthly")}
-              requiresRole={["BUYER", "SUPER_ADMIN"]}
+              requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]}
               currentRole={userRole}
             />
           </div>
@@ -212,11 +212,21 @@ export default function Sidebar() {
             <div style={{ fontSize: 20.6, color: "#fff", marginBottom: 12, fontWeight: "bold" }}>
               연계고용도급계약센터
             </div>
+            {userRole === "SUPPLIER" && (
+              <MenuItem
+                href="/supplier/profile"
+                label="연계고용감면상품관리"
+                icon="🏭"
+                active={isActive("/supplier/profile")}
+              />
+            )}
             <MenuItem
               href="/catalog"
               label="연계고용감면표준사업장"
               icon="🛒"
               active={isActive("/catalog")}
+              requiresRole={["SUPPLIER"]}
+              currentRole={userRole}
             />
             {userRole === "BUYER" && (
               <MenuItem
@@ -254,14 +264,6 @@ export default function Sidebar() {
               icon="📄"
               active={isActive("/contract-sample")}
             />
-            {userRole === "SUPPLIER" && (
-              <MenuItem
-                href="/supplier/profile"
-                label="프로필 관리"
-                icon="🏭"
-                active={isActive("/supplier/profile")}
-              />
-            )}
           </div>
 
           {/* 계정 */}
@@ -376,11 +378,11 @@ function MenuItem({
     if (requiresRole && requiresRole.length > 0) {
       if (!currentRole || !requiresRole.includes(currentRole)) {
         e.preventDefault();
-        alert(`이 메뉴는 로그인이 필요합니다.\n\n필요한 권한: ${
-          requiresRole.includes("BUYER") ? "고용의무기업" :
-          requiresRole.includes("SUPPLIER") ? "표준사업장" :
-          requiresRole.includes("SUPER_ADMIN") ? "관리자" : "특정 권한"
-        }`);
+        const roleLabels = [];
+        if (requiresRole.includes("BUYER")) roleLabels.push("고용의무기업");
+        if (requiresRole.includes("SUPPLIER")) roleLabels.push("표준사업장");
+        if (requiresRole.includes("SUPER_ADMIN")) roleLabels.push("관리자");
+        alert(`이 메뉴는 로그인이 필요합니다.\n\n필요한 권한: ${roleLabels.join(", ") || "특정 권한"}`);
         return;
       }
     }
