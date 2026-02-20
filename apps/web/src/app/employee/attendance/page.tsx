@@ -531,11 +531,16 @@ export default function EmployeeAttendancePage() {
                   
                   {announcement.isRead ? (
                     <span style={{
-                      fontSize: 12,
-                      color: "#ef4444",
+                      padding: "6px 14px",
+                      background: "#ef4444",
+                      color: "white",
+                      border: "none",
+                      borderRadius: 6,
+                      fontSize: 13,
                       fontWeight: "600",
                       whiteSpace: "nowrap",
                       marginLeft: 12,
+                      display: "inline-block",
                     }}>
                       확인완료
                     </span>
@@ -544,7 +549,7 @@ export default function EmployeeAttendancePage() {
                       onClick={() => markAnnouncementAsRead(announcement.id)}
                       style={{
                         padding: "6px 14px",
-                        background: "#3b82f6",
+                        background: "#10b981",
                         color: "white",
                         border: "none",
                         borderRadius: 6,
