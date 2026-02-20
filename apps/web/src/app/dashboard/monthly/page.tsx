@@ -21,6 +21,8 @@ type MonthlyData = {
   surplusCount: number;
   levy: number;
   incentive: number;
+  femaleIncentiveCount?: number;
+  femaleIncentiveAmount?: number;
   netAmount: number;
   details?: any[];
 };
@@ -30,6 +32,31 @@ type CompanyInfo = {
   buyerType?: string;
   quotaRate: number;
 };
+
+// ============================================
+// 유틸리티 함수
+// ============================================
+
+// 여성 장려금 계산 함수
+function calculateFemaleIncentive(details?: any[]): { count: number; amount: number } {
+  if (!details || details.length === 0) {
+    return { count: 0, amount: 0 };
+  }
+
+  let count = 0;
+  let amount = 0;
+
+  details.forEach((emp) => {
+    // 여성이고 장려금 대상인 경우
+    if (emp.gender === "F" && emp.incentiveAmount > 0) {
+      count++;
+      // 여성 장려금은 월 30만원 (incentiveAmount 외 추가)
+      amount += 300000;
+    }
+  });
+
+  return { count, amount };
+}
 
 // ============================================
 // 메인 컴포넌트
@@ -113,7 +140,18 @@ export default function MonthlyManagementPage() {
       if (!res.ok) throw new Error("월별 데이터 조회 실패");
 
       const data = await res.json();
-      setMonthlyData(data.monthlyData);
+      
+      // 월별 데이터에 여성 장려금 정보 추가
+      const enrichedMonthlyData = data.monthlyData.map((monthData: MonthlyData) => {
+        const { count, amount } = calculateFemaleIncentive(monthData.details);
+        return {
+          ...monthData,
+          femaleIncentiveCount: count,
+          femaleIncentiveAmount: amount,
+        };
+      });
+      
+      setMonthlyData(enrichedMonthlyData);
       
       // 회사 정보 및 buyerType 기반 quotaRate 설정
       const userStr = typeof window !== "undefined" ? localStorage.getItem("user") : null;
@@ -509,7 +547,18 @@ export default function MonthlyManagementPage() {
                       color: data.incentive > 0 ? "#059669" : "#666",
                     }}
                   >
-                    {data.incentive > 0 ? `+${(data.incentive / 10000).toFixed(0)}만` : "-"}
+                    {data.incentive > 0 ? (
+                      <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                        <div>+{(data.incentive / 10000).toFixed(0)}만</div>
+                        {data.femaleIncentiveCount && data.femaleIncentiveCount > 0 && (
+                          <div style={{ fontSize: 11, color: "#9ca3af" }}>
+                            (여성 {data.femaleIncentiveCount}명: +{(data.femaleIncentiveAmount! / 10000).toFixed(0)}만)
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      "-"
+                    )}
                   </td>
                   <td
                     style={{
