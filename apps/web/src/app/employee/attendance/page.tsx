@@ -1,129 +1,148 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 import { API_BASE } from "@/lib/api";
-import { getToken, getUserRole } from "@/lib/auth";
+import { getToken } from "@/lib/auth";
 
-// ============================================
-// 타입 정의
-// ============================================
+interface AttendanceRecord {
+  id: string;
+  date: string;
+  workType: string;
+  clockIn: string | null;
+  clockOut: string | null;
+  workHours: number | null;
+  location: string | null;
+  note: string | null;
+}
 
-type TodayStatus = {
-  today: string;
-  record: {
-    id: string;
-    workType: "OFFICE" | "REMOTE" | "HYBRID";
-    clockIn: string;
-    clockOut: string | null;
-    workHours: number | null;
-    note: string | null;
-  } | null;
-  status: "NOT_CLOCKED_IN" | "WORKING" | "CLOCKED_OUT";
-};
-
-// ============================================
-// 메인 컴포넌트
-// ============================================
+interface EmployeeInfo {
+  name: string;
+  companyName: string;
+  phone: string;
+}
 
 export default function EmployeeAttendancePage() {
-  const router = useRouter();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
-
-  const [todayStatus, setTodayStatus] = useState<TodayStatus | null>(null);
-  const [selectedWorkType, setSelectedWorkType] = useState<"OFFICE" | "REMOTE" | "HYBRID">("OFFICE");
-
-  const [userName, setUserName] = useState<string>("");
-  const [companyName, setCompanyName] = useState<string>("");
-
-  // ============================================
-  // 초기 로드
-  // ============================================
+  const [error, setError] = useState("");
+  const [workType, setWorkType] = useState<"OFFICE" | "REMOTE">("OFFICE");
+  const [location, setLocation] = useState("");
+  const [note, setNote] = useState("");
+  const [todayRecord, setTodayRecord] = useState<AttendanceRecord | null>(null);
+  const [recentRecords, setRecentRecords] = useState<AttendanceRecord[]>([]);
+  const [employeeInfo, setEmployeeInfo] = useState<EmployeeInfo | null>(null);
 
   useEffect(() => {
-    const role = getUserRole();
-    if (role !== "EMPLOYEE") {
-      router.push("/");
-      return;
-    }
-
-    // 사용자 정보 로드
-    if (typeof window !== "undefined") {
-      const userStr = localStorage.getItem("user");
-      if (userStr) {
-        try {
-          const user = JSON.parse(userStr);
-          setUserName(user.name || "");
-          setCompanyName(user.companyName || "");
-        } catch (e) {
-          console.error("사용자 정보 파싱 실패:", e);
-        }
-      }
-    }
-
-    fetchTodayStatus();
+    loadEmployeeInfo();
+    loadTodayRecord();
+    loadRecentRecords();
   }, []);
 
-  // ============================================
-  // API 호출
-  // ============================================
-
-  async function fetchTodayStatus() {
-    setLoading(true);
-    setError("");
-
-    const token = getToken();
-    if (!token) {
-      router.push("/login");
-      return;
-    }
-
+  async function loadEmployeeInfo() {
     try {
-      const res = await fetch(`${API_BASE}/attendance/today`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const token = getToken();
+      if (!token) return;
+
+      // localStorage에서 기본 사용자 정보 가져오기
+      const userStr = localStorage.getItem("user");
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        
+        // /attendance/today API에서 회사명까지 함께 받아옴
+        const todayRes = await fetch(`${API_BASE}/attendance/today`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (todayRes.ok) {
+          const todayData = await todayRes.json();
+          
+          if (todayData.employee) {
+            setEmployeeInfo({
+              name: todayData.employee.name,
+              companyName: todayData.employee.companyName,
+              phone: user.phone || "",
+            });
+            
+            // 오늘 출퇴근 기록도 함께 설정
+            setTodayRecord(todayData.record);
+            return;
+          }
+        }
+        
+        // API 호출 실패 시 기본값
+        setEmployeeInfo({
+          name: user.name || "직원",
+          companyName: "회사명 불명",
+          phone: user.phone || "",
+        });
+      }
+    } catch (e) {
+      console.error("직원 정보 로딩 실패:", e);
+    }
+  }
+
+  async function loadTodayRecord() {
+    // loadEmployeeInfo에서 이미 처리하므로 빈 함수로 유지
+    // (useEffect에서 호출하지만 실제 로딩은 loadEmployeeInfo에서 처리)
+  }
+
+  async function loadRecentRecords() {
+    try {
+      const token = getToken();
+      if (!token) return;
+
+      const res = await fetch(`${API_BASE}/attendance/my-records?limit=7`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
 
-      if (!res.ok) throw new Error("오늘 상태 조회 실패");
-
-      const json = await res.json();
-      setTodayStatus(json);
-    } catch (e: any) {
-      setError(e.message);
-    } finally {
-      setLoading(false);
+      if (res.ok) {
+        const data = await res.json();
+        setRecentRecords(data);
+      }
+    } catch (e) {
+      console.error("최근 출퇴근 기록 로딩 실패:", e);
     }
   }
 
   async function handleClockIn() {
-    const token = getToken();
-    if (!token) return;
-
-    setLoading(true);
-    setError("");
     setMessage("");
+    setError("");
+    setLoading(true);
 
     try {
+      const token = getToken();
+      if (!token) {
+        throw new Error("로그인이 필요합니다.");
+      }
+
       const res = await fetch(`${API_BASE}/attendance/clock-in`, {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          workType: selectedWorkType,
+          workType,
+          location,
+          note,
         }),
       });
 
+      const data = await res.json();
+
       if (!res.ok) {
-        const json = await res.json();
-        throw new Error(json.message || json.error || "출근 처리 실패");
+        throw new Error(data.message || data.error || "출근 체크 실패");
       }
 
-      setMessage("✅ 출근 처리되었습니다!");
-      setTimeout(() => setMessage(""), 3000);
-      await fetchTodayStatus();
+      setMessage(`✅ ${data.message}`);
+      setNote("");
+      setLocation("");
+      await loadTodayRecord();
+      await loadRecentRecords();
     } catch (e: any) {
       setError(e.message);
     } finally {
@@ -132,33 +151,39 @@ export default function EmployeeAttendancePage() {
   }
 
   async function handleClockOut() {
-    if (!confirm("퇴근 처리하시겠습니까?")) return;
-
-    const token = getToken();
-    if (!token) return;
-
-    setLoading(true);
-    setError("");
     setMessage("");
+    setError("");
+    setLoading(true);
 
     try {
+      const token = getToken();
+      if (!token) {
+        throw new Error("로그인이 필요합니다.");
+      }
+
       const res = await fetch(`${API_BASE}/attendance/clock-out`, {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
+        body: JSON.stringify({
+          location,
+          note,
+        }),
       });
 
+      const data = await res.json();
+
       if (!res.ok) {
-        const json = await res.json();
-        throw new Error(json.message || json.error || "퇴근 처리 실패");
+        throw new Error(data.message || data.error || "퇴근 체크 실패");
       }
 
-      const json = await res.json();
-      setMessage(`✅ 퇴근 처리되었습니다! (${json.workHours}시간 근무)`);
-      setTimeout(() => setMessage(""), 3000);
-      await fetchTodayStatus();
+      setMessage(`✅ ${data.message}`);
+      setNote("");
+      setLocation("");
+      await loadTodayRecord();
+      await loadRecentRecords();
     } catch (e: any) {
       setError(e.message);
     } finally {
@@ -166,348 +191,272 @@ export default function EmployeeAttendancePage() {
     }
   }
 
-  // ============================================
-  // 렌더링
-  // ============================================
+  // 현재 시각
+  const [currentTime, setCurrentTime] = useState(new Date());
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
-  if (loading && !todayStatus) {
-    return (
-      <div className="container">
-        <div className="card">
-          <p>로딩 중...</p>
-        </div>
-      </div>
-    );
-  }
+  const formatTime = (date: Date) => {
+    return date.toLocaleTimeString("ko-KR", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    });
+  };
 
-  const currentTime = new Date().toLocaleTimeString("ko-KR", {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  });
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString("ko-KR", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      weekday: "long",
+    });
+  };
 
   return (
-    <div className="container">
-      <div className="card" style={{ maxWidth: "600px", margin: "20px auto" }}>
-        <h1 style={{ textAlign: "center", marginBottom: 8 }}>⏰ 출퇴근 관리</h1>
-        
-        {companyName && (
-          <div style={{
-            textAlign: "center",
-            fontSize: 18,
-            color: "#666",
-            marginBottom: 24,
-          }}>
-            🏢 {companyName} | {userName}
-          </div>
+    <div className="container" style={{ maxWidth: 800, margin: "40px auto" }}>
+      {/* 헤더 */}
+      <div style={{ textAlign: "center", marginBottom: 40 }}>
+        <h1 style={{ fontSize: 32, marginBottom: 8 }}>⏰ 출퇴근 관리</h1>
+        {employeeInfo && (
+          <p style={{ fontSize: 18, color: "#666", marginTop: 8 }}>
+            <strong>{employeeInfo.companyName}</strong> / {employeeInfo.name}
+          </p>
         )}
+      </div>
 
-        {/* 현재 시각 */}
-        <div style={{
-          padding: "24px",
+      {/* 현재 시각 */}
+      <div
+        className="card"
+        style={{
           background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-          borderRadius: 12,
+          color: "white",
           textAlign: "center",
-          marginBottom: 24,
-          boxShadow: "0 4px 12px rgba(102, 126, 234, 0.3)",
-        }}>
-          <div style={{ fontSize: 14, color: "rgba(255, 255, 255, 0.9)", marginBottom: 8 }}>
-            현재 시각
-          </div>
-          <div style={{ fontSize: 48, fontWeight: "bold", color: "white", fontFamily: "monospace" }}>
-            {currentTime}
-          </div>
-          <div style={{ fontSize: 16, color: "rgba(255, 255, 255, 0.9)", marginTop: 8 }}>
-            {new Date().toLocaleDateString("ko-KR", { 
-              year: "numeric", 
-              month: "long", 
-              day: "numeric",
-              weekday: "long",
-            })}
-          </div>
+          padding: "40px 20px",
+          marginBottom: 30,
+        }}
+      >
+        <div style={{ fontSize: 48, fontWeight: "bold", marginBottom: 8 }}>
+          {formatTime(currentTime)}
         </div>
+        <div style={{ fontSize: 18, opacity: 0.9 }}>{formatDate(currentTime)}</div>
+      </div>
 
-        {/* 메시지 */}
-        {message && (
-          <div
-            style={{
-              marginBottom: 16,
-              padding: 16,
-              background: "#d1fae5",
-              color: "#065f46",
-              borderRadius: 8,
-              fontWeight: "bold",
-              textAlign: "center",
-            }}
-          >
-            {message}
-          </div>
-        )}
-
-        {error && (
-          <div
-            style={{
-              marginBottom: 16,
-              padding: 16,
-              background: "#fee2e2",
-              color: "#991b1b",
-              borderRadius: 8,
-              fontWeight: "bold",
-              textAlign: "center",
-            }}
-          >
-            ❌ {error}
-          </div>
-        )}
-
-        {/* 오늘 상태 */}
-        {todayStatus && (
-          <div style={{
-            padding: 24,
-            background: "#f9fafb",
-            borderRadius: 12,
-            marginBottom: 24,
-          }}>
-            <h3 style={{ margin: 0, marginBottom: 16, textAlign: "center" }}>
-              📅 오늘 근무 상태
-            </h3>
-
-            {todayStatus.status === "NOT_CLOCKED_IN" && (
-              <div style={{ textAlign: "center" }}>
-                <div style={{ fontSize: 48, marginBottom: 16 }}>🌅</div>
-                <p style={{ fontSize: 18, color: "#666", margin: 0 }}>
-                  아직 출근하지 않았습니다.
-                </p>
-              </div>
-            )}
-
-            {todayStatus.status === "WORKING" && todayStatus.record && (
-              <div>
-                <div style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginBottom: 16,
-                  padding: 16,
-                  background: "white",
-                  borderRadius: 8,
-                }}>
-                  <div>
-                    <div style={{ fontSize: 14, color: "#999", marginBottom: 4 }}>근무형태</div>
-                    <div style={{ fontSize: 18, fontWeight: "bold" }}>
-                      {todayStatus.record.workType === "OFFICE" ? "🏢 회사 근무" : 
-                       todayStatus.record.workType === "REMOTE" ? "🏠 재택 근무" : 
-                       "🔄 하이브리드"}
-                    </div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 14, color: "#999", marginBottom: 4 }}>출근시간</div>
-                    <div style={{ fontSize: 18, fontWeight: "bold", fontFamily: "monospace" }}>
-                      {todayStatus.record.clockIn}
-                    </div>
-                  </div>
-                </div>
-                <div style={{
-                  padding: 16,
-                  background: "#10b981",
-                  color: "white",
-                  borderRadius: 8,
-                  textAlign: "center",
-                  fontSize: 20,
-                  fontWeight: "bold",
-                }}>
-                  💼 근무 중
-                </div>
-              </div>
-            )}
-
-            {todayStatus.status === "CLOCKED_OUT" && todayStatus.record && (
-              <div>
-                <div style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
-                  gap: 16,
-                  marginBottom: 16,
-                }}>
-                  <div style={{
-                    padding: 16,
-                    background: "white",
-                    borderRadius: 8,
-                    textAlign: "center",
-                  }}>
-                    <div style={{ fontSize: 14, color: "#999", marginBottom: 4 }}>출근시간</div>
-                    <div style={{ fontSize: 20, fontWeight: "bold", fontFamily: "monospace" }}>
-                      {todayStatus.record.clockIn}
-                    </div>
-                  </div>
-                  <div style={{
-                    padding: 16,
-                    background: "white",
-                    borderRadius: 8,
-                    textAlign: "center",
-                  }}>
-                    <div style={{ fontSize: 14, color: "#999", marginBottom: 4 }}>퇴근시간</div>
-                    <div style={{ fontSize: 20, fontWeight: "bold", fontFamily: "monospace" }}>
-                      {todayStatus.record.clockOut}
-                    </div>
-                  </div>
-                </div>
-                <div style={{
-                  padding: 20,
-                  background: "#3b82f6",
-                  color: "white",
-                  borderRadius: 8,
-                  textAlign: "center",
-                }}>
-                  <div style={{ fontSize: 16, marginBottom: 8 }}>총 근무시간</div>
-                  <div style={{ fontSize: 36, fontWeight: "bold" }}>
-                    {todayStatus.record.workHours}시간
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* 출퇴근 버튼 */}
-        {todayStatus && todayStatus.status === "NOT_CLOCKED_IN" && (
-          <div>
-            <h3 style={{ marginBottom: 16 }}>🚪 출근하기</h3>
-            
-            {/* 근무형태 선택 */}
-            <div style={{ marginBottom: 24 }}>
-              <label style={{ display: "block", marginBottom: 8, fontWeight: "600" }}>
-                근무형태 선택
-              </label>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
-                <button
-                  onClick={() => setSelectedWorkType("OFFICE")}
-                  style={{
-                    padding: "20px",
-                    background: selectedWorkType === "OFFICE" ? "#3b82f6" : "white",
-                    color: selectedWorkType === "OFFICE" ? "white" : "#666",
-                    border: selectedWorkType === "OFFICE" ? "2px solid #3b82f6" : "2px solid #e5e7eb",
-                    borderRadius: 12,
-                    fontSize: 16,
-                    fontWeight: "bold",
-                    cursor: "pointer",
-                    transition: "all 0.2s",
-                  }}
-                >
-                  🏢<br />회사 근무
-                </button>
-                <button
-                  onClick={() => setSelectedWorkType("REMOTE")}
-                  style={{
-                    padding: "20px",
-                    background: selectedWorkType === "REMOTE" ? "#f59e0b" : "white",
-                    color: selectedWorkType === "REMOTE" ? "white" : "#666",
-                    border: selectedWorkType === "REMOTE" ? "2px solid #f59e0b" : "2px solid #e5e7eb",
-                    borderRadius: 12,
-                    fontSize: 16,
-                    fontWeight: "bold",
-                    cursor: "pointer",
-                    transition: "all 0.2s",
-                  }}
-                >
-                  🏠<br />재택 근무
-                </button>
-                <button
-                  onClick={() => setSelectedWorkType("HYBRID")}
-                  style={{
-                    padding: "20px",
-                    background: selectedWorkType === "HYBRID" ? "#8b5cf6" : "white",
-                    color: selectedWorkType === "HYBRID" ? "white" : "#666",
-                    border: selectedWorkType === "HYBRID" ? "2px solid #8b5cf6" : "2px solid #e5e7eb",
-                    borderRadius: 12,
-                    fontSize: 16,
-                    fontWeight: "bold",
-                    cursor: "pointer",
-                    transition: "all 0.2s",
-                  }}
-                >
-                  🔄<br />하이브리드
-                </button>
-              </div>
-            </div>
-
-            <button
-              onClick={handleClockIn}
-              disabled={loading}
-              style={{
-                width: "100%",
-                padding: "20px",
-                background: loading ? "#ccc" : "#10b981",
-                color: "white",
-                border: "none",
-                borderRadius: 12,
-                fontSize: 20,
-                fontWeight: "bold",
-                cursor: loading ? "not-allowed" : "pointer",
-                boxShadow: "0 4px 12px rgba(16, 185, 129, 0.3)",
-              }}
-            >
-              {loading ? "처리 중..." : "✅ 출근하기"}
-            </button>
-          </div>
-        )}
-
-        {todayStatus && todayStatus.status === "WORKING" && (
-          <button
-            onClick={handleClockOut}
-            disabled={loading}
-            style={{
-              width: "100%",
-              padding: "20px",
-              background: loading ? "#ccc" : "#ef4444",
-              color: "white",
-              border: "none",
-              borderRadius: 12,
-              fontSize: 20,
-              fontWeight: "bold",
-              cursor: loading ? "not-allowed" : "pointer",
-              boxShadow: "0 4px 12px rgba(239, 68, 68, 0.3)",
-            }}
-          >
-            {loading ? "처리 중..." : "🚪 퇴근하기"}
-          </button>
-        )}
-
-        {todayStatus && todayStatus.status === "CLOCKED_OUT" && (
-          <div style={{
-            padding: 20,
-            background: "#f3f4f6",
-            borderRadius: 12,
-            textAlign: "center",
-          }}>
-            <div style={{ fontSize: 48, marginBottom: 16 }}>🌙</div>
-            <p style={{ fontSize: 18, color: "#666", margin: 0 }}>
-              오늘 업무가 종료되었습니다.<br />
-              고생하셨습니다!
-            </p>
-          </div>
-        )}
-
-        {/* 안내 */}
+      {/* 오늘의 출퇴근 현황 */}
+      {todayRecord && (
         <div
+          className="card"
           style={{
-            marginTop: 24,
-            padding: 16,
-            background: "#eff6ff",
-            borderRadius: 8,
-            border: "1px solid #bfdbfe",
+            background: "#f0f9ff",
+            border: "2px solid #0ea5e9",
+            marginBottom: 30,
           }}
         >
-          <h4 style={{ margin: 0, color: "#1e40af", fontSize: 14 }}>
-            💡 사용 안내
-          </h4>
-          <ul style={{ marginTop: 8, paddingLeft: 20, color: "#1e3a8a", fontSize: 13, lineHeight: 1.6 }}>
-            <li>출근 시 근무형태(회사/재택)를 선택하세요.</li>
-            <li>출근 버튼을 누르면 현재 시각이 기록됩니다.</li>
-            <li>퇴근 버튼을 누르면 자동으로 근무시간이 계산됩니다.</li>
-            <li>하루에 한 번만 출퇴근 기록이 가능합니다.</li>
-          </ul>
+          <h3 style={{ marginTop: 0, color: "#0284c7" }}>📅 오늘의 근태 현황</h3>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+            <div>
+              <div style={{ fontSize: 14, color: "#666", marginBottom: 4 }}>출근 시간</div>
+              <div style={{ fontSize: 20, fontWeight: "bold", color: "#0284c7" }}>
+                {todayRecord.clockIn || "-"}
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: 14, color: "#666", marginBottom: 4 }}>퇴근 시간</div>
+              <div style={{ fontSize: 20, fontWeight: "bold", color: "#0284c7" }}>
+                {todayRecord.clockOut || "-"}
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: 14, color: "#666", marginBottom: 4 }}>근무 형태</div>
+              <div style={{ fontSize: 16 }}>
+                {todayRecord.workType === "OFFICE" ? "🏢 사무실 근무" : "🏠 재택 근무"}
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: 14, color: "#666", marginBottom: 4 }}>근무 시간</div>
+              <div style={{ fontSize: 16 }}>
+                {todayRecord.workHours ? `${todayRecord.workHours}시간` : "-"}
+              </div>
+            </div>
+          </div>
         </div>
+      )}
+
+      {/* 메시지 */}
+      {message && (
+        <div
+          style={{
+            padding: 16,
+            background: "#d1fae5",
+            color: "#065f46",
+            borderRadius: 8,
+            marginBottom: 24,
+            fontWeight: "bold",
+          }}
+        >
+          {message}
+        </div>
+      )}
+
+      {error && (
+        <div
+          style={{
+            padding: 16,
+            background: "#fee2e2",
+            color: "#991b1b",
+            borderRadius: 8,
+            marginBottom: 24,
+            fontWeight: "bold",
+          }}
+        >
+          ❌ {error}
+        </div>
+      )}
+
+      {/* 출퇴근 체크 */}
+      <div className="card" style={{ marginBottom: 30 }}>
+        <h3 style={{ marginTop: 0 }}>📍 근무 형태 선택</h3>
+        <div style={{ display: "flex", gap: 12, marginBottom: 20 }}>
+          <button
+            onClick={() => setWorkType("OFFICE")}
+            style={{
+              flex: 1,
+              padding: "16px 20px",
+              background: workType === "OFFICE" ? "#3b82f6" : "#e5e7eb",
+              color: workType === "OFFICE" ? "white" : "#6b7280",
+              border: "none",
+              borderRadius: 8,
+              fontSize: 16,
+              fontWeight: "bold",
+              cursor: "pointer",
+            }}
+          >
+            🏢 사무실 근무
+          </button>
+          <button
+            onClick={() => setWorkType("REMOTE")}
+            style={{
+              flex: 1,
+              padding: "16px 20px",
+              background: workType === "REMOTE" ? "#3b82f6" : "#e5e7eb",
+              color: workType === "REMOTE" ? "white" : "#6b7280",
+              border: "none",
+              borderRadius: 8,
+              fontSize: 16,
+              fontWeight: "bold",
+              cursor: "pointer",
+            }}
+          >
+            🏠 재택 근무
+          </button>
+        </div>
+
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ display: "block", marginBottom: 8, fontWeight: "600" }}>
+            위치 (선택)
+          </label>
+          <input
+            type="text"
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            placeholder="예: 서울시 강남구 테헤란로 123"
+          />
+        </div>
+
+        <div style={{ marginBottom: 20 }}>
+          <label style={{ display: "block", marginBottom: 8, fontWeight: "600" }}>
+            메모 (선택)
+          </label>
+          <textarea
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="특이사항이 있으면 입력하세요"
+            rows={3}
+          />
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <button
+            onClick={handleClockIn}
+            disabled={loading || !!todayRecord?.clockIn}
+            style={{
+              padding: "16px 20px",
+              background: todayRecord?.clockIn ? "#9ca3af" : "#10b981",
+              color: "white",
+              border: "none",
+              borderRadius: 8,
+              fontSize: 18,
+              fontWeight: "bold",
+              cursor: todayRecord?.clockIn ? "not-allowed" : "pointer",
+            }}
+          >
+            {todayRecord?.clockIn ? "✅ 출근 완료" : "🚪 출근 체크"}
+          </button>
+
+          <button
+            onClick={handleClockOut}
+            disabled={loading || !todayRecord?.clockIn || !!todayRecord?.clockOut}
+            style={{
+              padding: "16px 20px",
+              background:
+                !todayRecord?.clockIn || todayRecord?.clockOut ? "#9ca3af" : "#ef4444",
+              color: "white",
+              border: "none",
+              borderRadius: 8,
+              fontSize: 18,
+              fontWeight: "bold",
+              cursor:
+                !todayRecord?.clockIn || todayRecord?.clockOut ? "not-allowed" : "pointer",
+            }}
+          >
+            {todayRecord?.clockOut ? "✅ 퇴근 완료" : "👋 퇴근 체크"}
+          </button>
+        </div>
+      </div>
+
+      {/* 최근 7일 출퇴근 기록 */}
+      <div className="card">
+        <h3 style={{ marginTop: 0 }}>📊 최근 출퇴근 기록</h3>
+        {recentRecords.length === 0 ? (
+          <p style={{ textAlign: "center", color: "#999", padding: "40px 0" }}>
+            아직 출퇴근 기록이 없습니다.
+          </p>
+        ) : (
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr style={{ background: "#f3f4f6" }}>
+                  <th style={{ padding: 12, textAlign: "left", fontWeight: 600 }}>날짜</th>
+                  <th style={{ padding: 12, textAlign: "left", fontWeight: 600 }}>출근</th>
+                  <th style={{ padding: 12, textAlign: "left", fontWeight: 600 }}>퇴근</th>
+                  <th style={{ padding: 12, textAlign: "left", fontWeight: 600 }}>
+                    근무시간
+                  </th>
+                  <th style={{ padding: 12, textAlign: "left", fontWeight: 600 }}>형태</th>
+                </tr>
+              </thead>
+              <tbody>
+                {recentRecords.map((record) => (
+                  <tr key={record.id} style={{ borderBottom: "1px solid #e5e7eb" }}>
+                    <td style={{ padding: 12 }}>{record.date}</td>
+                    <td style={{ padding: 12 }}>{record.clockIn || "-"}</td>
+                    <td style={{ padding: 12 }}>{record.clockOut || "-"}</td>
+                    <td style={{ padding: 12 }}>
+                      {record.workHours ? `${record.workHours}h` : "-"}
+                    </td>
+                    <td style={{ padding: 12 }}>
+                      {record.workType === "OFFICE" ? "🏢" : "🏠"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );

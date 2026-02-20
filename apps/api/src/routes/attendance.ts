@@ -287,10 +287,31 @@ router.get("/today", requireAuth, async (req, res) => {
       },
     });
 
+    // 직원 정보와 회사 정보 가져오기
+    const employee = await prisma.disabledEmployee.findUnique({
+      where: { id: user.employeeId },
+      include: {
+        buyer: {
+          include: {
+            company: {
+              select: {
+                name: true,
+                bizNo: true,
+              }
+            }
+          }
+        }
+      }
+    });
+
     return res.json({ 
       today,
       record: record || null,
       status: !record ? "NOT_CLOCKED_IN" : (record.clockOut ? "CLOCKED_OUT" : "WORKING"),
+      employee: employee ? {
+        name: employee.name,
+        companyName: employee.buyer.company.name,
+      } : null,
     });
   } catch (error: any) {
     console.error("오늘 상태 조회 실패:", error);
