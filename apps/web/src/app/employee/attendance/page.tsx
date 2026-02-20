@@ -517,12 +517,12 @@ export default function EmployeeAttendancePage() {
                   {announcement.isRead ? (
                     <span style={{
                       fontSize: 12,
-                      color: "#10b981",
+                      color: "#ef4444",
                       fontWeight: "600",
                       whiteSpace: "nowrap",
                       marginLeft: 12,
                     }}>
-                      ✓ 확인완료됨
+                      확인완료
                     </span>
                   ) : (
                     <button
