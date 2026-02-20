@@ -212,7 +212,7 @@
 /* 라디오 버튼 카드 스타일 */
 .radioGroup {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 1rem;
   margin-bottom: 1rem;
 }
@@ -255,12 +255,15 @@
 
 .radioContent {
   flex: 1;
+  min-width: 0; /* 텍스트가 잘리지 않도록 */
 }
 
 .radioContent strong {
   display: block;
   margin-bottom: 0.3rem;
   font-size: 1.05rem;
+  word-break: keep-all; /* 한글 단어 단위로 줄바꿈 */
+  overflow-wrap: break-word; /* 긴 단어 줄바꿈 */
 }
 
 .radioContent small {
@@ -268,6 +271,9 @@
   color: #666;
   font-size: 0.85rem;
   line-height: 1.4;
+  word-break: keep-all; /* 한글 단어 단위로 줄바꿈 */
+  overflow-wrap: break-word; /* 긴 단어 줄바꿈 */
+  white-space: normal; /* 자동 줄바꿈 허용 */
 }
 
 .badge {
