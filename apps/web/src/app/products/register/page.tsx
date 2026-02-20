@@ -356,7 +356,13 @@ export default function ProductRegisterPage() {
                 />
                 <div className={styles.radioContent}>
                   <strong>{type.label}</strong>
-                  <small>{type.desc}</small>
+                  <small style={{ 
+                    display: 'block',
+                    whiteSpace: 'normal',
+                    wordBreak: 'keep-all',
+                    overflowWrap: 'break-word',
+                    writingMode: 'horizontal-tb'
+                  }}>{type.desc}</small>
                 </div>
               </label>
             ))}
