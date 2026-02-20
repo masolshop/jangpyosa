@@ -174,7 +174,14 @@ function getBaseIncentiveRate(
   gender: "M" | "F",
   age: number
 ): number {
-  const rates = INCENTIVE_RATES[severity][gender];
+  // Fallback: rates가 undefined일 경우 기본값 사용
+  const rates = INCENTIVE_RATES[severity]?.[gender];
+  
+  if (!rates) {
+    // 기본값: 중증 남성 35-55세 기준
+    console.warn(`⚠️  장려금 단가 조회 실패: severity=${severity}, gender=${gender}, 기본값(500,000원) 사용`);
+    return 500000;
+  }
 
   if (age < 35) return rates.under35;
   if (age <= 55) return rates.age35to55;
