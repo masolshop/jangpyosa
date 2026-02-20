@@ -140,20 +140,10 @@ export default function MonthlyManagementPage() {
       if (!res.ok) throw new Error("월별 데이터 조회 실패");
 
       const data = await res.json();
-      console.log("📊 백엔드 응답 데이터:", data);
-      console.log("📊 첫 번째 월 데이터:", data.monthlyData?.[0]);
-      
-      // 1월의 details 상세 확인
-      if (data.monthlyData?.[0]?.details) {
-        console.log("📊 1월 직원 상세 정보 (처음 3명):", data.monthlyData[0].details.slice(0, 3));
-        console.log("📊 1월 전체 직원 수:", data.monthlyData[0].details.length);
-        console.log("📊 1월 장려금 지급 대상:", data.monthlyData[0].details.filter((d: any) => d.incentiveAmount > 0).length);
-      }
       
       // 월별 데이터에 여성 장려금 정보 추가
       const enrichedMonthlyData = data.monthlyData.map((monthData: MonthlyData) => {
         const { count, amount } = calculateFemaleIncentive(monthData.details);
-        console.log(`📊 ${monthData.month}월 - 장려금: ${monthData.incentive}, 여성: ${count}명/${amount}원`);
         return {
           ...monthData,
           femaleIncentiveCount: count,
@@ -161,7 +151,6 @@ export default function MonthlyManagementPage() {
         };
       });
       
-      console.log("📊 최종 월별 데이터:", enrichedMonthlyData[0]);
       setMonthlyData(enrichedMonthlyData);
       
       // 회사 정보 및 buyerType 기반 quotaRate 설정
