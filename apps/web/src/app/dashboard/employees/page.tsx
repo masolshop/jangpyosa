@@ -69,25 +69,21 @@ export default function EmployeesPage() {
   });
 
   // 2026년 최저시급
-  const MINIMUM_HOURLY_WAGE = 10030;
+  const MINIMUM_HOURLY_WAGE = 10320;
 
-  // 근로시간으로 월급 자동 계산
-  // 주 60시간 기준: 약 260만원 (월 최저임금 기준)
-  const calculateMonthlySalary = (weeklyHours: number): number => {
-    if (!weeklyHours || weeklyHours <= 0) return 0;
-    // 주 60시간 = 월 260만원 기준으로 비율 계산
-    const baseSalary = 2600000; // 주 60시간 기준
-    const baseHours = 60;
-    const salary = (weeklyHours / baseHours) * baseSalary;
-    // 10,000원 단위로 반올림
-    return Math.round(salary / 10000) * 10000;
+  // 월간 근로시간으로 월급 자동 계산
+  const calculateMonthlySalary = (monthlyHours: number): number => {
+    if (!monthlyHours || monthlyHours <= 0) return 0;
+    const salary = monthlyHours * MINIMUM_HOURLY_WAGE;
+    // 1,000원 단위로 반올림
+    return Math.round(salary / 1000) * 1000;
   };
 
-  // 근로시간 변경 시 급여 자동 계산
+  // 월간 근로시간 변경 시 급여 자동 계산
   const handleWorkHoursChange = (hours: number) => {
     setForm({
       ...form,
-      workHoursPerWeek: hours,
+      workHoursPerWeek: hours, // 실제로는 월간 근로시간
       monthlySalary: calculateMonthlySalary(hours),
     });
   };
@@ -272,7 +268,7 @@ export default function EmployeesPage() {
         "월급여*",
         "고용보험*",
         "최저임금*",
-        "주근로시간",
+        "월근로시간",
         "근무형태",
         "메모",
       ],
@@ -359,8 +355,8 @@ export default function EmployeesPage() {
       ["[최저임금]"],
       ["- 이상 또는 미만으로 입력"],
       [],
-      ["[주근로시간]"],
-      ["- 주당 근로시간을 숫자로 입력 (예: 60)"],
+      ["[월근로시간]"],
+      ["- 월간 근로시간을 숫자로 입력 (예: 60, 최소 60시간 이상)"],
       ["- 입력하지 않으면 60시간으로 자동 설정됩니다"],
       ["- 60시간이 최소 근무시간입니다"],
       [],
@@ -389,7 +385,7 @@ export default function EmployeesPage() {
       { wch: 12 },  // 월급여
       { wch: 10 },  // 고용보험
       { wch: 10 },  // 최저임금
-      { wch: 12 },  // 주근로시간
+      { wch: 12 },  // 월근로시간
       { wch: 12 },  // 근무형태
       { wch: 20 },  // 메모
     ];
@@ -932,17 +928,17 @@ export default function EmployeesPage() {
                   </div>
 
                   <div>
-                    <label>주간 근로시간 *</label>
+                    <label>월간 근로시간 *</label>
                     <input
                       type="number"
                       value={form.workHoursPerWeek}
                       onChange={(e) => handleWorkHoursChange(Number(e.target.value))}
                       min="1"
-                      max="80"
+                      max="240"
                       required
                     />
                     <p style={{ fontSize: 12, color: "#666", marginTop: 4 }}>
-                      💡 중증 60시간 이상: 의무고용 인원 계산에서 2명으로 인정
+                      💡 월 60시간 이상 필수. 중증 월 60시간 이상: 의무고용 인원 계산에서 2명으로 인정
                     </p>
                   </div>
 
@@ -959,7 +955,7 @@ export default function EmployeesPage() {
                       required
                     />
                     <p style={{ fontSize: 12, color: "#10b981", marginTop: 4 }}>
-                      ✅ 주 {form.workHoursPerWeek || 0}시간 기준 월급여: {calculateMonthlySalary(form.workHoursPerWeek || 0).toLocaleString()}원 (자동 계산됨)
+                      ✅ 월 {form.workHoursPerWeek || 0}시간 × 10,320원 = {calculateMonthlySalary(form.workHoursPerWeek || 0).toLocaleString()}원 (자동 계산됨)
                     </p>
                   </div>
 
@@ -1141,7 +1137,7 @@ export default function EmployeesPage() {
                           </p>
                         )}
                         <p style={{ margin: "6px 0 0 0", fontSize: 14, color: "#666" }}>
-                          ⏰ 주 {emp.workHoursPerWeek || 40}시간 | 💰 월 {emp.monthlySalary.toLocaleString()}원
+                          ⏰ 월 {emp.workHoursPerWeek || 60}시간 | 💰 월 {emp.monthlySalary.toLocaleString()}원
                         </p>
                         <p style={{ margin: "6px 0 0 0", fontSize: 14, color: "#666" }}>
                           🏢 근무형태: {
