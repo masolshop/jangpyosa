@@ -76,6 +76,7 @@ router.post("/", requireAuth, async (req, res) => {
       hasEmploymentInsurance: z.boolean(),
       meetsMinimumWage: z.boolean(),
       workHoursPerWeek: z.number().int().nullable().optional(),
+      workType: z.enum(["OFFICE", "REMOTE", "HYBRID"]).optional(),
       memo: z.string().nullable().optional(),
     });
 
@@ -117,6 +118,7 @@ router.post("/", requireAuth, async (req, res) => {
         hasEmploymentInsurance: body.hasEmploymentInsurance,
         meetsMinimumWage: body.meetsMinimumWage,
         workHoursPerWeek: body.workHoursPerWeek,
+        workType: body.workType || "OFFICE",
         memo: body.memo,
       },
     });
@@ -393,6 +395,7 @@ router.put("/:id", requireAuth, async (req, res) => {
       hasEmploymentInsurance: z.boolean().optional(),
       meetsMinimumWage: z.boolean().optional(),
       workHoursPerWeek: z.number().int().nullable().optional(),
+      workType: z.enum(["OFFICE", "REMOTE", "HYBRID"]).optional(),
       memo: z.string().nullable().optional(),
     });
 
@@ -443,6 +446,7 @@ router.put("/:id", requireAuth, async (req, res) => {
         hasEmploymentInsurance: body.hasEmploymentInsurance,
         meetsMinimumWage: body.meetsMinimumWage,
         workHoursPerWeek: body.workHoursPerWeek === null ? null : body.workHoursPerWeek,
+        workType: body.workType,
         memo: body.memo === null ? null : body.memo,
       },
     });

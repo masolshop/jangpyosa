@@ -25,6 +25,7 @@ type Employee = {
   hasEmploymentInsurance: boolean;
   meetsMinimumWage: boolean;
   workHoursPerWeek?: number;
+  workType?: "OFFICE" | "REMOTE" | "HYBRID";
   memo?: string;
 };
 
@@ -63,6 +64,7 @@ export default function EmployeesPage() {
     hasEmploymentInsurance: true,
     meetsMinimumWage: true,
     workHoursPerWeek: 60,
+    workType: "OFFICE" as "OFFICE" | "REMOTE" | "HYBRID",
     memo: "",
   });
 
@@ -218,6 +220,7 @@ export default function EmployeesPage() {
       hasEmploymentInsurance: emp.hasEmploymentInsurance,
       meetsMinimumWage: emp.meetsMinimumWage,
       workHoursPerWeek: emp.workHoursPerWeek || 40,
+      workType: emp.workType || "OFFICE",
       memo: emp.memo || "",
     });
     setEditingId(emp.id);
@@ -239,6 +242,7 @@ export default function EmployeesPage() {
       hasEmploymentInsurance: true,
       meetsMinimumWage: true,
       workHoursPerWeek: 60,
+      workType: "OFFICE",
       memo: "",
     });
     setEditingId(null);
@@ -266,6 +270,7 @@ export default function EmployeesPage() {
         "고용보험*",
         "최저임금*",
         "주근로시간",
+        "근무형태",
         "메모",
       ],
       [
@@ -282,6 +287,7 @@ export default function EmployeesPage() {
         "가입",
         "이상",
         "60",
+        "사무실",
         "샘플 데이터",
       ],
       [
@@ -298,6 +304,7 @@ export default function EmployeesPage() {
         "가입",
         "이상",
         "60",
+        "재택",
         "",
       ],
       [
@@ -314,6 +321,7 @@ export default function EmployeesPage() {
         "가입",
         "이상",
         "60",
+        "혼합",
         "",
       ],
     ];
@@ -352,6 +360,12 @@ export default function EmployeesPage() {
       ["- 주당 근로시간을 숫자로 입력 (예: 60)"],
       ["- 입력하지 않으면 60시간으로 자동 설정됩니다"],
       ["- 60시간이 최소 근무시간입니다"],
+      [],
+      ["[근무형태]"],
+      ["- 사무실: 회사에서 근무 (OFFICE)"],
+      ["- 재택: 재택 근무 (REMOTE)"],
+      ["- 혼합: 사무실 + 재택 혼합 (HYBRID)"],
+      ["- 입력하지 않으면 '사무실'로 자동 설정됩니다"],
     ];
 
     // 워크북 생성
@@ -373,6 +387,7 @@ export default function EmployeesPage() {
       { wch: 10 },  // 고용보험
       { wch: 10 },  // 최저임금
       { wch: 12 },  // 주근로시간
+      { wch: 12 },  // 근무형태
       { wch: 20 },  // 메모
     ];
     XLSX.utils.book_append_sheet(wb, ws, "직원 데이터");
@@ -428,6 +443,12 @@ export default function EmployeesPage() {
 
         try {
           // 데이터 매핑
+          const workTypeStr = row[13]?.toString().trim() || "";
+          let workType: "OFFICE" | "REMOTE" | "HYBRID" = "OFFICE";
+          if (workTypeStr === "재택") workType = "REMOTE";
+          else if (workTypeStr === "혼합") workType = "HYBRID";
+          else workType = "OFFICE"; // 기본값 또는 "사무실"
+
           const employeeData = {
             name: row[0]?.toString().trim() || "",
             registrationNumber: row[1]?.toString().trim() || "",
@@ -442,7 +463,8 @@ export default function EmployeesPage() {
             hasEmploymentInsurance: row[10]?.toString().trim() === "가입",
             meetsMinimumWage: row[11]?.toString().trim() === "이상",
             workHoursPerWeek: Number(row[12]) || 60,
-            memo: row[13]?.toString().trim() || "",
+            workType: workType,
+            memo: row[14]?.toString().trim() || "",
           };
 
           // 필수 항목 검증
@@ -939,6 +961,20 @@ export default function EmployeesPage() {
                   </div>
 
                   <div>
+                    <label>근무형태</label>
+                    <select
+                      value={form.workType}
+                      onChange={(e) =>
+                        setForm({ ...form, workType: e.target.value as "OFFICE" | "REMOTE" | "HYBRID" })
+                      }
+                    >
+                      <option value="OFFICE">사무실 근무</option>
+                      <option value="REMOTE">재택 근무</option>
+                      <option value="HYBRID">혼합 (사무실 + 재택)</option>
+                    </select>
+                  </div>
+
+                  <div>
                     <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
                       <input
                         type="checkbox"
@@ -1103,6 +1139,13 @@ export default function EmployeesPage() {
                         )}
                         <p style={{ margin: "6px 0 0 0", fontSize: 14, color: "#666" }}>
                           ⏰ 주 {emp.workHoursPerWeek || 40}시간 | 💰 월 {emp.monthlySalary.toLocaleString()}원
+                        </p>
+                        <p style={{ margin: "6px 0 0 0", fontSize: 14, color: "#666" }}>
+                          🏢 근무형태: {
+                            emp.workType === "REMOTE" ? "재택 근무" :
+                            emp.workType === "HYBRID" ? "혼합 (사무실+재택)" :
+                            "사무실 근무"
+                          }
                         </p>
                         <p style={{ margin: "6px 0 0 0", fontSize: 14, color: "#999" }}>
                           📅 입사: {emp.hireDate.split("T")[0]}

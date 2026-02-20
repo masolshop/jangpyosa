@@ -21,7 +21,8 @@ const MOCK_EMPLOYEES = [
     monthlySalary: 2606200,
     hasEmploymentInsurance: true,
     meetsMinimumWage: true,
-    memo: "중증 60시간 - 2배 인정"
+    workType: "OFFICE",
+    memo: "중증 60시간 - 2배 인정, 사무실 근무"
   },
   {
     name: "박영희",
@@ -36,7 +37,8 @@ const MOCK_EMPLOYEES = [
     monthlySalary: 3040900,
     hasEmploymentInsurance: true,
     meetsMinimumWage: true,
-    memo: "중증 70시간 - 2배 인정 + 여성장려금"
+    workType: "REMOTE",
+    memo: "중증 70시간 - 2배 인정 + 여성장려금, 재택 근무"
   },
   {
     name: "이철수",
@@ -51,7 +53,8 @@ const MOCK_EMPLOYEES = [
     monthlySalary: 2823550,
     hasEmploymentInsurance: true,
     meetsMinimumWage: true,
-    memo: "중증 65시간 - 2배 인정"
+    workType: "HYBRID",
+    memo: "중증 65시간 - 2배 인정, 혼합 근무"
   },
   {
     name: "정미라",
@@ -66,7 +69,8 @@ const MOCK_EMPLOYEES = [
     monthlySalary: 2606200,
     hasEmploymentInsurance: true,
     meetsMinimumWage: true,
-    memo: "중증 60시간 - 2배 인정 + 여성장려금"
+    workType: "OFFICE",
+    memo: "중증 60시간 - 2배 인정 + 여성장려금, 사무실 근무"
   },
   {
     name: "최동욱",
@@ -81,7 +85,8 @@ const MOCK_EMPLOYEES = [
     monthlySalary: 2606200,
     hasEmploymentInsurance: true,
     meetsMinimumWage: true,
-    memo: "경증 60시간 - 1배 인정"
+    workType: "OFFICE",
+    memo: "경증 60시간 - 1배 인정, 사무실 근무"
   },
   {
     name: "한수진",
@@ -96,7 +101,8 @@ const MOCK_EMPLOYEES = [
     monthlySalary: 2606200,
     hasEmploymentInsurance: true,
     meetsMinimumWage: true,
-    memo: "경증 60시간 - 1배 인정 + 여성장려금"
+    workType: "REMOTE",
+    memo: "경증 60시간 - 1배 인정 + 여성장려금, 재택 근무"
   },
   {
     name: "강태민",
@@ -111,7 +117,8 @@ const MOCK_EMPLOYEES = [
     monthlySalary: 2606200,
     hasEmploymentInsurance: true,
     meetsMinimumWage: true,
-    memo: "경증 60시간 - 1배 인정"
+    workType: "HYBRID",
+    memo: "경증 60시간 - 1배 인정, 혼합 근무"
   },
   {
     name: "윤서영",
@@ -126,7 +133,8 @@ const MOCK_EMPLOYEES = [
     monthlySalary: 3258250,
     hasEmploymentInsurance: true,
     meetsMinimumWage: true,
-    memo: "중증 75시간 - 2배 인정 + 여성장려금 + 고시간"
+    workType: "OFFICE",
+    memo: "중증 75시간 - 2배 인정 + 여성장려금 + 고시간, 사무실 근무"
   },
   {
     name: "임재현",
@@ -141,7 +149,8 @@ const MOCK_EMPLOYEES = [
     monthlySalary: 3475600,
     hasEmploymentInsurance: true,
     meetsMinimumWage: true,
-    memo: "중증 80시간(최대) - 2배 인정 + 고시간"
+    workType: "OFFICE",
+    memo: "중증 80시간(최대) - 2배 인정 + 고시간, 사무실 근무"
   },
   {
     name: "서민지",
@@ -156,7 +165,8 @@ const MOCK_EMPLOYEES = [
     monthlySalary: 2606200,
     hasEmploymentInsurance: true,
     meetsMinimumWage: true,
-    memo: "경증 60시간 - 1배 인정 + 여성장려금"
+    workType: "REMOTE",
+    memo: "경증 60시간 - 1배 인정 + 여성장려금, 재택 근무"
   }
 ];
 
