@@ -31,8 +31,10 @@ export default function EmployeeAttendancePage() {
   const [todayRecord, setTodayRecord] = useState<AttendanceRecord | null>(null);
   const [recentRecords, setRecentRecords] = useState<AttendanceRecord[]>([]);
   const [employeeInfo, setEmployeeInfo] = useState<EmployeeInfo | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
+    setIsMounted(true);
     loadEmployeeInfo();
     loadTodayRecord();
     loadRecentRecords();
@@ -242,9 +244,11 @@ export default function EmployeeAttendancePage() {
         }}
       >
         <div style={{ fontSize: 48, fontWeight: "bold", marginBottom: 8 }}>
-          {formatTime(currentTime)}
+          {isMounted ? formatTime(currentTime) : "--:--:--"}
         </div>
-        <div style={{ fontSize: 18, opacity: 0.9 }}>{formatDate(currentTime)}</div>
+        <div style={{ fontSize: 18, opacity: 0.9 }}>
+          {isMounted ? formatDate(currentTime) : "로딩 중..."}
+        </div>
       </div>
 
       {/* 오늘의 출퇴근 현황 */}
