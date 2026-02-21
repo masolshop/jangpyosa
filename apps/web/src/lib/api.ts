@@ -18,6 +18,7 @@ export async function apiFetch(path: string, opts: RequestInit = {}) {
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     const error: any = new Error(data?.error || data?.message || "API_ERROR");
+    error.status = res.status;
     error.data = data; // 백엔드에서 보낸 전체 응답 데이터 저장
     throw error;
   }

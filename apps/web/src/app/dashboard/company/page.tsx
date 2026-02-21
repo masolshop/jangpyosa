@@ -293,7 +293,12 @@ export default function CompanyDashboardPage() {
 
   return (
     <div className="container" style={{ padding: 40 }}>
-      <div className="card">
+      <div 
+        className="card"
+        style={{
+          boxShadow: "0 10px 20px -2px rgba(59, 130, 246, 0.3), 0 6px 12px -2px rgba(59, 130, 246, 0.2)"
+        }}
+      >
         <h1 style={{ fontSize: 28, marginBottom: 8 }}>🏢 기업 대시보드</h1>
         <p style={{ color: "#666", fontSize: 14, marginBottom: 32 }}>
           팀원 관리 · 활동 로그 · 기업정보 수정
@@ -307,7 +312,8 @@ export default function CompanyDashboardPage() {
               background: message.includes("실패") ? "#fee2e2" : "#d1fae5",
               borderRadius: 8,
               color: message.includes("실패") ? "#991b1b" : "#065f46",
-              fontWeight: 600
+              fontWeight: 600,
+              boxShadow: "0 4px 8px -1px rgba(59, 130, 246, 0.3), 0 2px 4px -1px rgba(59, 130, 246, 0.2)"
             }}
           >
             {message}
@@ -462,23 +468,24 @@ export default function CompanyDashboardPage() {
             <div
               style={{
                 padding: 16,
-                background: "linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%)",
+                background: "linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)",
                 borderRadius: 8,
                 marginTop: 16,
-                boxShadow: "0 4px 6px -1px rgba(40, 167, 69, 0.3), 0 2px 4px -1px rgba(40, 167, 69, 0.2)"
+                border: "2px solid #3b82f6",
+                boxShadow: "0 6px 12px -1px rgba(59, 130, 246, 0.3), 0 3px 6px -1px rgba(59, 130, 246, 0.2)"
               }}
             >
-              <p style={{ margin: 0, fontWeight: "bold", fontSize: 14, color: "#155724" }}>
+              <p style={{ margin: 0, fontWeight: "bold", fontSize: 14, color: "#1e40af" }}>
                 초대 코드: {newInvitation.inviteCode}
               </p>
-              <p style={{ margin: "8px 0 0 0", fontSize: 14, color: "#155724" }}>
+              <p style={{ margin: "8px 0 0 0", fontSize: 14, color: "#1e40af" }}>
                 초대 링크: {newInvitation.inviteUrl}
               </p>
               <button
                 onClick={() => copyToClipboard(newInvitation.inviteUrl, newInvitation.inviteCode)}
                 style={{
                   marginTop: 12,
-                  background: "#28a745",
+                  background: "#3b82f6",
                   color: "white",
                   border: "none",
                   padding: "8px 16px",
@@ -503,9 +510,9 @@ export default function CompanyDashboardPage() {
                     padding: 16,
                     marginBottom: 12,
                     background: inv.isUsed ? "#f3f4f6" : "white",
-                    border: `1px solid ${inv.isUsed ? "#d1d5db" : "#e5e7eb"}`,
+                    border: `2px solid ${inv.isUsed ? "#d1d5db" : "#3b82f6"}`,
                     borderRadius: 8,
-                    boxShadow: inv.isUsed ? "none" : "0 2px 4px rgba(59, 130, 246, 0.3), 0 1px 2px rgba(59, 130, 246, 0.2)"
+                    boxShadow: inv.isUsed ? "none" : "0 4px 8px -1px rgba(59, 130, 246, 0.3), 0 2px 4px -1px rgba(59, 130, 246, 0.2)"
                   }}
                 >
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -585,7 +592,8 @@ export default function CompanyDashboardPage() {
                     marginBottom: 12,
                     background: member.isCompanyOwner ? "#eff6ff" : "#f9fafb",
                     border: `2px solid ${member.isCompanyOwner ? "#3b82f6" : "#e5e7eb"}`,
-                    borderRadius: 8
+                    borderRadius: 8,
+                    boxShadow: "0 4px 8px -1px rgba(59, 130, 246, 0.3), 0 2px 4px -1px rgba(59, 130, 246, 0.2)"
                   }}
                 >
                   {editingMemberId === member.id ? (
