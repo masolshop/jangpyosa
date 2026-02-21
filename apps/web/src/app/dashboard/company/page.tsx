@@ -134,7 +134,13 @@ export default function CompanyDashboardPage() {
 
   async function loadInvitations() {
     const data = await apiFetch("/team/invitations");
-    setInvitations(data.invitations);
+    // 초대 URL을 클라이언트에서 생성
+    const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
+    const invitationsWithUrl = data.invitations.map((inv: any) => ({
+      ...inv,
+      inviteUrl: `${baseUrl}/signup?invite=${inv.inviteCode}`
+    }));
+    setInvitations(invitationsWithUrl);
   }
 
   async function handleUpdateCompany() {
@@ -207,7 +213,14 @@ export default function CompanyDashboardPage() {
         body: JSON.stringify({ role: inviteRole })
       });
       
-      setNewInvitation(data.invitation);
+      // 초대 URL을 클라이언트에서 생성
+      const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
+      const invitationWithUrl = {
+        ...data.invitation,
+        inviteUrl: `${baseUrl}/signup?invite=${data.invitation.inviteCode}`
+      };
+      
+      setNewInvitation(invitationWithUrl);
       setMessage("초대 코드가 생성되었습니다");
       await loadInvitations();
     } catch (error: any) {
