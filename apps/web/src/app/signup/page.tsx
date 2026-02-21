@@ -457,11 +457,13 @@ export default function SignupPage() {
           onClick={() => setStep("select")}
           style={{
             padding: "8px 16px",
-            background: "#f5f5f5",
+            background: "#0070f3",
+            color: "white",
             border: "none",
             borderRadius: 6,
             cursor: "pointer",
             fontSize: 14,
+            fontWeight: 600,
             marginBottom: 16,
           }}
         >
