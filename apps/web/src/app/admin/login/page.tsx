@@ -19,7 +19,7 @@ export default function AdminLogin() {
       // 전화번호에서 하이픈 제거
       const cleanPhone = phone.replace(/[-\s]/g, '');
       
-      const response = await fetch('http://localhost:4000/auth/login', {
+      const response = await fetch('/api/proxy/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ identifier: cleanPhone, password }),
