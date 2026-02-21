@@ -31,8 +31,7 @@ export default function TeamPage() {
   async function loadInvitations() {
     try {
       setLoading(true);
-      const res = await apiFetch("/team/invitations");
-      const data = await res.json();
+      const data = await apiFetch("/team/invitations");
       if (data.success) {
         setInvitations(data.invitations);
       }
@@ -49,12 +48,10 @@ export default function TeamPage() {
       setMessage("");
       setNewInvitation(null);
 
-      const res = await apiFetch("/team/invite", {
+      const data = await apiFetch("/team/invite", {
         method: "POST",
         body: JSON.stringify({ role }),
       });
-
-      const data = await res.json();
 
       if (data.success) {
         setNewInvitation(data.invitation);
@@ -74,11 +71,9 @@ export default function TeamPage() {
     if (!confirm("이 초대 코드를 삭제하시겠습니까?")) return;
 
     try {
-      const res = await apiFetch(`/team/invite/${id}`, {
+      const data = await apiFetch(`/team/invite/${id}`, {
         method: "DELETE",
       });
-
-      const data = await res.json();
 
       if (data.success) {
         setMessage("초대 코드가 삭제되었습니다");
@@ -121,7 +116,9 @@ export default function TeamPage() {
       </div>
 
       {/* 새 초대 코드 생성 */}
-      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+      <div className="bg-white rounded-lg p-6 mb-6" style={{
+        boxShadow: "0 4px 6px -1px rgba(59, 130, 246, 0.3), 0 2px 4px -1px rgba(59, 130, 246, 0.2)"
+      }}>
         <h2 className="text-xl font-semibold mb-4">
           <i className="fas fa-user-plus mr-2 text-blue-600"></i>
           새 팀원 초대하기
@@ -162,7 +159,10 @@ export default function TeamPage() {
           )}
 
           {newInvitation && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+            <div className="border border-green-200 rounded-lg p-4" style={{
+              background: "linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%)",
+              boxShadow: "0 4px 6px -1px rgba(40, 167, 69, 0.3), 0 2px 4px -1px rgba(40, 167, 69, 0.2)"
+            }}>
               <h3 className="font-semibold text-green-900 mb-3">
                 ✅ 초대 코드가 생성되었습니다
               </h3>
@@ -217,7 +217,9 @@ export default function TeamPage() {
       </div>
 
       {/* 초대 코드 목록 */}
-      <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="bg-white rounded-lg p-6" style={{
+        boxShadow: "0 4px 6px -1px rgba(59, 130, 246, 0.3), 0 2px 4px -1px rgba(59, 130, 246, 0.2)"
+      }}>
         <h2 className="text-xl font-semibold mb-4">
           <i className="fas fa-list mr-2 text-gray-600"></i>
           초대 코드 목록
@@ -244,6 +246,9 @@ export default function TeamPage() {
                     ? "bg-red-50 border-red-300"
                     : "bg-white border-gray-200"
                 }`}
+                style={!inv.isUsed && !isExpired(inv.expiresAt) ? {
+                  boxShadow: "0 2px 4px rgba(59, 130, 246, 0.3), 0 1px 2px rgba(59, 130, 246, 0.2)"
+                } : undefined}
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
