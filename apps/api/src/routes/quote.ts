@@ -57,7 +57,7 @@ router.get('/', requireAuth, async (req, res) => {
     const user = req.user;
 
     // 슈퍼어드민만 조회 가능
-    if (user.role !== 'SUPER_ADMIN') {
+    if (!user || user.role !== 'SUPER_ADMIN') {
       return res.status(403).json({ error: '접근 권한이 없습니다' });
     }
 
@@ -98,7 +98,7 @@ router.get('/:id', requireAuth, async (req, res) => {
   try {
     const user = req.user;
 
-    if (user.role !== 'SUPER_ADMIN') {
+    if (!user || user.role !== 'SUPER_ADMIN') {
       return res.status(403).json({ error: '접근 권한이 없습니다' });
     }
 
@@ -122,7 +122,7 @@ router.put('/:id', requireAuth, async (req, res) => {
   try {
     const user = req.user;
 
-    if (user.role !== 'SUPER_ADMIN') {
+    if (!user || user.role !== 'SUPER_ADMIN') {
       return res.status(403).json({ error: '접근 권한이 없습니다' });
     }
 
@@ -134,7 +134,7 @@ router.put('/:id', requireAuth, async (req, res) => {
         status,
         adminNote,
         respondedAt: status !== 'PENDING' ? new Date() : undefined,
-        respondedBy: status !== 'PENDING' ? user.id : undefined,
+        respondedBy: status !== 'PENDING' ? user!.id : undefined,
       },
     });
 
@@ -153,7 +153,7 @@ router.get('/stats/summary', requireAuth, async (req, res) => {
   try {
     const user = req.user;
 
-    if (user.role !== 'SUPER_ADMIN') {
+    if (!user || user.role !== 'SUPER_ADMIN') {
       return res.status(403).json({ error: '접근 권한이 없습니다' });
     }
 
