@@ -1,5 +1,5 @@
-// API 기본 URL - Next.js API proxy를 사용
-export const API_BASE = "/api/proxy";
+// API 기본 URL - Nginx proxy를 사용
+export const API_BASE = "/api";
 
 export async function apiFetch(path: string, opts: RequestInit = {}) {
   const token =
