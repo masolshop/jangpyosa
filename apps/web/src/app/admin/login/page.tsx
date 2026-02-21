@@ -16,10 +16,13 @@ export default function AdminLogin() {
     setLoading(true);
 
     try {
+      // 전화번호에서 하이픈 제거
+      const cleanPhone = phone.replace(/[-\s]/g, '');
+      
       const response = await fetch('http://localhost:4000/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, password }),
+        body: JSON.stringify({ phone: cleanPhone, password }),
       });
 
       const data = await response.json();
@@ -99,7 +102,7 @@ export default function AdminLogin() {
               type="text"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              placeholder="01012345678"
+              placeholder="010-6352-9091 또는 01063529091"
               required
               style={{
                 width: '100%',
@@ -110,6 +113,9 @@ export default function AdminLogin() {
                 boxSizing: 'border-box',
               }}
             />
+            <div style={{ fontSize: 12, color: '#999', marginTop: 4 }}>
+              하이픈(-) 있어도 됩니다
+            </div>
           </div>
 
           <div style={{ marginBottom: 30 }}>

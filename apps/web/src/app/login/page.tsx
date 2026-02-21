@@ -27,10 +27,13 @@ export default function LoginPage() {
     setMsg("");
     setLoading(true);
     try {
+      // 전화번호/아이디에서 하이픈 제거
+      const cleanIdentifier = identifier.replace(/[-\s]/g, "");
+      
       const out = await apiFetch("/auth/login", {
         method: "POST",
         body: JSON.stringify({ 
-          identifier, // phone 또는 username
+          identifier: cleanIdentifier, // phone 또는 username
           password,
           userType // 선택한 유저 타입 전송
         }),

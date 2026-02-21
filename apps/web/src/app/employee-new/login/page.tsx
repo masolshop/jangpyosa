@@ -20,11 +20,14 @@ export default function EmployeeLoginPage() {
     setLoading(true);
 
     try {
+      // 전화번호에서 하이픈 제거
+      const cleanPhone = form.phone.replace(/[-\s]/g, "");
+      
       const res = await fetch(`${API_BASE}/auth/login/employee`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          phone: form.phone,
+          phone: cleanPhone,
           password: form.password,
         }),
       });

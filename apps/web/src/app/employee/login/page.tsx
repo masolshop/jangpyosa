@@ -20,11 +20,12 @@ export default function EmployeeLoginPage() {
     setLoading(true);
 
     try {
+      const cleanPhone = form.phone.replace(/[-\s]/g, "");
       const res = await fetch(`${API_BASE}/auth/login/employee`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          phone: form.phone,
+          phone: cleanPhone,
           password: form.password,
         }),
       });
