@@ -432,3 +432,31 @@ model AnnouncementReadLog {
   @@index([employeeId])
   @@index([userId])
 }
+
+// 견적 문의 (장표사닷컴으로 전달)
+model QuoteInquiry {
+  id                String   @id @default(cuid())
+  productId         String?  // 관련 상품 ID (선택)
+  companyName       String   // 회사명
+  contactName       String   // 담당자명
+  contactPhone      String   // 연락처
+  contactEmail      String?  // 이메일
+  bizNo             String?  // 사업자등록번호
+  category          String   // 상품 카테고리
+  productName       String   // 상품명
+  quantity          Int?     // 수량
+  budget            String?  // 예산 범위
+  timeline          String?  // 납기 희망일
+  requirements      String?  // 상세 요구사항
+  attachmentUrls    String?  // 첨부파일 URL (JSON array)
+  status            String   @default("PENDING") // PENDING, IN_PROGRESS, QUOTED, COMPLETED, CANCELLED
+  adminNote         String?  // 관리자 메모
+  respondedAt       DateTime? // 응답일시
+  respondedBy       String?  // 응답자 User ID
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@index([status, createdAt])
+  @@index([category])
+  @@index([contactPhone])
+}

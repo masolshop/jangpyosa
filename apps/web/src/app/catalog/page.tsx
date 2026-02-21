@@ -1,232 +1,216 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
 
-type Registry = {
+interface Product {
   id: string;
-  certNo: string;
-  name: string;
-  bizNo: string;
-  region: string;
-  representative: string;
-  address: string;
-  contactTel: string;
-  industry: string;
-  companyType: string;
-};
+  title: string;
+  category: string;
+  summary?: string;
+  price: number;
+  unit: string;
+  thumbnailUrl?: string;
+  supplier: {
+    company: {
+      name: string;
+    };
+  };
+}
 
-export default function CatalogPage() {
-  const [q, setQ] = useState("");
-  const [registries, setRegistries] = useState<Registry[]>([]);
+export default function ProductCatalogPage() {
+  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [pagination, setPagination] = useState({ page: 1, total: 0, totalPages: 0 });
-
-  async function loadRegistries(page = 1) {
-    setLoading(true);
-    try {
-      const res = await fetch(
-        `/api/proxy/registry/list?page=${page}&limit=20&search=${encodeURIComponent(q)}`
-      );
-      const data = await res.json();
-      console.log("Loaded data:", data);
-      setRegistries(data.registries || []);
-      setPagination(data.pagination || { page: 1, total: 0, totalPages: 0 });
-    } catch (error) {
-      console.error("Load registries error:", error);
-    }
-    setLoading(false);
-  }
+  const [category, setCategory] = useState('');
 
   useEffect(() => {
-    loadRegistries(1);
-  }, []);
+    fetchProducts();
+  }, [category]);
 
-  const handleSearch = () => {
-    loadRegistries(1);
+  const fetchProducts = async () => {
+    try {
+      const url = category 
+        ? `http://localhost:4000/products?category=${category}` 
+        : 'http://localhost:4000/products';
+      
+      const response = await fetch(url);
+      const data = await response.json();
+      setProducts(data.products || []);
+    } catch (error) {
+      console.error('상품 로드 오류:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
+  if (loading) {
+    return <div style={{ padding: 40 }}>로딩 중...</div>;
+  }
+
   return (
-    <div className="container">
-      <div className="card">
-        <h1>🛒 도급계약 표준사업장</h1>
-        <p style={{ color: "#666", marginTop: 8 }}>
-          {pagination.total}개 장애인표준사업장의 상품·서비스를 검색하고 도급계약을 의뢰하세요
+    <div style={{ padding: 40, maxWidth: 1400, margin: '0 auto' }}>
+      <div style={{ marginBottom: 40 }}>
+        <h1 style={{ fontSize: 32, marginBottom: 16 }}>🛒 상품 카탈로그</h1>
+        <p style={{ color: '#666', fontSize: 16 }}>
+          장애인표준사업장의 우수한 상품과 서비스를 만나보세요
         </p>
-
-        {/* 검색 바 */}
-        <div style={{ display: "flex", gap: 8, marginTop: 24, flexWrap: "wrap" }}>
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            onKeyPress={(e) => e.key === "Enter" && handleSearch()}
-            placeholder="사업장명, 지역, 업종, 소재지로 검색"
-            style={{ flex: 1, minWidth: 200 }}
-          />
-          <button onClick={handleSearch}>검색</button>
-        </div>
-
-        {loading && <p style={{ marginTop: 24 }}>로딩 중...</p>}
-
-        {/* 표준사업장 목록 */}
-        <div style={{ marginTop: 24 }}>
-          {registries.length === 0 && !loading && (
-            <p style={{ color: "#999" }}>검색 결과가 없습니다.</p>
-          )}
-
-          {registries.map((r) => (
-            <div
-              key={r.id}
-              style={{
-                padding: 20,
-                border: "1px solid #ddd",
-                borderRadius: 8,
-                marginBottom: 12,
-                background: "white",
-              }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: 12 }}>
-                <div style={{ flex: 1 }}>
-                  <h3 style={{ margin: 0, fontSize: 18, color: "#333", fontWeight: 600 }}>
-                    {r.name}
-                    {r.certNo && (
-                      <span style={{ marginLeft: 8, fontSize: 13, color: "#0070f3", fontWeight: 400 }}>
-                        {r.certNo}
-                      </span>
-                    )}
-                  </h3>
-                </div>
-                {r.companyType && (
-                  <span
-                    style={{
-                      display: "inline-block",
-                      padding: "4px 12px",
-                      fontSize: 12,
-                      background: r.companyType === "자회사" ? "#e7f3ff" : "#f0f0f0",
-                      color: r.companyType === "자회사" ? "#0070f3" : "#666",
-                      borderRadius: 4,
-                      fontWeight: 500,
-                    }}
-                  >
-                    {r.companyType}
-                  </span>
-                )}
-              </div>
-
-              {/* 기본 정보 */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: 12, marginTop: 12 }}>
-                {r.representative && (
-                  <p style={{ margin: 0, fontSize: 14, color: "#666" }}>
-                    <strong style={{ color: "#333" }}>대표자:</strong> {r.representative}
-                  </p>
-                )}
-                {r.region && (
-                  <p style={{ margin: 0, fontSize: 14, color: "#666" }}>
-                    <strong style={{ color: "#333" }}>지역:</strong> {r.region}
-                  </p>
-                )}
-              </div>
-
-              {/* 소재지 */}
-              {r.address && (
-                <p style={{ margin: "12px 0 0 0", fontSize: 14, color: "#666" }}>
-                  <strong style={{ color: "#333" }}>소재지:</strong> {r.address}
-                </p>
-              )}
-
-              {/* 업종 및 주요 생산품 (강조) */}
-              {r.industry && (
-                <div
-                  style={{
-                    padding: 12,
-                    background: "#f8f9fa",
-                    borderRadius: 6,
-                    marginTop: 12,
-                    borderLeft: "3px solid #0070f3",
-                  }}
-                >
-                  <p style={{ margin: 0, fontSize: 14, color: "#333", fontWeight: 500 }}>
-                    <span style={{ color: "#0070f3", marginRight: 8 }}>📦</span>
-                    <strong>업종 및 주요 생산품:</strong>
-                  </p>
-                  <p style={{ margin: "4px 0 0 24px", fontSize: 14, color: "#555", lineHeight: 1.6 }}>
-                    {r.industry}
-                  </p>
-                </div>
-              )}
-            </div>
-          ))}
-
-          {/* 페이지네이션 */}
-          {pagination.totalPages > 1 && (
-            <div style={{ marginTop: 24, display: "flex", justifyContent: "center", gap: 8, alignItems: "center" }}>
-              <button
-                onClick={() => loadRegistries(pagination.page - 1)}
-                disabled={pagination.page === 1}
-                style={{ padding: "8px 16px" }}
-              >
-                이전
-              </button>
-              <span style={{ padding: "8px 16px", color: "#666" }}>
-                {pagination.page} / {pagination.totalPages} (총 {pagination.total}개)
-              </span>
-              <button
-                onClick={() => loadRegistries(pagination.page + 1)}
-                disabled={pagination.page === pagination.totalPages}
-                style={{ padding: "8px 16px" }}
-              >
-                다음
-              </button>
-            </div>
-          )}
-        </div>
       </div>
 
-      <style jsx>{`
-        .container {
-          padding: 20px;
-          max-width: 1200px;
-          margin: 0 auto;
-        }
-        .card {
-          background: white;
-          border-radius: 12px;
-          padding: 32px;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-        h1 {
-          margin: 0;
-          font-size: 28px;
-          color: #333;
-        }
-        input {
-          padding: 12px;
-          border: 1px solid #ddd;
-          border-radius: 6px;
-          font-size: 14px;
-        }
-        input:focus {
-          outline: none;
-          border-color: #0070f3;
-        }
-        button {
-          padding: 12px 24px;
-          background: #0070f3;
-          color: white;
-          border: none;
-          border-radius: 6px;
-          font-size: 14px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-        button:hover:not(:disabled) {
-          background: #0051cc;
-        }
-        button:disabled {
-          background: #ccc;
-          cursor: not-allowed;
-        }
-      `}</style>
+      {/* 카테고리 필터 */}
+      <div style={{
+        marginBottom: 30,
+        display: 'flex',
+        gap: 10,
+        flexWrap: 'wrap',
+      }}>
+        <button
+          onClick={() => setCategory('')}
+          style={{
+            padding: '10px 20px',
+            backgroundColor: category === '' ? '#1a237e' : 'white',
+            color: category === '' ? 'white' : '#333',
+            border: '1px solid #ddd',
+            borderRadius: 20,
+            cursor: 'pointer',
+            fontSize: 14,
+          }}
+        >
+          전체
+        </button>
+        {['제조', '용역', '공사', '렌탈'].map((cat) => (
+          <button
+            key={cat}
+            onClick={() => setCategory(cat)}
+            style={{
+              padding: '10px 20px',
+              backgroundColor: category === cat ? '#1a237e' : 'white',
+              color: category === cat ? 'white' : '#333',
+              border: '1px solid #ddd',
+              borderRadius: 20,
+              cursor: 'pointer',
+              fontSize: 14,
+            }}
+          >
+            {cat}
+          </button>
+        ))}
+      </div>
+
+      {/* 상품 그리드 */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+        gap: 24,
+      }}>
+        {products.map((product) => (
+          <Link
+            key={product.id}
+            href={`/catalog/${product.id}`}
+            style={{ textDecoration: 'none', color: 'inherit' }}
+          >
+            <div style={{
+              backgroundColor: 'white',
+              borderRadius: 8,
+              overflow: 'hidden',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+              transition: 'transform 0.2s, box-shadow 0.2s',
+              cursor: 'pointer',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-4px)';
+              e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.15)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+            }}
+            >
+              {/* 상품 이미지 */}
+              <div style={{
+                height: 200,
+                backgroundColor: '#f5f5f5',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                overflow: 'hidden',
+              }}>
+                {product.thumbnailUrl ? (
+                  <img
+                    src={product.thumbnailUrl}
+                    alt={product.title}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                    }}
+                  />
+                ) : (
+                  <span style={{ fontSize: 48, opacity: 0.3 }}>📦</span>
+                )}
+              </div>
+
+              {/* 상품 정보 */}
+              <div style={{ padding: 20 }}>
+                <div style={{
+                  fontSize: 12,
+                  color: '#1a237e',
+                  marginBottom: 8,
+                  fontWeight: 'bold',
+                }}>
+                  {product.category}
+                </div>
+                <h3 style={{
+                  fontSize: 18,
+                  marginBottom: 8,
+                  fontWeight: 'bold',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}>
+                  {product.title}
+                </h3>
+                <p style={{
+                  fontSize: 14,
+                  color: '#666',
+                  marginBottom: 12,
+                  height: 40,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                }}>
+                  {product.summary || '상세 설명을 확인해보세요'}
+                </p>
+                <div style={{
+                  fontSize: 20,
+                  fontWeight: 'bold',
+                  color: '#1a237e',
+                  marginBottom: 8,
+                }}>
+                  {product.price.toLocaleString()}원 / {product.unit}
+                </div>
+                <div style={{
+                  fontSize: 13,
+                  color: '#999',
+                }}>
+                  공급: {product.supplier?.company?.name || '표준사업장'}
+                </div>
+              </div>
+            </div>
+          </Link>
+        ))}
+      </div>
+
+      {products.length === 0 && (
+        <div style={{
+          textAlign: 'center',
+          padding: 60,
+          color: '#999',
+        }}>
+          <p style={{ fontSize: 18 }}>등록된 상품이 없습니다</p>
+        </div>
+      )}
     </div>
   );
 }

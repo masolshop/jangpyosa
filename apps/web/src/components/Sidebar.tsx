@@ -254,11 +254,9 @@ export default function Sidebar() {
             )}
             <MenuItem
               href="/catalog"
-              label="연계고용감면표준사업장"
+              label="상품 카탈로그"
               icon="🛒"
-              active={isActive("/catalog")}
-              requiresRole={["SUPPLIER"]}
-              currentRole={userRole}
+              active={pathname?.startsWith("/catalog")}
             />
             {userRole === "BUYER" && (
               <MenuItem
@@ -368,9 +366,15 @@ export default function Sidebar() {
           {/* 슈퍼어드민 전용 메뉴 */}
           {userRole === "SUPER_ADMIN" && (
             <div style={{ marginBottom: 24 }}>
-              <div style={{ fontSize: 13.2, color: "#666", marginBottom: 8, fontWeight: "bold" }}>
-                관리자
+              <div style={{ fontSize: 20.6, color: "#fff", marginBottom: 12, fontWeight: "bold" }}>
+                슈퍼어드민
               </div>
+              <MenuItem
+                href="/admin/dashboard"
+                label="대시보드"
+                icon="🛡️"
+                active={isActive("/admin/dashboard")}
+              />
               <MenuItem
                 href="/admin/branches"
                 label="지사 관리"
