@@ -52,6 +52,10 @@ export default function EmployeeAttendancePage() {
   const [autoReadEnabled, setAutoReadEnabled] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [currentSpeakingId, setCurrentSpeakingId] = useState<string | null>(null);
+  
+  // 공지사항 표시 관련 상태
+  const [showReadAnnouncements, setShowReadAnnouncements] = useState(false);
+  const [displayLimit, setDisplayLimit] = useState(10); // 읽은 공지 표시 개수
 
   useEffect(() => {
     setIsMounted(true);
@@ -59,6 +63,11 @@ export default function EmployeeAttendancePage() {
     const savedAutoRead = localStorage.getItem('autoReadAnnouncements');
     if (savedAutoRead === 'true') {
       setAutoReadEnabled(true);
+    }
+    // localStorage에서 읽은 공지 표시 설정 로드
+    const savedShowRead = localStorage.getItem('showReadAnnouncements');
+    if (savedShowRead === 'true') {
+      setShowReadAnnouncements(true);
     }
     loadEmployeeInfo();
     loadTodayRecord();
@@ -410,6 +419,30 @@ export default function EmployeeAttendancePage() {
   }
 
   /**
+   * 읽은 공지 표시 토글
+   */
+  function toggleShowReadAnnouncements() {
+    const newValue = !showReadAnnouncements;
+    setShowReadAnnouncements(newValue);
+    localStorage.setItem('showReadAnnouncements', newValue.toString());
+    
+    if (newValue) {
+      setMessage("✅ 읽은 공지사항을 표시합니다");
+    } else {
+      setMessage("📋 읽은 공지사항을 숨깁니다");
+      setDisplayLimit(10); // 숨길 때 표시 개수 초기화
+    }
+    setTimeout(() => setMessage(""), 3000);
+  }
+
+  /**
+   * 읽은 공지 더보기
+   */
+  function loadMoreReadAnnouncements() {
+    setDisplayLimit(prev => prev + 10);
+  }
+
+  /**
    * 여러 공지사항 순차적으로 음성 재생
    */
   function speakAnnouncements(announcementList: Announcement[]) {
@@ -635,151 +668,347 @@ export default function EmployeeAttendancePage() {
               )}
             </h3>
             
-            {/* 자동 음성 읽기 토글 */}
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ fontSize: 14, color: "#6b7280" }}>🔊 자동 음성 읽기</span>
-              <button
-                onClick={toggleAutoRead}
-                style={{
-                  width: 52,
-                  height: 28,
-                  background: autoReadEnabled ? "#10b981" : "#d1d5db",
-                  borderRadius: 14,
-                  border: "none",
-                  cursor: "pointer",
-                  position: "relative",
-                  transition: "background 0.3s",
-                }}
-                aria-label={autoReadEnabled ? "자동 읽기 활성화됨" : "자동 읽기 비활성화됨"}
-              >
-                <span style={{
-                  position: "absolute",
-                  top: 2,
-                  left: autoReadEnabled ? 26 : 2,
-                  width: 24,
-                  height: 24,
-                  background: "white",
-                  borderRadius: "50%",
-                  transition: "left 0.3s",
-                }} />
-              </button>
+            {/* 설정 토글들 */}
+            <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+              {/* 읽은 공지 표시 토글 */}
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 14, color: "#6b7280" }}>✓ 읽은 공지 표시</span>
+                <button
+                  onClick={toggleShowReadAnnouncements}
+                  style={{
+                    width: 52,
+                    height: 28,
+                    background: showReadAnnouncements ? "#3b82f6" : "#d1d5db",
+                    borderRadius: 14,
+                    border: "none",
+                    cursor: "pointer",
+                    position: "relative",
+                    transition: "background 0.3s",
+                  }}
+                  aria-label={showReadAnnouncements ? "읽은 공지 표시 활성화됨" : "읽은 공지 표시 비활성화됨"}
+                >
+                  <span style={{
+                    position: "absolute",
+                    top: 2,
+                    left: showReadAnnouncements ? 26 : 2,
+                    width: 24,
+                    height: 24,
+                    background: "white",
+                    borderRadius: "50%",
+                    transition: "left 0.3s",
+                  }} />
+                </button>
+              </div>
+              
+              {/* 자동 음성 읽기 토글 */}
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 14, color: "#6b7280" }}>🔊 자동 음성 읽기</span>
+                <button
+                  onClick={toggleAutoRead}
+                  style={{
+                    width: 52,
+                    height: 28,
+                    background: autoReadEnabled ? "#10b981" : "#d1d5db",
+                    borderRadius: 14,
+                    border: "none",
+                    cursor: "pointer",
+                    position: "relative",
+                    transition: "background 0.3s",
+                  }}
+                  aria-label={autoReadEnabled ? "자동 읽기 활성화됨" : "자동 읽기 비활성화됨"}
+                >
+                  <span style={{
+                    position: "absolute",
+                    top: 2,
+                    left: autoReadEnabled ? 26 : 2,
+                    width: 24,
+                    height: 24,
+                    background: "white",
+                    borderRadius: "50%",
+                    transition: "left 0.3s",
+                  }} />
+                </button>
+              </div>
             </div>
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {announcements.map((announcement) => (
-              <div
-                key={announcement.id}
-                style={{
-                  border: announcement.isRead ? "1px solid #e5e7eb" : "2px solid #3b82f6",
-                  borderRadius: 8,
-                  padding: 16,
-                  background: announcement.isRead ? "#fafafa" : "#eff6ff",
-                }}
-              >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: 8 }}>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                      {announcement.priority === "URGENT" && (
-                        <span style={{
-                          background: "#ef4444",
-                          color: "white",
-                          fontSize: 11,
-                          fontWeight: "bold",
-                          padding: "2px 8px",
-                          borderRadius: 4,
-                        }}>
-                          긴급
-                        </span>
-                      )}
-                      <h4 style={{ margin: 0, fontSize: 16, fontWeight: "600" }}>
-                        {announcement.title}
-                      </h4>
-                    </div>
-                    <p style={{ fontSize: 12, color: "#6b7280", margin: 0 }}>
-                      {new Date(announcement.createdAt).toLocaleString("ko-KR")}
-                    </p>
-                  </div>
-                  
-                  <div style={{ display: "flex", gap: 8, alignItems: "center", marginLeft: 12 }}>
-                    {/* 음성 재생 버튼 */}
-                    <button
-                      onClick={() => speakSingleAnnouncement(announcement)}
+          {/* 안 읽은 공지사항 */}
+          {announcements.filter(a => !a.isRead).length > 0 && (
+            <div style={{ marginTop: 16 }}>
+              <h4 style={{ 
+                margin: "0 0 12px 0", 
+                fontSize: 14, 
+                color: "#3b82f6", 
+                fontWeight: "600",
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+              }}>
+                <span style={{ 
+                  width: 6, 
+                  height: 6, 
+                  background: "#3b82f6", 
+                  borderRadius: "50%",
+                  display: "inline-block",
+                }} />
+                안 읽은 공지사항
+              </h4>
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {announcements
+                  .filter(a => !a.isRead)
+                  .map((announcement) => (
+                    <div
+                      key={announcement.id}
                       style={{
-                        padding: "6px 12px",
-                        background: currentSpeakingId === announcement.id ? "#f59e0b" : "#6366f1",
-                        color: "white",
-                        border: "none",
-                        borderRadius: 6,
-                        fontSize: 18,
-                        cursor: "pointer",
-                        whiteSpace: "nowrap",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
+                        border: "2px solid #3b82f6",
+                        borderRadius: 8,
+                        padding: 16,
+                        background: "#eff6ff",
                       }}
-                      title={currentSpeakingId === announcement.id ? "재생 중지" : "음성으로 듣기"}
-                      aria-label={currentSpeakingId === announcement.id ? "재생 중지" : "음성으로 듣기"}
                     >
-                      {currentSpeakingId === announcement.id ? "⏸️" : "🔊"}
-                    </button>
-                    
-                    {/* 확인완료 버튼/상태 */}
-                    {announcement.isRead ? (
-                      <span style={{
-                        padding: "6px 14px",
-                        background: "#ef4444",
-                        color: "white",
-                        border: "none",
+                      {/* 공지 내용 - 기존 코드 유지 */}
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: 8 }}>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                            {announcement.priority === "URGENT" && (
+                              <span style={{
+                                background: "#ef4444",
+                                color: "white",
+                                fontSize: 11,
+                                fontWeight: "bold",
+                                padding: "2px 8px",
+                                borderRadius: 4,
+                              }}>
+                                긴급
+                              </span>
+                            )}
+                            <h4 style={{ margin: 0, fontSize: 16, fontWeight: "600" }}>
+                              {announcement.title}
+                            </h4>
+                          </div>
+                          <p style={{ fontSize: 12, color: "#6b7280", margin: 0 }}>
+                            {new Date(announcement.createdAt).toLocaleString("ko-KR")}
+                          </p>
+                        </div>
+                        
+                        <div style={{ display: "flex", gap: 8, alignItems: "center", marginLeft: 12 }}>
+                          {/* 음성 재생 버튼 */}
+                          <button
+                            onClick={() => speakSingleAnnouncement(announcement)}
+                            style={{
+                              padding: "6px 12px",
+                              background: currentSpeakingId === announcement.id ? "#f59e0b" : "#6366f1",
+                              color: "white",
+                              border: "none",
+                              borderRadius: 6,
+                              fontSize: 18,
+                              cursor: "pointer",
+                              whiteSpace: "nowrap",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                            }}
+                            title={currentSpeakingId === announcement.id ? "재생 중지" : "음성으로 듣기"}
+                            aria-label={currentSpeakingId === announcement.id ? "재생 중지" : "음성으로 듣기"}
+                          >
+                            {currentSpeakingId === announcement.id ? "⏸️" : "🔊"}
+                          </button>
+                          
+                          {/* 확인완료 버튼 */}
+                          <button
+                            onClick={() => markAnnouncementAsRead(announcement.id)}
+                            style={{
+                              padding: "6px 14px",
+                              background: "#10b981",
+                              color: "white",
+                              border: "none",
+                              borderRadius: 6,
+                              fontSize: 13,
+                              fontWeight: "600",
+                              cursor: "pointer",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            확인완료
+                          </button>
+                        </div>
+                      </div>
+
+                      <div style={{
+                        padding: 12,
+                        background: "white",
                         borderRadius: 6,
-                        fontSize: 13,
-                        fontWeight: "600",
-                        whiteSpace: "nowrap",
-                        display: "inline-block",
+                        fontSize: 14,
+                        lineHeight: 1.6,
+                        whiteSpace: "pre-wrap",
+                        wordBreak: "break-word",
                       }}>
-                        확인완료
-                      </span>
-                    ) : (
-                      <button
-                        onClick={() => markAnnouncementAsRead(announcement.id)}
-                        style={{
-                          padding: "6px 14px",
-                          background: "#10b981",
-                          color: "white",
-                          border: "none",
-                          borderRadius: 6,
-                          fontSize: 13,
-                          fontWeight: "600",
-                          cursor: "pointer",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        확인완료
-                      </button>
-                    )}
-                  </div>
-                </div>
+                        {announcement.content}
+                      </div>
 
-                <div style={{
-                  padding: 12,
-                  background: "white",
-                  borderRadius: 6,
-                  fontSize: 14,
-                  lineHeight: 1.6,
-                  whiteSpace: "pre-wrap",
-                  wordBreak: "break-word",
-                }}>
-                  {announcement.content}
-                </div>
-
-                {announcement.isRead && announcement.readAt && (
-                  <p style={{ fontSize: 11, color: "#9ca3af", marginTop: 8, marginBottom: 0 }}>
-                    읽은 시간: {new Date(announcement.readAt).toLocaleString("ko-KR")}
-                  </p>
-                )}
+                      {announcement.readAt && (
+                        <div style={{
+                          marginTop: 8,
+                          fontSize: 12,
+                          color: "#6b7280",
+                        }}>
+                          읽은 시간: {new Date(announcement.readAt).toLocaleString("ko-KR")}
+                        </div>
+                      )}
+                    </div>
+                  ))}
               </div>
-            ))}
-          </div>
+            </div>
+          )}
+
+          {/* 읽은 공지사항 (토글로 표시/숨김) */}
+          {showReadAnnouncements && announcements.filter(a => a.isRead).length > 0 && (
+            <div style={{ marginTop: 24 }}>
+              <h4 style={{ 
+                margin: "0 0 12px 0", 
+                fontSize: 14, 
+                color: "#6b7280", 
+                fontWeight: "600",
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+              }}>
+                <span style={{ 
+                  width: 6, 
+                  height: 6, 
+                  background: "#6b7280", 
+                  borderRadius: "50%",
+                  display: "inline-block",
+                }} />
+                읽은 공지사항 ({announcements.filter(a => a.isRead).length}개)
+              </h4>
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {announcements
+                  .filter(a => a.isRead)
+                  .slice(0, displayLimit)
+                  .map((announcement) => (
+                    <div
+                      key={announcement.id}
+                      style={{
+                        border: "1px solid #e5e7eb",
+                        borderRadius: 8,
+                        padding: 16,
+                        background: "#fafafa",
+                      }}
+                    >
+                      {/* 공지 내용 - 기존 코드 유지 */}
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: 8 }}>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                            {announcement.priority === "URGENT" && (
+                              <span style={{
+                                background: "#ef4444",
+                                color: "white",
+                                fontSize: 11,
+                                fontWeight: "bold",
+                                padding: "2px 8px",
+                                borderRadius: 4,
+                              }}>
+                                긴급
+                              </span>
+                            )}
+                            <h4 style={{ margin: 0, fontSize: 16, fontWeight: "600", color: "#6b7280" }}>
+                              {announcement.title}
+                            </h4>
+                          </div>
+                          <p style={{ fontSize: 12, color: "#9ca3af", margin: 0 }}>
+                            {new Date(announcement.createdAt).toLocaleString("ko-KR")}
+                          </p>
+                        </div>
+                        
+                        <div style={{ display: "flex", gap: 8, alignItems: "center", marginLeft: 12 }}>
+                          {/* 음성 재생 버튼 */}
+                          <button
+                            onClick={() => speakSingleAnnouncement(announcement)}
+                            style={{
+                              padding: "6px 12px",
+                              background: currentSpeakingId === announcement.id ? "#f59e0b" : "#6366f1",
+                              color: "white",
+                              border: "none",
+                              borderRadius: 6,
+                              fontSize: 18,
+                              cursor: "pointer",
+                              whiteSpace: "nowrap",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                            }}
+                            title={currentSpeakingId === announcement.id ? "재생 중지" : "음성으로 듣기"}
+                            aria-label={currentSpeakingId === announcement.id ? "재생 중지" : "음성으로 듣기"}
+                          >
+                            {currentSpeakingId === announcement.id ? "⏸️" : "🔊"}
+                          </button>
+                          
+                          {/* 확인완료 상태 */}
+                          <span style={{
+                            padding: "6px 14px",
+                            background: "#ef4444",
+                            color: "white",
+                            border: "none",
+                            borderRadius: 6,
+                            fontSize: 13,
+                            fontWeight: "600",
+                            whiteSpace: "nowrap",
+                            display: "inline-block",
+                          }}>
+                            확인완료
+                          </span>
+                        </div>
+                      </div>
+
+                      <div style={{
+                        padding: 12,
+                        background: "white",
+                        borderRadius: 6,
+                        fontSize: 14,
+                        lineHeight: 1.6,
+                        whiteSpace: "pre-wrap",
+                        wordBreak: "break-word",
+                        color: "#6b7280",
+                      }}>
+                        {announcement.content}
+                      </div>
+
+                      {announcement.readAt && (
+                        <div style={{
+                          marginTop: 8,
+                          fontSize: 12,
+                          color: "#9ca3af",
+                        }}>
+                          읽은 시간: {new Date(announcement.readAt).toLocaleString("ko-KR")}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+              </div>
+              
+              {/* 더보기 버튼 */}
+              {announcements.filter(a => a.isRead).length > displayLimit && (
+                <button
+                  onClick={loadMoreReadAnnouncements}
+                  style={{
+                    width: "100%",
+                    marginTop: 12,
+                    padding: "12px",
+                    background: "#f3f4f6",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: 6,
+                    fontSize: 14,
+                    color: "#6b7280",
+                    cursor: "pointer",
+                    fontWeight: "500",
+                  }}
+                >
+                  + 이전 공지 더보기 ({announcements.filter(a => a.isRead).length - displayLimit}개 남음)
+                </button>
+              )}
+            </div>
+          )}
         </div>
       )}
 
