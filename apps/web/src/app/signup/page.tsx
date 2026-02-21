@@ -435,19 +435,23 @@ function SignupContent() {
               ← 뒤로가기
             </div>
 
-            <h1>🎉 {invitationInfo.companyName} 팀원 초대</h1>
-            <p style={{ fontSize: 16, color: "#666", marginTop: 8 }}>
-              {invitationInfo.invitedBy}님이 회사 팀원으로 초대했습니다.
-            </p>
+            <div style={{ textAlign: "center", marginBottom: 24, paddingBottom: 20, borderBottom: "2px solid #e5e7eb" }}>
+              <h1 style={{ fontSize: 28, color: "#1e40af", margin: 0, marginBottom: 8 }}>🎉 {invitationInfo.companyName}</h1>
+              <p style={{ fontSize: 18, color: "#0070f3", fontWeight: 600, margin: 0 }}>팀원 초대 회원가입</p>
+              <p style={{ fontSize: 15, color: "#666", marginTop: 12 }}>
+                {invitationInfo.invitedBy}님이 귀하를 {invitationInfo.companyName}의 팀원으로 초대했습니다.
+              </p>
+            </div>
             
             {/* 초대 정보 표시 */}
             <div style={{
-              marginTop: 20,
+              marginTop: 0,
+              marginBottom: 24,
               padding: 20,
-              background: "rgba(219, 234, 254, 0.3)",
+              background: "rgba(219, 234, 254, 0.2)",
               borderRadius: 12,
               border: "2px solid #3b82f6",
-              boxShadow: "0 4px 8px -1px rgba(59, 130, 246, 0.3), 0 2px 4px -1px rgba(59, 130, 246, 0.2)"
+              boxShadow: "0 4px 8px -1px rgba(59, 130, 246, 0.2), 0 2px 4px -1px rgba(59, 130, 246, 0.15)"
             }}>
               <p style={{ margin: 0, fontWeight: 700, color: "#1e40af", marginBottom: 12, fontSize: 16 }}>
                 🏢 초대받은 회사 정보
@@ -461,6 +465,21 @@ function SignupContent() {
                 <p style={{ margin: 0 }}><strong>역할:</strong> {invitationInfo.role === "BUYER" ? "고용부담금 기업" : "표준사업장"} 담당자</p>
                 <p style={{ margin: 0 }}><strong>초대자:</strong> {invitationInfo.invitedBy} {invitationInfo.inviterTitle || ""}</p>
               </div>
+            </div>
+
+            {/* 안내 메시지 */}
+            <div style={{
+              marginBottom: 20,
+              padding: 16,
+              background: "#f0f9ff",
+              borderRadius: 8,
+              border: "1px solid #bfdbfe"
+            }}>
+              <p style={{ margin: 0, fontSize: 14, color: "#1e40af", lineHeight: 1.6 }}>
+                <strong>📝 회원가입 안내</strong><br/>
+                아래 정보를 입력하시면 {invitationInfo.companyName}의 팀원으로 가입됩니다.<br/>
+                비밀번호는 본인이 직접 설정하시며, 이후 로그인 시 사용됩니다.
+              </p>
             </div>
 
             {/* 가입 폼 */}
