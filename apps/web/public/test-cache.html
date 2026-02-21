@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>캐시 우회 테스트</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .btn {
+            display: inline-block;
+            background: #0070f3;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 5px;
+            text-decoration: none;
+            margin: 10px 5px;
+            font-weight: bold;
+        }
+        .btn:hover {
+            background: #0051cc;
+        }
+        .info {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #0070f3;
+        }
+        .timestamp {
+            font-family: monospace;
+            background: #f0f0f0;
+            padding: 5px 10px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🔄 캐시 우회 테스트 페이지</h1>
+        
+        <div class="info">
+            <strong>⚠️ 주의:</strong> 브라우저가 이전 버전을 캐시하고 있습니다.<br>
+            아래 버튼을 클릭하면 완전히 새로운 URL로 이동하여 캐시를 우회합니다.
+        </div>
+
+        <h2>📋 테스트 링크</h2>
+        <p>
+            <a class="btn" href="/employee/signup?nocache=20260221021809" target="_blank">
+                🚀 회원가입 페이지 열기 (캐시 우회)
+            </a>
+        </p>
+        
+        <p>
+            <a class="btn" href="/employee/signup?v=20260221021809&force=1" target="_blank">
+                🔥 회원가입 페이지 열기 (강제 새로고침)
+            </a>
+        </p>
+
+        <h2>🎯 확인 사항</h2>
+        <div class="info">
+            <p><strong>박스 형태 UI가 보여야 합니다:</strong></p>
+            <ul>
+                <li>3개의 박스가 가로로 나란히</li>
+                <li>첫 번째 박스: 파란색 배경 + "기업확인"</li>
+                <li>두 번째 박스: 회색 배경 + "직원확인"</li>
+                <li>세 번째 박스: 회색 배경 + "가입완료"</li>
+            </ul>
+        </div>
+
+        <h2>💡 여전히 이전 버전이 보인다면?</h2>
+        <ol>
+            <li>개발자 도구 열기 (F12)</li>
+            <li>Network 탭 클릭</li>
+            <li>"Disable cache" 체크</li>
+            <li>페이지 새로고침 (Ctrl + Shift + R)</li>
+        </ol>
+
+        <p style="margin-top: 30px; color: #666; font-size: 14px;">
+            타임스탬프: <span class="timestamp">20260221021809</span>
+        </p>
+    </div>
+
+    <script>
+        // 5초마다 새로운 타임스탬프로 링크 업데이트
+        setInterval(() => {
+            const timestamp = Date.now();
+            const links = document.querySelectorAll('a[href*="nocache"], a[href*="force"]');
+            links.forEach((link, index) => {
+                if (index === 0) {
+                    link.href = `/employee/signup?nocache=${timestamp}`;
+                } else {
+                    link.href = `/employee/signup?v=${timestamp}&force=1`;
+                }
+            });
+            document.querySelector('.timestamp').textContent = timestamp;
+        }, 5000);
+    </script>
+</body>
+</html>
