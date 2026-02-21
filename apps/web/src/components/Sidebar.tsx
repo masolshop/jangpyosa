@@ -176,7 +176,7 @@ export default function Sidebar() {
               label="장애인직원근태관리"
               icon="⏰"
               active={isActive("/dashboard/attendance")}
-              requiresRole={["BUYER", "SUPER_ADMIN"]}
+              requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]}
               currentRole={userRole}
             />
             <MenuItem
@@ -184,7 +184,7 @@ export default function Sidebar() {
               label="회사 공지사항 관리"
               icon="📢"
               active={isActive("/dashboard/announcements")}
-              requiresRole={["BUYER", "SUPER_ADMIN"]}
+              requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]}
               currentRole={userRole}
             />
           </div>
