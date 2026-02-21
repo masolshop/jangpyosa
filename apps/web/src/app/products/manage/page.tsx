@@ -4,13 +4,16 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
 interface Product {
-  id: number
-  name: string
-  contractType: string
-  shortIntro: string | null
-  description: string
-  status: string
+  id: string
+  title: string
+  category: string
+  summary: string | null
+  description: string | null
+  isActive: boolean
   createdAt: string
+  price: number
+  unit: string
+  thumbnailUrl: string | null
 }
 
 export default function ProductManagePage() {
@@ -26,53 +29,76 @@ export default function ProductManagePage() {
   const fetchProducts = async () => {
     try {
       setLoading(true)
-      // TODO: 실제 API 호출로 변경
-      // const response = await fetch('/api/products/my', {
-      //   headers: {
-      //     'Authorization': `Bearer ${localStorage.getItem('token')}`
-      //   }
-      // })
-      // const data = await response.json()
       
-      // 임시 데이터
-      const mockData: Product[] = [
-        {
-          id: 1,
-          name: 'A4 인쇄 서비스',
-          contractType: 'MANUFACTURING',
-          shortIntro: '고품질 A4 인쇄 및 제본',
-          description: '장애인 직원이 직접 제작하는 고품질 인쇄 서비스입니다.',
-          status: 'ACTIVE',
-          createdAt: '2026-02-21'
+      const token = localStorage.getItem('token')
+      if (!token) {
+        setError('로그인이 필요합니다.')
+        router.push('/login')
+        return
+      }
+
+      const response = await fetch('http://localhost:4000/api/products/my/list', {
+        headers: {
+          'Authorization': `Bearer ${token}`
         }
-      ]
-      
-      setProducts(mockData)
-    } catch (err) {
-      setError('상품 목록을 불러오는데 실패했습니다.')
+      })
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          setError('로그인이 필요합니다.')
+          router.push('/login')
+          return
+        }
+        throw new Error('상품 목록을 불러오는데 실패했습니다.')
+      }
+
+      const data = await response.json()
+      setProducts(data.products || [])
+    } catch (err: any) {
+      setError(err.message || '상품 목록을 불러오는데 실패했습니다.')
       console.error(err)
     } finally {
       setLoading(false)
     }
   }
 
-  const getContractTypeLabel = (type: string) => {
-    const types: Record<string, string> = {
-      'MANUFACTURING': '제조 도급',
-      'SERVICE': '용역 도급',
-      'CONSTRUCTION': '공사 도급',
-      'RENTAL': '렌탈'
+  const getStatusLabel = (isActive: boolean) => {
+    if (isActive) {
+      return { label: '판매중', color: '#28a745' }
     }
-    return types[type] || type
+    return { label: '판매중지', color: '#dc3545' }
   }
 
-  const getStatusLabel = (status: string) => {
-    const statuses: Record<string, { label: string; color: string }> = {
-      'ACTIVE': { label: '판매중', color: '#28a745' },
-      'INACTIVE': { label: '판매중지', color: '#dc3545' },
-      'DRAFT': { label: '임시저장', color: '#6c757d' }
+  const handleDelete = async (productId: string) => {
+    if (!confirm('정말 삭제하시겠습니까?')) {
+      return
     }
-    return statuses[status] || { label: status, color: '#6c757d' }
+
+    try {
+      const token = localStorage.getItem('token')
+      if (!token) {
+        alert('로그인이 필요합니다.')
+        router.push('/login')
+        return
+      }
+
+      const response = await fetch(`http://localhost:4000/api/products/${productId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (!response.ok) {
+        throw new Error('상품 삭제에 실패했습니다.')
+      }
+
+      alert('상품이 삭제되었습니다.')
+      fetchProducts() // 목록 새로고침
+    } catch (error: any) {
+      alert(error.message || '삭제 중 오류가 발생했습니다.')
+      console.error(error)
+    }
   }
 
   if (loading) {
@@ -151,24 +177,24 @@ export default function ProductManagePage() {
             </thead>
             <tbody className="divide-y divide-gray-200">
               {products.map((product) => {
-                const status = getStatusLabel(product.status)
+                const status = getStatusLabel(product.isActive)
                 return (
                   <tr key={product.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4">
                       <div>
                         <div className="font-medium text-gray-900">
-                          {product.name}
+                          {product.title}
                         </div>
-                        {product.shortIntro && (
+                        {product.summary && (
                           <div className="text-sm text-gray-600 mt-1">
-                            {product.shortIntro}
+                            {product.summary}
                           </div>
                         )}
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
-                        {getContractTypeLabel(product.contractType)}
+                        {product.category}
                       </span>
                     </td>
                     <td className="px-6 py-4">
@@ -183,7 +209,7 @@ export default function ProductManagePage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-600">
-                      {product.createdAt}
+                      {new Date(product.createdAt).toLocaleDateString('ko-KR')}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex justify-center gap-2">
@@ -191,7 +217,7 @@ export default function ProductManagePage() {
                           onClick={() => router.push(`/products/${product.id}`)}
                           className="px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors text-sm font-medium"
                         >
-                          상세보기
+                          상세보���
                         </button>
                         <button
                           onClick={() => router.push(`/products/${product.id}/edit`)}
@@ -200,12 +226,7 @@ export default function ProductManagePage() {
                           수정
                         </button>
                         <button
-                          onClick={() => {
-                            if (confirm('정말 삭제하시겠습니까?')) {
-                              // TODO: 삭제 API 호출
-                              alert('삭제 기능은 곧 구현됩니다.')
-                            }
-                          }}
+                          onClick={() => handleDelete(product.id)}
                           className="px-4 py-2 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors text-sm font-medium"
                         >
                           삭제
@@ -230,19 +251,21 @@ export default function ProductManagePage() {
           <div className="bg-white rounded-lg shadow p-6">
             <div className="text-sm text-gray-600 mb-1">판매중</div>
             <div className="text-3xl font-bold text-green-600">
-              {products.filter(p => p.status === 'ACTIVE').length}
+              {products.filter(p => p.isActive).length}
             </div>
           </div>
           <div className="bg-white rounded-lg shadow p-6">
             <div className="text-sm text-gray-600 mb-1">판매중지</div>
             <div className="text-3xl font-bold text-red-600">
-              {products.filter(p => p.status === 'INACTIVE').length}
+              {products.filter(p => !p.isActive).length}
             </div>
           </div>
           <div className="bg-white rounded-lg shadow p-6">
-            <div className="text-sm text-gray-600 mb-1">임시저장</div>
-            <div className="text-3xl font-bold text-gray-600">
-              {products.filter(p => p.status === 'DRAFT').length}
+            <div className="text-sm text-gray-600 mb-1">평균 가격</div>
+            <div className="text-3xl font-bold text-blue-600">
+              {products.length > 0 
+                ? Math.round(products.reduce((sum, p) => sum + p.price, 0) / products.length).toLocaleString() 
+                : 0}원
             </div>
           </div>
         </div>

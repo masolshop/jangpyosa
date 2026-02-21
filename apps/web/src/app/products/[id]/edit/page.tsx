@@ -66,52 +66,47 @@ export default function ProductEditPage() {
   const loadProductData = async () => {
     try {
       setLoading(true)
-      // TODO: 실제 API 호출
-      // const response = await fetch(`/api/products/${productId}`)
-      // const data = await response.json()
       
-      // 임시 Mock 데이터
-      const mockData = {
-        id: productId,
-        contractType: 'MANUFACTURING',
-        category: '인쇄',
-        productName: 'A4 인쇄 서비스',
-        shortIntro: '고품질 A4 인쇄 및 제본',
-        description: '장애인 직원이 직접 제작하는 고품질 인쇄 서비스입니다.',
-        brand: '예시브랜드',
-        manufacturer: '예시제조사',
-        model: 'MODEL-001',
-        specifications: '- 색상: 전체\n- 판매단위: 개',
-        price: '10000',
-        stock: '100',
-        minOrderQty: '1',
-        deliveryInfo: '전국 배송 가능',
-        keywords: '인쇄, A4, 제본',
-        thumbnailUrl: null,
-        imageUrls: []
+      const token = localStorage.getItem('token')
+      if (!token) {
+        alert('로그인이 필요합니다.')
+        router.push('/login')
+        return
       }
 
-      // 데이터 설정
-      setContractType(mockData.contractType)
-      setCategory(mockData.category)
-      setProductName(mockData.productName)
-      setShortIntro(mockData.shortIntro)
-      setDescription(mockData.description)
-      setBrand(mockData.brand)
-      setManufacturer(mockData.manufacturer)
-      setModel(mockData.model)
-      setSpecifications(mockData.specifications)
-      setPrice(mockData.price)
-      setStock(mockData.stock)
-      setMinOrderQty(mockData.minOrderQty)
-      setDeliveryInfo(mockData.deliveryInfo)
-      setKeywords(mockData.keywords)
-      
-      if (mockData.thumbnailUrl) {
-        setThumbnailPreview(mockData.thumbnailUrl)
+      const response = await fetch(`http://localhost:4000/api/products/${productId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (!response.ok) {
+        throw new Error('상품 정보를 불러오는데 실패했습니다.')
       }
-      if (mockData.imageUrls && mockData.imageUrls.length > 0) {
-        setImagesPreviews(mockData.imageUrls)
+
+      const product = await response.json()
+
+      // 데이터 설정
+      setContractType(product.category || 'MANUFACTURING')
+      setCategory(product.category || '')
+      setProductName(product.title || '')
+      setShortIntro(product.summary || '')
+      setDescription(product.description || '')
+      setBrand(product.brand || '')
+      setManufacturer(product.manufacturer || '')
+      setModel(product.model || '')
+      setSpecifications(product.spec || '')
+      setPrice(product.price?.toString() || '')
+      setStock(product.minOrderQty?.toString() || '1')
+      setMinOrderQty(product.minOrderQty?.toString() || '1')
+      setDeliveryInfo(product.deliveryCycle || '')
+      setKeywords(product.keywords || '')
+      
+      if (product.thumbnailUrl) {
+        setThumbnailPreview(product.thumbnailUrl)
+      }
+      if (product.imageUrls && product.imageUrls.length > 0) {
+        setImagesPreviews(product.imageUrls)
       }
 
     } catch (error) {
@@ -203,36 +198,64 @@ export default function ProductEditPage() {
   const handleFinalSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    const productData = {
-      id: productId,
-      contractType,
-      category,
-      productName,
-      shortIntro,
-      description,
-      brand,
-      manufacturer,
-      model,
-      specifications,
-      price: price ? parseFloat(price) : null,
-      stock: parseInt(stock),
-      minOrderQty: parseInt(minOrderQty),
-      deliveryInfo,
-      keywords: keywords.split(',').map(k => k.trim()).filter(k => k),
-      thumbnailPreview,
-      imagesPreviews
-    }
+    try {
+      const token = localStorage.getItem('token')
+      if (!token) {
+        alert('로그인이 필요합니다.')
+        router.push('/login')
+        return
+      }
 
-    console.log('상품 수정 데이터:', productData)
-    
-    // TODO: API 호출
-    // await fetch(`/api/products/${productId}`, {
-    //   method: 'PUT',
-    //   body: JSON.stringify(productData)
-    // })
-    
-    alert('✅ 상품이 성공적으로 수정되었습니다!')
-    router.push('/products/manage')
+      const productData = {
+        title: productName,
+        category,
+        summary: shortIntro,
+        description,
+        spec: specifications,
+        price: price ? parseFloat(price) : 0,
+        unit: '개',
+        minOrderQty: parseInt(minOrderQty),
+        leadTimeDays: 7,
+        contractMinMonths: 12,
+        vatIncluded: true,
+        shippingIncluded: false,
+        invoiceAvailable: true,
+        quoteLeadTimeDays: 3,
+        thumbnailUrl: thumbnailPreview || undefined,
+        imageUrls: imagesPreviews,
+        keywords,
+        isActive: true,
+        // 필수 항목
+        noSubcontractConfirm: true,
+        monthlyDeliverySchedule: deliveryInfo || '매월',
+        monthlyBillingBasis: '실사용량 기준',
+        monthlyBillingDay: 31,
+        monthlyPaymentDay: 10,
+        costBreakdownJson: JSON.stringify({ labor: 0, material: 0, other: 0 }),
+        evidenceMethods: '납품확인서',
+        invoiceIssueConfirmed: true
+      }
+
+      const response = await fetch(`http://localhost:4000/api/products/${productId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(productData)
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.message || '상품 수정에 실패했습니다.')
+      }
+
+      alert('✅ 상품이 성공적으로 수정되었습니다!')
+      router.push('/products/manage')
+    } catch (error: any) {
+      console.error('상품 수정 에러:', error)
+      alert(error.message || '상품 수정 중 오류가 발생했습니다.')
+    }
   }
 
   if (loading) {
