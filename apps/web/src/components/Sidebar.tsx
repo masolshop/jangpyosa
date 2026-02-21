@@ -210,6 +210,12 @@ export default function Sidebar() {
               고용계산기
             </div>
             <MenuItem
+              href="/calculators/incentive-annual"
+              label="고용장려금계산기"
+              icon="💸"
+              active={isActive("/calculators/incentive-annual")}
+            />
+            <MenuItem
               href="/calculators/levy-annual"
               label="고용부담금계산기"
               icon="💰"
@@ -218,12 +224,6 @@ export default function Sidebar() {
                 { href: "/calculators/levy", label: "간단부담금계산" },
                 { href: "/calculators/levy-annual", label: "월별부담금계산" },
               ]}
-            />
-            <MenuItem
-              href="/calculators/incentive-annual"
-              label="고용장려금계산기"
-              icon="💸"
-              active={isActive("/calculators/incentive-annual")}
             />
             <MenuItem
               href="/calculators/linkage"
