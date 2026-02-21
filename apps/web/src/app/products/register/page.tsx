@@ -353,7 +353,7 @@ export default function ProductRegisterPage() {
           
           <div className={styles.radioGroup}>
             {CONTRACT_TYPES.map(type => (
-              <label key={type.value} className={styles.radioCard}>
+              <label key={type.value} className={styles.radioCard} style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>
                 <input
                   type="radio"
                   name="contractType"
@@ -365,12 +365,13 @@ export default function ProductRegisterPage() {
                     category: '' // 카테고리 초기화
                   })}
                   required
+                  style={{ marginTop: '0.25rem', flexShrink: 0 }}
                 />
-                <div className={styles.radioContent}>
-                  <strong>{type.label}</strong>
-                  <div className={styles.radioList}>
+                <div className={styles.radioContent} style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <strong style={{ display: 'block', fontSize: '1.05rem' }}>{type.label}</strong>
+                  <div className={styles.radioList} style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', fontSize: '0.85rem' }}>
                     {type.items.map((item, idx) => (
-                      <div key={idx}>{item}</div>
+                      <div key={idx} style={{ display: 'block', width: '100%' }}>{item}</div>
                     ))}
                   </div>
                 </div>
