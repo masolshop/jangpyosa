@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 
-// Build: 2026-02-21-v3 - Complete inline styles implementation
+// Build: 2026-02-21-v4 - Added RENTAL type (음식물처리기, 플라스틱처리기)
 
 const CONTRACT_TYPES = [
   {
@@ -19,6 +19,11 @@ const CONTRACT_TYPES = [
     value: 'CONSTRUCTION',
     label: '공사 도급',
     items: ['단순 시공', '내부 환경개선', '편의시설 설치']
+  },
+  {
+    value: 'RENTAL',
+    label: '렌탈',
+    items: ['음식물처리기', '플라스틱처리기']
   }
 ]
 
@@ -46,7 +51,8 @@ export default function ProductRegisterPage() {
         <ul className="space-y-2 text-sm text-gray-700">
           <li>
             ✅ <strong>인정 가능</strong>: 제조(인쇄, 판촉물, 식품, 조립, 제과·제빵, 가구),
-            용역(청소, 세탁, 시설관리, 문서작업, 콜센터), 공사(단순 시공, 내부 환경개선, 편의시설 설치)
+            용역(청소, 세탁, 시설관리, 문서작업, 콜센터), 공사(단순 시공, 내부 환경개선, 편의시설 설치),
+            렌탈(음식물처리기, 플라스틱처리기)
           </li>
           <li>
             ❌ <strong>인정 어려움</strong>: 유통 대행, 단순 중개, 외주 전량 위탁, 하도급 공사
@@ -73,10 +79,10 @@ export default function ProductRegisterPage() {
             연계고용 감면이 인정되는 계약 유형을 선택하세요
           </p>
 
-          {/* Grid Container - 강제로 가로 3열 */}
+          {/* Grid Container - 강제로 가로 4열 */}
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
+            gridTemplateColumns: 'repeat(4, 1fr)',
             gap: '1rem',
             marginBottom: '1rem'
           }}>
