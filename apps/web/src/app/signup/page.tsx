@@ -86,7 +86,7 @@ function SignupContent() {
         setIsInvited(true);
         setInvitationInfo(data.invitation);
         setType("invited");
-        setStep("form");
+        // setStep("form") 제거 - step을 "select"로 유지하여 초대 폼이 바로 표시되도록
         
         // 초대받을 사람 정보를 자동으로 입력
         if (data.invitation.inviteeName) {
@@ -403,24 +403,23 @@ function SignupContent() {
     }
   }
 
-  if (step === "select") {
-    // 초대받은 사람 로딩 중
-    if (loadingInvitation) {
-      return (
-        <div className="container">
-          <div className="card" style={{ maxWidth: 600, margin: "40px auto", textAlign: "center" }}>
-            <i className="fas fa-spinner fa-spin" style={{ fontSize: 48, color: "#0070f3" }}></i>
-            <h2 style={{ marginTop: 16 }}>초대 정보 확인 중...</h2>
-          </div>
+  // 초대받은 사람 로딩 중
+  if (loadingInvitation) {
+    return (
+      <div className="container">
+        <div className="card" style={{ maxWidth: 600, margin: "40px auto", textAlign: "center" }}>
+          <i className="fas fa-spinner fa-spin" style={{ fontSize: 48, color: "#0070f3" }}></i>
+          <h2 style={{ marginTop: 16 }}>초대 정보 확인 중...</h2>
         </div>
-      );
-    }
+      </div>
+    );
+  }
 
-    // 초대받은 사람 회원가입 폼
-    if (isInvited && invitationInfo) {
-      return (
-        <div className="container">
-          <div className="card" style={{ maxWidth: 600, margin: "40px auto" }}>
+  // 초대받은 사람 회원가입 폼 (step 조건 무시)
+  if (isInvited && invitationInfo) {
+    return (
+      <div className="container">
+        <div className="card" style={{ maxWidth: 600, margin: "40px auto" }}>
             <div style={{ textAlign: "center", marginBottom: 24, paddingBottom: 20, borderBottom: "2px solid #e5e7eb" }}>
               <h1 style={{ fontSize: 28, color: "#1e40af", margin: 0, marginBottom: 8 }}>🎉 {invitationInfo.companyName}</h1>
               <p style={{ fontSize: 18, color: "#0070f3", fontWeight: 600, margin: 0 }}>팀원 초대 회원가입</p>
