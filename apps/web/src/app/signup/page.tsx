@@ -85,6 +85,14 @@ function SignupContent() {
         setInvitationInfo(data.invitation);
         setType("invited");
         setStep("form");
+        
+        // 초대받을 사람 정보를 자동으로 입력
+        if (data.invitation.inviteeName) {
+          setName(data.invitation.inviteeName);
+        }
+        if (data.invitation.inviteePhone) {
+          setPhone(formatPhone(data.invitation.inviteePhone));
+        }
       } else {
         setMsg(data.error || "초대 코드가 유효하지 않습니다");
       }
@@ -453,6 +461,11 @@ function SignupContent() {
             }}>
               <p style={{ margin: 0, fontSize: 14, color: "#1e40af", lineHeight: 1.6 }}>
                 <strong>📝 회원가입 안내</strong><br/>
+                {invitationInfo.inviteeName && invitationInfo.inviteePhone && (
+                  <>
+                    <strong>{invitationInfo.inviteeName}님 ({invitationInfo.inviteePhone})</strong> 귀하를 위한 초대 링크입니다.<br/>
+                  </>
+                )}
                 아래 정보를 입력하시면 {invitationInfo.companyName}의 팀원으로 가입됩니다.<br/>
                 <strong style={{ color: "#ef4444" }}>비밀번호는 핸드폰 번호 뒤 8자리로 자동 설정됩니다.</strong>
               </p>
@@ -466,6 +479,11 @@ function SignupContent() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="홍길동"
+                readOnly={!!invitationInfo.inviteeName}
+                style={{
+                  backgroundColor: invitationInfo.inviteeName ? "#f3f4f6" : "white",
+                  cursor: invitationInfo.inviteeName ? "not-allowed" : "text"
+                }}
               />
 
               <label>핸드폰 번호 * (로그인 ID 및 비밀번호로 사용됩니다)</label>
@@ -474,6 +492,11 @@ function SignupContent() {
                 value={phone}
                 onChange={handlePhoneChange}
                 placeholder="010-1234-5678"
+                readOnly={!!invitationInfo.inviteePhone}
+                style={{
+                  backgroundColor: invitationInfo.inviteePhone ? "#f3f4f6" : "white",
+                  cursor: invitationInfo.inviteePhone ? "not-allowed" : "text"
+                }}
               />
               <p style={{ margin: "8px 0 0 0", fontSize: 13, color: "#ef4444" }}>
                 ⚠️ 비밀번호는 핸드폰 번호 뒤 8자리로 자동 설정됩니다.

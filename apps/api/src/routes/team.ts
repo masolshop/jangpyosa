@@ -99,15 +99,11 @@ router.post("/invite", requireAuth, async (req: any, res: any) => {
       }
     });
 
-    // 초대 링크 생성
-    const inviteUrl = `${process.env.FRONTEND_URL || "http://localhost:3000"}/signup?invite=${inviteCode}`;
-
     return res.json({
       success: true,
       invitation: {
         id: invitation.id,
         inviteCode: invitation.inviteCode,
-        inviteUrl,
         companyName: invitation.company.name,
         bizNo: invitation.company.bizNo,
         role: invitation.role,
@@ -173,6 +169,8 @@ router.get("/invite/:code", async (req: any, res: any) => {
         representative: invitation.company.representative,
         buyerType: invitation.company.buyerType,
         role: invitation.role,
+        inviteeName: invitation.inviteeName,
+        inviteePhone: invitation.inviteePhone,
         invitedBy: invitation.sender.name || invitation.sender.managerName,
         inviterTitle: invitation.sender.managerTitle,
         expiresAt: invitation.expiresAt
