@@ -114,6 +114,12 @@ export default function CompanyDashboardPage() {
       name: data.company.name,
       representative: data.company.representative || ""
     });
+    // 회사 타입에 따라 초대 역할 자동 설정
+    if (data.company.type === "BUYER") {
+      setInviteRole("BUYER");
+    } else if (data.company.type === "SUPPLIER") {
+      setInviteRole("SUPPLIER");
+    }
   }
 
   async function loadMembers() {
@@ -315,7 +321,7 @@ export default function CompanyDashboardPage() {
             background: "white",
             borderRadius: 12,
             marginBottom: 32,
-            boxShadow: "0 4px 6px -1px rgba(59, 130, 246, 0.3), 0 2px 4px -1px rgba(59, 130, 246, 0.2)"
+            boxShadow: "0 8px 16px -2px rgba(59, 130, 246, 0.3), 0 4px 8px -2px rgba(59, 130, 246, 0.2)"
           }}
         >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
@@ -427,19 +433,14 @@ export default function CompanyDashboardPage() {
             background: "white",
             borderRadius: 12,
             marginBottom: 32,
-            boxShadow: "0 4px 6px -1px rgba(59, 130, 246, 0.3), 0 2px 4px -1px rgba(59, 130, 246, 0.2)"
+            boxShadow: "0 8px 16px -2px rgba(59, 130, 246, 0.3), 0 4px 8px -2px rgba(59, 130, 246, 0.2)"
           }}
         >
           <h2 style={{ margin: 0, fontSize: 20, marginBottom: 16 }}>✉️ 새 팀원 초대하기</h2>
-          <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
-            <select
-              value={inviteRole}
-              onChange={(e) => setInviteRole(e.target.value as "BUYER" | "SUPPLIER")}
-              style={{ padding: 12, border: "1px solid #d1d5db", borderRadius: 6 }}
-            >
-              <option value="BUYER">고용부담금 기업 담당자</option>
-              <option value="SUPPLIER">표준사업장 담당자</option>
-            </select>
+          <div style={{ display: "flex", gap: 12, marginBottom: 16, alignItems: "center" }}>
+            <div style={{ padding: 12, border: "2px solid #3b82f6", borderRadius: 6, background: "#eff6ff", fontWeight: "bold", color: "#1e40af" }}>
+              {company?.type === "BUYER" ? "🏢 고용부담금 기업 담당자" : "🏭 표준사업장 담당자"}
+            </div>
             <button
               onClick={createInvitation}
               disabled={creatingInvite}
@@ -567,7 +568,7 @@ export default function CompanyDashboardPage() {
             background: "white",
             borderRadius: 12,
             marginBottom: 32,
-            boxShadow: "0 4px 6px -1px rgba(59, 130, 246, 0.3), 0 2px 4px -1px rgba(59, 130, 246, 0.2)"
+            boxShadow: "0 8px 16px -2px rgba(59, 130, 246, 0.3), 0 4px 8px -2px rgba(59, 130, 246, 0.2)"
           }}
         >
           <h2 style={{ margin: 0, fontSize: 20, marginBottom: 16 }}>👥 팀원 목록 ({members.length}명)</h2>
@@ -742,7 +743,7 @@ export default function CompanyDashboardPage() {
             padding: 24,
             background: "white",
             borderRadius: 12,
-            boxShadow: "0 4px 6px -1px rgba(59, 130, 246, 0.3), 0 2px 4px -1px rgba(59, 130, 246, 0.2)"
+            boxShadow: "0 8px 16px -2px rgba(59, 130, 246, 0.3), 0 4px 8px -2px rgba(59, 130, 246, 0.2)"
           }}
         >
           <h2 style={{ margin: 0, fontSize: 20, marginBottom: 16 }}>📜 활동 로그 (최근 20개)</h2>
