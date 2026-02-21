@@ -351,9 +351,9 @@ export default function ProductRegisterPage() {
             연계고용 감면이 인정되는 계약 유형을 선택하세요
           </p>
           
-          <div className={styles.radioGroup}>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
             {CONTRACT_TYPES.map(type => (
-              <label key={type.value} className={styles.radioCard} style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>
+              <label key={type.value} className="flex items-start gap-4 p-5 border-2 border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all">
                 <input
                   type="radio"
                   name="contractType"
@@ -365,13 +365,13 @@ export default function ProductRegisterPage() {
                     category: '' // 카테고리 초기화
                   })}
                   required
-                  style={{ marginTop: '0.25rem', flexShrink: 0 }}
+                  className="mt-1 flex-shrink-0"
                 />
-                <div className={styles.radioContent} style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <strong style={{ display: 'block', fontSize: '1.05rem' }}>{type.label}</strong>
-                  <div className={styles.radioList} style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', fontSize: '0.85rem' }}>
+                <div className="flex-1 flex flex-col gap-2">
+                  <strong className="block text-lg font-semibold text-gray-800">{type.label}</strong>
+                  <div className="flex flex-col gap-1 text-sm text-gray-600">
                     {type.items.map((item, idx) => (
-                      <div key={idx} style={{ display: 'block', width: '100%' }}>{item}</div>
+                      <div key={idx} className="block w-full">{item}</div>
                     ))}
                   </div>
                 </div>
