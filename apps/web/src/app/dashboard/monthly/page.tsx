@@ -266,12 +266,29 @@ export default function MonthlyManagementPage() {
           prev.map((data) => {
             const serverData = result.data.find((d: any) => d.month === data.month);
             if (serverData) {
+              // 장애인수와 인정수도 서버에서 업데이트
+              const newIncentive = serverData.incentive || 0;
+              const newRecognizedCount = serverData.recognizedCount || 0;
+              
+              // 부담금 재계산 (인정수가 변경되었을 수 있으므로)
+              const obligatedCount = Math.floor(data.totalEmployeeCount * companyInfo.quotaRate);
+              const shortfallCount = Math.max(0, obligatedCount - newRecognizedCount);
+              const surplusCount = Math.max(0, newRecognizedCount - obligatedCount);
+              const monthlyLevyBase = getMonthlyLevyBase(obligatedCount, newRecognizedCount);
+              const levy = shortfallCount * monthlyLevyBase;
+              
               return {
                 ...data,
-                incentive: serverData.incentive || 0,
+                disabledCount: serverData.disabledCount || 0,
+                recognizedCount: newRecognizedCount,
+                obligatedCount,
+                shortfallCount,
+                surplusCount,
+                levy,
+                incentive: newIncentive,
                 femaleIncentiveCount: serverData.femaleIncentiveCount || 0,
                 femaleIncentiveAmount: serverData.femaleIncentiveAmount || 0,
-                netAmount: serverData.incentive - data.levy,
+                netAmount: newIncentive - levy,
               };
             }
             return data;
@@ -284,7 +301,9 @@ export default function MonthlyManagementPage() {
   }
 
   async function updateEmployeeCount(month: number, value: string) {
-    const numValue = parseInt(value) || 0;
+    // 빈 문자열 또는 0 입력 처리
+    const numValue = value === "" ? 0 : parseInt(value);
+    if (isNaN(numValue)) return;
     
     // 1. totalEmployeeCount 업데이트 (즉시)
     setMonthlyData((prev) =>
@@ -570,8 +589,9 @@ export default function MonthlyManagementPage() {
                   <td style={tableCellStyle}>
                     <input
                       type="number"
-                      value={data.totalEmployeeCount}
+                      value={data.totalEmployeeCount === 0 ? "" : data.totalEmployeeCount}
                       onChange={(e) => updateEmployeeCount(data.month, e.target.value)}
+                      placeholder="0"
                       style={{
                         width: 80,
                         padding: "6px 8px",
