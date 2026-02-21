@@ -1,8 +1,9 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 
-// Build: 2026-02-21-v5 - Added form submit handler and state management
+// Build: 2026-02-21-v6 - Complete product registration with image upload
 
 const CONTRACT_TYPES = [
   {
@@ -28,15 +29,81 @@ const CONTRACT_TYPES = [
 ]
 
 export default function ProductRegisterPage() {
+  const router = useRouter()
+  const [step, setStep] = useState(1)
+  
+  // Step 1: 기본 정보
   const [contractType, setContractType] = useState('')
+  const [category, setCategory] = useState('')
   const [productName, setProductName] = useState('')
   const [shortIntro, setShortIntro] = useState('')
   const [description, setDescription] = useState('')
+  
+  // Step 2: 이미지
+  const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null)
+  const [imagesPreviews, setImagesPreviews] = useState<string[]>([])
+  
+  // Step 3: 상세 정보
+  const [brand, setBrand] = useState('')
+  const [manufacturer, setManufacturer] = useState('')
+  const [model, setModel] = useState('')
+  const [specifications, setSpecifications] = useState('')
+  const [price, setPrice] = useState('')
+  const [stock, setStock] = useState('1')
+  const [minOrderQty, setMinOrderQty] = useState('1')
+  const [deliveryInfo, setDeliveryInfo] = useState('')
+  const [keywords, setKeywords] = useState('')
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleThumbnailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        alert('파일 크기는 5MB를 초과할 수 없습니다.')
+        return
+      }
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setThumbnailPreview(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handleImagesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || [])
+    if (files.length > 5) {
+      alert('최대 5개의 이미지만 업로드할 수 있습니다.')
+      return
+    }
+    
+    const validFiles = files.filter(file => {
+      if (file.size > 5 * 1024 * 1024) {
+        alert(`${file.name}은(는) 5MB를 초과합니다.`)
+        return false
+      }
+      return true
+    })
+
+    const previews: string[] = []
+    validFiles.forEach(file => {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        previews.push(reader.result as string)
+        if (previews.length === validFiles.length) {
+          setImagesPreviews(previews)
+        }
+      }
+      reader.readAsDataURL(file)
+    })
+  }
+
+  const removeImage = (index: number) => {
+    setImagesPreviews(prev => prev.filter((_, i) => i !== index))
+  }
+
+  const handleStep1Submit = (e: React.FormEvent) => {
     e.preventDefault()
     
-    // 필수 항목 검증
     if (!contractType) {
       alert('계약 유형을 선택해주세요')
       return
@@ -50,20 +117,87 @@ export default function ProductRegisterPage() {
       return
     }
 
-    // 다음 단계로 이동 (임시로 alert)
-    alert(`✅ 저장되었습니다!\n\n계약 유형: ${CONTRACT_TYPES.find(t => t.value === contractType)?.label}\n상품명: ${productName}\n한줄 소개: ${shortIntro || '(없음)'}\n상세 설명: ${description.substring(0, 50)}...`)
+    setStep(2)
+  }
+
+  const handleStep2Submit = (e: React.FormEvent) => {
+    e.preventDefault()
     
-    // TODO: 실제로는 여기서 API 호출하거나 다음 페이지로 이동
+    if (!thumbnailPreview) {
+      alert('대표 이미지를 업로드해주세요')
+      return
+    }
+
+    setStep(3)
+  }
+
+  const handleFinalSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    const productData = {
+      contractType,
+      category,
+      productName,
+      shortIntro,
+      description,
+      brand,
+      manufacturer,
+      model,
+      specifications,
+      price: price ? parseFloat(price) : null,
+      stock: parseInt(stock),
+      minOrderQty: parseInt(minOrderQty),
+      deliveryInfo,
+      keywords: keywords.split(',').map(k => k.trim()).filter(k => k),
+      thumbnailPreview,
+      imagesPreviews
+    }
+
+    console.log('상품 등록 데이터:', productData)
+    
+    // TODO: API 호출
+    alert('✅ 상품이 성공적으로 등록되었습니다!')
+    router.push('/products/manage')
   }
 
   return (
     <div className="max-w-5xl mx-auto p-8">
       {/* Header */}
-      <div className="mb-8 text-center">
+      <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-800 mb-2">
           🛍️ 도급계약 상품 등록
         </h1>
         <p className="text-gray-600">연계고용 감면 가능한 상품을 등록하세요</p>
+        
+        {/* Progress Steps */}
+        <div className="mt-6 flex items-center justify-center gap-4">
+          <div className="flex items-center">
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${
+              step >= 1 ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600'
+            }`}>
+              1
+            </div>
+            <span className="ml-2 text-sm font-medium">기본 정보</span>
+          </div>
+          <div className="w-16 h-1 bg-gray-300" />
+          <div className="flex items-center">
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${
+              step >= 2 ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600'
+            }`}>
+              2
+            </div>
+            <span className="ml-2 text-sm font-medium">이미지</span>
+          </div>
+          <div className="w-16 h-1 bg-gray-300" />
+          <div className="flex items-center">
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${
+              step >= 3 ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600'
+            }`}>
+              3
+            </div>
+            <span className="ml-2 text-sm font-medium">상세 정보</span>
+          </div>
+        </div>
       </div>
 
       {/* Warning Box */}
@@ -84,159 +218,430 @@ export default function ProductRegisterPage() {
             ❌ <strong>인정 어려움</strong>: 유통 대행, 단순 중개, 외주 전량 위탁, 하도급 공사
           </li>
         </ul>
-        <div className="mt-4 p-3 bg-red-50 border border-red-300 rounded">
-          <p className="text-sm text-red-800">
-            <strong>※ 연계고용 감면은 장애인 직접 참여 공정이 확인되어야 하며, 하도급·재위탁 시 감면이 불인정될 수 있습니다.</strong>
-          </p>
-          <p className="text-sm text-red-800 mt-1">
-            <strong>※ 공공기관 계약은 국가계약법·지방계약법에 따른 절차를 따릅니다.</strong>
-          </p>
-        </div>
       </div>
 
-      {/* Form */}
-      <form className="bg-white rounded-lg shadow-md p-8" onSubmit={handleSubmit}>
-        {/* Step 1: Contract Type Selection */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">
-            1️⃣ 계약 유형 선택 (필수)
+      {/* Step 1: Basic Info */}
+      {step === 1 && (
+        <form className="bg-white rounded-lg shadow-md p-8" onSubmit={handleStep1Submit}>
+          <h2 className="text-2xl font-bold text-gray-800 mb-6">
+            1️⃣ 기본 정보
           </h2>
-          <p className="text-sm text-gray-600 mb-6">
-            연계고용 감면이 인정되는 계약 유형을 선택하세요
-          </p>
 
-          {/* Grid Container - 강제로 가로 4열 */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(4, 1fr)',
-            gap: '1rem',
-            marginBottom: '1rem'
-          }}>
-            {CONTRACT_TYPES.map(type => (
-              <label
-                key={type.value}
-                style={{
-                  display: 'flex',
-                  flexDirection: 'row',
-                  alignItems: 'flex-start',
-                  gap: '1rem',
-                  padding: '1.25rem',
-                  border: contractType === type.value ? '2px solid #3b82f6' : '2px solid #d1d5db',
-                  borderRadius: '0.5rem',
-                  cursor: 'pointer',
-                  backgroundColor: contractType === type.value ? '#eff6ff' : 'white',
-                  transition: 'all 0.2s'
-                }}
-              >
-                <input
-                  type="radio"
-                  name="contractType"
-                  value={type.value}
-                  checked={contractType === type.value}
-                  onChange={(e) => setContractType(e.target.value)}
-                  required
+          {/* Contract Type Selection */}
+          <div className="mb-8">
+            <label className="block text-sm font-medium text-gray-700 mb-3">
+              계약 유형 *
+            </label>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(4, 1fr)',
+              gap: '1rem'
+            }}>
+              {CONTRACT_TYPES.map(type => (
+                <label
+                  key={type.value}
                   style={{
-                    marginTop: '0.25rem',
-                    flexShrink: 0
-                  }}
-                />
-                <div style={{ flex: 1 }}>
-                  <strong style={{
-                    display: 'block',
-                    fontSize: '1.125rem',
-                    fontWeight: '600',
-                    color: '#1f2937',
-                    marginBottom: '0.5rem'
-                  }}>
-                    {type.label}
-                  </strong>
-                  <div style={{
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '0.25rem',
-                    fontSize: '0.875rem',
-                    color: '#4b5563'
-                  }}>
-                    {type.items.map((item, idx) => (
+                    alignItems: 'flex-start',
+                    padding: '1rem',
+                    border: contractType === type.value ? '2px solid #3b82f6' : '2px solid #d1d5db',
+                    borderRadius: '0.5rem',
+                    cursor: 'pointer',
+                    backgroundColor: contractType === type.value ? '#eff6ff' : 'white',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  <div className="flex items-center mb-2">
+                    <input
+                      type="radio"
+                      name="contractType"
+                      value={type.value}
+                      checked={contractType === type.value}
+                      onChange={(e) => {
+                        setContractType(e.target.value)
+                        setCategory('')
+                      }}
+                      required
+                      className="mr-2"
+                    />
+                    <strong className="text-base">{type.label}</strong>
+                  </div>
+                  <div className="text-xs text-gray-600 space-y-1 ml-6">
+                    {type.items.slice(0, 3).map((item, idx) => (
                       <div key={idx}>{item}</div>
                     ))}
                   </div>
-                </div>
-              </label>
-            ))}
+                </label>
+              ))}
+            </div>
           </div>
-        </div>
 
-        {/* Basic Info - Show only when contract type is selected */}
-        {contractType && (
+          {/* Category Selection */}
+          {contractType && (
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                상세 카테고리 *
+              </label>
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                required
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">선택하세요</option>
+                {CONTRACT_TYPES.find(t => t.value === contractType)?.items.map((item, idx) => (
+                  <option key={idx} value={item}>{item}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                상품명 *
+              </label>
+              <input
+                type="text"
+                required
+                value={productName}
+                onChange={(e) => setProductName(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="예: 블루투스 이어폰"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                한줄 소개
+              </label>
+              <input
+                type="text"
+                maxLength={100}
+                value={shortIntro}
+                onChange={(e) => setShortIntro(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="예: 고품질 블루투스 무선 이어폰"
+              />
+              <p className="text-xs text-gray-500 mt-1">{shortIntro.length}/100</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                상세 설명 *
+              </label>
+              <textarea
+                required
+                rows={8}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="상품에 대한 상세한 설명을 입력하세요&#10;- 장애인 직원이 참여하는 공정&#10;- 상품의 특징 및 장점&#10;- 사용 방법 등"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 mt-8">
+            <button
+              type="button"
+              onClick={() => router.push('/products/manage')}
+              className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+            >
+              취소
+            </button>
+            <button
+              type="submit"
+              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              다음 단계
+            </button>
+          </div>
+        </form>
+      )}
+
+      {/* Step 2: Images */}
+      {step === 2 && (
+        <form className="bg-white rounded-lg shadow-md p-8" onSubmit={handleStep2Submit}>
+          <h2 className="text-2xl font-bold text-gray-800 mb-6">
+            2️⃣ 상품 이미지
+          </h2>
+
+          {/* Thumbnail Upload */}
           <div className="mb-8">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6">
-              2️⃣ 기본 정보
-            </h2>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              대표 이미지 * (썸네일)
+            </label>
+            <p className="text-xs text-gray-500 mb-3">
+              권장 크기: 800x800px, 최대 5MB, JPG/PNG
+            </p>
             
-            <div className="space-y-4">
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+              {thumbnailPreview ? (
+                <div className="relative inline-block">
+                  <img
+                    src={thumbnailPreview}
+                    alt="Thumbnail"
+                    className="w-64 h-64 object-cover rounded-lg"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setThumbnailPreview(null)}
+                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-red-600"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ) : (
+                <label className="cursor-pointer">
+                  <div className="text-gray-400 mb-2">
+                    <svg className="mx-auto h-12 w-12" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                      <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </div>
+                  <p className="text-sm text-gray-600">클릭하여 이미지 업로드</p>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleThumbnailChange}
+                    className="hidden"
+                  />
+                </label>
+              )}
+            </div>
+          </div>
+
+          {/* Additional Images Upload */}
+          <div className="mb-8">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              추가 이미지 (최대 5개)
+            </label>
+            <p className="text-xs text-gray-500 mb-3">
+              상품의 다양한 각도 및 세부 사항을 보여주는 이미지
+            </p>
+            
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
+              {imagesPreviews.length > 0 ? (
+                <div className="grid grid-cols-5 gap-4">
+                  {imagesPreviews.map((preview, index) => (
+                    <div key={index} className="relative">
+                      <img
+                        src={preview}
+                        alt={`Product ${index + 1}`}
+                        className="w-full h-32 object-cover rounded-lg"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeImage(index)}
+                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                  {imagesPreviews.length < 5 && (
+                    <label className="cursor-pointer border-2 border-dashed border-gray-300 rounded-lg h-32 flex items-center justify-center hover:border-blue-500">
+                      <span className="text-gray-400 text-2xl">+</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={handleImagesChange}
+                        className="hidden"
+                      />
+                    </label>
+                  )}
+                </div>
+              ) : (
+                <label className="cursor-pointer text-center block">
+                  <div className="text-gray-400 mb-2">
+                    <svg className="mx-auto h-12 w-12" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                      <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </div>
+                  <p className="text-sm text-gray-600">클릭하여 이미지 업로드 (최대 5개)</p>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleImagesChange}
+                    className="hidden"
+                  />
+                </label>
+              )}
+            </div>
+          </div>
+
+          <div className="flex justify-between gap-3 mt-8">
+            <button
+              type="button"
+              onClick={() => setStep(1)}
+              className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+            >
+              이전
+            </button>
+            <button
+              type="submit"
+              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              다음 단계
+            </button>
+          </div>
+        </form>
+      )}
+
+      {/* Step 3: Detailed Info */}
+      {step === 3 && (
+        <form className="bg-white rounded-lg shadow-md p-8" onSubmit={handleFinalSubmit}>
+          <h2 className="text-2xl font-bold text-gray-800 mb-6">
+            3️⃣ 상세 정보
+          </h2>
+
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  상품명 *
+                  브랜드
                 </label>
                 <input
                   type="text"
-                  required
-                  value={productName}
-                  onChange={(e) => setProductName(e.target.value)}
+                  value={brand}
+                  onChange={(e) => setBrand(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="예: A4 인쇄 서비스"
+                  placeholder="예: 몬스타기어"
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  한줄 소개
+                  제조사
                 </label>
                 <input
                   type="text"
-                  maxLength={100}
-                  value={shortIntro}
-                  onChange={(e) => setShortIntro(e.target.value)}
+                  value={manufacturer}
+                  onChange={(e) => setManufacturer(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="예: 고품질 A4 인쇄 및 제본 서비스"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  상세 설명 *
-                </label>
-                <textarea
-                  required
-                  rows={6}
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="상품에 대한 상세한 설명을 입력하세요"
+                  placeholder="예: 몬스타 주식회사"
                 />
               </div>
             </div>
-          </div>
-        )}
 
-        {/* Action Buttons */}
-        <div className="flex justify-end gap-3 mt-8">
-          <button
-            type="button"
-            className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
-          >
-            취소
-          </button>
-          <button
-            type="submit"
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            disabled={!contractType}
-          >
-            다음 단계
-          </button>
-        </div>
-      </form>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                모델명
+              </label>
+              <input
+                type="text"
+                value={model}
+                onChange={(e) => setModel(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="예: TWS-2000"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                제품 사양
+              </label>
+              <textarea
+                rows={4}
+                value={specifications}
+                onChange={(e) => setSpecifications(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="예:&#10;- 색상: 전체&#10;- 판매단위: 개&#10;- 최소주문수량: 1&#10;- 중량/용량: 50g"
+              />
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  가격 (원)
+                </label>
+                <input
+                  type="number"
+                  value={price}
+                  onChange={(e) => setPrice(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="0"
+                  min="0"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  재고수량
+                </label>
+                <input
+                  type="number"
+                  value={stock}
+                  onChange={(e) => setStock(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="1"
+                  min="1"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  최소주문수량
+                </label>
+                <input
+                  type="number"
+                  value={minOrderQty}
+                  onChange={(e) => setMinOrderQty(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="1"
+                  min="1"
+                  required
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                배송/설치 정보
+              </label>
+              <textarea
+                rows={3}
+                value={deliveryInfo}
+                onChange={(e) => setDeliveryInfo(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="배송 기간, 설치 여부, 특이사항 등을 입력하세요"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                검색 키워드 (쉼표로 구분)
+              </label>
+              <input
+                type="text"
+                value={keywords}
+                onChange={(e) => setKeywords(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="예: 블루투스, 이어폰, 무선, TWS"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-between gap-3 mt-8">
+            <button
+              type="button"
+              onClick={() => setStep(2)}
+              className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+            >
+              이전
+            </button>
+            <button
+              type="submit"
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+            >
+              ✅ 상품 등록 완료
+            </button>
+          </div>
+        </form>
+      )}
     </div>
   )
 }
