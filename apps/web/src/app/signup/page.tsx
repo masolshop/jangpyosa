@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { apiFetch } from "@/lib/api";
 
@@ -17,7 +17,7 @@ interface InvitationInfo {
   expiresAt: string;
 }
 
-export default function SignupPage() {
+function SignupContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const inviteCode = searchParams.get("invite");
@@ -1227,5 +1227,20 @@ export default function SignupPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={
+      <div className="container">
+        <div className="card" style={{ maxWidth: 600, margin: "40px auto", textAlign: "center" }}>
+          <i className="fas fa-spinner fa-spin" style={{ fontSize: 48, color: "#0070f3" }}></i>
+          <h2 style={{ marginTop: 16 }}>로딩 중...</h2>
+        </div>
+      </div>
+    }>
+      <SignupContent />
+    </Suspense>
   );
 }
