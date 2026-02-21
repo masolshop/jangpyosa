@@ -351,7 +351,7 @@ export default function ProductRegisterPage() {
             연계고용 감면이 인정되는 계약 유형을 선택하세요
           </p>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+          <div className="grid grid-cols-3 gap-4 mb-4">
             {CONTRACT_TYPES.map(type => (
               <label key={type.value} className="flex items-start gap-4 p-5 border-2 border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all">
                 <input
