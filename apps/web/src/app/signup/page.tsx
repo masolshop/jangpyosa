@@ -178,7 +178,7 @@ function SignupContent() {
     setStep("form");
   };
 
-  // 초대받은 사람 회원가입
+  // 초대받은 사람 회원가입 (비밀번호 자동 생성)
   async function onInvitedSignup() {
     setMsg("");
 
@@ -192,16 +192,6 @@ function SignupContent() {
       return;
     }
 
-    if (!password || password.length < 8) {
-      setMsg("비밀번호는 8자 이상이어야 합니다");
-      return;
-    }
-
-    if (password !== passwordConfirm) {
-      setMsg("비밀번호가 일치하지 않습니다");
-      return;
-    }
-
     if (!privacyAgreed) {
       setMsg("개인정보 활용 동의는 필수입니다");
       return;
@@ -210,13 +200,16 @@ function SignupContent() {
     setLoading(true);
 
     try {
+      // 비밀번호 자동 생성 (핸드폰 번호 뒤 8자리)
+      const autoPassword = phone.replace(/\D/g, "").slice(-8);
+
       const res = await fetch("/api/auth/signup-invited", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           inviteCode: inviteCode,
           phone,
-          password,
+          password: autoPassword,
           name,
           email,
           managerName,
@@ -238,7 +231,7 @@ function SignupContent() {
       localStorage.setItem("accessToken", data.accessToken);
       localStorage.setItem("user", JSON.stringify(data.user));
 
-      alert(`✅ ${data.user.company.name}의 팀원으로 가입되었습니다!`);
+      alert(`✅ ${data.user.company.name}의 팀원으로 가입되었습니다!\n\n로그인 정보:\n- ID: ${phone}\n- 비밀번호: ${autoPassword}\n\n비밀번호는 핸드폰 번호 뒤 8자리입니다.`);
       router.push("/dashboard");
     } catch (error) {
       console.error("Invited signup error:", error);
@@ -478,7 +471,7 @@ function SignupContent() {
               <p style={{ margin: 0, fontSize: 14, color: "#1e40af", lineHeight: 1.6 }}>
                 <strong>📝 회원가입 안내</strong><br/>
                 아래 정보를 입력하시면 {invitationInfo.companyName}의 팀원으로 가입됩니다.<br/>
-                비밀번호는 본인이 직접 설정하시며, 이후 로그인 시 사용됩니다.
+                <strong style={{ color: "#ef4444" }}>비밀번호는 핸드폰 번호 뒤 8자리로 자동 설정됩니다.</strong>
               </p>
             </div>
 
@@ -492,29 +485,16 @@ function SignupContent() {
                 placeholder="홍길동"
               />
 
-              <label>핸드폰 번호 * (로그인 ID로 사용됩니다)</label>
+              <label>핸드폰 번호 * (로그인 ID 및 비밀번호로 사용됩니다)</label>
               <input
                 type="tel"
                 value={phone}
                 onChange={handlePhoneChange}
                 placeholder="010-1234-5678"
               />
-
-              <label>비밀번호 * (8자 이상)</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="비밀번호 입력"
-              />
-
-              <label>비밀번호 확인 *</label>
-              <input
-                type="password"
-                value={passwordConfirm}
-                onChange={(e) => setPasswordConfirm(e.target.value)}
-                placeholder="비밀번호 재입력"
-              />
+              <p style={{ margin: "8px 0 0 0", fontSize: 13, color: "#ef4444" }}>
+                ⚠️ 비밀번호는 핸드폰 번호 뒤 8자리로 자동 설정됩니다.
+              </p>
 
               <label>이메일 (선택)</label>
               <input
