@@ -270,4 +270,274 @@ router.delete("/invite/:id", authMiddleware, async (req: any, res: any) => {
   }
 });
 
+/**
+ * GET /api/team/members
+ * 팀원 목록 조회
+ */
+router.get("/members", authMiddleware, async (req: any, res: any) => {
+  try {
+    const { userId } = req;
+
+    // 현재 사용자의 회사 조회
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { companyId: true }
+    });
+
+    if (!user?.companyId) {
+      return res.status(404).json({ error: "소속 회사가 없습니다" });
+    }
+
+    // 팀원 목록 조회
+    const members = await prisma.user.findMany({
+      where: { companyId: user.companyId },
+      select: {
+        id: true,
+        name: true,
+        phone: true,
+        email: true,
+        username: true,
+        managerName: true,
+        managerTitle: true,
+        managerEmail: true,
+        managerPhone: true,
+        role: true,
+        isCompanyOwner: true,
+        createdAt: true,
+        updatedAt: true
+      },
+      orderBy: [
+        { isCompanyOwner: 'desc' }, // 소유자 먼저
+        { createdAt: 'asc' } // 그 다음 가입일순
+      ]
+    });
+
+    return res.json({
+      success: true,
+      members
+    });
+  } catch (error) {
+    console.error("Error fetching members:", error);
+    return res.status(500).json({ error: "팀원 목록 조회 중 오류가 발생했습니다" });
+  }
+});
+
+/**
+ * PUT /api/team/members/:id
+ * 팀원 정보 수정
+ */
+router.put("/members/:id", authMiddleware, async (req: any, res: any) => {
+  try {
+    const { userId } = req;
+    const { id } = req.params;
+    const { name, email, managerName, managerTitle, managerEmail, managerPhone } = req.body;
+
+    // 현재 사용자의 회사 조회
+    const currentUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { companyId: true, name: true }
+    });
+
+    if (!currentUser?.companyId) {
+      return res.status(404).json({ error: "소속 회사가 없습니다" });
+    }
+
+    // 수정할 팀원 조회
+    const targetUser = await prisma.user.findUnique({
+      where: { id },
+      select: { companyId: true, isCompanyOwner: true }
+    });
+
+    if (!targetUser) {
+      return res.status(404).json({ error: "팀원을 찾을 수 없습니다" });
+    }
+
+    if (targetUser.companyId !== currentUser.companyId) {
+      return res.status(403).json({ error: "다른 회사의 팀원은 수정할 수 없습니다" });
+    }
+
+    // 팀원 정보 업데이트
+    const updated = await prisma.user.update({
+      where: { id },
+      data: {
+        name,
+        email,
+        managerName,
+        managerTitle,
+        managerEmail,
+        managerPhone
+      }
+    });
+
+    // 활동 로그 기록
+    await prisma.activityLog.create({
+      data: {
+        companyId: currentUser.companyId,
+        userId: userId,
+        userName: currentUser.name,
+        action: "UPDATE",
+        targetType: "TEAM_MEMBER",
+        targetId: updated.id,
+        targetName: updated.name,
+        details: JSON.stringify({
+          changes: { name, email, managerName, managerTitle, managerEmail, managerPhone }
+        })
+      }
+    });
+
+    return res.json({
+      success: true,
+      member: {
+        id: updated.id,
+        name: updated.name,
+        email: updated.email,
+        managerName: updated.managerName,
+        managerTitle: updated.managerTitle,
+        managerEmail: updated.managerEmail,
+        managerPhone: updated.managerPhone
+      }
+    });
+  } catch (error) {
+    console.error("Error updating member:", error);
+    return res.status(500).json({ error: "팀원 정보 수정 중 오류가 발생했습니다" });
+  }
+});
+
+/**
+ * DELETE /api/team/members/:id
+ * 팀원 삭제
+ */
+router.delete("/members/:id", authMiddleware, async (req: any, res: any) => {
+  try {
+    const { userId } = req;
+    const { id } = req.params;
+
+    // 자기 자신 삭제 방지
+    if (userId === id) {
+      return res.status(400).json({ error: "본인은 삭제할 수 없습니다" });
+    }
+
+    // 현재 사용자의 회사 조회
+    const currentUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { companyId: true, name: true }
+    });
+
+    if (!currentUser?.companyId) {
+      return res.status(404).json({ error: "소속 회사가 없습니다" });
+    }
+
+    // 삭제할 팀원 조회
+    const targetUser = await prisma.user.findUnique({
+      where: { id },
+      select: { companyId: true, isCompanyOwner: true, name: true }
+    });
+
+    if (!targetUser) {
+      return res.status(404).json({ error: "팀원을 찾을 수 없습니다" });
+    }
+
+    if (targetUser.companyId !== currentUser.companyId) {
+      return res.status(403).json({ error: "다른 회사의 팀원은 삭제할 수 없습니다" });
+    }
+
+    // 회사 소유자 삭제 방지
+    if (targetUser.isCompanyOwner) {
+      return res.status(400).json({ error: "회사 소유자는 삭제할 수 없습니다" });
+    }
+
+    // 활동 로그 먼저 기록 (삭제 전)
+    await prisma.activityLog.create({
+      data: {
+        companyId: currentUser.companyId,
+        userId: userId,
+        userName: currentUser.name,
+        action: "DELETE",
+        targetType: "TEAM_MEMBER",
+        targetId: id,
+        targetName: targetUser.name,
+        details: JSON.stringify({
+          deletedUser: {
+            id,
+            name: targetUser.name
+          }
+        })
+      }
+    });
+
+    // 팀원 삭제 (companyId를 null로 설정하여 소속 해제)
+    await prisma.user.update({
+      where: { id },
+      data: {
+        companyId: null,
+        isCompanyOwner: false
+      }
+    });
+
+    return res.json({ 
+      success: true, 
+      message: "팀원이 삭제되었습니다" 
+    });
+  } catch (error) {
+    console.error("Error deleting member:", error);
+    return res.status(500).json({ error: "팀원 삭제 중 오류가 발생했습니다" });
+  }
+});
+
+/**
+ * GET /api/team/activity-log
+ * 활동 로그 조회
+ */
+router.get("/activity-log", authMiddleware, async (req: any, res: any) => {
+  try {
+    const { userId } = req;
+    const { limit = 50, offset = 0 } = req.query;
+
+    // 현재 사용자의 회사 조회
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { companyId: true }
+    });
+
+    if (!user?.companyId) {
+      return res.status(404).json({ error: "소속 회사가 없습니다" });
+    }
+
+    // 활동 로그 조회
+    const logs = await prisma.activityLog.findMany({
+      where: { companyId: user.companyId },
+      orderBy: { createdAt: 'desc' },
+      take: parseInt(limit as string),
+      skip: parseInt(offset as string)
+    });
+
+    // 전체 로그 개수
+    const total = await prisma.activityLog.count({
+      where: { companyId: user.companyId }
+    });
+
+    return res.json({
+      success: true,
+      logs: logs.map(log => ({
+        id: log.id,
+        userId: log.userId,
+        userName: log.userName,
+        action: log.action,
+        targetType: log.targetType,
+        targetId: log.targetId,
+        targetName: log.targetName,
+        details: log.details ? JSON.parse(log.details) : null,
+        ipAddress: log.ipAddress,
+        createdAt: log.createdAt
+      })),
+      total,
+      limit: parseInt(limit as string),
+      offset: parseInt(offset as string)
+    });
+  } catch (error) {
+    console.error("Error fetching activity log:", error);
+    return res.status(500).json({ error: "활동 로그 조회 중 오류가 발생했습니다" });
+  }
+});
+
 export default router;

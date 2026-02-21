@@ -156,6 +156,14 @@ export default function Sidebar() {
               기업장애인고용관리_실무자용
             </div>
             <MenuItem
+              href="/dashboard/company"
+              label="기업 대시보드"
+              icon="🏢"
+              active={isActive("/dashboard/company")}
+              requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]}
+              currentRole={userRole}
+            />
+            <MenuItem
               href="/dashboard/employees"
               label="장애인 직원 등록·관리"
               icon="👥"
@@ -184,14 +192,6 @@ export default function Sidebar() {
               label="회사 공지사항 관리"
               icon="📢"
               active={isActive("/dashboard/announcements")}
-              requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]}
-              currentRole={userRole}
-            />
-            <MenuItem
-              href="/dashboard/team"
-              label="팀원 초대"
-              icon="👥➕"
-              active={isActive("/dashboard/team")}
               requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]}
               currentRole={userRole}
             />

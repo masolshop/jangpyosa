@@ -82,6 +82,7 @@ model Company {
   supplierProfile SupplierProfile?
   invitations     TeamInvitation[] // 🆕 초대 코드 목록
   announcements   CompanyAnnouncement[] // 🆕 회사 공지사항
+  activityLogs    ActivityLog[]    // 🆕 활동 로그
 }
 
 model SupplierRegistry {
@@ -465,6 +466,27 @@ model TeamInvitation {
   @@index([inviteCode])
   @@index([companyId])
   @@index([expiresAt, isUsed])
+}
+
+// 🆕 활동 로그 (팀원들의 모든 활동 기록)
+model ActivityLog {
+  id          String   @id @default(cuid())
+  companyId   String   // 회사 ID
+  userId      String   // 행동한 사람 User ID
+  userName    String   // 행동한 사람 이름 (스냅샷)
+  action      String   // CREATE, UPDATE, DELETE, LOGIN, LOGOUT, INVITE, etc.
+  targetType  String   // EMPLOYEE, ANNOUNCEMENT, TEAM_MEMBER, COMPANY, MONTHLY_DATA, etc.
+  targetId    String?  // 대상 ID (optional)
+  targetName  String?  // 대상 이름 (스냅샷)
+  details     String?  // 추가 정보 (JSON)
+  ipAddress   String?  // IP 주소
+  createdAt   DateTime @default(now())
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  @@index([companyId, createdAt])
+  @@index([userId, createdAt])
+  @@index([action])
+  @@index([targetType, targetId])
 }
 
 // 견적 문의 (장표사닷컴으로 전달)
