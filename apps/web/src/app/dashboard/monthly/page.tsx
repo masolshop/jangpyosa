@@ -541,7 +541,7 @@ export default function MonthlyManagementPage() {
                 <th style={tableHeaderStyle}>인정수</th>
                 <th style={tableHeaderStyle}>미달/초과</th>
                 <th style={tableHeaderStyle}>부담금</th>
-                <th style={tableHeaderStyle}>장려금</th>
+                <th style={{ ...tableHeaderStyle, minWidth: 80, maxWidth: 100 }}>장려금</th>
                 <th style={tableHeaderStyle}>순액</th>
               </tr>
             </thead>
@@ -593,14 +593,17 @@ export default function MonthlyManagementPage() {
                     style={{
                       ...tableCellStyle,
                       color: data.incentive > 0 ? "#059669" : "#666",
+                      minWidth: 80,
+                      maxWidth: 100,
+                      fontSize: 12,
                     }}
                   >
                     {data.incentive > 0 ? (
                       <>
                         +{(data.incentive / 10000).toFixed(0)}만
                         {data.femaleIncentiveCount && data.femaleIncentiveCount > 0 && (
-                          <><br /><span style={{ fontSize: 11, color: "#9ca3af" }}>
-                            (여성 {data.femaleIncentiveCount}명: +{(data.femaleIncentiveAmount! / 10000).toFixed(0)}만)
+                          <><br /><span style={{ fontSize: 10, color: "#9ca3af" }}>
+                            (여 {data.femaleIncentiveCount}명: +{(data.femaleIncentiveAmount! / 10000).toFixed(0)}만)
                           </span></>
                         )}
                       </>
@@ -629,7 +632,7 @@ export default function MonthlyManagementPage() {
                 <td style={{ ...tableCellStyle, color: "#dc2626" }}>
                   -{(yearlyLevy / 10000).toFixed(0)}만
                 </td>
-                <td style={{ ...tableCellStyle, color: "#059669" }}>
+                <td style={{ ...tableCellStyle, color: "#059669", minWidth: 80, maxWidth: 100 }}>
                   +{(yearlyIncentive / 10000).toFixed(0)}만
                 </td>
                 <td

@@ -381,14 +381,11 @@ export default function Sidebar() {
           )}
         </nav>
 
-        {/* 푸터 */}
+        {/* 푸터 - 맨 아래에 배치 */}
         <div
           style={{
-            position: "absolute",
-            bottom: 20,
-            left: 20,
-            right: 20,
-            fontSize: 11,
+            marginTop: 40,
+            fontSize: 22,
             color: "#666",
             borderTop: "1px solid #333",
             paddingTop: 12,
