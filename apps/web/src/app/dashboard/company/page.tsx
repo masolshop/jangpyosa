@@ -545,7 +545,18 @@ export default function CompanyDashboardPage() {
                 초대 코드: {newInvitation.inviteCode}
               </p>
               <p style={{ margin: "8px 0 0 0", fontSize: 14, color: "#1e40af" }}>
-                초대 링크: {newInvitation.inviteUrl}
+                초대 링크: <a 
+                  href={newInvitation.inviteUrl} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  style={{ 
+                    color: "#3b82f6", 
+                    textDecoration: "underline",
+                    fontWeight: "bold"
+                  }}
+                >
+                  {newInvitation.inviteUrl}
+                </a>
               </p>
               <button
                 onClick={() => copyToClipboard(newInvitation.inviteUrl, newInvitation.inviteCode)}
@@ -591,6 +602,19 @@ export default function CompanyDashboardPage() {
                       </p>
                       <p style={{ margin: "4px 0 0 0", fontSize: 14, color: "#666" }}>
                         만료일: {formatDate(inv.expiresAt)}
+                      </p>
+                      <p style={{ margin: "4px 0 0 0", fontSize: 13 }}>
+                        <a 
+                          href={inv.inviteUrl} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          style={{ 
+                            color: "#3b82f6", 
+                            textDecoration: "underline"
+                          }}
+                        >
+                          {inv.inviteUrl}
+                        </a>
                       </p>
                     </div>
                     <div style={{ display: "flex", gap: 8 }}>
