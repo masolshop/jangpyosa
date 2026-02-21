@@ -384,9 +384,9 @@ export default function Sidebar() {
         {/* 푸터 - 맨 아래에 배치 */}
         <div
           style={{
-            marginTop: 40,
+            marginTop: 28,
             fontSize: 22,
-            color: "#666",
+            color: "#ccc",
             borderTop: "1px solid #333",
             paddingTop: 12,
             textAlign: "center",
