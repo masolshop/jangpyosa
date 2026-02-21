@@ -411,23 +411,6 @@ function SignupContent() {
       return (
         <div className="container">
           <div className="card" style={{ maxWidth: 600, margin: "40px auto" }}>
-            {/* 뒤로가기 버튼 */}
-            <div
-              onClick={() => router.push("/signup")}
-              style={{
-                background: "#0070f3",
-                color: "white",
-                fontWeight: 600,
-                padding: "8px 16px",
-                borderRadius: 8,
-                cursor: "pointer",
-                display: "inline-block",
-                marginBottom: 16,
-              }}
-            >
-              ← 뒤로가기
-            </div>
-
             <div style={{ textAlign: "center", marginBottom: 24, paddingBottom: 20, borderBottom: "2px solid #e5e7eb" }}>
               <h1 style={{ fontSize: 28, color: "#1e40af", margin: 0, marginBottom: 8 }}>🎉 {invitationInfo.companyName}</h1>
               <p style={{ fontSize: 18, color: "#0070f3", fontWeight: 600, margin: 0 }}>팀원 초대 회원가입</p>
