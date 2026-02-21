@@ -816,7 +816,6 @@ r.post("/verify-company", async (req, res) => {
     // 기업 확인
     const company = await prisma.company.findUnique({
       where: { bizNo: cleanBizNo },
-      include: { buyerProfile: true },
       select: {
         id: true,
         name: true,
