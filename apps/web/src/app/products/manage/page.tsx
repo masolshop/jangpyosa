@@ -117,15 +117,15 @@ export default function ProductManagePage() {
       <div className="mb-8 flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-800 mb-2">
-            📦 내 상품 관리
+            🏭 연계고용감면 상품관리
           </h1>
-          <p className="text-gray-600">등록한 상품을 관리하고 수정할 수 있습니다</p>
+          <p className="text-gray-600">상품을 등록하고 관리할 수 있습니다</p>
         </div>
         <button
           onClick={() => router.push('/products/register')}
-          className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+          className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-bold text-lg shadow-lg"
         >
-          + 새 상품 등록
+          ➕ 새 상품 등록
         </button>
       </div>
 

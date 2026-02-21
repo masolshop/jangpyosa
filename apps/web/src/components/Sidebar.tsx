@@ -245,26 +245,12 @@ export default function Sidebar() {
               연계고용도급계약센터
             </div>
             {userRole === "SUPPLIER" && (
-              <>
-                <MenuItem
-                  href="/supplier/profile"
-                  label="연계고용감면상품관리"
-                  icon="🏭"
-                  active={isActive("/supplier/profile")}
-                />
-                <MenuItem
-                  href="/products/manage"
-                  label="내상품관리"
-                  icon="📦"
-                  active={isActive("/products/manage")}
-                />
-                <MenuItem
-                  href="/products/register"
-                  label="상품등록"
-                  icon="➕"
-                  active={isActive("/products/register")}
-                />
-              </>
+              <MenuItem
+                href="/products/manage"
+                label="연계고용감면상품관리"
+                icon="🏭"
+                active={isActive("/products/manage") || isActive("/supplier/profile")}
+              />
             )}
             <MenuItem
               href="/catalog"
