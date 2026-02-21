@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 
-// Build: 2026-02-21-v4 - Added RENTAL type (음식물처리기, 플라스틱처리기)
+// Build: 2026-02-21-v5 - Added form submit handler and state management
 
 const CONTRACT_TYPES = [
   {
@@ -29,6 +29,32 @@ const CONTRACT_TYPES = [
 
 export default function ProductRegisterPage() {
   const [contractType, setContractType] = useState('')
+  const [productName, setProductName] = useState('')
+  const [shortIntro, setShortIntro] = useState('')
+  const [description, setDescription] = useState('')
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    // 필수 항목 검증
+    if (!contractType) {
+      alert('계약 유형을 선택해주세요')
+      return
+    }
+    if (!productName.trim()) {
+      alert('상품명을 입력해주세요')
+      return
+    }
+    if (!description.trim()) {
+      alert('상세 설명을 입력해주세요')
+      return
+    }
+
+    // 다음 단계로 이동 (임시로 alert)
+    alert(`✅ 저장되었습니다!\n\n계약 유형: ${CONTRACT_TYPES.find(t => t.value === contractType)?.label}\n상품명: ${productName}\n한줄 소개: ${shortIntro || '(없음)'}\n상세 설명: ${description.substring(0, 50)}...`)
+    
+    // TODO: 실제로는 여기서 API 호출하거나 다음 페이지로 이동
+  }
 
   return (
     <div className="max-w-5xl mx-auto p-8">
@@ -69,7 +95,7 @@ export default function ProductRegisterPage() {
       </div>
 
       {/* Form */}
-      <form className="bg-white rounded-lg shadow-md p-8">
+      <form className="bg-white rounded-lg shadow-md p-8" onSubmit={handleSubmit}>
         {/* Step 1: Contract Type Selection */}
         <div className="mb-8">
           <h2 className="text-2xl font-bold text-gray-800 mb-2">
@@ -156,6 +182,8 @@ export default function ProductRegisterPage() {
                 <input
                   type="text"
                   required
+                  value={productName}
+                  onChange={(e) => setProductName(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="예: A4 인쇄 서비스"
                 />
@@ -168,6 +196,8 @@ export default function ProductRegisterPage() {
                 <input
                   type="text"
                   maxLength={100}
+                  value={shortIntro}
+                  onChange={(e) => setShortIntro(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="예: 고품질 A4 인쇄 및 제본 서비스"
                 />
@@ -180,6 +210,8 @@ export default function ProductRegisterPage() {
                 <textarea
                   required
                   rows={6}
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="상품에 대한 상세한 설명을 입력하세요"
                 />
