@@ -1,28 +1,9 @@
 import { Router } from "express";
 import { PrismaClient } from "@prisma/client";
-import jwt from "jsonwebtoken";
+import { requireAuth } from "../middleware/auth.js";
 
 const router = Router();
 const prisma = new PrismaClient();
-const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
-
-// 인증 미들웨어
-function authMiddleware(req: any, res: any, next: any) {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return res.status(401).json({ error: "Unauthorized" });
-  }
-  
-  const token = authHeader.substring(7);
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET) as any;
-    req.userId = decoded.userId;
-    req.userRole = decoded.role;
-    next();
-  } catch (error) {
-    return res.status(401).json({ error: "Invalid token" });
-  }
-}
 
 // 랜덤 초대 코드 생성 (8자리 영문+숫자)
 function generateInviteCode(): string {
@@ -43,9 +24,10 @@ function generateInviteCode(): string {
  *   "role": "BUYER" | "SUPPLIER"  // 초대할 팀원의 역할
  * }
  */
-router.post("/invite", authMiddleware, async (req: any, res: any) => {
+router.post("/invite", requireAuth, async (req: any, res: any) => {
   try {
-    const { userId, userRole } = req;
+    const userId = req.user!.id;
+    const userRole = req.user!.role;
     const { role } = req.body;
 
     // 역할 검증
@@ -197,9 +179,9 @@ router.get("/invite/:code", async (req: any, res: any) => {
  * GET /api/team/invitations
  * 내가 생성한 초대 코드 목록 조회
  */
-router.get("/invitations", authMiddleware, async (req: any, res: any) => {
+router.get("/invitations", requireAuth, async (req: any, res: any) => {
   try {
-    const { userId } = req;
+    const userId = req.user!.id;
 
     const invitations = await prisma.teamInvitation.findMany({
       where: { invitedBy: userId },
@@ -238,9 +220,9 @@ router.get("/invitations", authMiddleware, async (req: any, res: any) => {
  * DELETE /api/team/invite/:id
  * 초대 코드 삭제 (취소)
  */
-router.delete("/invite/:id", authMiddleware, async (req: any, res: any) => {
+router.delete("/invite/:id", requireAuth, async (req: any, res: any) => {
   try {
-    const { userId } = req;
+    const userId = req.user!.id;
     const { id } = req.params;
 
     const invitation = await prisma.teamInvitation.findUnique({
@@ -274,9 +256,9 @@ router.delete("/invite/:id", authMiddleware, async (req: any, res: any) => {
  * GET /api/team/members
  * 팀원 목록 조회
  */
-router.get("/members", authMiddleware, async (req: any, res: any) => {
+router.get("/members", requireAuth, async (req: any, res: any) => {
   try {
-    const { userId } = req;
+    const userId = req.user!.id;
 
     // 현재 사용자의 회사 조회
     const user = await prisma.user.findUnique({
@@ -326,9 +308,9 @@ router.get("/members", authMiddleware, async (req: any, res: any) => {
  * PUT /api/team/members/:id
  * 팀원 정보 수정
  */
-router.put("/members/:id", authMiddleware, async (req: any, res: any) => {
+router.put("/members/:id", requireAuth, async (req: any, res: any) => {
   try {
-    const { userId } = req;
+    const userId = req.user!.id;
     const { id } = req.params;
     const { name, email, managerName, managerTitle, managerEmail, managerPhone } = req.body;
 
@@ -407,9 +389,9 @@ router.put("/members/:id", authMiddleware, async (req: any, res: any) => {
  * DELETE /api/team/members/:id
  * 팀원 삭제
  */
-router.delete("/members/:id", authMiddleware, async (req: any, res: any) => {
+router.delete("/members/:id", requireAuth, async (req: any, res: any) => {
   try {
-    const { userId } = req;
+    const userId = req.user!.id;
     const { id } = req.params;
 
     // 자기 자신 삭제 방지
@@ -488,9 +470,9 @@ router.delete("/members/:id", authMiddleware, async (req: any, res: any) => {
  * GET /api/team/activity-log
  * 활동 로그 조회
  */
-router.get("/activity-log", authMiddleware, async (req: any, res: any) => {
+router.get("/activity-log", requireAuth, async (req: any, res: any) => {
   try {
-    const { userId } = req;
+    const userId = req.user!.id;
     const { limit = 50, offset = 0 } = req.query;
 
     // 현재 사용자의 회사 조회
