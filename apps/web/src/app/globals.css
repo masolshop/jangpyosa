@@ -23,54 +23,9 @@ a:hover {
   text-decoration: underline;
 }
 
-button {
-  background: #0070f3;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: all 0.2s;
-  font-weight: 500;
-}
+/* Button styles removed - using inline styles or Tailwind */
 
-button:hover {
-  background: #0051cc;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0, 112, 243, 0.3);
-}
-
-button:active {
-  transform: translateY(0);
-}
-
-button:disabled {
-  background: #ccc;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
-}
-
-input,
-textarea,
-select {
-  width: 100%;
-  padding: 10px;
-  margin: 8px 0;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 14px;
-  transition: border-color 0.2s;
-}
-
-input:focus,
-textarea:focus,
-select:focus {
-  outline: none;
-  border-color: #0070f3;
-  box-shadow: 0 0 0 3px rgba(0, 112, 243, 0.1);
-}
+/* Input styles removed - using inline styles or Tailwind */
 
 .container {
   max-width: 1200px;
