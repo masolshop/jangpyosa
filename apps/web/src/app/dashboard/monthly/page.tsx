@@ -258,8 +258,26 @@ export default function MonthlyManagementPage() {
 
       if (!res.ok) throw new Error("자동 저장 실패");
 
-      // 데이터 다시 불러오기 (장려금 재계산 포함)
-      await fetchMonthlyData();
+      const result = await res.json();
+      
+      // 서버에서 받은 장려금 데이터로만 업데이트 (초기화 방지)
+      if (result.data && Array.isArray(result.data)) {
+        setMonthlyData((prev) =>
+          prev.map((data) => {
+            const serverData = result.data.find((d: any) => d.month === data.month);
+            if (serverData) {
+              return {
+                ...data,
+                incentive: serverData.incentive || 0,
+                femaleIncentiveCount: serverData.femaleIncentiveCount || 0,
+                femaleIncentiveAmount: serverData.femaleIncentiveAmount || 0,
+                netAmount: serverData.incentive - data.levy,
+              };
+            }
+            return data;
+          })
+        );
+      }
     } catch (e: any) {
       console.error("자동 저장 오류:", e.message);
     }
@@ -528,21 +546,21 @@ export default function MonthlyManagementPage() {
             style={{
               width: "100%",
               borderCollapse: "collapse",
-              fontSize: 14,
-              minWidth: 1200,
+              fontSize: 13,
+              tableLayout: "fixed",
             }}
           >
             <thead>
               <tr style={{ background: "#f3f4f6" }}>
-                <th style={tableHeaderStyle}>월</th>
-                <th style={tableHeaderStyle}>상시근로자</th>
-                <th style={tableHeaderStyle}>장애인수</th>
-                <th style={tableHeaderStyle}>의무고용</th>
-                <th style={tableHeaderStyle}>인정수</th>
-                <th style={tableHeaderStyle}>미달/초과</th>
-                <th style={tableHeaderStyle}>부담금</th>
-                <th style={{ ...tableHeaderStyle, minWidth: 80, maxWidth: 100 }}>장려금</th>
-                <th style={tableHeaderStyle}>순액</th>
+                <th style={{ ...tableHeaderStyle, width: "6%" }}>월</th>
+                <th style={{ ...tableHeaderStyle, width: "11%" }}>상시근로자</th>
+                <th style={{ ...tableHeaderStyle, width: "10%" }}>장애인수</th>
+                <th style={{ ...tableHeaderStyle, width: "10%" }}>의무고용</th>
+                <th style={{ ...tableHeaderStyle, width: "10%" }}>인정수</th>
+                <th style={{ ...tableHeaderStyle, width: "10%" }}>미달/초과</th>
+                <th style={{ ...tableHeaderStyle, width: "13%" }}>부담금</th>
+                <th style={{ ...tableHeaderStyle, width: "13%" }}>장려금</th>
+                <th style={{ ...tableHeaderStyle, width: "13%" }}>순액</th>
               </tr>
             </thead>
             <tbody>
