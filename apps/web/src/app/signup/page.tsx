@@ -95,7 +95,7 @@ export default function SignupPage() {
     setCompanyInfo(null);
     
     try {
-      const response = await fetch(`/api/bizno/verify?bizNo=${cleanBizNo}`);
+      const response = await fetch(`/api/apick/bizno/${cleanBizNo}`);
       const data = await response.json();
       
       if (!response.ok) {
