@@ -433,11 +433,15 @@ export default function EmployeeAttendancePage() {
       const text = `공지사항. ${announcement.priority === 'URGENT' ? '긴급. ' : ''}${announcement.title}. ${announcement.content}`;
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = 'ko-KR';
-      utterance.rate = 0.9; // 약간 느리게
+      utterance.rate = 1.0; // 정상 속도 (더 또렷하게)
       utterance.pitch = 1.0;
-      utterance.volume = 1.0;
+      utterance.volume = 1.0; // 최대 음량
       
-      utterance.onend = () => {
+      utterance.onend = async () => {
+        // 음성 재생 완료 시 자동으로 읽음 처리
+        if (!announcement.isRead) {
+          await markAnnouncementAsRead(announcement.id);
+        }
         currentIndex++;
         setTimeout(speakNext, 500); // 다음 공지 사이에 0.5초 간격
       };
@@ -477,11 +481,15 @@ export default function EmployeeAttendancePage() {
     const text = `공지사항. ${announcement.priority === 'URGENT' ? '긴급. ' : ''}${announcement.title}. ${announcement.content}`;
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = 'ko-KR';
-    utterance.rate = 0.9;
+    utterance.rate = 1.0; // 정상 속도 (더 또렷하게)
     utterance.pitch = 1.0;
-    utterance.volume = 1.0;
+    utterance.volume = 1.0; // 최대 음량
     
-    utterance.onend = () => {
+    utterance.onend = async () => {
+      // 음성 재생 완료 시 자동으로 읽음 처리
+      if (!announcement.isRead) {
+        await markAnnouncementAsRead(announcement.id);
+      }
       setIsSpeaking(false);
       setCurrentSpeakingId(null);
     };
