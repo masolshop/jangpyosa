@@ -165,54 +165,66 @@ export default function EmployeeSignupPage() {
             기업에 등록된 장애인 직원만 가입할 수 있습니다
           </p>
           
-          {/* 진행 단계 표시 */}
-          <div className="flex justify-center items-center space-x-3">
-            {/* Step 1 */}
-            <div className="flex flex-col items-center">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
-                step >= 1 ? "bg-blue-500 text-white" : "bg-gray-300 text-gray-600"
-              }`}>
-                1
+          {/* 진행 단계 표시 - 박스 형태 */}
+          <div className="grid grid-cols-3 gap-3">
+            {/* Step 1: 기업확인 */}
+            <div className={`p-4 rounded-lg border-2 transition-all cursor-default ${
+              step >= 1 
+                ? "bg-blue-50 border-blue-500" 
+                : "bg-gray-50 border-gray-300"
+            }`}>
+              <div className="flex flex-col items-center">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold mb-2 ${
+                  step >= 1 ? "bg-blue-500 text-white" : "bg-gray-300 text-gray-600"
+                }`}>
+                  1
+                </div>
+                <span className={`text-xs font-bold ${
+                  step >= 1 ? "text-blue-700" : "text-gray-500"
+                }`}>
+                  기업확인
+                </span>
               </div>
-              <span className={`text-xs mt-1 font-medium ${
-                step >= 1 ? "text-blue-600" : "text-gray-500"
-              }`}>
-                기업확인
-              </span>
             </div>
             
-            {/* 연결선 1-2 */}
-            <div className={`w-12 h-1 mb-5 ${step >= 2 ? "bg-blue-500" : "bg-gray-300"}`} />
-            
-            {/* Step 2 */}
-            <div className="flex flex-col items-center">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
-                step >= 2 ? "bg-blue-500 text-white" : "bg-gray-300 text-gray-600"
-              }`}>
-                2
+            {/* Step 2: 직원확인 */}
+            <div className={`p-4 rounded-lg border-2 transition-all cursor-default ${
+              step >= 2 
+                ? "bg-blue-50 border-blue-500" 
+                : "bg-gray-50 border-gray-300"
+            }`}>
+              <div className="flex flex-col items-center">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold mb-2 ${
+                  step >= 2 ? "bg-blue-500 text-white" : "bg-gray-300 text-gray-600"
+                }`}>
+                  2
+                </div>
+                <span className={`text-xs font-bold ${
+                  step >= 2 ? "text-blue-700" : "text-gray-500"
+                }`}>
+                  직원확인
+                </span>
               </div>
-              <span className={`text-xs mt-1 font-medium ${
-                step >= 2 ? "text-blue-600" : "text-gray-500"
-              }`}>
-                직원확인
-              </span>
             </div>
             
-            {/* 연결선 2-3 */}
-            <div className={`w-12 h-1 mb-5 ${step >= 3 ? "bg-blue-500" : "bg-gray-300"}`} />
-            
-            {/* Step 3 */}
-            <div className="flex flex-col items-center">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
-                step >= 3 ? "bg-blue-500 text-white" : "bg-gray-300 text-gray-600"
-              }`}>
-                3
+            {/* Step 3: 가입완료 */}
+            <div className={`p-4 rounded-lg border-2 transition-all cursor-default ${
+              step >= 3 
+                ? "bg-blue-50 border-blue-500" 
+                : "bg-gray-50 border-gray-300"
+            }`}>
+              <div className="flex flex-col items-center">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold mb-2 ${
+                  step >= 3 ? "bg-blue-500 text-white" : "bg-gray-300 text-gray-600"
+                }`}>
+                  3
+                </div>
+                <span className={`text-xs font-bold ${
+                  step >= 3 ? "text-blue-700" : "text-gray-500"
+                }`}>
+                  가입완료
+                </span>
               </div>
-              <span className={`text-xs mt-1 font-medium ${
-                step >= 3 ? "text-blue-600" : "text-gray-500"
-              }`}>
-                가입완료
-              </span>
             </div>
           </div>
         </div>
