@@ -307,7 +307,7 @@ export default function EmployeeSignupPage() {
                   setVerifiedCompany(null);
                   setRegistrationNumber("");
                 }}
-                className="text-xs text-blue-600 hover:underline mt-2"
+                className="text-xs text-white bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded mt-2"
               >
                 다시 입력하기
               </button>
@@ -375,7 +375,7 @@ export default function EmployeeSignupPage() {
                   setPasswordConfirm("");
                   setPrivacyAgreed(false);
                 }}
-                className="text-xs text-blue-600 hover:underline mt-2"
+                className="text-xs text-white bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded mt-2"
               >
                 다시 입력하기
               </button>
