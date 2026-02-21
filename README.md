@@ -50,12 +50,25 @@
 
 ## 🚀 현재 상태
 
-✅ **MVP 완전 구현 완료 + Phase 1 완료**
-- API 서버 실행 중: http://localhost:4000
-- 웹 서버 실행 중: http://localhost:3001
-- 공개 URL: https://3001-i9nss1cey8kihvk6alb7i-02b9cc79.sandbox.novita.ai
-- 데이터베이스: SQLite (개발 환경)
-- 초기 데이터 시딩 완료
+✅ **프로덕션 배포 완료 (AWS EC2 + HTTPS)**
+- **Production URL**: https://jangpyosa.com (메인 도메인)
+- **WWW URL**: https://www.jangpyosa.com (www 서브도메인)
+- **API 엔드포인트**: https://jangpyosa.com/api/ (Nginx 프록시)
+- **슈퍼어드민 로그인**: https://jangpyosa.com/admin/login
+- **배포 서버**: AWS EC2 (Seoul ap-northeast-2a)
+  - Instance: 32GB RAM, 8 vCPU, 640GB SSD
+  - Public IP: 43.201.0.129
+  - OS: Ubuntu 22.04
+- **웹 서버**: Node.js 20.20.0 + Next.js 14.2.35 (포트 3000)
+- **API 서버**: Node.js 20.20.0 + Express (포트 4000)
+- **프로세스 관리**: PM2 (자동 재시작, 로그 관리)
+- **리버스 프록시**: Nginx 1.18.0
+- **SSL 인증서**: Let's Encrypt (자동 갱신, 2026-05-22까지 유효)
+- **데이터베이스**: SQLite (프로덕션 환경)
+- **DNS**: Cafe24 (직접 연결, Cloudflare 미사용)
+- **보안**: HTTPS/TLS 1.2+1.3, HSTS, HTTP→HTTPS 자동 리다이렉트
+- **최종 배포 시간**: 2026-02-21 13:57 UTC (한국시간 22:57)
+- **최신 커밋**: `693fb50` - 슈퍼어드민 로그인 API URL 프록시 경로 변경
 
 ### 🎨 최근 업데이트 (2026-02-20)
 **Phase 2.2 완료: Sidebar 컴포넌트 수정 - 직원 로그인 UI 개선** 🆕
@@ -227,17 +240,64 @@ webapp/
 
 ## 🚀 빠른 시작 가이드
 
-### 현재 서버 상태 확인
+### 프로덕션 서버 관리 (AWS EC2)
 
+**SSH 접속:**
 ```bash
-# PM2로 실행 중인 서비스 확인
-cd /home/user/webapp && pm2 list
+ssh -i ~/.ssh/jangpyosa.pem ubuntu@43.201.0.129
+```
 
-# API 서버 확인
-curl http://localhost:4000/health
+**PM2 서비스 관리:**
+```bash
+# 서비스 상태 확인
+pm2 list
 
-# 웹 서버 확인
+# 로그 확인 (non-blocking)
+pm2 logs --nostream
+
+# 서비스 재시작
+pm2 restart jangpyosa-api
+pm2 restart jangpyosa-web
+pm2 restart all
+
+# 서비스 중지
+pm2 stop all
+
+# 서비스 삭제
+pm2 delete all
+```
+
+**웹 서버 테스트:**
+```bash
+# 로컬 테스트
 curl http://localhost:3000
+curl http://localhost:4000
+
+# HTTPS 외부 접속 테스트
+curl -I https://jangpyosa.com
+curl -I https://www.jangpyosa.com
+curl -I https://jangpyosa.com/admin/login
+```
+
+**Nginx 관리:**
+```bash
+# 설정 테스트
+sudo nginx -t
+
+# 재시작
+sudo systemctl restart nginx
+
+# 상태 확인
+sudo systemctl status nginx
+```
+
+**SSL 인증서 갱신 (자동):**
+```bash
+# 수동 갱신 (테스트)
+sudo certbot renew --dry-run
+
+# 실제 갱신
+sudo certbot renew
 ```
 
 ### 기능별 테스트 시나리오
@@ -321,19 +381,56 @@ URL: /employee/signup
 → /employee/attendance
 ```
 
-### 새로운 터미널에서 서버 시작 (필요 시)
+### 새로운 코드 배포 프로세스 (AWS EC2)
 
+**1. 로컬에서 코드 변경 및 푸시:**
 ```bash
-# PM2로 전체 재시작
 cd /home/user/webapp
+
+# 변경사항 커밋
+git add .
+git commit -m "설명"
+
+# GitHub에 푸시
+git push origin main
+```
+
+**2. AWS 서버에서 최신 코드 배포:**
+```bash
+# SSH 접속
+ssh -i ~/.ssh/jangpyosa.pem ubuntu@43.201.0.129
+
+# 프로젝트 디렉토리로 이동
+cd /home/ubuntu/jangpyosa
+
+# 최신 코드 가져오기 (충돌 시 stash 사용)
+git stash && git pull origin main && git stash pop || true
+
+# API 의존성 설치 및 DB 동기화
+cd apps/api && npm install
+npx prisma generate && npx prisma db push --accept-data-loss
+
+# Web 의존성 설치 및 빌드
+cd ../web && npm install
+npm run build
+
+# PM2 서비스 재시작
+cd /home/ubuntu/jangpyosa
 pm2 restart all
 
-# PM2 로그 확인
-pm2 logs --nostream
+# 상태 확인
+sleep 5 && pm2 list
+pm2 logs --nostream --lines 20
+```
 
-# 포트 충돌 시 정리
-fuser -k 3000/tcp
-fuser -k 4000/tcp
+**3. 배포 확인:**
+```bash
+# 로컬 테스트
+curl http://localhost:3000
+curl http://localhost:4000
+
+# 외부 접속 테스트
+curl -I https://jangpyosa.com
 ```
 
 ### 데이터베이스 재설정
