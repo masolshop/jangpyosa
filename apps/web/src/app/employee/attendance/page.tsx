@@ -47,9 +47,19 @@ export default function EmployeeAttendancePage() {
   const [isMounted, setIsMounted] = useState(false);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  
+  // 음성 읽기 관련 상태
+  const [autoReadEnabled, setAutoReadEnabled] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [currentSpeakingId, setCurrentSpeakingId] = useState<string | null>(null);
 
   useEffect(() => {
     setIsMounted(true);
+    // localStorage에서 자동 음성 읽기 설정 로드
+    const savedAutoRead = localStorage.getItem('autoReadAnnouncements');
+    if (savedAutoRead === 'true') {
+      setAutoReadEnabled(true);
+    }
     loadEmployeeInfo();
     loadTodayRecord();
     loadRecentRecords();
@@ -368,9 +378,133 @@ export default function EmployeeAttendancePage() {
         setAnnouncements(data.announcements || []);
         const unread = data.announcements?.filter((a: Announcement) => !a.isRead).length || 0;
         setUnreadCount(unread);
+        
+        // 자동 읽기가 활성화되어 있고, 안 읽은 공지가 있으면 자동 재생
+        if (autoReadEnabled && unread > 0) {
+          const unreadAnnouncements = data.announcements.filter((a: Announcement) => !a.isRead);
+          setTimeout(() => {
+            speakAnnouncements(unreadAnnouncements);
+          }, 1000); // 1초 딜레이 후 재생 (페이지 로드 완료 대기)
+        }
       }
     } catch (e) {
       console.error("공지사항 로드 실패:", e);
+    }
+  }
+
+  /**
+   * 자동 읽기 설정 토글
+   */
+  function toggleAutoRead() {
+    const newValue = !autoReadEnabled;
+    setAutoReadEnabled(newValue);
+    localStorage.setItem('autoReadAnnouncements', newValue.toString());
+    
+    if (newValue) {
+      setMessage("✅ 자동 음성 읽기가 활성화되었습니다");
+    } else {
+      setMessage("❌ 자동 음성 읽기가 비활성화되었습니다");
+      stopSpeaking(); // 현재 재생 중이면 중지
+    }
+    setTimeout(() => setMessage(""), 3000);
+  }
+
+  /**
+   * 여러 공지사항 순차적으로 음성 재생
+   */
+  function speakAnnouncements(announcementList: Announcement[]) {
+    if (!window.speechSynthesis || announcementList.length === 0) return;
+    
+    // 이미 재생 중이면 중지
+    stopSpeaking();
+    
+    let currentIndex = 0;
+    
+    function speakNext() {
+      if (currentIndex >= announcementList.length) {
+        setIsSpeaking(false);
+        setCurrentSpeakingId(null);
+        return;
+      }
+      
+      const announcement = announcementList[currentIndex];
+      setCurrentSpeakingId(announcement.id);
+      
+      const text = `공지사항. ${announcement.priority === 'URGENT' ? '긴급. ' : ''}${announcement.title}. ${announcement.content}`;
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'ko-KR';
+      utterance.rate = 0.9; // 약간 느리게
+      utterance.pitch = 1.0;
+      utterance.volume = 1.0;
+      
+      utterance.onend = () => {
+        currentIndex++;
+        setTimeout(speakNext, 500); // 다음 공지 사이에 0.5초 간격
+      };
+      
+      utterance.onerror = (e) => {
+        console.error("음성 재생 오류:", e);
+        currentIndex++;
+        speakNext();
+      };
+      
+      setIsSpeaking(true);
+      window.speechSynthesis.speak(utterance);
+    }
+    
+    speakNext();
+  }
+
+  /**
+   * 단일 공지사항 음성 재생
+   */
+  function speakSingleAnnouncement(announcement: Announcement) {
+    if (!window.speechSynthesis) {
+      setError("이 브라우저는 음성 재생을 지원하지 않습니다");
+      setTimeout(() => setError(""), 3000);
+      return;
+    }
+    
+    // 이미 이 공지를 재생 중이면 중지
+    if (currentSpeakingId === announcement.id) {
+      stopSpeaking();
+      return;
+    }
+    
+    // 다른 공지를 재생 중이면 중지하고 새로 시작
+    stopSpeaking();
+    
+    const text = `공지사항. ${announcement.priority === 'URGENT' ? '긴급. ' : ''}${announcement.title}. ${announcement.content}`;
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'ko-KR';
+    utterance.rate = 0.9;
+    utterance.pitch = 1.0;
+    utterance.volume = 1.0;
+    
+    utterance.onend = () => {
+      setIsSpeaking(false);
+      setCurrentSpeakingId(null);
+    };
+    
+    utterance.onerror = (e) => {
+      console.error("음성 재생 오류:", e);
+      setIsSpeaking(false);
+      setCurrentSpeakingId(null);
+    };
+    
+    setIsSpeaking(true);
+    setCurrentSpeakingId(announcement.id);
+    window.speechSynthesis.speak(utterance);
+  }
+
+  /**
+   * 음성 재생 중지
+   */
+  function stopSpeaking() {
+    if (window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+      setCurrentSpeakingId(null);
     }
   }
 
@@ -476,7 +610,7 @@ export default function EmployeeAttendancePage() {
       {/* 회사 공지사항 */}
       {announcements.length > 0 && (
         <div className="card" style={{ marginBottom: 30 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 12 }}>
             <h3 style={{ margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
               📢 회사 공지사항
               {unreadCount > 0 && (
@@ -492,6 +626,36 @@ export default function EmployeeAttendancePage() {
                 </span>
               )}
             </h3>
+            
+            {/* 자동 음성 읽기 토글 */}
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 14, color: "#6b7280" }}>🔊 자동 음성 읽기</span>
+              <button
+                onClick={toggleAutoRead}
+                style={{
+                  width: 52,
+                  height: 28,
+                  background: autoReadEnabled ? "#10b981" : "#d1d5db",
+                  borderRadius: 14,
+                  border: "none",
+                  cursor: "pointer",
+                  position: "relative",
+                  transition: "background 0.3s",
+                }}
+                aria-label={autoReadEnabled ? "자동 읽기 활성화됨" : "자동 읽기 비활성화됨"}
+              >
+                <span style={{
+                  position: "absolute",
+                  top: 2,
+                  left: autoReadEnabled ? 26 : 2,
+                  width: 24,
+                  height: 24,
+                  background: "white",
+                  borderRadius: "50%",
+                  transition: "left 0.3s",
+                }} />
+              </button>
+            </div>
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -529,40 +693,63 @@ export default function EmployeeAttendancePage() {
                     </p>
                   </div>
                   
-                  {announcement.isRead ? (
-                    <span style={{
-                      padding: "6px 14px",
-                      background: "#ef4444",
-                      color: "white",
-                      border: "none",
-                      borderRadius: 6,
-                      fontSize: 13,
-                      fontWeight: "600",
-                      whiteSpace: "nowrap",
-                      marginLeft: 12,
-                      display: "inline-block",
-                    }}>
-                      확인완료
-                    </span>
-                  ) : (
+                  <div style={{ display: "flex", gap: 8, alignItems: "center", marginLeft: 12 }}>
+                    {/* 음성 재생 버튼 */}
                     <button
-                      onClick={() => markAnnouncementAsRead(announcement.id)}
+                      onClick={() => speakSingleAnnouncement(announcement)}
                       style={{
+                        padding: "6px 12px",
+                        background: currentSpeakingId === announcement.id ? "#f59e0b" : "#6366f1",
+                        color: "white",
+                        border: "none",
+                        borderRadius: 6,
+                        fontSize: 18,
+                        cursor: "pointer",
+                        whiteSpace: "nowrap",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                      title={currentSpeakingId === announcement.id ? "재생 중지" : "음성으로 듣기"}
+                      aria-label={currentSpeakingId === announcement.id ? "재생 중지" : "음성으로 듣기"}
+                    >
+                      {currentSpeakingId === announcement.id ? "⏸️" : "🔊"}
+                    </button>
+                    
+                    {/* 확인완료 버튼/상태 */}
+                    {announcement.isRead ? (
+                      <span style={{
                         padding: "6px 14px",
-                        background: "#10b981",
+                        background: "#ef4444",
                         color: "white",
                         border: "none",
                         borderRadius: 6,
                         fontSize: 13,
                         fontWeight: "600",
-                        cursor: "pointer",
                         whiteSpace: "nowrap",
-                        marginLeft: 12,
-                      }}
-                    >
-                      확인완료
-                    </button>
-                  )}
+                        display: "inline-block",
+                      }}>
+                        확인완료
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => markAnnouncementAsRead(announcement.id)}
+                        style={{
+                          padding: "6px 14px",
+                          background: "#10b981",
+                          color: "white",
+                          border: "none",
+                          borderRadius: 6,
+                          fontSize: 13,
+                          fontWeight: "600",
+                          cursor: "pointer",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        확인완료
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 <div style={{
