@@ -157,39 +157,69 @@ export default function EmployeeSignupPage() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
         {/* 헤더 */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">
+        <div className="text-center mb-6">
+          <h1 className="text-3xl font-bold text-gray-800 mb-3">
             👷 장애인직원 회원가입
           </h1>
-          <p className="text-gray-600 text-sm">
+          <p className="text-gray-600 text-sm mb-6">
             기업에 등록된 장애인 직원만 가입할 수 있습니다
           </p>
-        </div>
-
-        {/* 진행 단계 표시 */}
-        <div className="flex justify-center items-center mb-8 space-x-2">
-          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-            step >= 1 ? "bg-blue-500 text-white" : "bg-gray-300 text-gray-600"
-          }`}>
-            1
-          </div>
-          <div className={`w-12 h-1 ${step >= 2 ? "bg-blue-500" : "bg-gray-300"}`} />
-          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-            step >= 2 ? "bg-blue-500 text-white" : "bg-gray-300 text-gray-600"
-          }`}>
-            2
-          </div>
-          <div className={`w-12 h-1 ${step >= 3 ? "bg-blue-500" : "bg-gray-300"}`} />
-          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-            step >= 3 ? "bg-blue-500 text-white" : "bg-gray-300 text-gray-600"
-          }`}>
-            3
+          
+          {/* 진행 단계 표시 */}
+          <div className="flex justify-center items-center space-x-3">
+            {/* Step 1 */}
+            <div className="flex flex-col items-center">
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
+                step >= 1 ? "bg-blue-500 text-white" : "bg-gray-300 text-gray-600"
+              }`}>
+                1
+              </div>
+              <span className={`text-xs mt-1 font-medium ${
+                step >= 1 ? "text-blue-600" : "text-gray-500"
+              }`}>
+                기업확인
+              </span>
+            </div>
+            
+            {/* 연결선 1-2 */}
+            <div className={`w-12 h-1 mb-5 ${step >= 2 ? "bg-blue-500" : "bg-gray-300"}`} />
+            
+            {/* Step 2 */}
+            <div className="flex flex-col items-center">
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
+                step >= 2 ? "bg-blue-500 text-white" : "bg-gray-300 text-gray-600"
+              }`}>
+                2
+              </div>
+              <span className={`text-xs mt-1 font-medium ${
+                step >= 2 ? "text-blue-600" : "text-gray-500"
+              }`}>
+                직원확인
+              </span>
+            </div>
+            
+            {/* 연결선 2-3 */}
+            <div className={`w-12 h-1 mb-5 ${step >= 3 ? "bg-blue-500" : "bg-gray-300"}`} />
+            
+            {/* Step 3 */}
+            <div className="flex flex-col items-center">
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
+                step >= 3 ? "bg-blue-500 text-white" : "bg-gray-300 text-gray-600"
+              }`}>
+                3
+              </div>
+              <span className={`text-xs mt-1 font-medium ${
+                step >= 3 ? "text-blue-600" : "text-gray-500"
+              }`}>
+                가입완료
+              </span>
+            </div>
           </div>
         </div>
 
         {/* 에러 메시지 */}
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-300 rounded-lg text-red-700 text-sm">
+          <div className="mt-6 mb-4 p-4 bg-red-50 border border-red-300 rounded-lg text-red-700 text-sm">
             ⚠️ {error}
           </div>
         )}
