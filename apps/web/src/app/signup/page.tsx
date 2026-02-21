@@ -1,13 +1,34 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { apiFetch } from "@/lib/api";
 
-type SignupType = "agent" | "supplier" | "buyer";
+type SignupType = "agent" | "supplier" | "buyer" | "invited";
+
+interface InvitationInfo {
+  companyName: string;
+  bizNo: string;
+  representative?: string;
+  buyerType?: string;
+  role: string;
+  invitedBy: string;
+  inviterTitle?: string;
+  expiresAt: string;
+}
 
 export default function SignupPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const inviteCode = searchParams.get("invite");
+
   const [step, setStep] = useState<"select" | "form">("select");
   const [type, setType] = useState<SignupType>("buyer");
+  
+  // 초대받은 경우
+  const [isInvited, setIsInvited] = useState(false);
+  const [invitationInfo, setInvitationInfo] = useState<InvitationInfo | null>(null);
+  const [loadingInvitation, setLoadingInvitation] = useState(false);
 
   // 공통 필드
   const [phone, setPhone] = useState("");
@@ -39,12 +60,41 @@ export default function SignupPage() {
   const [companyInfo, setCompanyInfo] = useState<{name: string; ceo: string} | null>(null);
   const [verifying, setVerifying] = useState(false);
 
+  // 초대 코드 확인
+  useEffect(() => {
+    if (inviteCode) {
+      checkInvitation(inviteCode);
+    }
+  }, [inviteCode]);
+
   // 지사 목록 로드 (매니저용)
   useEffect(() => {
     if (type === "agent") {
       loadBranches();
     }
   }, [type]);
+
+  async function checkInvitation(code: string) {
+    try {
+      setLoadingInvitation(true);
+      const res = await fetch(`/api/team/invite/${code}`);
+      const data = await res.json();
+
+      if (data.success) {
+        setIsInvited(true);
+        setInvitationInfo(data.invitation);
+        setType("invited");
+        setStep("form");
+      } else {
+        setMsg(data.error || "초대 코드가 유효하지 않습니다");
+      }
+    } catch (error) {
+      console.error("Failed to check invitation:", error);
+      setMsg("초대 코드 확인 중 오류가 발생했습니다");
+    } finally {
+      setLoadingInvitation(false);
+    }
+  }
 
   async function loadBranches() {
     try {
@@ -127,6 +177,76 @@ export default function SignupPage() {
     setType(selectedType);
     setStep("form");
   };
+
+  // 초대받은 사람 회원가입
+  async function onInvitedSignup() {
+    setMsg("");
+
+    if (!name) {
+      setMsg("이름을 입력하세요");
+      return;
+    }
+
+    if (!phone) {
+      setMsg("핸드폰 번호를 입력하세요");
+      return;
+    }
+
+    if (!password || password.length < 8) {
+      setMsg("비밀번호는 8자 이상이어야 합니다");
+      return;
+    }
+
+    if (password !== passwordConfirm) {
+      setMsg("비밀번호가 일치하지 않습니다");
+      return;
+    }
+
+    if (!privacyAgreed) {
+      setMsg("개인정보 활용 동의는 필수입니다");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/auth/signup-invited", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          inviteCode: inviteCode,
+          phone,
+          password,
+          name,
+          email,
+          managerName,
+          managerTitle,
+          managerEmail,
+          managerPhone,
+          privacyAgreed,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setMsg(data.message || "회원가입 실패");
+        return;
+      }
+
+      // 회원가입 성공 - 자동 로그인
+      localStorage.setItem("accessToken", data.accessToken);
+      localStorage.setItem("user", JSON.stringify(data.user));
+
+      alert(`✅ ${data.user.company.name}의 팀원으로 가입되었습니다!`);
+      router.push("/dashboard");
+    } catch (error) {
+      console.error("Invited signup error:", error);
+      setMsg("회원가입 중 오류가 발생했습니다");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   async function onSignup() {
     setMsg("");
@@ -281,6 +401,187 @@ export default function SignupPage() {
   }
 
   if (step === "select") {
+    // 초대받은 사람 로딩 중
+    if (loadingInvitation) {
+      return (
+        <div className="container">
+          <div className="card" style={{ maxWidth: 600, margin: "40px auto", textAlign: "center" }}>
+            <i className="fas fa-spinner fa-spin" style={{ fontSize: 48, color: "#0070f3" }}></i>
+            <h2 style={{ marginTop: 16 }}>초대 정보 확인 중...</h2>
+          </div>
+        </div>
+      );
+    }
+
+    // 초대받은 사람 회원가입 폼
+    if (isInvited && invitationInfo) {
+      return (
+        <div className="container">
+          <div className="card" style={{ maxWidth: 600, margin: "40px auto" }}>
+            {/* 뒤로가기 버튼 */}
+            <div
+              onClick={() => router.push("/signup")}
+              style={{
+                background: "#0070f3",
+                color: "white",
+                fontWeight: 600,
+                padding: "8px 16px",
+                borderRadius: 8,
+                cursor: "pointer",
+                display: "inline-block",
+                marginBottom: 16,
+              }}
+            >
+              ← 뒤로가기
+            </div>
+
+            <h1>🎉 팀원 초대 회원가입</h1>
+            
+            {/* 초대 정보 표시 */}
+            <div style={{
+              marginTop: 20,
+              padding: 16,
+              background: "#e6f4ff",
+              borderRadius: 8,
+              border: "1px solid #91d5ff"
+            }}>
+              <p style={{ margin: 0, fontWeight: 600, color: "#0050b3", marginBottom: 8 }}>
+                <i className="fas fa-building mr-2"></i>
+                초대받은 회사 정보
+              </p>
+              <div style={{ fontSize: 14, color: "#333", lineHeight: 1.8 }}>
+                <p><strong>회사명:</strong> {invitationInfo.companyName}</p>
+                <p><strong>사업자번호:</strong> {invitationInfo.bizNo}</p>
+                {invitationInfo.representative && (
+                  <p><strong>대표자:</strong> {invitationInfo.representative}</p>
+                )}
+                <p><strong>역할:</strong> {invitationInfo.role === "BUYER" ? "고용부담금 기업" : "표준사업장"} 담당자</p>
+                <p><strong>초대자:</strong> {invitationInfo.invitedBy} {invitationInfo.inviterTitle}</p>
+              </div>
+            </div>
+
+            {/* 가입 폼 */}
+            <div style={{ marginTop: 24 }}>
+              <label>이름 *</label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="홍길동"
+              />
+
+              <label>핸드폰 번호 * (로그인 ID로 사용됩니다)</label>
+              <input
+                type="tel"
+                value={phone}
+                onChange={handlePhoneChange}
+                placeholder="010-1234-5678"
+              />
+
+              <label>비밀번호 * (8자 이상)</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="비밀번호 입력"
+              />
+
+              <label>비밀번호 확인 *</label>
+              <input
+                type="password"
+                value={passwordConfirm}
+                onChange={(e) => setPasswordConfirm(e.target.value)}
+                placeholder="비밀번호 재입력"
+              />
+
+              <label>이메일 (선택)</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="example@email.com"
+              />
+
+              <hr style={{ margin: "24px 0", border: "none", borderTop: "1px solid #eee" }} />
+
+              <h3 style={{ fontSize: 16, marginBottom: 12 }}>담당자 정보 (선택)</h3>
+
+              <label>담당자 성함</label>
+              <input
+                type="text"
+                value={managerName}
+                onChange={(e) => setManagerName(e.target.value)}
+                placeholder="김담당"
+              />
+
+              <label>담당자 직함</label>
+              <input
+                type="text"
+                value={managerTitle}
+                onChange={(e) => setManagerTitle(e.target.value)}
+                placeholder="과장"
+              />
+
+              <label>담당자 이메일</label>
+              <input
+                type="email"
+                value={managerEmail}
+                onChange={(e) => setManagerEmail(e.target.value)}
+                placeholder="manager@company.com"
+              />
+
+              <label>담당자 핸드폰 (알림톡 수신용)</label>
+              <input
+                type="tel"
+                value={managerPhone}
+                onChange={(e) => setManagerPhone(formatPhone(e.target.value))}
+                placeholder="010-9876-5432"
+              />
+
+              <hr style={{ margin: "24px 0", border: "none", borderTop: "1px solid #eee" }} />
+
+              {/* 개인정보 동의 */}
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ display: "flex", alignItems: "center", cursor: "pointer" }}>
+                  <input
+                    type="checkbox"
+                    checked={privacyAgreed}
+                    onChange={(e) => setPrivacyAgreed(e.target.checked)}
+                    style={{ marginRight: 8, width: 20, height: 20 }}
+                  />
+                  <span style={{ fontSize: 14 }}>
+                    개인정보 수집 및 이용에 동의합니다 (필수)
+                  </span>
+                </label>
+              </div>
+
+              {msg && (
+                <div style={{
+                  marginTop: 12,
+                  padding: 12,
+                  background: msg.includes("✅") ? "#d4edda" : "#f8d7da",
+                  color: msg.includes("✅") ? "#155724" : "#721c24",
+                  borderRadius: 4
+                }}>
+                  {msg}
+                </div>
+              )}
+
+              <button
+                onClick={onInvitedSignup}
+                disabled={loading}
+                className="btn-primary"
+                style={{ marginTop: 16, width: "100%" }}
+              >
+                {loading ? "가입 중..." : "회원가입"}
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // 일반 회원가입 선택 화면 (step === "select")
     return (
       <div className="container">
         <div className="card" style={{ maxWidth: 720, margin: "40px auto" }}>

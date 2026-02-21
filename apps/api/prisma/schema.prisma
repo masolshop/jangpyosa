@@ -19,6 +19,10 @@ model User {
   refCode           String?  @unique
   referredById      String?
   
+  // 🆕 기업 소속 정보 (ownerUserId 대신 companyId 사용)
+  companyId         String?                // 소속 회사 ID
+  isCompanyOwner    Boolean  @default(false) // 회사 최초 생성자 여부
+  
   // 🆕 기업 담당자 정보 (SUPPLIER, BUYER 전용)
   managerName       String?                // 담당자 성함
   managerTitle      String?                // 담당자 직함
@@ -36,10 +40,15 @@ model User {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
   companyType       String?
-  company           Company?
+  company           Company? @relation("CompanyMembers", fields: [companyId], references: [id])
+  ownedCompany      Company? @relation("CompanyOwner") // ownerUserId 관계 유지
   referredBy        User?    @relation("Referrals", fields: [referredById], references: [id])
   referrals         User[]   @relation("Referrals")
   branch            Branch?  @relation(fields: [branchId], references: [id])
+  sentInvitations   TeamInvitation[] @relation("InvitationSender")
+  
+  @@index([companyId])
+  @@index([isCompanyOwner])
 }
 
 model Branch {
@@ -64,12 +73,15 @@ model Company {
   buyerType       String?          // 🆕 BUYER 전용: PRIVATE_COMPANY, PUBLIC_INSTITUTION, GOVERNMENT
   isVerified      Boolean          @default(false)
   apickData       String?
-  ownerUserId     String           @unique
+  ownerUserId     String           @unique      // 🆕 기존 필드 유지 (호환성)
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
+  members         User[]           @relation("CompanyMembers") // 🆕 1:N 관계 (회사에 소속된 모든 담당자)
+  ownerUser       User             @relation("CompanyOwner", fields: [ownerUserId], references: [id])
   buyerProfile    BuyerProfile?
-  ownerUser       User             @relation(fields: [ownerUserId], references: [id])
   supplierProfile SupplierProfile?
+  invitations     TeamInvitation[] // 🆕 초대 코드 목록
+  announcements   CompanyAnnouncement[] // 🆕 회사 공지사항
 }
 
 model SupplierRegistry {
@@ -411,6 +423,7 @@ model CompanyAnnouncement {
   createdById String                     // 작성자 User ID
   createdAt   DateTime                   @default(now())
   updatedAt   DateTime                   @updatedAt
+  company     Company                    @relation(fields: [companyId], references: [id], onDelete: Cascade)
   readLogs    AnnouncementReadLog[]
   
   @@index([companyId, isActive])
@@ -431,6 +444,27 @@ model AnnouncementReadLog {
   @@index([announcementId])
   @@index([employeeId])
   @@index([userId])
+}
+
+// 팀원 초대 코드
+model TeamInvitation {
+  id              String    @id @default(cuid())
+  companyId       String    // 회사 ID
+  inviteCode      String    @unique // 초대 코드 (8자리 랜덤)
+  invitedBy       String    // 초대한 사람 User ID
+  companyType     String    // BUYER, SUPPLIER
+  role            String    // 초대된 사람의 역할 (BUYER, SUPPLIER)
+  expiresAt       DateTime  // 만료일 (생성 후 7일)
+  isUsed          Boolean   @default(false) // 사용 여부
+  usedBy          String?   // 사용한 사람 User ID
+  usedAt          DateTime? // 사용 시각
+  createdAt       DateTime  @default(now())
+  company         Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  sender          User      @relation("InvitationSender", fields: [invitedBy], references: [id])
+  
+  @@index([inviteCode])
+  @@index([companyId])
+  @@index([expiresAt, isUsed])
 }
 
 // 견적 문의 (장표사닷컴으로 전달)

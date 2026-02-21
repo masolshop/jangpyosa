@@ -270,7 +270,23 @@ r.post("/signup/supplier", async (req, res) => {
 
     const passwordHash = await bcrypt.hash(body.password, 10);
 
-    // User, Company, SupplierProfile 생성
+    // Company 먼저 생성
+    const company = await prisma.company.create({
+      data: {
+        name: apickResult.name!,
+        bizNo: cleanBizNo,
+        representative: apickResult.representative,
+        type: "SUPPLIER",
+        isVerified: true,
+        apickData: apickResult.data ? JSON.stringify(apickResult.data) : null,
+        supplierProfile: {
+          create: {},
+        },
+      },
+      include: { supplierProfile: true }
+    });
+
+    // User 생성 (Company에 연결)
     const user = await prisma.user.create({
       data: {
         phone: cleanManagerPhone, // 담당자 핸드폰 (알림톡용, unique 제약 때문에 여기 저장)
@@ -278,6 +294,8 @@ r.post("/signup/supplier", async (req, res) => {
         passwordHash,
         name: apickResult.representative || "대표자",
         role: "SUPPLIER",
+        companyId: company.id,
+        isCompanyOwner: true, // 🆕 회사 최초 생성자
         referredById: referredBy.id,
         
         // 🆕 담당자 정보
@@ -289,20 +307,6 @@ r.post("/signup/supplier", async (req, res) => {
         // 🆕 개인정보 동의
         privacyAgreed: body.privacyAgreed,
         privacyAgreedAt: new Date(),
-        
-        company: {
-          create: {
-            name: apickResult.name!,
-            bizNo: cleanBizNo,
-            representative: apickResult.representative,
-            type: "SUPPLIER",
-            isVerified: true,
-            apickData: apickResult.data ? JSON.stringify(apickResult.data) : null,
-            supplierProfile: {
-              create: {},
-            },
-          },
-        },
       },
       include: {
         company: {
@@ -429,7 +433,24 @@ r.post("/signup/buyer", async (req, res) => {
     // buyerType 결정 (신규 필드 우선, 없으면 companyType에서 변환)
     const buyerType = body.buyerType || (body.companyType === "GOVERNMENT" ? "GOVERNMENT" : "PRIVATE_COMPANY");
 
-    // User, Company, BuyerProfile 생성
+    // Company 먼저 생성
+    const company = await prisma.company.create({
+      data: {
+        name: apickResult.name!,
+        bizNo: cleanBizNo,
+        representative: apickResult.representative,
+        type: "BUYER",
+        buyerType, // 🆕 Company 테이블에 buyerType 저장
+        isVerified: true,
+        apickData: apickResult.data ? JSON.stringify(apickResult.data) : null,
+        buyerProfile: {
+          create: {},
+        },
+      },
+      include: { buyerProfile: true }
+    });
+
+    // User 생성 (Company에 연결)
     const user = await prisma.user.create({
       data: {
         phone: cleanManagerPhone, // 담당자 핸드폰 (알림톡용, unique 제약 때문에 여기 저장)
@@ -437,6 +458,8 @@ r.post("/signup/buyer", async (req, res) => {
         passwordHash,
         name: apickResult.representative || "대표자",
         role: "BUYER",
+        companyId: company.id,
+        isCompanyOwner: true, // 🆕 회사 최초 생성자
         companyType: body.companyType || (buyerType === "GOVERNMENT" ? "GOVERNMENT" : "PRIVATE"), // User 테이블에도 저장 (호환성)
         referredById: referredBy.id,
         
@@ -449,21 +472,6 @@ r.post("/signup/buyer", async (req, res) => {
         // 🆕 개인정보 동의
         privacyAgreed: body.privacyAgreed,
         privacyAgreedAt: new Date(),
-        
-        company: {
-          create: {
-            name: apickResult.name!,
-            bizNo: cleanBizNo,
-            representative: apickResult.representative,
-            type: "BUYER",
-            buyerType, // 🆕 Company 테이블에 buyerType 저장
-            isVerified: true,
-            apickData: apickResult.data ? JSON.stringify(apickResult.data) : null,
-            buyerProfile: {
-              create: {},
-            },
-          },
-        },
       },
       include: {
         company: {
@@ -1095,6 +1103,132 @@ r.post("/login/employee", async (req, res) => {
     }
     console.error("Employee login error:", error);
     return res.status(500).json({ error: "INTERNAL_ERROR" });
+  }
+});
+
+// ========================================
+// 📨 초대받은 사람 회원가입
+// ========================================
+
+const signupInvitedSchema = z.object({
+  inviteCode: z.string().min(8, "초대 코드를 입력하세요"),
+  phone: z.string().min(10, "핸드폰 번호를 입력하세요"),
+  password: z.string().min(4, "비밀번호는 4자리 이상이어야 합니다"),
+  name: z.string().min(1, "이름을 입력하세요"),
+  email: z.string().email("유효한 이메일을 입력하세요").optional(),
+  
+  // 담당자 정보 (선택)
+  managerName: z.string().optional(),
+  managerTitle: z.string().optional(),
+  managerEmail: z.string().email().optional(),
+  managerPhone: z.string().optional(),
+  
+  // 개인정보 동의
+  privacyAgreed: z.boolean().refine(val => val === true, "개인정보 처리방침에 동의해야 합니다"),
+});
+
+r.post("/signup-invited", async (req, res) => {
+  try {
+    const body = signupInvitedSchema.parse(req.body);
+    
+    // 1. 초대 코드 확인
+    const invitation = await prisma.teamInvitation.findUnique({
+      where: { inviteCode: body.inviteCode },
+      include: { company: true }
+    });
+    
+    if (!invitation) {
+      return res.status(404).json({ error: "INVALID_INVITE_CODE", message: "유효하지 않은 초대 코드입니다" });
+    }
+    
+    if (invitation.isUsed) {
+      return res.status(400).json({ error: "INVITE_ALREADY_USED", message: "이미 사용된 초대 코드입니다" });
+    }
+    
+    if (new Date() > new Date(invitation.expiresAt)) {
+      return res.status(400).json({ error: "INVITE_EXPIRED", message: "만료된 초대 코드입니다" });
+    }
+    
+    // 2. 핸드폰 번호 정규화 및 중복 체크
+    const cleanPhone = normalizePhone(body.phone);
+    const existingUser = await prisma.user.findUnique({
+      where: { phone: cleanPhone }
+    });
+    
+    if (existingUser) {
+      return res.status(400).json({ error: "PHONE_EXISTS", message: "이미 가입된 핸드폰 번호입니다" });
+    }
+    
+    // 3. 비밀번호 해시
+    const passwordHash = await bcrypt.hash(body.password, 10);
+    
+    // 4. 사용자 생성
+    const newUser = await prisma.user.create({
+      data: {
+        phone: cleanPhone,
+        passwordHash,
+        name: body.name,
+        email: body.email,
+        role: invitation.role,
+        companyId: invitation.companyId,
+        isCompanyOwner: false, // 초대받은 사람은 소유자가 아님
+        managerName: body.managerName,
+        managerTitle: body.managerTitle,
+        managerEmail: body.managerEmail,
+        managerPhone: body.managerPhone,
+        privacyAgreed: body.privacyAgreed,
+        privacyAgreedAt: new Date(),
+      },
+      include: { company: true }
+    });
+    
+    // 5. 초대 코드 사용 처리
+    await prisma.teamInvitation.update({
+      where: { id: invitation.id },
+      data: {
+        isUsed: true,
+        usedBy: newUser.id,
+        usedAt: new Date()
+      }
+    });
+    
+    // 6. JWT 토큰 생성
+    const accessToken = jwt.sign(
+      { userId: newUser.id, role: newUser.role },
+      config.jwtSecret,
+      { expiresIn: "7d" }
+    );
+    
+    const refreshToken = jwt.sign(
+      { userId: newUser.id },
+      config.jwtRefreshSecret,
+      { expiresIn: "30d" }
+    );
+    
+    return res.status(201).json({
+      success: true,
+      accessToken,
+      refreshToken,
+      user: {
+        id: newUser.id,
+        phone: newUser.phone,
+        name: newUser.name,
+        role: newUser.role,
+        email: newUser.email,
+        company: {
+          id: newUser.company!.id,
+          name: newUser.company!.name,
+          bizNo: newUser.company!.bizNo,
+          type: newUser.company!.type,
+        }
+      }
+    });
+  } catch (error: any) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: "VALIDATION_ERROR", details: error.errors });
+    }
+    console.error("Invited signup error:", error);
+    return res.status(500).json({ error: "INTERNAL_ERROR", message: "회원가입 중 오류가 발생했습니다" });
   }
 });
 

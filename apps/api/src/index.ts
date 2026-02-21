@@ -29,6 +29,7 @@ import apickRoutes from "./routes/apick.js";
 import attendanceRoutes from "./routes/attendance.js";
 import announcementsRoutes from "./routes/announcements.js";
 import quoteRoutes from "./routes/quote.js";
+import teamRoutes from "./routes/team.js";
 
 export const prisma = new PrismaClient();
 
@@ -60,6 +61,7 @@ app.use("/apick", apickRoutes);
 app.use("/attendance", attendanceRoutes);
 app.use("/announcements", announcementsRoutes);
 app.use("/quotes", quoteRoutes);
+app.use("/team", teamRoutes);
 app.use("/", performancesRoutes); // performances와 contracts 엔드포인트 모두 포함
 
 // Error handler

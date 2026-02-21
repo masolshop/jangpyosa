@@ -187,6 +187,14 @@ export default function Sidebar() {
               requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]}
               currentRole={userRole}
             />
+            <MenuItem
+              href="/dashboard/team"
+              label="팀원 초대"
+              icon="👥➕"
+              active={isActive("/dashboard/team")}
+              requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]}
+              currentRole={userRole}
+            />
           </div>
 
           {/* 직원용 메뉴 (EMPLOYEE 역할인 경우) */}
