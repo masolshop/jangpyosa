@@ -28,11 +28,16 @@ router.post("/invite", requireAuth, async (req: any, res: any) => {
   try {
     const userId = req.user!.id;
     const userRole = req.user!.role;
-    const { role } = req.body;
+    const { role, inviteeName, inviteePhone } = req.body;
 
     // 역할 검증
     if (!role || !["BUYER", "SUPPLIER"].includes(role)) {
       return res.status(400).json({ error: "유효하지 않은 역할입니다" });
+    }
+
+    // 초대받을 사람 정보 검증
+    if (!inviteeName || !inviteePhone) {
+      return res.status(400).json({ error: "초대받을 사람의 이름과 핸드폰 번호를 입력하세요" });
     }
 
     // 현재 사용자의 회사 정보 조회
@@ -78,6 +83,8 @@ router.post("/invite", requireAuth, async (req: any, res: any) => {
         invitedBy: userId,
         companyType: user.company!.type,
         role,
+        inviteeName,
+        inviteePhone,
         expiresAt
       },
       include: {
@@ -104,6 +111,8 @@ router.post("/invite", requireAuth, async (req: any, res: any) => {
         companyName: invitation.company.name,
         bizNo: invitation.company.bizNo,
         role: invitation.role,
+        inviteeName: invitation.inviteeName,
+        inviteePhone: invitation.inviteePhone,
         expiresAt: invitation.expiresAt,
         invitedBy: invitation.sender.name || invitation.sender.managerName
       }

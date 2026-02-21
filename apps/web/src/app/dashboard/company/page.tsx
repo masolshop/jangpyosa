@@ -79,6 +79,8 @@ export default function CompanyDashboardPage() {
   // 초대 코드 생성
   const [creatingInvite, setCreatingInvite] = useState(false);
   const [inviteRole, setInviteRole] = useState<"BUYER" | "SUPPLIER">("BUYER");
+  const [inviteeName, setInviteeName] = useState(""); // 초대받을 사람 이름
+  const [inviteePhone, setInviteePhone] = useState(""); // 초대받을 사람 핸드폰
   const [message, setMessage] = useState("");
   const [newInvitation, setNewInvitation] = useState<Invitation | null>(null);
   const [copiedCode, setCopiedCode] = useState("");
@@ -204,13 +206,29 @@ export default function CompanyDashboardPage() {
 
   async function createInvitation() {
     setMessage("");
+    
+    // 유효성 검사
+    if (!inviteeName.trim()) {
+      setMessage("초대받을 사람의 이름을 입력하세요");
+      return;
+    }
+    
+    if (!inviteePhone.trim()) {
+      setMessage("초대받을 사람의 핸드폰 번호를 입력하세요");
+      return;
+    }
+    
     setCreatingInvite(true);
     setNewInvitation(null);
 
     try {
       const data = await apiFetch("/team/invite", {
         method: "POST",
-        body: JSON.stringify({ role: inviteRole })
+        body: JSON.stringify({ 
+          role: inviteRole,
+          inviteeName,
+          inviteePhone
+        })
       });
       
       // 초대 URL을 클라이언트에서 생성
@@ -221,7 +239,12 @@ export default function CompanyDashboardPage() {
       };
       
       setNewInvitation(invitationWithUrl);
-      setMessage("초대 코드가 생성되었습니다");
+      setMessage(`${inviteeName}님에게 보낼 초대 코드가 생성되었습니다`);
+      
+      // 폼 초기화
+      setInviteeName("");
+      setInviteePhone("");
+      
       await loadInvitations();
     } catch (error: any) {
       setMessage("생성 실패: " + (error.message || "알 수 없는 오류"));
@@ -456,24 +479,54 @@ export default function CompanyDashboardPage() {
           }}
         >
           <h2 style={{ margin: 0, fontSize: 20, marginBottom: 16 }}>✉️ 새 팀원 초대하기</h2>
+          
+          {/* 초대받을 사람 정보 입력 */}
+          <div style={{ marginBottom: 16, padding: 16, background: "#f0f9ff", borderRadius: 8, border: "1px solid #bfdbfe" }}>
+            <p style={{ margin: "0 0 12px 0", fontWeight: "bold", color: "#1e40af" }}>
+              초대받을 분의 정보를 입력하세요
+            </p>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+              <div>
+                <label style={{ display: "block", marginBottom: 4, fontSize: 14, fontWeight: 600 }}>이름 *</label>
+                <input
+                  type="text"
+                  value={inviteeName}
+                  onChange={(e) => setInviteeName(e.target.value)}
+                  placeholder="홍길동"
+                  style={{ width: "100%", padding: 10, border: "1px solid #d1d5db", borderRadius: 6, fontSize: 14 }}
+                />
+              </div>
+              <div>
+                <label style={{ display: "block", marginBottom: 4, fontSize: 14, fontWeight: 600 }}>핸드폰 번호 *</label>
+                <input
+                  type="tel"
+                  value={inviteePhone}
+                  onChange={(e) => setInviteePhone(e.target.value)}
+                  placeholder="010-1234-5678"
+                  style={{ width: "100%", padding: 10, border: "1px solid #d1d5db", borderRadius: 6, fontSize: 14 }}
+                />
+              </div>
+            </div>
+          </div>
+
           <div style={{ display: "flex", gap: 12, marginBottom: 16, alignItems: "center" }}>
             <div style={{ padding: 12, border: "2px solid #3b82f6", borderRadius: 6, background: "#eff6ff", fontWeight: "bold", color: "#1e40af" }}>
               {company?.type === "BUYER" ? "🏢 고용부담금 기업 담당자" : "🏭 표준사업장 담당자"}
             </div>
             <button
               onClick={createInvitation}
-              disabled={creatingInvite}
+              disabled={creatingInvite || !inviteeName.trim() || !inviteePhone.trim()}
               style={{
-                background: creatingInvite ? "#d1d5db" : "#3b82f6",
+                background: (creatingInvite || !inviteeName.trim() || !inviteePhone.trim()) ? "#d1d5db" : "#3b82f6",
                 color: "white",
                 border: "none",
                 padding: "12px 24px",
                 borderRadius: 6,
                 fontWeight: "bold",
-                cursor: creatingInvite ? "not-allowed" : "pointer"
+                cursor: (creatingInvite || !inviteeName.trim() || !inviteePhone.trim()) ? "not-allowed" : "pointer"
               }}
             >
-              {creatingInvite ? "생성 중..." : "🎫 초대 코드 생성"}
+              {creatingInvite ? "생성 중..." : "🎫 초대 링크 생성"}
             </button>
           </div>
 

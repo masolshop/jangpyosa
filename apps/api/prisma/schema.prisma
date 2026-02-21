@@ -455,6 +455,8 @@ model TeamInvitation {
   invitedBy       String    // 초대한 사람 User ID
   companyType     String    // BUYER, SUPPLIER
   role            String    // 초대된 사람의 역할 (BUYER, SUPPLIER)
+  inviteeName     String?   // 초대받을 사람 이름
+  inviteePhone    String?   // 초대받을 사람 핸드폰
   expiresAt       DateTime  // 만료일 (생성 후 7일)
   isUsed          Boolean   @default(false) // 사용 여부
   usedBy          String?   // 사용한 사람 User ID
