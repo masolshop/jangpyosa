@@ -802,15 +802,129 @@ r.post("/refresh", async (req, res) => {
 });
 
 // ========================================
+// ✅ 사업자등록번호로 등록 기업 확인 (직원 회원가입용)
+// ========================================
+
+r.post("/verify-company", async (req, res) => {
+  try {
+    const { bizNo } = z.object({
+      bizNo: z.string().min(10, "사업자등록번호를 입력하세요"),
+    }).parse(req.body);
+
+    const cleanBizNo = bizNo.replace(/\D/g, "");
+
+    // 기업 확인
+    const company = await prisma.company.findUnique({
+      where: { bizNo: cleanBizNo },
+      include: { buyerProfile: true },
+      select: {
+        id: true,
+        name: true,
+        bizNo: true,
+        representative: true,
+        buyerProfile: {
+          select: { id: true }
+        }
+      },
+    });
+
+    if (!company || !company.buyerProfile) {
+      return res.status(404).json({ 
+        error: "COMPANY_NOT_FOUND", 
+        message: "해당 사업자등록번호로 등록된 기업이 없습니다" 
+      });
+    }
+
+    return res.json({
+      company: {
+        id: company.id,
+        name: company.name,
+        bizNo: company.bizNo,
+        representative: company.representative,
+        buyerProfileId: company.buyerProfile.id,
+      },
+    });
+  } catch (error: any) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: "VALIDATION_ERROR", details: error.errors });
+    }
+    console.error("Verify company error:", error);
+    return res.status(500).json({ error: "INTERNAL_ERROR", message: "기업 확인 실패" });
+  }
+});
+
+// ========================================
+// ✅ 인증번호로 등록 직원 확인 (직원 회원가입용)
+// ========================================
+
+r.post("/verify-employee", async (req, res) => {
+  try {
+    const { buyerProfileId, registrationNumber } = z.object({
+      buyerProfileId: z.string().min(1, "기업 정보가 필요합니다"),
+      registrationNumber: z.string().min(6, "주민등록번호 앞자리 6자리를 입력하세요"),
+    }).parse(req.body);
+
+    // 장애인 직원 매칭 (주민등록번호 앞자리로 매칭)
+    const employee = await prisma.disabledEmployee.findFirst({
+      where: {
+        buyerId: buyerProfileId,
+        registrationNumber: registrationNumber,
+        resignDate: null, // 재직 중인 직원만
+      },
+      select: {
+        id: true,
+        name: true,
+        workType: true,
+        disabilityType: true,
+        registrationNumber: true,
+      },
+    });
+
+    if (!employee) {
+      return res.status(404).json({ 
+        error: "EMPLOYEE_NOT_FOUND", 
+        message: "해당 인증번호로 등록된 직원 정보를 찾을 수 없습니다" 
+      });
+    }
+
+    // 이미 계정이 연결된 직원인지 확인
+    const existingEmployeeAccount = await prisma.user.findUnique({
+      where: { employeeId: employee.id },
+    });
+
+    if (existingEmployeeAccount) {
+      return res.status(400).json({ 
+        error: "EMPLOYEE_ACCOUNT_EXISTS", 
+        message: "이미 계정이 연결된 직원입니다" 
+      });
+    }
+
+    return res.json({
+      employee: {
+        id: employee.id,
+        name: employee.name,
+        workType: employee.workType,
+        disabilityType: employee.disabilityType,
+      },
+    });
+  } catch (error: any) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: "VALIDATION_ERROR", details: error.errors });
+    }
+    console.error("Verify employee error:", error);
+    return res.status(500).json({ error: "INTERNAL_ERROR", message: "직원 확인 실패" });
+  }
+});
+
+// ========================================
 // 👷 직원(EMPLOYEE) 계정 회원가입
 // ========================================
 
 const signupEmployeeSchema = z.object({
   phone: z.string().min(10, "핸드폰 번호를 입력하세요"),
   password: z.string().min(8, "비밀번호는 8자 이상이어야 합니다"),
-  name: z.string().min(1, "이름을 입력하세요"),
+  employeeId: z.string().min(1, "직원 정보가 필요합니다"), // 검증 API에서 받은 직원 ID
   companyBizNo: z.string().min(10, "소속 기업 사업자등록번호를 입력하세요"),
-  registrationNumber: z.string().min(1, "주민등록번호 앞자리 또는 인증번호를 입력하세요"), // 직원 매칭용
   privacyAgreed: z.boolean().refine(val => val === true, "개인정보 활용 동의는 필수입니다"),
 });
 
@@ -829,33 +943,16 @@ r.post("/signup/employee", async (req, res) => {
       });
     }
 
-    // 소속 기업 확인 (사업자등록번호로 검색)
-    const company = await prisma.company.findUnique({
-      where: { bizNo: cleanBizNo },
-      include: { buyerProfile: true },
+    // 직원 정보 확인
+    const employee = await prisma.disabledEmployee.findUnique({
+      where: { id: body.employeeId },
+      include: { buyer: { include: { company: true } } },
     });
 
-    if (!company || !company.buyerProfile) {
-      return res.status(404).json({ 
-        error: "COMPANY_NOT_FOUND", 
-        message: "해당 사업자등록번호로 등록된 기업이 없습니다" 
-      });
-    }
-
-    // 장애인 직원 매칭 (이름 + 주민등록번호)
-    const employee = await prisma.disabledEmployee.findFirst({
-      where: {
-        buyerId: company.buyerProfile.id,
-        name: body.name,
-        registrationNumber: body.registrationNumber,
-        resignDate: null, // 재직 중인 직원만
-      },
-    });
-
-    if (!employee) {
+    if (!employee || employee.resignDate) {
       return res.status(404).json({ 
         error: "EMPLOYEE_NOT_FOUND", 
-        message: "기업에 등록된 장애인 직원 정보를 찾을 수 없습니다. 이름과 인증번호를 확인하세요." 
+        message: "직원 정보를 찾을 수 없거나 퇴사한 직원입니다" 
       });
     }
 
@@ -871,6 +968,14 @@ r.post("/signup/employee", async (req, res) => {
       });
     }
 
+    // 사업자번호 일치 확인
+    if (employee.buyer.company.bizNo !== cleanBizNo) {
+      return res.status(400).json({ 
+        error: "BIZNO_MISMATCH", 
+        message: "기업 정보가 일치하지 않습니다" 
+      });
+    }
+
     const passwordHash = await bcrypt.hash(body.password, 10);
 
     // 직원 계정 생성
@@ -878,7 +983,7 @@ r.post("/signup/employee", async (req, res) => {
       data: {
         phone: cleanPhone,
         passwordHash,
-        name: body.name,
+        name: employee.name,
         role: "EMPLOYEE",
         employeeId: employee.id,
         companyBizNo: cleanBizNo,
@@ -894,7 +999,7 @@ r.post("/signup/employee", async (req, res) => {
         phone: user.phone,
         name: user.name,
         role: user.role,
-        companyName: company.name,
+        companyName: employee.buyer.company.name,
       },
     });
   } catch (error: any) {
