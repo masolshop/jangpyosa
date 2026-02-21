@@ -350,13 +350,13 @@ export default function Sidebar() {
                 }}>
                   <MenuItem
                     href="/employee/login"
-                    label="직원 로그인"
+                    label="장애인직원로그인"
                     icon="👷"
                     active={isActive("/employee/login")}
                   />
                   <MenuItem
                     href="/employee/signup"
-                    label="직원 회원가입"
+                    label="장애인직원회원가입"
                     icon="📝"
                     active={isActive("/employee/signup")}
                   />
