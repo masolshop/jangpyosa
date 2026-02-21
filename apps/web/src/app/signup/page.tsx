@@ -590,8 +590,9 @@ function SignupContent() {
       );
     }
 
-    // 일반 회원가입 선택 화면 (step === "select")
-    return (
+    // 일반 회원가입 선택 화면
+    if (step === "select" && !isInvited) {
+      return (
       <div className="container">
         <div className="card" style={{ maxWidth: 720, margin: "40px auto" }}>
           <h1>✍️ 회원가입</h1>
@@ -756,11 +757,12 @@ function SignupContent() {
           </div>
         </div>
       </div>
-    );
-  }
+      );
+    }
 
-  // 입력 폼
-  return (
+    // 일반 회원가입 입력 폼
+    if (step === "form") {
+      return (
     <div className="container">
       <div className="card" style={{ maxWidth: 520, margin: "40px auto" }}>
         <button
@@ -1236,8 +1238,12 @@ function SignupContent() {
         </div>
       </div>
     </div>
-  );
-}
+      );
+    }
+
+    // 기본값: 선택 화면으로 리다이렉트
+    return null;
+  }
 
 export default function SignupPage() {
   return (
