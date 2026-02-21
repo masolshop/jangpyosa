@@ -17,11 +17,11 @@ module.exports = {
     {
       name: 'jangpyosa-web',
       script: 'npx',
-      args: 'next start -p 3000 -H 0.0.0.0',
+      args: 'next start -p 3001 -H 0.0.0.0',
       cwd: './apps/web',
       env: {
         NODE_ENV: 'production',
-        PORT: 3000
+        PORT: 3001
       },
       watch: false,
       instances: 1,
