@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:4000";
+// Next.js 프록시를 통해 백엔드 API 호출
+const API_BASE = "/api/proxy";
 
 export default function EmployeeSignupPage() {
   const router = useRouter();
