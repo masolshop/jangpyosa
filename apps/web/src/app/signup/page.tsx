@@ -435,28 +435,31 @@ function SignupContent() {
               ← 뒤로가기
             </div>
 
-            <h1>🎉 팀원 초대 회원가입</h1>
+            <h1>🎉 {invitationInfo.companyName} 팀원 초대</h1>
+            <p style={{ fontSize: 16, color: "#666", marginTop: 8 }}>
+              {invitationInfo.invitedBy}님이 회사 팀원으로 초대했습니다.
+            </p>
             
             {/* 초대 정보 표시 */}
             <div style={{
               marginTop: 20,
-              padding: 16,
-              background: "#e6f4ff",
-              borderRadius: 8,
-              border: "1px solid #91d5ff"
+              padding: 20,
+              background: "rgba(219, 234, 254, 0.3)",
+              borderRadius: 12,
+              border: "2px solid #3b82f6",
+              boxShadow: "0 4px 8px -1px rgba(59, 130, 246, 0.3), 0 2px 4px -1px rgba(59, 130, 246, 0.2)"
             }}>
-              <p style={{ margin: 0, fontWeight: 600, color: "#0050b3", marginBottom: 8 }}>
-                <i className="fas fa-building mr-2"></i>
-                초대받은 회사 정보
+              <p style={{ margin: 0, fontWeight: 700, color: "#1e40af", marginBottom: 12, fontSize: 16 }}>
+                🏢 초대받은 회사 정보
               </p>
-              <div style={{ fontSize: 14, color: "#333", lineHeight: 1.8 }}>
-                <p><strong>회사명:</strong> {invitationInfo.companyName}</p>
-                <p><strong>사업자번호:</strong> {invitationInfo.bizNo}</p>
+              <div style={{ fontSize: 15, color: "#333", lineHeight: 2 }}>
+                <p style={{ margin: 0 }}><strong>회사명:</strong> {invitationInfo.companyName}</p>
+                <p style={{ margin: 0 }}><strong>사업자번호:</strong> {invitationInfo.bizNo}</p>
                 {invitationInfo.representative && (
-                  <p><strong>대표자:</strong> {invitationInfo.representative}</p>
+                  <p style={{ margin: 0 }}><strong>대표자:</strong> {invitationInfo.representative}</p>
                 )}
-                <p><strong>역할:</strong> {invitationInfo.role === "BUYER" ? "고용부담금 기업" : "표준사업장"} 담당자</p>
-                <p><strong>초대자:</strong> {invitationInfo.invitedBy} {invitationInfo.inviterTitle}</p>
+                <p style={{ margin: 0 }}><strong>역할:</strong> {invitationInfo.role === "BUYER" ? "고용부담금 기업" : "표준사업장"} 담당자</p>
+                <p style={{ margin: 0 }}><strong>초대자:</strong> {invitationInfo.invitedBy} {invitationInfo.inviterTitle || ""}</p>
               </div>
             </div>
 
