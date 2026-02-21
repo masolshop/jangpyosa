@@ -22,7 +22,7 @@ export default function AdminLogin() {
       const response = await fetch('http://localhost:4000/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: cleanPhone, password }),
+        body: JSON.stringify({ identifier: cleanPhone, password }),
       });
 
       const data = await response.json();
@@ -37,7 +37,7 @@ export default function AdminLogin() {
       }
 
       // 로그인 정보 저장
-      localStorage.setItem('token', data.token);
+      localStorage.setItem('token', data.accessToken);
       localStorage.setItem('role', data.user.role);
       localStorage.setItem('name', data.user.name);
 
