@@ -12,6 +12,8 @@ interface InvitationInfo {
   representative?: string;
   buyerType?: string;
   role: string;
+  inviteeName?: string;
+  inviteePhone?: string;
   invitedBy: string;
   inviterTitle?: string;
   expiresAt: string;
