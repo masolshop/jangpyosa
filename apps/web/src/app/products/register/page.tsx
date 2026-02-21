@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 
+// Build: 2026-02-21-v3 - Complete inline styles implementation
+
 const CONTRACT_TYPES = [
   {
     value: 'MANUFACTURING',
