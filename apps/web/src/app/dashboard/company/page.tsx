@@ -324,7 +324,7 @@ export default function CompanyDashboardPage() {
         <div
           style={{
             padding: 24,
-            background: "white",
+            background: "rgba(219, 234, 254, 0.3)",
             borderRadius: 12,
             marginBottom: 32,
             boxShadow: "0 8px 16px -2px rgba(59, 130, 246, 0.3), 0 4px 8px -2px rgba(59, 130, 246, 0.2)"
@@ -436,7 +436,7 @@ export default function CompanyDashboardPage() {
         <div
           style={{
             padding: 24,
-            background: "white",
+            background: "rgba(219, 234, 254, 0.3)",
             borderRadius: 12,
             marginBottom: 32,
             boxShadow: "0 8px 16px -2px rgba(59, 130, 246, 0.3), 0 4px 8px -2px rgba(59, 130, 246, 0.2)"
@@ -509,7 +509,7 @@ export default function CompanyDashboardPage() {
                   style={{
                     padding: 16,
                     marginBottom: 12,
-                    background: inv.isUsed ? "#f3f4f6" : "white",
+                    background: inv.isUsed ? "#f3f4f6" : "rgba(239, 246, 255, 0.5)",
                     border: `2px solid ${inv.isUsed ? "#d1d5db" : "#3b82f6"}`,
                     borderRadius: 8,
                     boxShadow: inv.isUsed ? "none" : "0 4px 8px -1px rgba(59, 130, 246, 0.3), 0 2px 4px -1px rgba(59, 130, 246, 0.2)"
@@ -572,7 +572,7 @@ export default function CompanyDashboardPage() {
         <div
           style={{
             padding: 24,
-            background: "white",
+            background: "rgba(219, 234, 254, 0.3)",
             borderRadius: 12,
             marginBottom: 32,
             boxShadow: "0 8px 16px -2px rgba(59, 130, 246, 0.3), 0 4px 8px -2px rgba(59, 130, 246, 0.2)"
@@ -590,7 +590,7 @@ export default function CompanyDashboardPage() {
                   style={{
                     padding: 16,
                     marginBottom: 12,
-                    background: member.isCompanyOwner ? "#eff6ff" : "#f9fafb",
+                    background: member.isCompanyOwner ? "rgba(239, 246, 255, 0.7)" : "rgba(249, 250, 251, 0.5)",
                     border: `2px solid ${member.isCompanyOwner ? "#3b82f6" : "#e5e7eb"}`,
                     borderRadius: 8,
                     boxShadow: "0 4px 8px -1px rgba(59, 130, 246, 0.3), 0 2px 4px -1px rgba(59, 130, 246, 0.2)"
@@ -749,7 +749,7 @@ export default function CompanyDashboardPage() {
         <div
           style={{
             padding: 24,
-            background: "white",
+            background: "rgba(219, 234, 254, 0.3)",
             borderRadius: 12,
             boxShadow: "0 8px 16px -2px rgba(59, 130, 246, 0.3), 0 4px 8px -2px rgba(59, 130, 246, 0.2)"
           }}
