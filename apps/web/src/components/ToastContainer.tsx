@@ -60,7 +60,9 @@ export default function ToastContainer() {
       }, duration);
     });
 
-    return unsubscribe;
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
   function removeToast(id: string) {
