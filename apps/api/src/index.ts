@@ -31,6 +31,7 @@ import attendanceRoutes from "./routes/attendance.js";
 import announcementsRoutes from "./routes/announcements.js";
 import quoteRoutes from "./routes/quote.js";
 import teamRoutes from "./routes/team.js";
+import workOrdersRoutes from "./routes/work-orders.js";
 
 export const prisma = new PrismaClient();
 
@@ -63,6 +64,7 @@ app.use("/attendance", attendanceRoutes);
 app.use("/announcements", announcementsRoutes);
 app.use("/quotes", quoteRoutes);
 app.use("/team", teamRoutes);
+app.use("/work-orders", workOrdersRoutes);
 app.use("/", performancesRoutes); // performances와 contracts 엔드포인트 모두 포함
 
 // Error handler
