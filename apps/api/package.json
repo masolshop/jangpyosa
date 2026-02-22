@@ -11,7 +11,8 @@
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
     "fix:supplier-buyer-profile": "tsx scripts/add-buyer-profile-to-suppliers.ts",
-    "mock:employees": "tsx scripts/create-mock-employees.ts"
+    "mock:employees": "tsx scripts/create-mock-employees.ts",
+    "check:users": "tsx scripts/check-users.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.20.0",
