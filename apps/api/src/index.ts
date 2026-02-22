@@ -70,8 +70,24 @@ app.use((err: any, _req: express.Request, res: express.Response, _next: express.
   res.status(500).json({ error: err.message || "INTERNAL_ERROR" });
 });
 
-app.listen(config.port, () => {
+app.listen(config.port, async () => {
   console.log(`🚀 장표사닷컴 API listening on :${config.port}`);
   console.log(`📊 Database: ${process.env.DATABASE_URL?.split("@")[1] || "local"}`);
   console.log(`🔐 APICK Provider: ${config.apickProvider}`);
+  
+  // 서버 시작 시 만료된 초대 코드 자동 정리
+  try {
+    const now = new Date();
+    const result = await prisma.teamInvitation.deleteMany({
+      where: {
+        expiresAt: { lt: now },
+        isUsed: false
+      }
+    });
+    if (result.count > 0) {
+      console.log(`🗑️  만료된 초대 코드 ${result.count}개 자동 삭제 완료`);
+    }
+  } catch (error) {
+    console.error('⚠️  만료된 초대 코드 정리 중 오류:', error);
+  }
 });
