@@ -99,13 +99,13 @@ router.get("/", requireAuth, async (req, res) => {
       // 의무고용인원
       const obligated = Math.floor(employeeCount * quotaRate);
 
-      // 인정 장애인 수 (중증 60시간 이상 2배)
+      // 인정 장애인 수 (중증장애인은 항상 2배 인정)
       let recognizedCount = 0;
       activeEmployees.forEach((emp) => {
-        if (emp.severity === "SEVERE" && (emp.workHoursPerWeek || 40) >= 60) {
-          recognizedCount += 2;
+        if (emp.severity === "SEVERE") {
+          recognizedCount += 2;  // 중증장애인: 2배 인정
         } else {
-          recognizedCount += 1;
+          recognizedCount += 1;  // 경증장애인: 1배 인정
         }
       });
 
