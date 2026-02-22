@@ -599,6 +599,9 @@ export default function CompanyDashboardPage() {
                         {inv.isUsed && (
                           <span style={{ marginLeft: 8, color: "#6b7280", fontSize: 14 }}>(사용됨)</span>
                         )}
+                        {!inv.isUsed && new Date(inv.expiresAt) < new Date() && (
+                          <span style={{ marginLeft: 8, color: "#ef4444", fontSize: 14 }}>(만료됨)</span>
+                        )}
                       </p>
                       <p style={{ margin: "4px 0 0 0", fontSize: 14, color: "#666" }}>
                         만료일: {formatDate(inv.expiresAt)}
@@ -618,37 +621,37 @@ export default function CompanyDashboardPage() {
                       </p>
                     </div>
                     <div style={{ display: "flex", gap: 8 }}>
-                      {!inv.isUsed && (
-                        <>
-                          <button
-                            onClick={() => copyToClipboard(inv.inviteUrl, inv.inviteCode)}
-                            style={{
-                              background: "#3b82f6",
-                              color: "white",
-                              border: "none",
-                              padding: "8px 12px",
-                              borderRadius: 6,
-                              fontSize: 14,
-                              cursor: "pointer"
-                            }}
-                          >
-                            {copiedCode === inv.inviteCode ? "✅" : "📋"}
-                          </button>
-                          <button
-                            onClick={() => deleteInvitation(inv.id)}
-                            style={{
-                              background: "#ef4444",
-                              color: "white",
-                              border: "none",
-                              padding: "8px 12px",
-                              borderRadius: 6,
-                              fontSize: 14,
-                              cursor: "pointer"
-                            }}
-                          >
-                            🗑️
-                          </button>
-                        </>
+                      {!inv.isUsed && new Date(inv.expiresAt) >= new Date() && (
+                        <button
+                          onClick={() => copyToClipboard(inv.inviteUrl, inv.inviteCode)}
+                          style={{
+                            background: "#3b82f6",
+                            color: "white",
+                            border: "none",
+                            padding: "8px 12px",
+                            borderRadius: 6,
+                            fontSize: 14,
+                            cursor: "pointer"
+                          }}
+                        >
+                          {copiedCode === inv.inviteCode ? "✅" : "📋"}
+                        </button>
+                      )}
+                      {(inv.isUsed || new Date(inv.expiresAt) < new Date()) && (
+                        <button
+                          onClick={() => deleteInvitation(inv.id)}
+                          style={{
+                            background: "#ef4444",
+                            color: "white",
+                            border: "none",
+                            padding: "8px 12px",
+                            borderRadius: 6,
+                            fontSize: 14,
+                            cursor: "pointer"
+                          }}
+                        >
+                          🗑️ 삭제
+                        </button>
                       )}
                     </div>
                   </div>
