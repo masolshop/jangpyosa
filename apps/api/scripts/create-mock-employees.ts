@@ -112,11 +112,8 @@ async function createMockEmployees() {
         // 중증(50%) vs 경증(50%)
         const severity = Math.random() > 0.5 ? '중증' : '경증';
         
-        // 월 근무시간: 60-180시간 랜덤
-        const monthlyHours = Math.floor(Math.random() * 121) + 60;
-        
-        // 월급: 200만원 ~ 350만원 랜덤
-        const monthlySalary = Math.floor(Math.random() * 1500000) + 2000000;
+        // 주당 근무시간: 15-40시간 랜덤
+        const workHoursPerWeek = Math.floor(Math.random() * 26) + 15;
         
         const disabilityType = disabilityTypes[Math.floor(Math.random() * disabilityTypes.length)];
         const disabilityGrade = Math.floor(Math.random() * 3) + 1; // 1-3급
@@ -136,15 +133,14 @@ async function createMockEmployees() {
               disabilityType,
               disabilityGrade: `${disabilityGrade}급`,
               severity,
-              monthlyWorkHours: monthlyHours,
-              monthlySalary,
+              workHoursPerWeek,
               hireDate: new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1),
               isActive: true
             }
           });
 
           employees.push(employee);
-          console.log(`   ✅ ${i + 1}/${employeeCount}: ${name} (${severity}, ${gender}, ${monthlyHours}시간/월)`);
+          console.log(`   ✅ ${i + 1}/${employeeCount}: ${name} (${severity}, ${gender}, ${workHoursPerWeek}시간/주)`);
         } catch (error: any) {
           console.log(`   ❌ ${i + 1}/${employeeCount}: ${name} - 오류: ${error.message}`);
         }
@@ -157,12 +153,12 @@ async function createMockEmployees() {
       const mildCount = employees.filter(e => e.severity === '경증').length;
       const maleCount = employees.filter(e => e.gender === '남').length;
       const femaleCount = employees.filter(e => e.gender === '여').length;
-      const totalHours = employees.reduce((sum, e) => sum + e.monthlyWorkHours, 0);
-      const avgHours = Math.round(totalHours / employees.length);
+      const totalHours = employees.reduce((sum, e) => sum + (e.workHoursPerWeek || 0), 0);
+      const avgHours = totalHours > 0 ? Math.round(totalHours / employees.length) : 0;
 
       console.log(`   - 중증: ${severeCount}명, 경증: ${mildCount}명`);
       console.log(`   - 남성: ${maleCount}명, 여성: ${femaleCount}명`);
-      console.log(`   - 평균 근무시간: ${avgHours}시간/월`);
+      console.log(`   - 평균 근무시간: ${avgHours}시간/주`);
       console.log(`   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
     }
 
