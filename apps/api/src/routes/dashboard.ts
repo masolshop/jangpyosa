@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { prisma } from "../index.js";
 import { requireAuth } from "../middleware/auth.js";
+import { getLevyBaseAmount2026 } from "../services/employment-calculator.js";
 
 const router = Router();
 
@@ -112,12 +113,13 @@ router.get("/", requireAuth, async (req, res) => {
       // 미달인원
       const shortfall = Math.max(0, obligated - recognizedCount);
 
-      // 월별 부담금 (간단 계산)
-      const monthlyLevy = shortfall * yearSetting.baseLevyAmount;
+      // 월별 부담금 (고용수준별 단가 적용)
+      const levyBaseAmount = getLevyBaseAmount2026(recognizedCount, obligated);
+      const monthlyLevy = shortfall * levyBaseAmount;
       totalLevy += monthlyLevy;
 
-      // 장려금 계산 (의무고용인원 초과 인원)
-      const eligibleForIncentive = Math.max(0, activeEmployees.length - Math.ceil(employeeCount * quotaRate));
+      // 장려금 계산 (인정수가 의무고용인원 초과 시)
+      const eligibleForIncentive = Math.max(0, recognizedCount - obligated);
       let monthlyIncentive = 0;
 
       if (eligibleForIncentive > 0) {
