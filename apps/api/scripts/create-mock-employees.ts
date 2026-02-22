@@ -131,7 +131,7 @@ async function createMockEmployees() {
             data: {
               buyerId: company.buyerProfile.id,
               name,
-              regNo,
+              registrationNumber: regNo,
               phone,
               address,
               gender,
