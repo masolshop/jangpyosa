@@ -1191,14 +1191,9 @@ r.post("/signup-invited", async (req, res) => {
       include: { company: true }
     });
     
-    // 6. 초대 코드 사용 처리
-    await prisma.teamInvitation.update({
-      where: { id: invitation.id },
-      data: {
-        isUsed: true,
-        usedBy: newUser.id,
-        usedAt: new Date()
-      }
+    // 6. 초대 코드 삭제 (사용 완료된 초대는 자동 삭제)
+    await prisma.teamInvitation.delete({
+      where: { id: invitation.id }
     });
     
     // 7. JWT 토큰 생성

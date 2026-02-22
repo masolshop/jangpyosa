@@ -145,15 +145,7 @@ router.get("/invite/:code", async (req: any, res: any) => {
       return res.status(404).json({ error: "유효하지 않은 초대 코드입니다" });
     }
 
-    // 이미 사용된 초대 코드
-    if (invitation.isUsed) {
-      return res.status(400).json({ 
-        error: "이미 사용된 초대 코드입니다",
-        used: true
-      });
-    }
-
-    // 만료된 초대 코드
+    // 만료된 초대 코드 (사용된 초대는 이미 삭제됨)
     if (new Date() > new Date(invitation.expiresAt)) {
       return res.status(400).json({ 
         error: "만료된 초대 코드입니다",
@@ -190,8 +182,12 @@ router.get("/invitations", requireAuth, async (req: any, res: any) => {
   try {
     const userId = req.user!.id;
 
+    // 사용되지 않은 초대 코드만 조회 (사용된 코드는 가입 시 자동 삭제됨)
     const invitations = await prisma.teamInvitation.findMany({
-      where: { invitedBy: userId },
+      where: { 
+        invitedBy: userId,
+        isUsed: false  // 사용되지 않은 초대만 조회
+      },
       include: {
         company: {
           select: {
@@ -244,9 +240,7 @@ router.delete("/invite/:id", requireAuth, async (req: any, res: any) => {
       return res.status(403).json({ error: "삭제 권한이 없습니다" });
     }
 
-    if (invitation.isUsed) {
-      return res.status(400).json({ error: "이미 사용된 초대 코드는 삭제할 수 없습니다" });
-    }
+    // 이미 사용된 초대는 가입 시 자동 삭제되므로 여기서는 체크 불필요
 
     await prisma.teamInvitation.delete({
       where: { id }
