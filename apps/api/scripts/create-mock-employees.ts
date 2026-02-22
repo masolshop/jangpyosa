@@ -132,6 +132,7 @@ async function createMockEmployees() {
               buyerId: company.buyerProfile.id,
               name,
               registrationNumber: regNo,
+              gender,
               disabilityType,
               disabilityGrade: `${disabilityGrade}급`,
               severity,
