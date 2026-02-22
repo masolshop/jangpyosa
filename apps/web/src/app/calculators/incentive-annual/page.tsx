@@ -288,11 +288,8 @@ export default function IncentiveAnnualPage() {
           if (w.severity === "SEVERE" && w.gender === "M") rate = INCENTIVE_RATES_2026.SEVERE_M;
           if (w.severity === "SEVERE" && w.gender === "F") rate = INCENTIVE_RATES_2026.SEVERE_F;
 
-          // 중증 장애인: min(단가, 임금 × 60%)
-          let amount = rate;
-          if (w.severity === "SEVERE") {
-            amount = Math.min(rate, w.monthlySalary * 0.6);
-          }
+          // 고용노동부 기준: 경증/중증 모두 지급단가와 월임금 60% 중 낮은 금액 적용
+          const amount = Math.min(rate, w.monthlySalary * 0.6);
 
           return { worker: w, amount };
         });
