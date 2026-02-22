@@ -2,23 +2,43 @@ import { Router } from 'express';
 import { prisma } from '../index.js';
 import { requireAuth } from '../middleware/auth.js';
 
+// 사용자의 회사 정보 조회 헬퍼 함수 (getUserCompany)
+async function getUserCompany(userId: string, userRole: string) {
+  if (userRole === 'SUPER_ADMIN') {
+    // 슈퍼 어드민은 첫 번째 BUYER 회사를 반환
+    return await prisma.company.findFirst({
+      where: { type: 'BUYER' },
+      include: { buyerProfile: true }
+    });
+  }
+  
+  // 일반 사용자는 자신이 속한 회사를 반환
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: {
+      company: {
+        include: { buyerProfile: true }
+      }
+    }
+  });
+  
+  return user?.company || null;
+}
+
 const router = Router();
 
-// 공지사항 목록 조회 (바이어)
+// 공지사항 목록 조회 (바이어, 표준사업장, 슈퍼 어드민)
 router.get('/list', requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
     const userRole = req.user!.role;
     
-    if (userRole !== 'BUYER') {
-      return res.status(403).json({ error: '바이어만 접근 가능합니다' });
+    if (!['BUYER', 'SUPPLIER', 'SUPER_ADMIN'].includes(userRole)) {
+      return res.status(403).json({ error: '접근 권한이 없습니다' });
     }
 
-    // 바이어의 회사 정보 가져오기
-    const company = await prisma.company.findUnique({
-      where: { ownerUserId: userId },
-      include: { buyerProfile: true }
-    });
+    // 사용자의 회사 정보 가져오기
+    const company = await getUserCompany(userId, userRole);
 
     if (!company || !company.buyerProfile) {
       return res.status(404).json({ error: '회사 정보를 찾을 수 없습니다' });
@@ -74,8 +94,8 @@ router.get('/:id/readers', requireAuth, async (req, res) => {
     const userRole = req.user!.role;
     const announcementId = req.params.id;
     
-    if (userRole !== 'BUYER') {
-      return res.status(403).json({ error: '바이어만 접근 가능합니다' });
+    if (!['BUYER', 'SUPPLIER', 'SUPER_ADMIN'].includes(userRole)) {
+      return res.status(403).json({ error: '접근 권한이 없습니다' });
     }
 
     const announcement = await prisma.companyAnnouncement.findUnique({
@@ -94,10 +114,7 @@ router.get('/:id/readers', requireAuth, async (req, res) => {
     }
 
     // 회사의 모든 장애인 직원 조회
-    const company = await prisma.company.findUnique({
-      where: { ownerUserId: userId },
-      include: { buyerProfile: true }
-    });
+    const company = await getUserCompany(userId, userRole);
 
     if (!company || !company.buyerProfile) {
       return res.status(404).json({ error: '회사 정보를 찾을 수 없습니다' });
@@ -139,14 +156,14 @@ router.get('/:id/readers', requireAuth, async (req, res) => {
   }
 });
 
-// 공지사항 작성 (바이어)
+// 공지사항 작성 (바이어, 표준사업장, 슈퍼 어드민)
 router.post('/create', requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
     const userRole = req.user!.role;
     
-    if (userRole !== 'BUYER') {
-      return res.status(403).json({ error: '바이어만 접근 가능합니다' });
+    if (!['BUYER', 'SUPPLIER', 'SUPER_ADMIN'].includes(userRole)) {
+      return res.status(403).json({ error: '접근 권한이 없습니다' });
     }
 
     const { title, content, priority = 'NORMAL' } = req.body;
@@ -155,11 +172,8 @@ router.post('/create', requireAuth, async (req, res) => {
       return res.status(400).json({ error: '제목과 내용은 필수입니다' });
     }
 
-    // 바이어의 회사 정보 가져오기
-    const company = await prisma.company.findUnique({
-      where: { ownerUserId: userId },
-      include: { buyerProfile: true }
-    });
+    // 사용자의 회사 정보 가져오기
+    const company = await getUserCompany(userId, userRole);
 
     if (!company || !company.buyerProfile) {
       return res.status(404).json({ error: '회사 정보를 찾을 수 없습니다' });
@@ -186,15 +200,15 @@ router.post('/create', requireAuth, async (req, res) => {
   }
 });
 
-// 공지사항 수정 (바이어)
+// 공지사항 수정 (바이어, 표준사업장, 슈퍼 어드민)
 router.put('/:id', requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
     const userRole = req.user!.role;
     const announcementId = req.params.id;
     
-    if (userRole !== 'BUYER') {
-      return res.status(403).json({ error: '바이어만 접근 가능합니다' });
+    if (!['BUYER', 'SUPPLIER', 'SUPER_ADMIN'].includes(userRole)) {
+      return res.status(403).json({ error: '접근 권한이 없습니다' });
     }
 
     const { title, content, priority, isActive } = req.body;
@@ -219,15 +233,15 @@ router.put('/:id', requireAuth, async (req, res) => {
   }
 });
 
-// 공지사항 삭제 (바이어)
+// 공지사항 삭제 (바이어, 표준사업장, 슈퍼 어드민)
 router.delete('/:id', requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
     const userRole = req.user!.role;
     const announcementId = req.params.id;
     
-    if (userRole !== 'BUYER') {
-      return res.status(403).json({ error: '바이어만 접근 가능합니다' });
+    if (!['BUYER', 'SUPPLIER', 'SUPER_ADMIN'].includes(userRole)) {
+      return res.status(403).json({ error: '접근 권한이 없습니다' });
     }
 
     await prisma.companyAnnouncement.delete({
