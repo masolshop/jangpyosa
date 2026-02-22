@@ -59,7 +59,7 @@ async function createMockEmployees() {
     console.log('🚀 목업 직원 데이터 생성 시작...\n');
 
     // 목표 계정 아이디 (실제 존재하는 계정들)
-    const targetUserIds = [
+    const targetUsernames = [
       'buyer01',     // 민간기업
       'buyer03',     // 공공기관
       'buyer05',     // 국가지자체/교육청
@@ -69,7 +69,7 @@ async function createMockEmployees() {
     // 사용자 조회
     const allUsers = await prisma.user.findMany({
       where: {
-        userId: { in: targetUserIds }
+        username: { in: targetUsernames }
       },
       include: {
         company: {
@@ -98,7 +98,7 @@ async function createMockEmployees() {
 
       const employeeCount = Math.floor(Math.random() * 6) + 10; // 10-15명
       console.log(`\n🏢 ${company.name} (${company.buyerType || company.type})`);
-      console.log(`   👤 소유자: ${user.phone}`);
+      console.log(`   👤 소유자: ${user.username || user.phone}`);
       console.log(`   📝 생성할 직원 수: ${employeeCount}명\n`);
 
       const employees = [];

@@ -23,14 +23,14 @@ async function checkUsers() {
         }
       },
       orderBy: {
-        userId: 'asc'
+        username: 'asc'
       }
     });
 
     console.log(`✅ 총 ${users.length}명의 BUYER/SUPPLIER 사용자 발견\n`);
 
     users.forEach((user, index) => {
-      console.log(`${index + 1}. 아이디: ${user.userId || 'N/A'} / 전화: ${user.phone} (${user.role})`);
+      console.log(`${index + 1}. 아이디: ${user.username || 'N/A'} / 전화: ${user.phone} (${user.role})`);
       if (user.company) {
         console.log(`   회사: ${user.company.name}`);
         console.log(`   타입: ${user.company.type} / ${user.company.buyerType || 'N/A'}`);
