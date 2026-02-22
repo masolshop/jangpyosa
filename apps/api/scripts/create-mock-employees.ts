@@ -138,8 +138,7 @@ async function createMockEmployees() {
               severity,
               workHoursPerWeek,
               monthlySalary,
-              hireDate: new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1),
-              isActive: true
+              hireDate: new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1)
             }
           });
 
