@@ -22,8 +22,15 @@ const INCENTIVE_RATES = {
   },
 };
 
-// 부담금 단가 (월)
-const LEVY_BASE_AMOUNT = 1260000; // 2026년 기준
+// 부담금 기초액 (월, 2026년 기준 - 고용수준별)
+// 고용수준 = 장애인고용인원 / 의무고용인원
+const LEVY_BASE_AMOUNTS = {
+  LEVEL_0: 2156880,    // 0명 고용
+  LEVEL_1_4: 1813000,  // 1/4 미만
+  LEVEL_1_4_TO_1_2: 1554000,  // 1/4 ~ 1/2 미만
+  LEVEL_1_2_TO_3_4: 1372700,  // 1/2 ~ 3/4 미만
+  LEVEL_3_4_OVER: 1295000,    // 3/4 이상
+};
 
 // 의무고용률
 const QUOTA_RATES = {
@@ -34,7 +41,7 @@ const QUOTA_RATES = {
 };
 
 // 중증 장애인 인정 배수
-const SEVERE_MULTIPLIER_THRESHOLD = 60; // 주 60시간 이상
+const SEVERE_MULTIPLIER_THRESHOLD = 60; // 월 60시간 이상
 const SEVERE_MULTIPLIER = 2.0;
 const MILD_MULTIPLIER = 1.0;
 
@@ -56,7 +63,8 @@ export interface Employee {
   birthDate?: Date;
   hireDate: Date;
   resignDate?: Date;
-  workHoursPerWeek: number;
+  workHoursPerWeek: number;  // 주당 근무시간 (참고용)
+  monthlyWorkHours?: number;  // 월 근로시간 (메인)
   monthlySalary: number;
   meetsMinimumWage: boolean;
   hasEmploymentInsurance: boolean;
@@ -219,7 +227,10 @@ export function calculateEmployeeMonthly(
   let recognizedMultiplier = 1.0;
   let levyRecognizedCount = 1.0;
   
-  if (employee.severity === "SEVERE" && employee.workHoursPerWeek >= SEVERE_MULTIPLIER_THRESHOLD) {
+  // 월 근로시간 사용 (우선), 없으면 주당 근무시간 사용
+  const monthlyHours = employee.monthlyWorkHours || (employee.workHoursPerWeek * 4.33);
+  
+  if (employee.severity === "SEVERE" && monthlyHours >= SEVERE_MULTIPLIER_THRESHOLD) {
     recognizedMultiplier = SEVERE_MULTIPLIER;
     levyRecognizedCount = SEVERE_MULTIPLIER;
   }
@@ -310,9 +321,30 @@ export function calculateMonthlyData(
   const quotaRate = (QUOTA_RATES as any)[companyType] || QUOTA_RATES.PRIVATE;
   const obligatedCount = Math.floor(totalEmployeeCount * quotaRate);
   
-  // 부담금 계산
+  // 부담금 계산 (고용수준별 부담기초액 적용)
   const shortfallCount = Math.max(0, obligatedCount - recognizedCount);
-  const levy = shortfallCount * LEVY_BASE_AMOUNT;
+  
+  // 고용수준 계산
+  let employmentRate = 0;
+  if (obligatedCount > 0) {
+    employmentRate = recognizedCount / obligatedCount;
+  }
+  
+  // 부담기초액 결정
+  let levyBaseAmount = LEVY_BASE_AMOUNTS.LEVEL_0;
+  if (recognizedCount === 0) {
+    levyBaseAmount = LEVY_BASE_AMOUNTS.LEVEL_0;
+  } else if (employmentRate >= 0.75) {
+    levyBaseAmount = LEVY_BASE_AMOUNTS.LEVEL_3_4_OVER;
+  } else if (employmentRate >= 0.5) {
+    levyBaseAmount = LEVY_BASE_AMOUNTS.LEVEL_1_2_TO_3_4;
+  } else if (employmentRate >= 0.25) {
+    levyBaseAmount = LEVY_BASE_AMOUNTS.LEVEL_1_4_TO_1_2;
+  } else {
+    levyBaseAmount = LEVY_BASE_AMOUNTS.LEVEL_1_4;
+  }
+  
+  const levy = shortfallCount * levyBaseAmount;
   
   // 장려금 계산
   const incentive = details.reduce((sum, d) => sum + d.incentiveAmount, 0);
