@@ -268,8 +268,11 @@ function SignupContent() {
       localStorage.setItem("accessToken", data.accessToken);
       localStorage.setItem("user", JSON.stringify(data.user));
 
+      // 성공 알림
       alert(`✅ ${data.user.company.name}의 팀원으로 가입되었습니다!\n\n로그인 정보:\n- 아이디: ${username}\n- 비밀번호: 설정하신 비밀번호`);
-      router.push("/dashboard");
+      
+      // 대시보드로 이동
+      window.location.href = "/dashboard";
     } catch (error) {
       console.error("Invited signup error:", error);
       setMsg("회원가입 중 오류가 발생했습니다");
