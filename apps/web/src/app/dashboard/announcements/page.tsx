@@ -611,7 +611,7 @@ export default function AnnouncementsPage() {
           minHeight: 600,
         }}>
           <iframe
-            src="/dashboard/work-orders"
+            src="/dashboard/work-orders?embed=true"
             style={{
               width: "100%",
               height: "100%",

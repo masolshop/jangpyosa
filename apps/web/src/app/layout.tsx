@@ -1,9 +1,30 @@
+'use client';
+
 import './globals.css'
 import Sidebar from '@/components/Sidebar'
+import { useSearchParams } from 'next/navigation'
+import { Suspense } from 'react'
 
-export const metadata = {
-  title: '장표사닷컴 - 장애인표준사업장 연계고용 플랫폼',
-  description: '장애인 미고용 부담금 절감을 위한 연계고용 도급계약 플랫폼',
+function LayoutContent({ children }: { children: React.ReactNode }) {
+  const searchParams = useSearchParams()
+  const isEmbedded = searchParams.get('embed') === 'true'
+
+  if (isEmbedded) {
+    return (
+      <main style={{ minHeight: '100vh', padding: 0 }}>
+        {children}
+      </main>
+    )
+  }
+
+  return (
+    <>
+      <Sidebar />
+      <main style={{ marginLeft: 350, minHeight: '100vh' }}>
+        {children}
+      </main>
+    </>
+  )
 }
 
 export default function RootLayout({
@@ -14,10 +35,13 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body>
-        <Sidebar />
-        <main style={{ marginLeft: 350, minHeight: '100vh' }}>
-          {children}
-        </main>
+        <Suspense fallback={
+          <main style={{ minHeight: '100vh' }}>
+            {children}
+          </main>
+        }>
+          <LayoutContent>{children}</LayoutContent>
+        </Suspense>
       </body>
     </html>
   )
