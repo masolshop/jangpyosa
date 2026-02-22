@@ -1138,7 +1138,7 @@ export default function EmployeesPage() {
                           </p>
                         )}
                         <p style={{ margin: "6px 0 0 0", fontSize: 14, color: "#666" }}>
-                          ⏰ 월 {emp.workHoursPerWeek || 60}시간 | 💰 월 {emp.monthlySalary.toLocaleString()}원
+                          ⏰ 근로시간 월 {emp.workHoursPerWeek || 60}시간 | 💰 월 {emp.monthlySalary.toLocaleString()}원 (최저시급 {((emp.monthlySalary / (emp.workHoursPerWeek || 60)) || 10320).toLocaleString()}원)
                         </p>
                         <p style={{ margin: "6px 0 0 0", fontSize: 14, color: "#666" }}>
                           🏢 근무형태: {

@@ -127,9 +127,6 @@ async function createMockEmployees() {
         // 월 근로시간: 60시간 ~ 209시간 랜덤 (최소 60시간, 최대 주 52시간 × 4주)
         const monthlyWorkHours = Math.floor(Math.random() * 150) + MIN_WORK_HOURS; // 60-209시간
         
-        // 주당 근무시간 계산 (월 근로시간 ÷ 4.33주)
-        const workHoursPerWeek = Math.round(monthlyWorkHours / 4.33);
-        
         // 월급 = 월 근로시간 × 최저시급 (10,320원)
         const monthlySalary = monthlyWorkHours * MIN_HOURLY_WAGE;
         
@@ -151,7 +148,7 @@ async function createMockEmployees() {
               disabilityType,
               disabilityGrade: `${disabilityGrade}급`,
               severity,
-              workHoursPerWeek,
+              workHoursPerWeek: monthlyWorkHours, // 실제로는 월 근로시간을 저장
               monthlySalary,
               hireDate: new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1)
             }
