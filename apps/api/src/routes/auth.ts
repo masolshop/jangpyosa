@@ -1112,16 +1112,14 @@ r.post("/login/employee", async (req, res) => {
 
 const signupInvitedSchema = z.object({
   inviteCode: z.string().min(8, "초대 코드를 입력하세요"),
+  username: z.string().min(4, "아이디는 4자 이상이어야 합니다").regex(/^[a-zA-Z0-9]+$/, "아이디는 영문과 숫자만 사용 가능합니다"),
   phone: z.string().min(10, "핸드폰 번호를 입력하세요"),
-  password: z.string().min(4, "비밀번호는 4자리 이상이어야 합니다"),
+  password: z.string().min(8, "비밀번호는 8자 이상이어야 합니다"),
   name: z.string().min(1, "이름을 입력하세요"),
-  email: z.string().email("유효한 이메일을 입력하세요").optional(),
+  email: z.string().email("유효한 이메일을 입력하세요"),
   
-  // 담당자 정보 (선택)
-  managerName: z.string().optional(),
+  // 직함 (선택)
   managerTitle: z.string().optional(),
-  managerEmail: z.string().email().optional(),
-  managerPhone: z.string().optional(),
   
   // 개인정보 동의
   privacyAgreed: z.boolean().refine(val => val === true, "개인정보 처리방침에 동의해야 합니다"),
@@ -1151,20 +1149,30 @@ r.post("/signup-invited", async (req, res) => {
     
     // 2. 핸드폰 번호 정규화 및 중복 체크
     const cleanPhone = normalizePhone(body.phone);
-    const existingUser = await prisma.user.findUnique({
+    const existingUserByPhone = await prisma.user.findUnique({
       where: { phone: cleanPhone }
     });
     
-    if (existingUser) {
+    if (existingUserByPhone) {
       return res.status(400).json({ error: "PHONE_EXISTS", message: "이미 가입된 핸드폰 번호입니다" });
     }
     
-    // 3. 비밀번호 해시
+    // 3. 아이디 중복 체크
+    const existingUserByUsername = await prisma.user.findUnique({
+      where: { username: body.username }
+    });
+    
+    if (existingUserByUsername) {
+      return res.status(400).json({ error: "USERNAME_EXISTS", message: "이미 사용 중인 아이디입니다" });
+    }
+    
+    // 4. 비밀번호 해시
     const passwordHash = await bcrypt.hash(body.password, 10);
     
-    // 4. 사용자 생성
+    // 5. 사용자 생성
     const newUser = await prisma.user.create({
       data: {
+        username: body.username,
         phone: cleanPhone,
         passwordHash,
         name: body.name,
@@ -1172,17 +1180,14 @@ r.post("/signup-invited", async (req, res) => {
         role: invitation.role,
         companyId: invitation.companyId,
         isCompanyOwner: false, // 초대받은 사람은 소유자가 아님
-        managerName: body.managerName,
         managerTitle: body.managerTitle,
-        managerEmail: body.managerEmail,
-        managerPhone: body.managerPhone,
         privacyAgreed: body.privacyAgreed,
         privacyAgreedAt: new Date(),
       },
       include: { company: true }
     });
     
-    // 5. 초대 코드 사용 처리
+    // 6. 초대 코드 사용 처리
     await prisma.teamInvitation.update({
       where: { id: invitation.id },
       data: {
@@ -1192,7 +1197,7 @@ r.post("/signup-invited", async (req, res) => {
       }
     });
     
-    // 6. JWT 토큰 생성
+    // 7. JWT 토큰 생성
     const accessToken = jwt.sign(
       { userId: newUser.id, role: newUser.role },
       config.jwtSecret,
@@ -1211,6 +1216,7 @@ r.post("/signup-invited", async (req, res) => {
       refreshToken,
       user: {
         id: newUser.id,
+        username: newUser.username,
         phone: newUser.phone,
         name: newUser.name,
         role: newUser.role,

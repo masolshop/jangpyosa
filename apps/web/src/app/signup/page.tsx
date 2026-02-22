@@ -192,6 +192,7 @@ function SignupContent() {
   async function onInvitedSignup() {
     setMsg("");
 
+    // 필수 항목 검증
     if (!name) {
       setMsg("이름을 입력하세요");
       return;
@@ -199,6 +200,37 @@ function SignupContent() {
 
     if (!phone) {
       setMsg("핸드폰 번호를 입력하세요");
+      return;
+    }
+
+    if (!email) {
+      setMsg("이메일을 입력하세요");
+      return;
+    }
+
+    if (!username) {
+      setMsg("아이디를 입력하세요");
+      return;
+    }
+
+    // username 유효성 검사 (영문+숫자만)
+    if (!/^[a-zA-Z0-9]+$/.test(username)) {
+      setMsg("아이디는 영문과 숫자만 사용 가능합니다");
+      return;
+    }
+
+    if (!password) {
+      setMsg("비밀번호를 입력하세요");
+      return;
+    }
+
+    if (password.length < 8) {
+      setMsg("비밀번호는 8자 이상이어야 합니다");
+      return;
+    }
+
+    if (password !== passwordConfirm) {
+      setMsg("비밀번호가 일치하지 않습니다");
       return;
     }
 
@@ -210,22 +242,17 @@ function SignupContent() {
     setLoading(true);
 
     try {
-      // 비밀번호 자동 생성 (핸드폰 번호 뒤 8자리)
-      const autoPassword = phone.replace(/\D/g, "").slice(-8);
-
       const res = await fetch("/api/auth/signup-invited", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           inviteCode: inviteCode,
+          username,
           phone,
-          password: autoPassword,
+          password,
           name,
           email,
-          managerName,
           managerTitle,
-          managerEmail,
-          managerPhone,
           privacyAgreed,
         }),
       });
@@ -241,7 +268,7 @@ function SignupContent() {
       localStorage.setItem("accessToken", data.accessToken);
       localStorage.setItem("user", JSON.stringify(data.user));
 
-      alert(`✅ ${data.user.company.name}의 팀원으로 가입되었습니다!\n\n로그인 정보:\n- ID: ${phone}\n- 비밀번호: ${autoPassword}\n\n비밀번호는 핸드폰 번호 뒤 8자리입니다.`);
+      alert(`✅ ${data.user.company.name}의 팀원으로 가입되었습니다!\n\n로그인 정보:\n- 아이디: ${username}\n- 비밀번호: 설정하신 비밀번호`);
       router.push("/dashboard");
     } catch (error) {
       console.error("Invited signup error:", error);
@@ -467,8 +494,7 @@ function SignupContent() {
                     <strong>{invitationInfo.inviteeName}님 ({invitationInfo.inviteePhone})</strong> 귀하를 위한 초대 링크입니다.<br/>
                   </>
                 )}
-                아래 정보를 입력하시면 {invitationInfo.companyName}의 팀원으로 가입됩니다.<br/>
-                <strong style={{ color: "#ef4444" }}>비밀번호는 핸드폰 번호 뒤 8자리로 자동 설정됩니다.</strong>
+                아래 정보를 입력하시면 {invitationInfo.companyName}의 팀원으로 가입됩니다.
               </p>
             </div>
 
@@ -487,7 +513,7 @@ function SignupContent() {
                 }}
               />
 
-              <label>핸드폰 번호 * (로그인 ID 및 비밀번호로 사용됩니다)</label>
+              <label>핸드폰 번호 *</label>
               <input
                 type="tel"
                 value={phone}
@@ -499,31 +525,16 @@ function SignupContent() {
                   cursor: invitationInfo.inviteePhone ? "not-allowed" : "text"
                 }}
               />
-              <p style={{ margin: "8px 0 0 0", fontSize: 13, color: "#ef4444" }}>
-                ⚠️ 비밀번호는 핸드폰 번호 뒤 8자리로 자동 설정됩니다.
-              </p>
 
-              <label>이메일 (선택)</label>
+              <label>이메일 *</label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="example@email.com"
+                placeholder="masolshopceo@gmail.com"
               />
 
-              <hr style={{ margin: "24px 0", border: "none", borderTop: "1px solid #eee" }} />
-
-              <h3 style={{ fontSize: 16, marginBottom: 12 }}>담당자 정보 (선택)</h3>
-
-              <label>담당자 성함</label>
-              <input
-                type="text"
-                value={managerName}
-                onChange={(e) => setManagerName(e.target.value)}
-                placeholder="김담당"
-              />
-
-              <label>담당자 직함</label>
+              <label>직함</label>
               <input
                 type="text"
                 value={managerTitle}
@@ -531,20 +542,28 @@ function SignupContent() {
                 placeholder="과장"
               />
 
-              <label>담당자 이메일</label>
+              <label>아이디 * (영문+숫자)</label>
               <input
-                type="email"
-                value={managerEmail}
-                onChange={(e) => setManagerEmail(e.target.value)}
-                placeholder="manager@company.com"
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="user123"
               />
 
-              <label>담당자 핸드폰 (알림톡 수신용)</label>
+              <label>비밀번호 *</label>
               <input
-                type="tel"
-                value={managerPhone}
-                onChange={(e) => setManagerPhone(formatPhone(e.target.value))}
-                placeholder="010-9876-5432"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="비밀번호를 입력하세요"
+              />
+
+              <label>비밀번호 확인 *</label>
+              <input
+                type="password"
+                value={passwordConfirm}
+                onChange={(e) => setPasswordConfirm(e.target.value)}
+                placeholder="비밀번호를 다시 입력하세요"
               />
 
               <hr style={{ margin: "24px 0", border: "none", borderTop: "1px solid #eee" }} />
@@ -584,6 +603,13 @@ function SignupContent() {
               >
                 {loading ? "가입 중..." : "회원가입"}
               </button>
+
+              {/* 아이디·비밀번호 찾기 링크 */}
+              <p style={{ marginTop: 16, textAlign: "center", fontSize: 14, color: "#666" }}>
+                <a href="/forgot-password" style={{ color: "#0070f3", textDecoration: "underline" }}>
+                  아이디·비밀번호 찾기
+                </a>
+              </p>
             </div>
           </div>
         </div>
