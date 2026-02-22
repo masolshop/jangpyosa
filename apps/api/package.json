@@ -9,7 +9,8 @@
     "prisma": "prisma",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:seed": "tsx prisma/seed.ts",
+    "fix:supplier-buyer-profile": "tsx scripts/add-buyer-profile-to-suppliers.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.20.0",

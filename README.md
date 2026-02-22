@@ -688,6 +688,42 @@ curl -X POST http://localhost:4000/auth/login \
 
 ## 🚢 배포 가이드
 
+### 🔄 표준사업장 권한 마이그레이션 (필수!)
+
+**중요**: 기존 표준사업장 계정이 장애인 직원 관리 기능을 사용하려면 `buyerProfile` 추가가 필요합니다.
+
+```bash
+# AWS 서버 접속
+ssh ubuntu@43.201.0.129
+
+# 프로젝트 디렉토리 이동
+cd /home/ubuntu/jangpyosa
+
+# 최신 코드 가져오기
+git pull origin main
+
+# 마이그레이션 실행 (SQLite)
+cd apps/api
+sqlite3 prisma/dev.db < scripts/update-supplier-profiles.sql
+
+# 또는 TypeScript 스크립트 실행
+npm run fix:supplier-buyer-profile
+
+# API 서버 빌드 및 재시작
+npm run build
+pm2 restart jangpyosa-api
+
+# WEB 서버 빌드 및 재시작
+cd ../web
+npm run build
+pm2 restart jangpyosa-web
+
+# 상태 확인
+pm2 status
+pm2 logs jangpyosa-api --nostream
+pm2 logs jangpyosa-web --nostream
+```
+
 ### PostgreSQL로 전환 (프로덕션)
 
 ```bash
