@@ -460,17 +460,17 @@ export default function AnnouncementsPage() {
       {activeTab === "announcements" ? (
         /* 공지사항 목록 */
         <div style={{ background: "white", borderRadius: 12, boxShadow: "0 1px 3px rgba(0,0,0,0.1)", overflow: "hidden" }}>
-        {loading && announcements.length === 0 ? (
-          <div style={{ padding: 40, textAlign: "center", color: "#999" }}>
-            로딩 중...
-          </div>
-        ) : announcements.length === 0 ? (
-          <div style={{ padding: 40, textAlign: "center", color: "#999" }}>
-            등록된 공지사항이 없습니다.
-          </div>
-        ) : (
-          <div>
-            {announcements.map((announcement) => (
+          {loading && announcements.length === 0 ? (
+            <div style={{ padding: 40, textAlign: "center", color: "#999" }}>
+              로딩 중...
+            </div>
+          ) : announcements.length === 0 ? (
+            <div style={{ padding: 40, textAlign: "center", color: "#999" }}>
+              등록된 공지사항이 없습니다.
+            </div>
+          ) : (
+            <div>
+              {announcements.map((announcement) => (
               <div
                 key={announcement.id}
                 style={{
@@ -1025,7 +1025,8 @@ export default function AnnouncementsPage() {
             )}
           </div>
         </div>
-      )
+          )}
+        </div>
       ) : (
         /* 업무지시 탭 - iframe으로 표시 */
         <div style={{
