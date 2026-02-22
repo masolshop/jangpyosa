@@ -294,7 +294,8 @@ model DisabledEmployee {
   monthlySalary          Int
   hasEmploymentInsurance Boolean            @default(true)
   meetsMinimumWage       Boolean            @default(true)
-  workHoursPerWeek       Int?
+  workHoursPerWeek       Int?               // 주당 근무시간 (호환성 유지)
+  monthlyWorkHours       Int?               // 월 근로시간 (메인 필드)
   workType               String             @default("OFFICE") // 근무형태: OFFICE, REMOTE, HYBRID
   memo                   String?
   createdAt              DateTime           @default(now())

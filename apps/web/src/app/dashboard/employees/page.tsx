@@ -24,7 +24,8 @@ type Employee = {
   monthlySalary: number;
   hasEmploymentInsurance: boolean;
   meetsMinimumWage: boolean;
-  workHoursPerWeek?: number;
+  workHoursPerWeek?: number;  // 주당 근무시간 (호환성)
+  monthlyWorkHours?: number;   // 월 근로시간 (메인)
   workType?: "OFFICE" | "REMOTE" | "HYBRID";
   memo?: string;
 };
@@ -1138,7 +1139,7 @@ export default function EmployeesPage() {
                           </p>
                         )}
                         <p style={{ margin: "6px 0 0 0", fontSize: 14, color: "#666" }}>
-                          ⏰ 근로시간 월 {emp.workHoursPerWeek || 60}시간 | 💰 월 {emp.monthlySalary.toLocaleString()}원 (최저시급 {((emp.monthlySalary / (emp.workHoursPerWeek || 60)) || 10320).toLocaleString()}원)
+                          ⏰ 근로시간 월 {emp.monthlyWorkHours || emp.workHoursPerWeek || 60}시간 | 💰 월 {emp.monthlySalary.toLocaleString()}원 (시급 {Math.round(emp.monthlySalary / (emp.monthlyWorkHours || emp.workHoursPerWeek || 60)).toLocaleString()}원)
                         </p>
                         <p style={{ margin: "6px 0 0 0", fontSize: 14, color: "#666" }}>
                           🏢 근무형태: {

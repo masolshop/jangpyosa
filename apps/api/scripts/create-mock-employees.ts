@@ -148,7 +148,8 @@ async function createMockEmployees() {
               disabilityType,
               disabilityGrade: `${disabilityGrade}급`,
               severity,
-              workHoursPerWeek: monthlyWorkHours, // 실제로는 월 근로시간을 저장
+              monthlyWorkHours: monthlyWorkHours, // 월 근로시간
+              workHoursPerWeek: Math.round(monthlyWorkHours / 4.33), // 주당 근무시간 (참고용)
               monthlySalary,
               hireDate: new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1)
             }
