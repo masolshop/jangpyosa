@@ -573,6 +573,13 @@ export default function EmployeesPage() {
       <div className="card" style={{ maxWidth: "100%", margin: "20px auto" }}>
         <h1>👥 장애인 직원 등록·관리</h1>
 
+        {/* 참고용 프로그램 안내 - 붉은색 강조 */}
+        <div style={{ marginTop: 16, padding: 12, background: "#fee", borderRadius: 8, border: "2px solid #dc2626" }}>
+          <p style={{ margin: 0, fontSize: 15, color: "#dc2626", fontWeight: 600, textAlign: "center" }}>
+            ⚠️ 본 자동계산 프로그램은 실제 고용부담금 신고프로그램이 아닌 참고용 프로그램입니다.
+          </p>
+        </div>
+
         {/* 기업명 표시 */}
         {companyName && (
           <div style={{
