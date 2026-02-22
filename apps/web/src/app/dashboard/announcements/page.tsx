@@ -1025,8 +1025,7 @@ export default function AnnouncementsPage() {
             )}
           </div>
         </div>
-      )}
-      
+      )
       ) : (
         /* 업무지시 탭 - iframe으로 표시 */
         <div style={{
