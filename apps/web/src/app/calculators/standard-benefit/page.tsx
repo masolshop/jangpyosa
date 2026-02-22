@@ -96,7 +96,12 @@ export default function StandardBenefitCalculatorV2() {
   return (
     <div style={{ padding: 24, maxWidth: 1100, margin: "0 auto" }}>
       <h1>🏢 표준사업장 혜택 계산기</h1>
-      <p style={{ color: "#666", marginTop: 8 }}>
+      <div style={{ marginTop: 12, padding: 12, background: "#fff3cd", borderRadius: 4, fontSize: 14, color: "#856404", border: "1px solid #ffeeba" }}>
+        <p style={{ margin: 0, fontWeight: 600 }}>
+          ⚠️ 본 모의계산 프로그램은 실제 고용부담(장려)금 신고프로그램이 아닌 참고용 프로그램입니다.
+        </p>
+      </div>
+      <p style={{ color: "#666", marginTop: 12 }}>
         표준사업장 설립/운영 시 받을 수 있는 무상지원금(공단) + 세제혜택(조특법 85-6) 추정
       </p>
       <div

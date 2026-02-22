@@ -166,7 +166,12 @@ export default function LinkageCalcPage() {
         <h1 style={{ fontSize: 32, fontWeight: "bold", marginBottom: 12 }}>
           📉 연계고용 부담금 감면 계산기
         </h1>
-        <p style={{ fontSize: 16, color: "#666", lineHeight: 1.6 }}>
+        <div style={{ marginTop: 12, padding: 12, background: "#fff3cd", borderRadius: 4, fontSize: 14, color: "#856404", border: "1px solid #ffeeba" }}>
+          <p style={{ margin: 0, fontWeight: 600 }}>
+            ⚠️ 본 모의계산 프로그램은 실제 고용부담(장려)금 신고프로그램이 아닌 참고용 프로그램입니다.
+          </p>
+        </div>
+        <p style={{ fontSize: 16, color: "#666", lineHeight: 1.6, marginTop: 12 }}>
           장애인표준사업장과의 도급계약에 따른 부담금 감면액을 정확하게 계산합니다.
           <br />
           <strong>2025년도 기준</strong> · 부담기초액 1,258,000원

@@ -102,7 +102,22 @@ export default function LevyCalcPage() {
     <div className="container">
       <div className="card" style={{ maxWidth: 600, margin: "40px auto" }}>
         <h1>💰 간단부담금계산</h1>
-        <p style={{ color: "#666", marginTop: 8 }}>
+        <div
+          style={{
+            marginTop: 12,
+            padding: 12,
+            background: "#fff3cd",
+            borderRadius: 4,
+            fontSize: 14,
+            color: "#856404",
+            border: "1px solid #ffeeba",
+          }}
+        >
+          <p style={{ margin: 0, fontWeight: 600 }}>
+            ⚠️ 본 모의계산 프로그램은 실제 고용부담(장려)금 신고프로그램이 아닌 참고용 프로그램입니다.
+          </p>
+        </div>
+        <p style={{ color: "#666", marginTop: 12 }}>
           상시근로자 수와 장애인 고용인원을 입력하여 부담금을 빠르게 추정하세요
         </p>
         <p style={{ color: "#0070f3", fontSize: 14, marginTop: 8 }}>
