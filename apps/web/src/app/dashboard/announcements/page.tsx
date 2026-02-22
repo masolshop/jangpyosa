@@ -39,6 +39,9 @@ interface AnnouncementDetail {
 }
 
 export default function AnnouncementsPage() {
+  // 탭 상태
+  const [activeTab, setActiveTab] = useState<"announcements" | "work-orders">("announcements");
+  
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -328,52 +331,102 @@ export default function AnnouncementsPage() {
         <h1 style={{ fontSize: 28, margin: 0 }}>📢 회사공지업무방</h1>
         
         <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
-          {/* 자동 음성 읽기 토글 */}
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: 14, color: "#6b7280", fontWeight: 500 }}>🔊 자동 음성 읽기</span>
-            <button
-              onClick={toggleAutoRead}
-              style={{
-                width: 52,
-                height: 28,
-                background: autoReadEnabled ? "#10b981" : "#d1d5db",
-                borderRadius: 14,
-                border: "none",
-                cursor: "pointer",
-                position: "relative",
-                transition: "background 0.3s",
-              }}
-              aria-label={autoReadEnabled ? "자동 읽기 활성화됨" : "자동 읽기 비활성화됨"}
-            >
-              <span style={{
-                position: "absolute",
-                top: 2,
-                left: autoReadEnabled ? 26 : 2,
-                width: 24,
-                height: 24,
-                background: "white",
-                borderRadius: "50%",
-                transition: "left 0.3s",
-              }} />
-            </button>
-          </div>
+          {/* 자동 음성 읽기 토글 (공지사항 탭에서만 표시) */}
+          {activeTab === "announcements" && (
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 14, color: "#6b7280", fontWeight: 500 }}>🔊 자동 음성 읽기</span>
+              <button
+                onClick={toggleAutoRead}
+                style={{
+                  width: 52,
+                  height: 28,
+                  background: autoReadEnabled ? "#10b981" : "#d1d5db",
+                  borderRadius: 14,
+                  border: "none",
+                  cursor: "pointer",
+                  position: "relative",
+                  transition: "background 0.3s",
+                }}
+                aria-label={autoReadEnabled ? "자동 읽기 활성화됨" : "자동 읽기 비활성화됨"}
+              >
+                <span style={{
+                  position: "absolute",
+                  top: 2,
+                  left: autoReadEnabled ? 26 : 2,
+                  width: 24,
+                  height: 24,
+                  background: "white",
+                  borderRadius: "50%",
+                  transition: "left 0.3s",
+                }} />
+              </button>
+            </div>
+          )}
           
-          <button
-            onClick={() => setIsCreateModalOpen(true)}
-            style={{
-              padding: "12px 24px",
-              background: "#3b82f6",
-              color: "white",
-              border: "none",
-              borderRadius: 8,
-              fontSize: 16,
-              fontWeight: "600",
-              cursor: "pointer",
-            }}
-          >
-            ✏️ 공지 작성
-          </button>
+          {/* 공지 작성 버튼 (공지사항 탭에서만 표시) */}
+          {activeTab === "announcements" && (
+            <button
+              onClick={() => setIsCreateModalOpen(true)}
+              style={{
+                padding: "12px 24px",
+                background: "#3b82f6",
+                color: "white",
+                border: "none",
+                borderRadius: 8,
+                fontSize: 16,
+                fontWeight: "600",
+                cursor: "pointer",
+              }}
+            >
+              ✏️ 공지 작성
+            </button>
+          )}
         </div>
+      </div>
+
+      {/* 탭 메뉴 */}
+      <div style={{
+        display: "flex",
+        gap: 8,
+        marginBottom: 24,
+        borderBottom: "2px solid #e5e7eb",
+      }}>
+        <button
+          onClick={() => setActiveTab("announcements")}
+          style={{
+            padding: "12px 24px",
+            background: activeTab === "announcements" ? "#3b82f6" : "transparent",
+            color: activeTab === "announcements" ? "white" : "#6b7280",
+            border: "none",
+            borderRadius: "8px 8px 0 0",
+            fontSize: 16,
+            fontWeight: "600",
+            cursor: "pointer",
+            transition: "all 0.2s",
+            marginBottom: -2,
+            borderBottom: activeTab === "announcements" ? "2px solid #3b82f6" : "none",
+          }}
+        >
+          📢 공지사항
+        </button>
+        <button
+          onClick={() => setActiveTab("work-orders")}
+          style={{
+            padding: "12px 24px",
+            background: activeTab === "work-orders" ? "#3b82f6" : "transparent",
+            color: activeTab === "work-orders" ? "white" : "#6b7280",
+            border: "none",
+            borderRadius: "8px 8px 0 0",
+            fontSize: 16,
+            fontWeight: "600",
+            cursor: "pointer",
+            transition: "all 0.2s",
+            marginBottom: -2,
+            borderBottom: activeTab === "work-orders" ? "2px solid #3b82f6" : "none",
+          }}
+        >
+          📋 업무지시
+        </button>
       </div>
 
       {/* 메시지 */}
@@ -403,8 +456,10 @@ export default function AnnouncementsPage() {
         </div>
       )}
 
-      {/* 공지사항 목록 */}
-      <div style={{ background: "white", borderRadius: 12, boxShadow: "0 1px 3px rgba(0,0,0,0.1)", overflow: "hidden" }}>
+      {/* 탭 컨텐츠 */}
+      {activeTab === "announcements" ? (
+        /* 공지사항 목록 */
+        <div style={{ background: "white", borderRadius: 12, boxShadow: "0 1px 3px rgba(0,0,0,0.1)", overflow: "hidden" }}>
         {loading && announcements.length === 0 ? (
           <div style={{ padding: 40, textAlign: "center", color: "#999" }}>
             로딩 중...
@@ -969,6 +1024,28 @@ export default function AnnouncementsPage() {
               </div>
             )}
           </div>
+        </div>
+      )}
+      
+      ) : (
+        /* 업무지시 탭 - iframe으로 표시 */
+        <div style={{
+          background: "white",
+          borderRadius: 12,
+          boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+          overflow: "hidden",
+          height: "calc(100vh - 250px)",
+          minHeight: 600,
+        }}>
+          <iframe
+            src="/dashboard/work-orders"
+            style={{
+              width: "100%",
+              height: "100%",
+              border: "none",
+            }}
+            title="업무지시"
+          />
         </div>
       )}
     </div>
