@@ -76,7 +76,7 @@ function getQuotaRate(companyType: string): number {
  * 2026년 기준 부담기초액 조회 (고용수준별)
  * 고용수준 = 장애인고용인원 / 의무고용인원
  */
-function getLevyBaseAmount2026(disabledCount: number, obligatedCount: number): number {
+export function getLevyBaseAmount2026(disabledCount: number, obligatedCount: number): number {
   if (obligatedCount === 0) return LEVY_BASE_AMOUNTS_2026.LEVEL_0;
   if (disabledCount === 0) return LEVY_BASE_AMOUNTS_2026.LEVEL_0;
   
