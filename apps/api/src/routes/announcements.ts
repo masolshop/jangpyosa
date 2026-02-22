@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { prisma } from '../index.js';
 import { requireAuth } from '../middleware/auth.js';
+import { sendNotificationToUsers } from './notifications.js';
 
 // 사용자의 회사 정보 조회 헬퍼 함수 (getUserCompany)
 async function getUserCompany(userId: string, userRole: string) {
@@ -189,6 +190,57 @@ router.post('/create', requireAuth, async (req, res) => {
         createdById: userId
       }
     });
+
+    // 🆕 전체 직원들에게 실시간 알림 전송
+    try {
+      const allEmployees = await prisma.disabledEmployee.findMany({
+        where: { buyerId: company.buyerProfile.id },
+        select: { id: true }
+      });
+
+      // DisabledEmployee ID → User ID 매핑
+      const users = await prisma.user.findMany({
+        where: { 
+          employeeId: { in: allEmployees.map(e => e.id) },
+          role: 'EMPLOYEE'
+        },
+        select: { id: true }
+      });
+
+      const userIds = users.map(u => u.id);
+
+      if (userIds.length > 0) {
+        // DB에 알림 저장
+        await Promise.all(userIds.map(uid => 
+          prisma.notification.create({
+            data: {
+              userId: uid,
+              type: 'ANNOUNCEMENT',
+              title: `📢 새 공지: ${title}`,
+              message: content.substring(0, 100),
+              link: `/dashboard/announcements`,
+              data: JSON.stringify({ announcementId: announcement.id })
+            }
+          })
+        ));
+
+        // 실시간 SSE 알림 전송
+        sendNotificationToUsers(userIds, {
+          type: 'ANNOUNCEMENT',
+          title: `📢 새 공지: ${title}`,
+          message: content.substring(0, 100),
+          link: `/dashboard/announcements`,
+          announcementId: announcement.id,
+          priority,
+          createdAt: announcement.createdAt
+        });
+
+        console.log(`[공지사항] ${userIds.length}명에게 알림 전송 완료`);
+      }
+    } catch (notifError) {
+      console.error('[공지사항] 알림 전송 실패:', notifError);
+      // 알림 실패해도 공지사항 작성은 성공으로 처리
+    }
 
     return res.json({ 
       message: '공지사항이 등록되었습니다',

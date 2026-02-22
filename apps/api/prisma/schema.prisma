@@ -564,3 +564,21 @@ model WorkOrderConfirmation {
   @@index([employeeId])
   @@index([userId])
 }
+
+// 실시간 알림
+model Notification {
+  id          String    @id @default(cuid())
+  userId      String    // 수신자 User ID
+  type        String    // ANNOUNCEMENT, WORK_ORDER, ATTENDANCE, SYSTEM, etc.
+  title       String    // 알림 제목
+  message     String    // 알림 내용
+  link        String?   // 관련 링크 (선택)
+  data        String?   // 추가 데이터 (JSON)
+  read        Boolean   @default(false)
+  readAt      DateTime? // 읽은 시각
+  createdAt   DateTime  @default(now())
+  
+  @@index([userId, read, createdAt])
+  @@index([userId, createdAt])
+  @@index([type])
+}

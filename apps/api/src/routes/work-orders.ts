@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { prisma } from '../index.js';
 import { requireAuth } from '../middleware/auth.js';
 import { getKSTNow } from '../utils/kst.js';
+import { sendNotificationToUsers } from './notifications.js';
 
 // 사용자의 회사 정보 조회 헬퍼 함수
 async function getUserCompany(userId: string, userRole: string) {
@@ -266,6 +267,65 @@ router.post('/create', requireAuth, async (req, res) => {
         createdByName: user.name
       }
     });
+
+    // 🆕 대상 직원들의 User ID 조회 후 실시간 알림 전송
+    try {
+      let targetEmployeeIds: string[] = [];
+      
+      if (validated.targetType === 'ALL') {
+        // 전체 직원
+        const allEmployees = await prisma.disabledEmployee.findMany({
+          where: { buyerId: company.buyerProfile.id },
+          select: { id: true }
+        });
+        targetEmployeeIds = allEmployees.map(e => e.id);
+      } else if (validated.targetEmployees && validated.targetEmployees.length > 0) {
+        targetEmployeeIds = validated.targetEmployees;
+      }
+
+      // DisabledEmployee ID → User ID 매핑
+      const users = await prisma.user.findMany({
+        where: { 
+          employeeId: { in: targetEmployeeIds },
+          role: 'EMPLOYEE'
+        },
+        select: { id: true }
+      });
+
+      const userIds = users.map(u => u.id);
+
+      if (userIds.length > 0) {
+        // DB에 알림 저장
+        await Promise.all(userIds.map(uid => 
+          prisma.notification.create({
+            data: {
+              userId: uid,
+              type: 'WORK_ORDER',
+              title: `📋 새 업무지시: ${validated.title}`,
+              message: validated.content.substring(0, 100),
+              link: `/dashboard/work-orders`,
+              data: JSON.stringify({ workOrderId: workOrder.id })
+            }
+          })
+        ));
+
+        // 실시간 SSE 알림 전송
+        sendNotificationToUsers(userIds, {
+          type: 'WORK_ORDER',
+          title: `📋 새 업무지시: ${validated.title}`,
+          message: validated.content.substring(0, 100),
+          link: `/dashboard/work-orders`,
+          workOrderId: workOrder.id,
+          priority: validated.priority,
+          createdAt: workOrder.createdAt
+        });
+
+        console.log(`[업무지시] ${userIds.length}명에게 알림 전송 완료`);
+      }
+    } catch (notifError) {
+      console.error('[업무지시] 알림 전송 실패:', notifError);
+      // 알림 실패해도 업무지시 생성은 성공으로 처리
+    }
 
     return res.json({ 
       message: '업무지시가 등록되었습니다',
