@@ -58,18 +58,18 @@ async function createMockEmployees() {
   try {
     console.log('🚀 목업 직원 데이터 생성 시작...\n');
 
-    // 목표 계정 전화번호 (실제 존재하는 계정들)
-    const targetPhones = [
-      '01011112222', // buyer01 (민간기업1)
-      '01033334444', // buyer03 (공공기관1)  
-      '01055556666', // buyer05 (교육청1)
-      '01099998888', // supplier01 (행복한표준사업장)
+    // 목표 계정 아이디 (실제 존재하는 계정들)
+    const targetUserIds = [
+      'buyer01',     // 민간기업
+      'buyer03',     // 공공기관
+      'buyer05',     // 국가지자체/교육청
+      'supplier01',  // 표준사업장
     ];
 
     // 사용자 조회
     const allUsers = await prisma.user.findMany({
       where: {
-        phone: { in: targetPhones }
+        userId: { in: targetUserIds }
       },
       include: {
         company: {
@@ -115,6 +115,9 @@ async function createMockEmployees() {
         // 월 근무시간: 60-180시간 랜덤
         const monthlyHours = Math.floor(Math.random() * 121) + 60;
         
+        // 월급: 200만원 ~ 350만원 랜덤
+        const monthlySalary = Math.floor(Math.random() * 1500000) + 2000000;
+        
         const disabilityType = disabilityTypes[Math.floor(Math.random() * disabilityTypes.length)];
         const disabilityGrade = Math.floor(Math.random() * 3) + 1; // 1-3급
         const jobTitle = jobTitles[Math.floor(Math.random() * jobTitles.length)];
@@ -137,6 +140,7 @@ async function createMockEmployees() {
               severity,
               jobTitle,
               monthlyWorkHours: monthlyHours,
+              monthlySalary,
               hireDate: new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1),
               isActive: true
             }
