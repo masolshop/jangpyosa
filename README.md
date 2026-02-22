@@ -840,6 +840,58 @@ CORS_ORIGIN="https://your-domain.com"
 
 ---
 
+## 🔒 보안 및 DDoS 방어
+
+### DDoS 방어 시스템 (2026-02-22 구축 완료)
+
+#### 적용된 보안 계층
+
+**Layer 3/4 (네트워크/전송 계층)**
+- ✅ **AWS Shield Standard** - SYN/UDP Flood 자동 차단 (무료)
+- ✅ **Security Group** - 최소 권한 원칙 (SSH/HTTP/HTTPS만 개방)
+- ✅ **UFW 방화벽** - 필수 포트만 허용
+- ✅ **iptables** - SYN/ICMP Flood 방어
+- ✅ **커널 최적화** - TCP SYN Cookies, IP Spoofing 방어
+
+**Layer 7 (애플리케이션 계층)**
+- ✅ **Nginx Rate Limiting**
+  - API: 초당 10개 요청 (burst 20)
+  - 페이지: 초당 30개 요청 (burst 50)
+  - 로그인: 초당 2개 요청 (브루트포스 방어)
+  - 동시 연결: IP당 최대 20개
+- ✅ **Fail2Ban 자동 차단** (5개 Jail)
+  - SSH: 3회 실패 시 2시간 차단
+  - HTTP: 10회 4xx 에러 시 1시간 차단
+  - Rate Limit: 20회 초과 시 30분 차단
+  - DDoS: 분당 200회 초과 시 10분 차단
+  - BadBots: 악의적인 봇 24시간 차단
+- ✅ **보안 헤더** - HSTS, CSP, X-Frame-Options, XSS 방어
+- ✅ **SSL/TLS 강화** - TLS 1.2+, OCSP Stapling
+
+#### 모니터링
+```bash
+# 실시간 DDoS 모니터링 (5분마다 자동 실행)
+sudo /home/ubuntu/jangpyosa/scripts/monitor-ddos.sh
+
+# Fail2Ban 상태 확인
+sudo fail2ban-client status
+
+# Nginx 로그 확인
+tail -f /var/log/nginx/access.log
+tail -f /var/log/nginx/error.log | grep limiting
+```
+
+#### 상세 문서
+- [DDoS 배포 완료 보고서](docs/DDOS-DEPLOYMENT-REPORT.md)
+- [AWS Shield 가이드](docs/AWS-SHIELD-GUIDE.md)
+- [Cloudflare 연동 가이드](docs/CLOUDFLARE-SETUP.md)
+
+#### 비용
+- **현재**: $0/월 (무료 솔루션)
+- **향후 확장**: AWS WAF ($10-30/월), CloudFront CDN ($50-100/월)
+
+---
+
 ## 📝 라이센스
 
 Proprietary - (주)장표사닷컴
