@@ -328,8 +328,9 @@ router.get("/company", requireAuth, async (req, res) => {
     const userId = req.user!.id;
     const userRole = req.user!.role;
 
-    if (userRole !== "BUYER" && userRole !== "SUPER_ADMIN") {
-      return res.status(403).json({ error: "부담금기업만 접근 가능합니다." });
+    // BUYER, SUPPLIER, SUPER_ADMIN 모두 접근 가능
+    if (userRole !== "BUYER" && userRole !== "SUPPLIER" && userRole !== "SUPER_ADMIN") {
+      return res.status(403).json({ error: "부담금기업 또는 표준사업장만 접근 가능합니다." });
     }
 
     // 회사 조회
@@ -340,10 +341,16 @@ router.get("/company", requireAuth, async (req, res) => {
         include: { buyerProfile: true },
       });
     } else {
-      company = await prisma.company.findUnique({
-        where: { ownerUserId: userId },
-        include: { buyerProfile: true },
+      // 일반 사용자 또는 팀원: companyId로 조회
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        include: {
+          company: {
+            include: { buyerProfile: true }
+          }
+        }
       });
+      company = user?.company;
     }
 
     if (!company || !company.buyerProfile) {
@@ -469,7 +476,7 @@ router.put("/:id", requireAuth, async (req, res) => {
     // 권한 확인
     const user = await prisma.user.findUnique({ where: { id: userId } });
     const isOwner = user?.employeeId === record.employeeId;
-    const isManager = userRole === "BUYER" || userRole === "SUPER_ADMIN";
+    const isManager = userRole === "BUYER" || userRole === "SUPPLIER" || userRole === "SUPER_ADMIN";
 
     if (!isOwner && !isManager) {
       return res.status(403).json({ error: "수정 권한이 없습니다." });
@@ -518,8 +525,9 @@ router.delete("/:id", requireAuth, async (req, res) => {
     const userRole = req.user!.role;
     const recordId = req.params.id;
 
-    if (userRole !== "BUYER" && userRole !== "SUPER_ADMIN") {
-      return res.status(403).json({ error: "부담금기업만 접근 가능합니다." });
+    // BUYER, SUPPLIER, SUPER_ADMIN 모두 접근 가능
+    if (userRole !== "BUYER" && userRole !== "SUPPLIER" && userRole !== "SUPER_ADMIN") {
+      return res.status(403).json({ error: "부담금기업 또는 표준사업장만 접근 가능합니다." });
     }
 
     await prisma.attendanceRecord.delete({

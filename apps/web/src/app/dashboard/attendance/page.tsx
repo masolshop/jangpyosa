@@ -65,7 +65,8 @@ export default function AttendancePage() {
 
   useEffect(() => {
     const role = getUserRole();
-    if (role !== "BUYER" && role !== "SUPER_ADMIN") {
+    // BUYER, SUPPLIER, SUPER_ADMIN 모두 접근 가능
+    if (role !== "BUYER" && role !== "SUPPLIER" && role !== "SUPER_ADMIN") {
       router.push("/");
       return;
     }

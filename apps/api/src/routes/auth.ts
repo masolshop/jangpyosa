@@ -270,20 +270,24 @@ r.post("/signup/supplier", async (req, res) => {
 
     const passwordHash = await bcrypt.hash(body.password, 10);
 
-    // Company 먼저 생성
+    // Company 먼저 생성 (표준사업장도 장애인 직원 관리를 위해 buyerProfile 생성)
     const company = await prisma.company.create({
       data: {
         name: apickResult.name!,
         bizNo: cleanBizNo,
         representative: apickResult.representative,
         type: "SUPPLIER",
+        buyerType: "STANDARD_WORKPLACE", // 표준사업장 타입
         isVerified: true,
         apickData: apickResult.data ? JSON.stringify(apickResult.data) : null,
         supplierProfile: {
           create: {},
         },
+        buyerProfile: {
+          create: {}, // 장애인 직원 관리를 위한 buyerProfile 추가
+        },
       },
-      include: { supplierProfile: true }
+      include: { supplierProfile: true, buyerProfile: true }
     });
 
     // User 생성 (Company에 연결)

@@ -40,8 +40,9 @@ router.get("/", requireAuth, async (req, res) => {
     const userId = req.user!.id;
     const userRole = req.user!.role;
 
-    if (userRole !== "BUYER" && userRole !== "SUPER_ADMIN") {
-      return res.status(403).json({ error: "부담금기업만 접근 가능합니다." });
+    // BUYER, SUPPLIER, SUPER_ADMIN 모두 접근 가능
+    if (userRole !== "BUYER" && userRole !== "SUPPLIER" && userRole !== "SUPER_ADMIN") {
+      return res.status(403).json({ error: "부담금기업 또는 표준사업장만 접근 가능합니다." });
     }
 
     const company = await getUserCompany(userId, userRole);
@@ -68,8 +69,9 @@ router.post("/", requireAuth, async (req, res) => {
     const userId = req.user!.id;
     const userRole = req.user!.role;
 
-    if (userRole !== "BUYER" && userRole !== "SUPER_ADMIN") {
-      return res.status(403).json({ error: "부담금기업만 접근 가능합니다." });
+    // BUYER, SUPPLIER, SUPER_ADMIN 모두 접근 가능
+    if (userRole !== "BUYER" && userRole !== "SUPPLIER" && userRole !== "SUPER_ADMIN") {
+      return res.status(403).json({ error: "부담금기업 또는 표준사업장만 접근 가능합니다." });
     }
 
     const schema = z.object({
@@ -138,8 +140,9 @@ router.get("/monthly", requireAuth, async (req, res) => {
     const userRole = req.user!.role;
     const year = parseInt(req.query.year as string) || new Date().getFullYear();
 
-    if (userRole !== "BUYER" && userRole !== "SUPER_ADMIN") {
-      return res.status(403).json({ error: "부담금기업만 접근 가능합니다." });
+    // BUYER, SUPPLIER, SUPER_ADMIN 모두 접근 가능
+    if (userRole !== "BUYER" && userRole !== "SUPPLIER" && userRole !== "SUPER_ADMIN") {
+      return res.status(403).json({ error: "부담금기업 또는 표준사업장만 접근 가능합니다." });
     }
 
     const company = await getUserCompany(userId, userRole);
@@ -237,8 +240,9 @@ router.put("/monthly", requireAuth, async (req, res) => {
     console.log("PUT /employees/monthly - userId:", userId, "role:", userRole);
     console.log("year:", year, "monthlyEmployeeCounts:", monthlyEmployeeCounts);
 
-    if (userRole !== "BUYER" && userRole !== "SUPER_ADMIN") {
-      return res.status(403).json({ error: "부담금기업만 접근 가능합니다." });
+    // BUYER, SUPPLIER, SUPER_ADMIN 모두 접근 가능
+    if (userRole !== "BUYER" && userRole !== "SUPPLIER" && userRole !== "SUPER_ADMIN") {
+      return res.status(403).json({ error: "부담금기업 또는 표준사업장만 접근 가능합니다." });
     }
 
     const company = await getUserCompany(userId, userRole);
@@ -348,8 +352,9 @@ router.put("/:id", requireAuth, async (req, res) => {
     const userRole = req.user!.role;
     const employeeId = req.params.id;
 
-    if (userRole !== "BUYER" && userRole !== "SUPER_ADMIN") {
-      return res.status(403).json({ error: "부담금기업만 접근 가능합니다." });
+    // BUYER, SUPPLIER, SUPER_ADMIN 모두 접근 가능
+    if (userRole !== "BUYER" && userRole !== "SUPPLIER" && userRole !== "SUPER_ADMIN") {
+      return res.status(403).json({ error: "부담금기업 또는 표준사업장만 접근 가능합니다." });
     }
 
     const schema = z.object({
@@ -420,8 +425,9 @@ router.delete("/:id", requireAuth, async (req, res) => {
     const userRole = req.user!.role;
     const employeeId = req.params.id;
 
-    if (userRole !== "BUYER" && userRole !== "SUPER_ADMIN") {
-      return res.status(403).json({ error: "부담금기업만 접근 가능합니다." });
+    // BUYER, SUPPLIER, SUPER_ADMIN 모두 접근 가능
+    if (userRole !== "BUYER" && userRole !== "SUPPLIER" && userRole !== "SUPER_ADMIN") {
+      return res.status(403).json({ error: "부담금기업 또는 표준사업장만 접근 가능합니다." });
     }
 
     const company = await getUserCompany(userId, userRole);
