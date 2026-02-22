@@ -122,7 +122,7 @@ async function createMockEmployees() {
         const address = getRandomAddress();
         
         // 중증(50%) vs 경증(50%)
-        const severity = Math.random() > 0.5 ? '중증' : '경증';
+        const severity = Math.random() > 0.5 ? 'SEVERE' : 'MILD';
         
         // 월 근로시간: 60시간 ~ 209시간 랜덤 (최소 60시간, 최대 주 52시간 × 4주)
         const monthlyWorkHours = Math.floor(Math.random() * 150) + MIN_WORK_HOURS; // 60-209시간
@@ -136,7 +136,7 @@ async function createMockEmployees() {
         
         // 성별 (주민등록번호에서 추출)
         const genderCode = regNo.split('-')[1][0];
-        const gender = (genderCode === '1' || genderCode === '3') ? '남' : '여';
+        const gender = (genderCode === '1' || genderCode === '3') ? 'M' : 'F';
 
         try {
           const employee = await prisma.disabledEmployee.create({
@@ -165,10 +165,10 @@ async function createMockEmployees() {
       console.log(`\n   📊 ${company.name} 총 ${employees.length}명 등록 완료`);
       
       // 통계 출력
-      const severeCount = employees.filter(e => e.severity === '중증').length;
-      const mildCount = employees.filter(e => e.severity === '경증').length;
-      const maleCount = employees.filter(e => e.gender === '남').length;
-      const femaleCount = employees.filter(e => e.gender === '여').length;
+      const severeCount = employees.filter(e => e.severity === 'SEVERE').length;
+      const mildCount = employees.filter(e => e.severity === 'MILD').length;
+      const maleCount = employees.filter(e => e.gender === 'M').length;
+      const femaleCount = employees.filter(e => e.gender === 'F').length;
       const totalSalary = employees.reduce((sum, e) => sum + (e.monthlySalary || 0), 0);
       const avgSalary = totalSalary > 0 ? Math.round(totalSalary / employees.length) : 0;
 
