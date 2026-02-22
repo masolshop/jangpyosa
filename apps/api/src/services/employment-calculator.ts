@@ -22,22 +22,30 @@ const INCENTIVE_RATES = {
   },
 };
 
-// 부담금 기초액 (월, 2026년 기준 - 고용수준별)
+// 부담기초액 (월, 2026년 기준 - 고용수준별)
 // 고용수준 = 장애인고용인원 / 의무고용인원
-const LEVY_BASE_AMOUNTS = {
-  LEVEL_0: 2156880,    // 0명 고용
-  LEVEL_1_4: 1813000,  // 1/4 미만
+const LEVY_BASE_AMOUNTS_2026 = {
+  LEVEL_0: 2156880,        // 0명 고용 (미고용)
+  LEVEL_1_4: 1813000,      // 1/4 미만
   LEVEL_1_4_TO_1_2: 1554000,  // 1/4 ~ 1/2 미만
   LEVEL_1_2_TO_3_4: 1372700,  // 1/2 ~ 3/4 미만
   LEVEL_3_4_OVER: 1295000,    // 3/4 이상
 };
 
+// 2025년 기준 (참고용)
+const LEVY_BASE_AMOUNTS_2025 = {
+  LEVEL_0: 2096270,
+  LEVEL_1_4: 1761200,
+  LEVEL_1_4_TO_1_2: 1509600,
+  LEVEL_1_2_TO_3_4: 1333480,
+  LEVEL_3_4_OVER: 1258000,
+};
+
 // 의무고용률
 const QUOTA_RATES = {
-  PRIVATE: 0.031,
-  PUBLIC_CORP: 0.038,
-  GOVERNMENT: 0.038,
-  OTHER_PUBLIC: 0.038,
+  PRIVATE_COMPANY: 0.031,     // 민간기업 3.1%
+  PUBLIC_INSTITUTION: 0.038,   // 공공기관 3.8%
+  GOVERNMENT: 0.038,           // 국가/지자체 3.8%
 };
 
 // 중증 장애인 인정 배수
@@ -50,6 +58,35 @@ const SUPPORT_PERIOD_MONTHS = {
   SEVERE: 60, // 중증: 최대 60개월
   MILD: 36,   // 경증: 최대 36개월
 };
+
+// 최저 월급여 (2026년 기준)
+const MINIMUM_MONTHLY_WAGE_2026 = 2156880;
+
+/**
+ * 의무고용률 조회 (회사 유형별)
+ */
+function getQuotaRate(companyType: string): number {
+  if (companyType === "PUBLIC" || companyType === "PUBLIC_INSTITUTION" || companyType === "GOVERNMENT") {
+    return QUOTA_RATES.PUBLIC_INSTITUTION;
+  }
+  return QUOTA_RATES.PRIVATE_COMPANY;
+}
+
+/**
+ * 2026년 기준 부담기초액 조회 (고용수준별)
+ * 고용수준 = 장애인고용인원 / 의무고용인원
+ */
+function getLevyBaseAmount2026(disabledCount: number, obligatedCount: number): number {
+  if (obligatedCount === 0) return LEVY_BASE_AMOUNTS_2026.LEVEL_0;
+  if (disabledCount === 0) return LEVY_BASE_AMOUNTS_2026.LEVEL_0;
+  
+  const employmentRate = disabledCount / obligatedCount;
+  
+  if (employmentRate >= 0.75) return LEVY_BASE_AMOUNTS_2026.LEVEL_3_4_OVER;      // 3/4 이상
+  if (employmentRate >= 0.5) return LEVY_BASE_AMOUNTS_2026.LEVEL_1_2_TO_3_4;    // 1/2 ~ 3/4 미만
+  if (employmentRate >= 0.25) return LEVY_BASE_AMOUNTS_2026.LEVEL_1_4_TO_1_2;   // 1/4 ~ 1/2 미만
+  return LEVY_BASE_AMOUNTS_2026.LEVEL_1_4;                                       // 1/4 미만
+}
 
 // ============================================
 // 타입 정의
@@ -318,31 +355,14 @@ export function calculateMonthlyData(
   );
   
   // 의무고용인원
-  const quotaRate = (QUOTA_RATES as any)[companyType] || QUOTA_RATES.PRIVATE;
+  const quotaRate = getQuotaRate(companyType);
   const obligatedCount = Math.floor(totalEmployeeCount * quotaRate);
   
-  // 부담금 계산 (고용수준별 부담기초액 적용)
+  // 부담금 계산 (2026년 기준 - 고용수준별 부담기초액 적용)
   const shortfallCount = Math.max(0, obligatedCount - recognizedCount);
   
-  // 고용수준 계산
-  let employmentRate = 0;
-  if (obligatedCount > 0) {
-    employmentRate = recognizedCount / obligatedCount;
-  }
-  
-  // 부담기초액 결정
-  let levyBaseAmount = LEVY_BASE_AMOUNTS.LEVEL_0;
-  if (recognizedCount === 0) {
-    levyBaseAmount = LEVY_BASE_AMOUNTS.LEVEL_0;
-  } else if (employmentRate >= 0.75) {
-    levyBaseAmount = LEVY_BASE_AMOUNTS.LEVEL_3_4_OVER;
-  } else if (employmentRate >= 0.5) {
-    levyBaseAmount = LEVY_BASE_AMOUNTS.LEVEL_1_2_TO_3_4;
-  } else if (employmentRate >= 0.25) {
-    levyBaseAmount = LEVY_BASE_AMOUNTS.LEVEL_1_4_TO_1_2;
-  } else {
-    levyBaseAmount = LEVY_BASE_AMOUNTS.LEVEL_1_4;
-  }
+  // 고용수준 계산 및 부담기초액 결정
+  const levyBaseAmount = getLevyBaseAmount2026(recognizedCount, obligatedCount);
   
   const levy = shortfallCount * levyBaseAmount;
   
