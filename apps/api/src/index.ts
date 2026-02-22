@@ -73,8 +73,8 @@ app.use((err: any, _req: express.Request, res: express.Response, _next: express.
   res.status(500).json({ error: err.message || "INTERNAL_ERROR" });
 });
 
-app.listen(config.port, async () => {
-  console.log(`🚀 장표사닷컴 API listening on :${config.port}`);
+app.listen(config.port, '127.0.0.1', async () => {
+  console.log(`🚀 장표사닷컴 API listening on 127.0.0.1:${config.port}`);
   console.log(`📊 Database: ${process.env.DATABASE_URL?.split("@")[1] || "local"}`);
   console.log(`🔐 APICK Provider: ${config.apickProvider}`);
   

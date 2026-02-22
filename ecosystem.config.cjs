@@ -17,7 +17,7 @@ module.exports = {
     {
       name: 'jangpyosa-web',
       script: 'npx',
-      args: 'next start -p 3003 -H 0.0.0.0',
+      args: 'next start -p 3003 -H 127.0.0.1',
       cwd: './apps/web',
       env: {
         NODE_ENV: 'production',
