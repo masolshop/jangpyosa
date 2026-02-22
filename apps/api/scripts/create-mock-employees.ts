@@ -115,6 +115,9 @@ async function createMockEmployees() {
         // 주당 근무시간: 15-40시간 랜덤
         const workHoursPerWeek = Math.floor(Math.random() * 26) + 15;
         
+        // 월급: 200만원 ~ 350만원 랜덤
+        const monthlySalary = Math.floor(Math.random() * 1500000) + 2000000;
+        
         const disabilityType = disabilityTypes[Math.floor(Math.random() * disabilityTypes.length)];
         const disabilityGrade = Math.floor(Math.random() * 3) + 1; // 1-3급
         const jobTitle = jobTitles[Math.floor(Math.random() * jobTitles.length)];
@@ -134,6 +137,7 @@ async function createMockEmployees() {
               disabilityGrade: `${disabilityGrade}급`,
               severity,
               workHoursPerWeek,
+              monthlySalary,
               hireDate: new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1),
               isActive: true
             }
