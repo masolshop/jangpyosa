@@ -600,6 +600,27 @@ export default function AnnouncementsPage() {
           </div>
         )}
       </div>
+      ) : (
+        /* 업무지시 탭 - iframe으로 표시 */
+        <div style={{
+          background: "white",
+          borderRadius: 12,
+          boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+          overflow: "hidden",
+          height: "calc(100vh - 250px)",
+          minHeight: 600,
+        }}>
+          <iframe
+            src="/dashboard/work-orders"
+            style={{
+              width: "100%",
+              height: "100%",
+              border: "none",
+            }}
+            title="업무지시"
+          />
+        </div>
+      )}
 
       {/* 공지 작성 모달 */}
       {isCreateModalOpen && (
@@ -1024,26 +1045,6 @@ export default function AnnouncementsPage() {
               </div>
             )}
           </div>
-        </div>
-      ) : (
-        /* 업무지시 탭 - iframe으로 표시 */
-        <div style={{
-          background: "white",
-          borderRadius: 12,
-          boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-          overflow: "hidden",
-          height: "calc(100vh - 250px)",
-          minHeight: 600,
-        }}>
-          <iframe
-            src="/dashboard/work-orders"
-            style={{
-              width: "100%",
-              height: "100%",
-              border: "none",
-            }}
-            title="업무지시"
-          />
         </div>
       )}
     </div>
