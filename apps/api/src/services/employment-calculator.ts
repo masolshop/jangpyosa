@@ -10,16 +10,17 @@
 // 상수 정의 (2026년 기준)
 // ============================================
 
-// 고용장려금 기본 단가 (월)
-const INCENTIVE_RATES = {
+// 고용장려금 기본 단가 (월) - 2023년 발생분부터 적용
+// 고용노동부 공식 단가 (성별 구분, 2026년 기준)
+const INCENTIVE_RATES_2026 = {
   SEVERE: {
-    M: { under35: 600000, age35to55: 500000, over55: 450000 },
-    F: { under35: 700000, age35to55: 600000, over55: 500000 },
+    MALE: 700000,    // 중증 남성: 70만원
+    FEMALE: 900000   // 중증 여성: 90만원
   },
   MILD: {
-    M: { under35: 400000, age35to55: 350000, over55: 300000 },
-    F: { under35: 500000, age35to55: 450000, over55: 400000 },
-  },
+    MALE: 350000,    // 경증 남성: 35만원
+    FEMALE: 500000   // 경증 여성: 50만원
+  }
 };
 
 // 부담기초액 (월, 2026년 기준 - 고용수준별)
@@ -203,18 +204,17 @@ function getWorkHoursRate(hoursPerWeek: number): number {
 }
 
 /**
- * 장려금 기본 단가 조회
+ * 장려금 기본 단가 조회 (2026년 고용노동부 공식)
+ * 성별 구분, 연령 무관
+ * 지급단가와 월임금액의 60% 중 낮은 금액 적용
  */
 function getBaseIncentiveRate(
   severity: "SEVERE" | "MILD",
-  gender: "M" | "F",
-  age: number
+  gender: "M" | "F" | "MALE" | "FEMALE"
 ): number {
-  const rates = INCENTIVE_RATES[severity][gender];
-  
-  if (age < 35) return rates.under35;
-  if (age <= 55) return rates.age35to55;
-  return rates.over55;
+  // gender 정규화 (M/F를 MALE/FEMALE로 변환)
+  const normalizedGender = (gender === "M" || gender === "MALE") ? "MALE" : "FEMALE";
+  return INCENTIVE_RATES_2026[severity][normalizedGender];
 }
 
 // ============================================
@@ -273,21 +273,26 @@ export function calculateEmployeeMonthly(
   }
   
   // ========================================
-  // 2. 장려금 계산
+  // 2. 장려금 계산 (고용노동부 공식)
   // ========================================
   
-  // 기본 단가
+  // 기본 단가 (성별 구분)
   const baseIncentive = getBaseIncentiveRate(
     employee.severity,
-    employee.gender,
-    age
+    employee.gender
   );
   
-  // 근로시간 비율
+  // 월임금액의 60% 상한 적용
+  const wageLimit = employee.monthlySalary * 0.6;
+  
+  // 지급 단가와 월임금 60% 중 낮은 금액 적용
+  const incentiveRate = Math.min(baseIncentive, wageLimit);
+  
+  // 근로시간 비율 (30시간 이상 100%, 20~30시간 50%, 20시간 미만 0%)
   const workHoursRate = getWorkHoursRate(employee.workHoursPerWeek);
   
   // 계산된 장려금
-  const calculatedIncentive = Math.round(baseIncentive * workHoursRate);
+  const calculatedIncentive = Math.round(incentiveRate * workHoursRate);
   
   // 지원 자격 확인
   const maxSupportPeriod = SUPPORT_PERIOD_MONTHS[employee.severity];
