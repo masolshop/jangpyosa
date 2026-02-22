@@ -308,9 +308,8 @@ export function calculateMonthlyData(
     }
 
     // 부담금 인정 인원 (제외 조건 없음, 모든 재직자 인정)
-    // 중증장애인은 근무시간과 관계없이 항상 2배 인정
     let levyRecognizedCount = 1.0;
-    if (emp.severity === "SEVERE") {
+    if (emp.severity === "SEVERE" && emp.workHoursPerWeek >= SEVERE_MULTIPLIER_THRESHOLD) {
       levyRecognizedCount = SEVERE_MULTIPLIER;
     }
     totalRecognizedCount += levyRecognizedCount;

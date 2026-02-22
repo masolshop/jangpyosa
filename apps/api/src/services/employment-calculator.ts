@@ -264,8 +264,10 @@ export function calculateEmployeeMonthly(
   let recognizedMultiplier = 1.0;
   let levyRecognizedCount = 1.0;
   
-  // 중증장애인은 근무시간과 관계없이 항상 2배 인정
-  if (employee.severity === "SEVERE") {
+  // 월 근로시간 사용 (우선), 없으면 주당 근무시간 사용
+  const monthlyHours = employee.monthlyWorkHours || (employee.workHoursPerWeek * 4.33);
+  
+  if (employee.severity === "SEVERE" && monthlyHours >= SEVERE_MULTIPLIER_THRESHOLD) {
     recognizedMultiplier = SEVERE_MULTIPLIER;
     levyRecognizedCount = SEVERE_MULTIPLIER;
   }
