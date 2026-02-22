@@ -10,6 +10,30 @@ import {
 
 const router = Router();
 
+// 헬퍼 함수: 사용자의 회사 정보 조회
+async function getUserCompany(userId: string, userRole: string) {
+  if (userRole === "SUPER_ADMIN") {
+    return await prisma.company.findFirst({
+      where: { 
+        type: "BUYER",
+        buyerProfile: { isNot: null }
+      },
+      include: { buyerProfile: true },
+    });
+  } else {
+    // 일반 사용자 또는 팀원: companyId로 조회
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        company: {
+          include: { buyerProfile: true }
+        }
+      }
+    });
+    return user?.company;
+  }
+}
+
 // 직원 목록 조회
 router.get("/", requireAuth, async (req, res) => {
   try {
@@ -20,22 +44,7 @@ router.get("/", requireAuth, async (req, res) => {
       return res.status(403).json({ error: "부담금기업만 접근 가능합니다." });
     }
 
-    // SUPER_ADMIN일 경우 첫 번째 BUYER 회사 데이터 조회
-    let company;
-    if (userRole === "SUPER_ADMIN") {
-      company = await prisma.company.findFirst({
-        where: { 
-          type: "BUYER",
-          buyerProfile: { isNot: null }
-        },
-        include: { buyerProfile: true },
-      });
-    } else {
-      company = await prisma.company.findUnique({
-        where: { ownerUserId: userId },
-        include: { buyerProfile: true },
-      });
-    }
+    const company = await getUserCompany(userId, userRole);
 
     if (!company || !company.buyerProfile) {
       return res.status(404).json({ error: "기업 정보가 없습니다." });
@@ -82,22 +91,7 @@ router.post("/", requireAuth, async (req, res) => {
 
     const body = schema.parse(req.body);
 
-    // SUPER_ADMIN일 경우 첫 번째 BUYER 회사 데이터 조회
-    let company;
-    if (userRole === "SUPER_ADMIN") {
-      company = await prisma.company.findFirst({
-        where: { 
-          type: "BUYER",
-          buyerProfile: { isNot: null }
-        },
-        include: { buyerProfile: true },
-      });
-    } else {
-      company = await prisma.company.findUnique({
-        where: { ownerUserId: userId },
-        include: { buyerProfile: true },
-      });
-    }
+    const company = await getUserCompany(userId, userRole);
 
     if (!company || !company.buyerProfile) {
       return res.status(404).json({ error: "기업 정보가 없습니다." });
@@ -148,19 +142,7 @@ router.get("/monthly", requireAuth, async (req, res) => {
       return res.status(403).json({ error: "부담금기업만 접근 가능합니다." });
     }
 
-    // 회사 조회
-    let company;
-    if (userRole === "SUPER_ADMIN") {
-      company = await prisma.company.findFirst({
-        where: { type: "BUYER", buyerProfile: { isNot: null } },
-        include: { buyerProfile: true },
-      });
-    } else {
-      company = await prisma.company.findUnique({
-        where: { ownerUserId: userId },
-        include: { buyerProfile: true },
-      });
-    }
+    const company = await getUserCompany(userId, userRole);
 
     if (!company || !company.buyerProfile) {
       return res.status(404).json({ error: "기업 정보가 없습니다." });
@@ -259,19 +241,7 @@ router.put("/monthly", requireAuth, async (req, res) => {
       return res.status(403).json({ error: "부담금기업만 접근 가능합니다." });
     }
 
-    // 회사 조회
-    let company;
-    if (userRole === "SUPER_ADMIN") {
-      company = await prisma.company.findFirst({
-        where: { type: "BUYER", buyerProfile: { isNot: null } },
-        include: { buyerProfile: true },
-      });
-    } else {
-      company = await prisma.company.findUnique({
-        where: { ownerUserId: userId },
-        include: { buyerProfile: true },
-      });
-    }
+    const company = await getUserCompany(userId, userRole);
 
     console.log("회사:", company?.name, "buyerProfileId:", company?.buyerProfile?.id);
 
@@ -401,22 +371,7 @@ router.put("/:id", requireAuth, async (req, res) => {
 
     const body = schema.parse(req.body);
 
-    // SUPER_ADMIN일 경우 첫 번째 BUYER 회사 데이터 조회
-    let company;
-    if (userRole === "SUPER_ADMIN") {
-      company = await prisma.company.findFirst({
-        where: { 
-          type: "BUYER",
-          buyerProfile: { isNot: null }
-        },
-        include: { buyerProfile: true },
-      });
-    } else {
-      company = await prisma.company.findUnique({
-        where: { ownerUserId: userId },
-        include: { buyerProfile: true },
-      });
-    }
+    const company = await getUserCompany(userId, userRole);
 
     if (!company || !company.buyerProfile) {
       return res.status(404).json({ error: "기업 정보가 없습니다." });
@@ -469,22 +424,7 @@ router.delete("/:id", requireAuth, async (req, res) => {
       return res.status(403).json({ error: "부담금기업만 접근 가능합니다." });
     }
 
-    // SUPER_ADMIN일 경우 첫 번째 BUYER 회사 데이터 조회
-    let company;
-    if (userRole === "SUPER_ADMIN") {
-      company = await prisma.company.findFirst({
-        where: { 
-          type: "BUYER",
-          buyerProfile: { isNot: null }
-        },
-        include: { buyerProfile: true },
-      });
-    } else {
-      company = await prisma.company.findUnique({
-        where: { ownerUserId: userId },
-        include: { buyerProfile: true },
-      });
-    }
+    const company = await getUserCompany(userId, userRole);
 
     if (!company || !company.buyerProfile) {
       return res.status(404).json({ error: "기업 정보가 없습니다." });
