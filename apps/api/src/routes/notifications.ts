@@ -1,5 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
+import jwt from 'jsonwebtoken';
+import { config } from '../config.js';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -8,10 +10,23 @@ const prisma = new PrismaClient();
 const sseConnections = new Map<string, Response[]>();
 
 /**
- * SSE 연결 설정
+ * SSE 연결 설정 (쿼리 파라미터로 토큰 전달)
  */
 router.get('/notifications/stream', async (req: Request, res: Response) => {
-  const userId = (req as any).user?.userId;
+  // EventSource는 헤더를 설정할 수 없으므로 쿼리 파라미터로 토큰 전달
+  const token = req.query.token as string;
+  
+  if (!token) {
+    return res.status(401).json({ error: '토큰이 필요합니다' });
+  }
+
+  let userId: string;
+  try {
+    const decoded = jwt.verify(token, config.jwtSecret) as any;
+    userId = decoded.userId;
+  } catch (error) {
+    return res.status(401).json({ error: '유효하지 않은 토큰입니다' });
+  }
 
   if (!userId) {
     return res.status(401).json({ error: '인증이 필요합니다' });

@@ -527,11 +527,14 @@ model WorkOrder {
   companyId       String                // Company ID (바이어 회사)
   buyerId         String                // BuyerProfile ID
   title           String                // 지시 제목
-  content         String                // 지시 내용
+  content         String                // 지시 내용 (description으로 변경 추천)
+  description     String?               // 🆕 상세 설명 (content와 동일하게 사용 가능)
   targetType      String                // 대상 타입: ALL (전체), GROUP (그룹), INDIVIDUAL (개인)
   targetEmployees String?               // JSON array: 대상 직원 ID 목록 (targetType이 GROUP 또는 INDIVIDUAL일 때)
-  priority        String                @default("NORMAL") // URGENT, NORMAL, LOW
+  priority        String                @default("NORMAL") // URGENT, HIGH, NORMAL, LOW
+  status          String                @default("PENDING") // 🆕 PENDING, IN_PROGRESS, COMPLETED, CANCELLED
   dueDate         DateTime?             // 완료 기한
+  attachmentUrls  String?               // 🆕 첨부파일 URL (JSON array)
   audioFileUrl    String?               // 음성 파일 URL (선택)
   audioFileName   String?               // 음성 파일 이름
   audioDuration   Int?                  // 음성 파일 길이 (초)
@@ -541,15 +544,43 @@ model WorkOrder {
   createdAt       DateTime              @default(now())
   updatedAt       DateTime              @updatedAt
   company         Company               @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  confirmations   WorkOrderConfirmation[]
+  recipients      WorkOrderRecipient[]  // 🆕 수신자 목록 (상태 관리)
   
   @@index([companyId, isActive])
   @@index([buyerId, isActive])
   @@index([createdAt])
   @@index([priority, dueDate])
+  @@index([status])
 }
 
-// 업무지시 확인 기록
+// 🆕 업무지시 수신자 (개별 상태 관리)
+model WorkOrderRecipient {
+  id                String      @id @default(cuid())
+  workOrderId       String
+  employeeId        String      // DisabledEmployee ID
+  userId            String      // User ID (직원 계정)
+  status            String      @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED, REJECTED
+  startedAt         DateTime?   // 시작 시간
+  completedAt       DateTime?   // 완료 시간
+  completionReport  String?     // 완료 보고서
+  rejectionReason   String?     // 거부 사유
+  adminApproval     String      @default("PENDING") // 🆕 PENDING, APPROVED, REJECTED (관리자 승인)
+  adminNote         String?     // 🆕 관리자 메모
+  approvedAt        DateTime?   // 🆕 승인 시간
+  approvedBy        String?     // 🆕 승인한 관리자 User ID
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  workOrder         WorkOrder   @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  
+  @@unique([workOrderId, employeeId])
+  @@index([workOrderId])
+  @@index([employeeId])
+  @@index([userId])
+  @@index([status])
+  @@index([adminApproval])
+}
+
+// 업무지시 확인 기록 (레거시 - 이제 WorkOrderRecipient로 대체)
 model WorkOrderConfirmation {
   id              String      @id @default(cuid())
   workOrderId     String
@@ -557,7 +588,6 @@ model WorkOrderConfirmation {
   userId          String      // User ID (직원 계정)
   confirmedAt     DateTime    @default(now())
   note            String?     // 확인 메모 (선택)
-  workOrder       WorkOrder   @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
   
   @@unique([workOrderId, employeeId])
   @@index([workOrderId])
