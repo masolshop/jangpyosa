@@ -58,10 +58,18 @@ async function createMockEmployees() {
   try {
     console.log('🚀 목업 직원 데이터 생성 시작...\n');
 
-    // 먼저 모든 User와 Company 조회
+    // 목표 계정 전화번호 (실제 존재하는 계정들)
+    const targetPhones = [
+      '01011112222', // buyer01 (민간기업1)
+      '01033334444', // buyer03 (공공기관1)  
+      '01055556666', // buyer05 (교육청1)
+      '01099998888', // supplier01 (행복한표준사업장)
+    ];
+
+    // 사용자 조회
     const allUsers = await prisma.user.findMany({
       where: {
-        phone: { in: ['01011111111', '01033333333', '01055555555', '01088888888'] }
+        phone: { in: targetPhones }
       },
       include: {
         company: {
