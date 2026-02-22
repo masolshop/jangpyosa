@@ -61,8 +61,19 @@ export default function AnnouncementsPage() {
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<AnnouncementDetail | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
+  // 음성 읽기 관련 상태
+  const [autoReadEnabled, setAutoReadEnabled] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [currentSpeakingId, setCurrentSpeakingId] = useState<string | null>(null);
+
   useEffect(() => {
     loadAnnouncements();
+    
+    // localStorage에서 자동 음성 읽기 설정 로드
+    const savedAutoRead = localStorage.getItem('autoReadAnnouncements');
+    if (savedAutoRead === 'true') {
+      setAutoReadEnabled(true);
+    }
   }, []);
 
   async function loadAnnouncements() {
@@ -85,6 +96,76 @@ export default function AnnouncementsPage() {
       console.error("공지사항 로드 실패:", e);
     } finally {
       setLoading(false);
+    }
+  }
+
+  /**
+   * 자동 읽기 설정 토글
+   */
+  function toggleAutoRead() {
+    const newValue = !autoReadEnabled;
+    setAutoReadEnabled(newValue);
+    localStorage.setItem('autoReadAnnouncements', newValue.toString());
+    
+    if (newValue) {
+      setMessage("✅ 자동 음성 읽기가 활성화되었습니다");
+    } else {
+      setMessage("❌ 자동 음성 읽기가 비활성화되었습니다");
+      stopSpeaking(); // 현재 재생 중이면 중지
+    }
+    setTimeout(() => setMessage(""), 3000);
+  }
+
+  /**
+   * 단일 공지사항 음성 재생
+   */
+  function speakSingleAnnouncement(announcement: Announcement) {
+    if (typeof window === 'undefined' || !window.speechSynthesis) {
+      setError("이 브라우저는 음성 재생을 지원하지 않습니다");
+      setTimeout(() => setError(""), 3000);
+      return;
+    }
+    
+    // 이미 이 공지를 재생 중이면 중지
+    if (currentSpeakingId === announcement.id) {
+      stopSpeaking();
+      return;
+    }
+    
+    // 다른 공지를 재생 중이면 중지하고 새로 시작
+    stopSpeaking();
+    
+    const text = `공지사항. ${announcement.priority === 'URGENT' ? '긴급. ' : ''}${announcement.title}. ${announcement.content}`;
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'ko-KR';
+    utterance.rate = 1.0; // 정상 속도
+    utterance.pitch = 1.0;
+    utterance.volume = 1.0; // 최대 음량
+    
+    utterance.onend = () => {
+      setIsSpeaking(false);
+      setCurrentSpeakingId(null);
+    };
+    
+    utterance.onerror = (e) => {
+      console.error("음성 재생 오류:", e);
+      setIsSpeaking(false);
+      setCurrentSpeakingId(null);
+    };
+    
+    setIsSpeaking(true);
+    setCurrentSpeakingId(announcement.id);
+    window.speechSynthesis.speak(utterance);
+  }
+
+  /**
+   * 음성 재생 중지
+   */
+  function stopSpeaking() {
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+      setCurrentSpeakingId(null);
     }
   }
 
@@ -243,23 +324,56 @@ export default function AnnouncementsPage() {
   return (
     <div style={{ maxWidth: 1200, margin: "40px auto", padding: "0 20px" }}>
       {/* 헤더 */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 30 }}>
-        <h1 style={{ fontSize: 28, margin: 0 }}>📢 회사 공지사항 관리</h1>
-        <button
-          onClick={() => setIsCreateModalOpen(true)}
-          style={{
-            padding: "12px 24px",
-            background: "#3b82f6",
-            color: "white",
-            border: "none",
-            borderRadius: 8,
-            fontSize: 16,
-            fontWeight: "600",
-            cursor: "pointer",
-          }}
-        >
-          ✏️ 공지 작성
-        </button>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 30, flexWrap: "wrap", gap: 16 }}>
+        <h1 style={{ fontSize: 28, margin: 0 }}>📢 회사공지업무방</h1>
+        
+        <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+          {/* 자동 음성 읽기 토글 */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: 14, color: "#6b7280", fontWeight: 500 }}>🔊 자동 음성 읽기</span>
+            <button
+              onClick={toggleAutoRead}
+              style={{
+                width: 52,
+                height: 28,
+                background: autoReadEnabled ? "#10b981" : "#d1d5db",
+                borderRadius: 14,
+                border: "none",
+                cursor: "pointer",
+                position: "relative",
+                transition: "background 0.3s",
+              }}
+              aria-label={autoReadEnabled ? "자동 읽기 활성화됨" : "자동 읽기 비활성화됨"}
+            >
+              <span style={{
+                position: "absolute",
+                top: 2,
+                left: autoReadEnabled ? 26 : 2,
+                width: 24,
+                height: 24,
+                background: "white",
+                borderRadius: "50%",
+                transition: "left 0.3s",
+              }} />
+            </button>
+          </div>
+          
+          <button
+            onClick={() => setIsCreateModalOpen(true)}
+            style={{
+              padding: "12px 24px",
+              background: "#3b82f6",
+              color: "white",
+              border: "none",
+              borderRadius: 8,
+              fontSize: 16,
+              fontWeight: "600",
+              cursor: "pointer",
+            }}
+          >
+            ✏️ 공지 작성
+          </button>
+        </div>
       </div>
 
       {/* 메시지 */}
@@ -357,7 +471,28 @@ export default function AnnouncementsPage() {
                     </div>
                   </div>
 
-                  <div style={{ display: "flex", gap: 8, marginLeft: 24 }}>
+                  <div style={{ display: "flex", gap: 8, marginLeft: 24, flexWrap: "wrap" }}>
+                    {/* 음성 재생 버튼 */}
+                    <button
+                      onClick={() => speakSingleAnnouncement(announcement)}
+                      style={{
+                        padding: "8px 16px",
+                        background: currentSpeakingId === announcement.id ? "#f59e0b" : "#6366f1",
+                        color: "white",
+                        border: "none",
+                        borderRadius: 6,
+                        fontSize: 14,
+                        fontWeight: "600",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 4,
+                      }}
+                      title={currentSpeakingId === announcement.id ? "재생 중지" : "음성으로 듣기"}
+                    >
+                      {currentSpeakingId === announcement.id ? "⏸️ 중지" : "🔊 듣기"}
+                    </button>
+                    
                     <button
                       onClick={() => loadAnnouncementDetail(announcement.id)}
                       style={{
@@ -371,7 +506,7 @@ export default function AnnouncementsPage() {
                         cursor: "pointer",
                       }}
                     >
-                      공지확인리스트
+                      확인리스트
                     </button>
                     <button
                       onClick={() => openEditModal(announcement)}

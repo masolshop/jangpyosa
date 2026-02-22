@@ -189,7 +189,7 @@ export default function Sidebar() {
             />
             <MenuItem
               href="/dashboard/announcements"
-              label="회사 공지사항 관리"
+              label="회사공지업무방"
               icon="📢"
               active={isActive("/dashboard/announcements")}
               requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]}
