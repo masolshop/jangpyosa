@@ -127,6 +127,30 @@
 - `010-1001-0003` / `employee123` - 이철수 (교육청1 소속)
   - 장애유형: 청각, 중증, 월급 300만원
 
+### 🎨 최근 업데이트 (2026-02-22)
+**Phase 3 완료: TTS 및 실시간 알림 시스템** 🆕
+- ✅ **TTS (Text-to-Speech) 음성 읽어주기 기능**
+  - Web Speech API 활용 자동 음성 재생
+  - 공지사항 & 업무지시 목록에서 즉시 듣기 가능
+  - 자동 음성 읽기 토글 기능 (localStorage 저장)
+  - 한국어 음성 우선 선택, 재생 속도/음높이 조절
+- ✅ **Server-Sent Events (SSE) 기반 실시간 알림**
+  - `/api/notifications/stream` 엔드포인트로 SSE 연결
+  - 새 공지사항/업무지시 등록 시 자동 알림 전송
+  - 알림 읽음/삭제 API 구현
+  - Notification 모델 추가 (userId, type, title, message, link, read)
+- ✅ **업무지시 시스템 통합**
+  - `/dashboard/work-orders` 페이지 구현
+  - 단체/개인 업무지시 발송
+  - 긴급도 설정 (낮음/보통/높음/긴급)
+  - 마감일 설정 및 완료 보고서 제출
+  - 파일 첨부 지원
+- ✅ **AWS 자동 배포 스크립트**
+  - `./scripts/deploy-to-aws.sh` - 원클릭 배포
+  - `./scripts/verify-deploy.sh` - 배포 전 환경 검증
+  - SSH 연결, Git Pull, 의존성 설치, 빌드, PM2 재시작 자동화
+  - Health Check 포함
+
 ### 🎨 최근 업데이트 (2026-02-20)
 **Phase 2.2 완료: Sidebar 컴포넌트 수정 - 직원 로그인 UI 개선** 🆕
 - ✅ 직원 로그인 시 회사명 표시 문제 해결
@@ -443,6 +467,31 @@ URL: /employee/signup
 
 ### 새로운 코드 배포 프로세스 (AWS EC2)
 
+**방법 1: 자동 배포 스크립트 사용 (권장)** 🆕
+```bash
+# 로컬에서 실행
+cd /home/user/webapp
+
+# 1. 배포 전 환경 검증
+./scripts/verify-deploy.sh
+
+# 2. 자동 배포 실행
+./scripts/deploy-to-aws.sh production
+
+# 스크립트가 자동으로 수행하는 작업:
+# - Git 상태 확인 및 커밋 (필요 시)
+# - GitHub에 푸시
+# - AWS 서버 SSH 연결
+# - Git pull
+# - 의존성 설치 (npm install)
+# - 빌드 (npm run build)
+# - DB 마이그레이션 (prisma migrate deploy)
+# - PM2 재시작
+# - Health Check
+```
+
+**방법 2: 수동 배포 (기존 방식)**
+
 **1. 로컬에서 코드 변경 및 푸시:**
 ```bash
 cd /home/user/webapp
@@ -649,7 +698,19 @@ curl -X POST http://localhost:4000/auth/login \
 - [ ] 공공기관/국가 데모 계정 생성
 - [ ] Dashboard UI 기업 유형별 분기 처리
 
-### Phase 3 - 도급계약 관리
+### Phase 3 - 도급계약 관리 ✅
+- [x] 업무지시 시스템 구현
+  - 단체/개인 업무지시 등록
+  - 긴급도 및 마감일 설정
+  - 파일 첨부 지원
+  - 음성 읽어주기 기능 (TTS)
+- [x] 실시간 알림 시스템 구현
+  - SSE (Server-Sent Events) 기반 푸시 알림
+  - 공지사항/업무지시 자동 알림 전송
+  - 알림 읽음/삭제 관리
+- [x] AWS 자동 배포 스크립트 작성
+  - 원클릭 배포 자동화
+  - 배포 전 환경 검증
 - [ ] 공급사 상품 등록 UI
 - [ ] 도급계약 의뢰서 생성 (ContractRequest)
 - [ ] 견적 요청/수정/확정 워크플로우
