@@ -5,6 +5,7 @@ import { PrismaClient } from "@prisma/client";
 import path from "path";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
+import { getKSTNow } from "./utils/kst.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -75,17 +76,17 @@ app.listen(config.port, async () => {
   console.log(`📊 Database: ${process.env.DATABASE_URL?.split("@")[1] || "local"}`);
   console.log(`🔐 APICK Provider: ${config.apickProvider}`);
   
-  // 서버 시작 시 만료된 초대 코드 자동 정리
+  // 서버 시작 시 만료된 초대 코드 자동 정리 (한국 시간 기준)
   try {
-    const now = new Date();
+    const kstNow = getKSTNow();
     const result = await prisma.teamInvitation.deleteMany({
       where: {
-        expiresAt: { lt: now },
+        expiresAt: { lt: kstNow },
         isUsed: false
       }
     });
     if (result.count > 0) {
-      console.log(`🗑️  만료된 초대 코드 ${result.count}개 자동 삭제 완료`);
+      console.log(`🗑️  만료된 초대 코드 ${result.count}개 자동 삭제 완료 (한국 시간 기준)`);
     }
   } catch (error) {
     console.error('⚠️  만료된 초대 코드 정리 중 오류:', error);

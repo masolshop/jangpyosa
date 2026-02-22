@@ -2,6 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../index.js";
 import { requireAuth } from "../middleware/auth.js";
+import { getKSTDate, getKSTTime, getKSTNow } from "../utils/kst.js";
 
 const router = Router();
 
@@ -40,10 +41,9 @@ router.post("/clock-in", requireAuth, async (req, res) => {
       return res.status(404).json({ error: "직원 정보를 찾을 수 없습니다." });
     }
 
-    // 오늘 날짜
-    const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
-    const now = new Date();
-    const clockInTime = now.toTimeString().split(" ")[0]; // HH:MM:SS
+    // 오늘 날짜 (한국 시간)
+    const today = getKSTDate(); // YYYY-MM-DD (KST)
+    const clockInTime = getKSTTime(); // HH:MM:SS (KST)
 
     // 오늘 이미 출근했는지 확인
     const existing = await prisma.attendanceRecord.findUnique({
@@ -114,9 +114,10 @@ router.post("/clock-out", requireAuth, async (req, res) => {
     }
 
     // 오늘 날짜
-    const today = new Date().toISOString().split("T")[0];
-    const now = new Date();
-    const clockOutTime = now.toTimeString().split(" ")[0]; // HH:MM:SS
+    // 오늘 날짜 (한국 시간)
+    const today = getKSTDate(); // YYYY-MM-DD (KST)
+    const now = getKSTNow(); // 한국 시간 Date 객체
+    const clockOutTime = getKSTTime(); // HH:MM:SS (KST)
 
     // 오늘 출근 기록 확인
     const record = await prisma.attendanceRecord.findUnique({
@@ -276,7 +277,7 @@ router.get("/today", requireAuth, async (req, res) => {
       return res.status(404).json({ error: "직원 정보를 찾을 수 없습니다." });
     }
 
-    const today = new Date().toISOString().split("T")[0];
+    const today = getKSTDate();
 
     const record = await prisma.attendanceRecord.findUnique({
       where: {
@@ -402,7 +403,7 @@ router.get("/company", requireAuth, async (req, res) => {
       });
     } else {
       // 오늘 조회 (기본값)
-      const today = new Date().toISOString().split("T")[0];
+      const today = getKSTDate();
       records = await prisma.attendanceRecord.findMany({
         where: {
           employeeId: { in: employees.map(e => e.id) },

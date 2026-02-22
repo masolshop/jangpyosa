@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { PrismaClient } from "@prisma/client";
 import { requireAuth } from "../middleware/auth.js";
+import { getKSTNow, getKSTDate } from "../utils/kst.js";
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -71,9 +72,9 @@ router.post("/invite", requireAuth, async (req: any, res: any) => {
       return res.status(500).json({ error: "초대 코드 생성 실패" });
     }
 
-    // 만료일 설정 (7일 후)
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 7);
+    // 만료일 설정 (한국 시간 기준 7일 후)
+    const expiresAt = getKSTNow();
+    expiresAt.setUTCDate(expiresAt.getUTCDate() + 7);
 
     // 초대 코드 생성
     const invitation = await prisma.teamInvitation.create({
@@ -146,7 +147,8 @@ router.get("/invite/:code", async (req: any, res: any) => {
     }
 
     // 만료된 초대 코드 (사용된 초대는 이미 삭제됨)
-    if (new Date() > new Date(invitation.expiresAt)) {
+    const kstNow = getKSTNow();
+    if (kstNow > new Date(invitation.expiresAt)) {
       return res.status(400).json({ 
         error: "만료된 초대 코드입니다",
         expired: true

@@ -5,6 +5,7 @@ import jwt from "jsonwebtoken";
 import { prisma } from "../index.js";
 import { config } from "../config.js";
 import { verifyBizNo } from "../services/apick.js";
+import { getKSTNow } from "../utils/kst.js";
 
 const r = Router();
 
@@ -182,7 +183,7 @@ r.post("/signup/agent", async (req, res) => {
         
         // 🆕 개인정보 동의
         privacyAgreed: body.privacyAgreed,
-        privacyAgreedAt: new Date(),
+        privacyAgreedAt: getKSTNow(),
       },
       include: { branch: true },
     });
@@ -310,7 +311,7 @@ r.post("/signup/supplier", async (req, res) => {
         
         // 🆕 개인정보 동의
         privacyAgreed: body.privacyAgreed,
-        privacyAgreedAt: new Date(),
+        privacyAgreedAt: getKSTNow(),
       },
       include: {
         company: {
@@ -475,7 +476,7 @@ r.post("/signup/buyer", async (req, res) => {
         
         // 🆕 개인정보 동의
         privacyAgreed: body.privacyAgreed,
-        privacyAgreedAt: new Date(),
+        privacyAgreedAt: getKSTNow(),
       },
       include: {
         company: {
@@ -999,7 +1000,7 @@ r.post("/signup/employee", async (req, res) => {
         employeeId: employee.id,
         companyBizNo: cleanBizNo,
         privacyAgreed: body.privacyAgreed,
-        privacyAgreedAt: new Date(),
+        privacyAgreedAt: getKSTNow(),
       },
     });
 
@@ -1147,7 +1148,7 @@ r.post("/signup-invited", async (req, res) => {
       return res.status(400).json({ error: "INVITE_ALREADY_USED", message: "이미 사용된 초대 코드입니다" });
     }
     
-    if (new Date() > new Date(invitation.expiresAt)) {
+    if (getKSTNow() > new Date(invitation.expiresAt)) {
       return res.status(400).json({ error: "INVITE_EXPIRED", message: "만료된 초대 코드입니다" });
     }
     
@@ -1186,7 +1187,7 @@ r.post("/signup-invited", async (req, res) => {
         isCompanyOwner: false, // 초대받은 사람은 소유자가 아님
         managerTitle: body.managerTitle,
         privacyAgreed: body.privacyAgreed,
-        privacyAgreedAt: new Date(),
+        privacyAgreedAt: getKSTNow(),
       },
       include: { company: true }
     });
