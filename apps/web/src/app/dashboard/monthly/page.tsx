@@ -446,6 +446,14 @@ export default function MonthlyManagementPage() {
     <div className="container">
       <div className="card" style={{ maxWidth: "100%", margin: "20px auto" }}>
         <h1>📅 월별 고용장려금부담금 관리</h1>
+        
+        {/* 안내문 */}
+        <div style={{ marginTop: 16, padding: 16, background: "#fef3c7", borderRadius: 8, border: "1px solid #fbbf24" }}>
+          <p style={{ margin: 0, fontSize: 14, color: "#92400e", fontWeight: 500 }}>
+            ⚠️ 본 모의계산 프로그램은 실제 고용부담(장려)금 신고프로그램이 아닌 참고용 프로그램입니다.
+          </p>
+        </div>
+        
         <div style={{ marginTop: 8, padding: 16, background: "#f0f9ff", borderRadius: 8, border: "1px solid #bae6fd" }}>
           <p style={{ margin: 0, fontSize: 16, color: "#0c4a6e" }}>
             <strong>{companyInfo.name}</strong> | {buyerTypeLabel} (의무고용률 <strong>{quotaRatePercent}%</strong>) | {year}년 월별 고용 현황 및 정밀 계산

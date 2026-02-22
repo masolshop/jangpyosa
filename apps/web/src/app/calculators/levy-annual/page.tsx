@@ -380,6 +380,13 @@ export default function LevyAnnualPage() {
       <p style={{ color: "#0070f3", fontSize: 14, marginTop: 8 }}>
         💡 <strong>실무 팁:</strong> 간단한 추정이 필요하시면 <a href="/calculators/levy" style={{ color: "#0070f3", textDecoration: "underline" }}>간단부담금계산</a>을 이용하세요
       </p>
+      
+      {/* 안내문 */}
+      <div style={{ marginTop: 16, padding: 16, background: "#fef3c7", borderRadius: 8, border: "1px solid #fbbf24" }}>
+        <p style={{ margin: 0, fontSize: 14, color: "#92400e", fontWeight: 500 }}>
+          ⚠️ 본 모의계산 프로그램은 실제 고용부담(장려)금 신고프로그램이 아닌 참고용 프로그램입니다.
+        </p>
+      </div>
 
       {/* 직원 데이터 불러오기 버튼 */}
       <div

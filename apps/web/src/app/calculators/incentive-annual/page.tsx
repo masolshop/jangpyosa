@@ -452,6 +452,13 @@ export default function IncentiveAnnualPage() {
         의무고용률을 초과하여 장애인을 고용한 사업주에게 지급되는 장려금을 계산하세요
       </p>
       
+      {/* 안내문 */}
+      <div style={{ marginTop: 16, padding: 16, background: "#fef3c7", borderRadius: 8, border: "1px solid #fbbf24" }}>
+        <p style={{ margin: 0, fontSize: 14, color: "#92400e", fontWeight: 500 }}>
+          ⚠️ 본 모의계산 프로그램은 실제 고용부담(장려)금 신고프로그램이 아닌 참고용 프로그램입니다.
+        </p>
+      </div>
+      
       {/* 계산식 안내 */}
       <div
         style={{
