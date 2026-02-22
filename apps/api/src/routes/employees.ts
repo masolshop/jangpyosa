@@ -208,6 +208,7 @@ router.get("/monthly", requireAuth, async (req, res) => {
         incentiveExcludedCount: result.incentiveExcludedCount,
         incentiveEligibleCount: result.incentiveEligibleCount,
         shortfallCount: result.shortfallCount,
+        surplusCount: result.surplusCount,
         levy: result.levy,
         incentive: result.incentive,
         netAmount: result.netAmount,
