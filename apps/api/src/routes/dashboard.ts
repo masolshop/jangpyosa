@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { prisma } from "../index.js";
 import { requireAuth } from "../middleware/auth.js";
-import { getLevyBaseAmount2026 } from "../services/employment-calculator.js";
+import { getLevyBaseAmount2026 } from "../services/employment-calculator";
 
 const router = Router();
 
