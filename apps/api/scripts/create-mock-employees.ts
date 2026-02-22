@@ -136,7 +136,6 @@ async function createMockEmployees() {
               disabilityType,
               disabilityGrade: `${disabilityGrade}급`,
               severity,
-              jobTitle,
               monthlyWorkHours: monthlyHours,
               monthlySalary,
               hireDate: new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1),
