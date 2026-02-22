@@ -83,6 +83,12 @@ async function createMockEmployees() {
 
     console.log(`📊 찾은 사용자: ${allUsers.length}명\n`);
 
+    // 2026년 최저시급
+    const MIN_HOURLY_WAGE = 10320;
+    
+    // 최소 근로시간 (월 60시간)
+    const MIN_WORK_HOURS = 60;
+
     for (const user of allUsers) {
       const company = user.company;
       
@@ -95,6 +101,12 @@ async function createMockEmployees() {
         console.log(`⚠️  ${company.name}: buyerProfile 없음, 건너뜀\n`);
         continue;
       }
+
+      // 기존 직원 데이터 삭제
+      const deletedCount = await prisma.disabledEmployee.deleteMany({
+        where: { buyerId: company.buyerProfile.id }
+      });
+      console.log(`🗑️  기존 직원 ${deletedCount.count}명 삭제\n`);
 
       const employeeCount = Math.floor(Math.random() * 6) + 10; // 10-15명
       console.log(`\n🏢 ${company.name} (${company.buyerType || company.type})`);
@@ -112,11 +124,14 @@ async function createMockEmployees() {
         // 중증(50%) vs 경증(50%)
         const severity = Math.random() > 0.5 ? '중증' : '경증';
         
-        // 주당 근무시간: 15-40시간 랜덤
-        const workHoursPerWeek = Math.floor(Math.random() * 26) + 15;
+        // 월 근로시간: 60시간 ~ 209시간 랜덤 (최소 60시간, 최대 주 52시간 × 4주)
+        const monthlyWorkHours = Math.floor(Math.random() * 150) + MIN_WORK_HOURS; // 60-209시간
         
-        // 월급: 200만원 ~ 350만원 랜덤
-        const monthlySalary = Math.floor(Math.random() * 1500000) + 2000000;
+        // 주당 근무시간 계산 (월 근로시간 ÷ 4.33주)
+        const workHoursPerWeek = Math.round(monthlyWorkHours / 4.33);
+        
+        // 월급 = 월 근로시간 × 최저시급 (10,320원)
+        const monthlySalary = monthlyWorkHours * MIN_HOURLY_WAGE;
         
         const disabilityType = disabilityTypes[Math.floor(Math.random() * disabilityTypes.length)];
         const disabilityGrade = Math.floor(Math.random() * 3) + 1; // 1-3급
@@ -143,7 +158,7 @@ async function createMockEmployees() {
           });
 
           employees.push(employee);
-          console.log(`   ✅ ${i + 1}/${employeeCount}: ${name} (${severity}, ${gender}, ${workHoursPerWeek}시간/주)`);
+          console.log(`   ✅ ${i + 1}/${employeeCount}: ${name} (${severity}, ${gender}, 월 ${monthlyWorkHours}시간, ${monthlySalary.toLocaleString()}원)`);
         } catch (error: any) {
           console.log(`   ❌ ${i + 1}/${employeeCount}: ${name} - 오류: ${error.message}`);
         }
@@ -156,12 +171,12 @@ async function createMockEmployees() {
       const mildCount = employees.filter(e => e.severity === '경증').length;
       const maleCount = employees.filter(e => e.gender === '남').length;
       const femaleCount = employees.filter(e => e.gender === '여').length;
-      const totalHours = employees.reduce((sum, e) => sum + (e.workHoursPerWeek || 0), 0);
-      const avgHours = totalHours > 0 ? Math.round(totalHours / employees.length) : 0;
+      const totalSalary = employees.reduce((sum, e) => sum + (e.monthlySalary || 0), 0);
+      const avgSalary = totalSalary > 0 ? Math.round(totalSalary / employees.length) : 0;
 
       console.log(`   - 중증: ${severeCount}명, 경증: ${mildCount}명`);
       console.log(`   - 남성: ${maleCount}명, 여성: ${femaleCount}명`);
-      console.log(`   - 평균 근무시간: ${avgHours}시간/주`);
+      console.log(`   - 평균 급여: ${avgSalary.toLocaleString()}원/월`);
       console.log(`   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
     }
 
