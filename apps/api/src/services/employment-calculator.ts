@@ -371,8 +371,22 @@ export function calculateMonthlyData(
   
   const levy = shortfallCount * levyBaseAmount;
   
-  // 장려금 계산
-  const incentive = details.reduce((sum, d) => sum + d.incentiveAmount, 0);
+  // 장려금 계산 (고용노동부 공식)
+  // 1. 장려금 지급기준인원 = ceil(상시근로자수 × 의무고용률)
+  const incentiveBaseCount = Math.ceil(totalEmployeeCount * quotaRate);
+  
+  // 2. 장려금 대상 인원 = 장애인수 - 지급기준인원
+  const incentiveEligibleCount = Math.max(0, disabledCount - incentiveBaseCount);
+  
+  // 3. 자격 있는 직원들을 장려금 높은 순으로 정렬
+  const eligibleDetails = details
+    .filter(d => d.isEligibleForIncentive && d.incentiveAmount > 0)
+    .sort((a, b) => b.incentiveAmount - a.incentiveAmount);
+  
+  // 4. 상위 N명만 선택하여 장려금 합산
+  const selectedForIncentive = eligibleDetails.slice(0, incentiveEligibleCount);
+  const incentive = selectedForIncentive.reduce((sum, d) => sum + d.incentiveAmount, 0);
+  
   const surplusCount = Math.max(0, recognizedCount - obligatedCount);
   
   // 순액
