@@ -58,34 +58,39 @@ async function createMockEmployees() {
   try {
     console.log('🚀 목업 직원 데이터 생성 시작...\n');
 
-    // 회사 정보 조회
-    const companies = await prisma.company.findMany({
+    // 먼저 모든 User와 Company 조회
+    const allUsers = await prisma.user.findMany({
       where: {
-        OR: [
-          { ownerUser: { phone: '01011111111' } }, // buyer01 (민간)
-          { ownerUser: { phone: '01033333333' } }, // buyer03 (공공)
-          { ownerUser: { phone: '01055555555' } }, // buyer05 (국가지자체)
-          { ownerUser: { phone: '01088888888' } }, // supplier01 (표준사업장)
-        ]
+        phone: { in: ['01011111111', '01033333333', '01055555555', '01088888888'] }
       },
       include: {
-        ownerUser: true,
-        buyerProfile: true,
-        supplierProfile: true
+        company: {
+          include: {
+            buyerProfile: true,
+            supplierProfile: true
+          }
+        }
       }
     });
 
-    console.log(`📊 찾은 회사: ${companies.length}개\n`);
+    console.log(`📊 찾은 사용자: ${allUsers.length}명\n`);
 
-    for (const company of companies) {
+    for (const user of allUsers) {
+      const company = user.company;
+      
+      if (!company) {
+        console.log(`⚠️  사용자 ${user.phone}: 회사 없음, 건너뜀\n`);
+        continue;
+      }
+
       if (!company.buyerProfile) {
         console.log(`⚠️  ${company.name}: buyerProfile 없음, 건너뜀\n`);
         continue;
       }
 
       const employeeCount = Math.floor(Math.random() * 6) + 10; // 10-15명
-      console.log(`\n🏢 ${company.name} (${company.buyerType})`);
-      console.log(`   👤 소유자: ${company.ownerUser?.phone}`);
+      console.log(`\n🏢 ${company.name} (${company.buyerType || company.type})`);
+      console.log(`   👤 소유자: ${user.phone}`);
       console.log(`   📝 생성할 직원 수: ${employeeCount}명\n`);
 
       const employees = [];
