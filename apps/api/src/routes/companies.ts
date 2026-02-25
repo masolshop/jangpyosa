@@ -71,6 +71,7 @@ router.get("/my", requireAuth, async (req, res) => {
         type: company.type,
         buyerType: company.buyerType,
         isVerified: company.isVerified,
+        attachmentEmail: company.attachmentEmail,
       },
       buyerProfile: company.buyerProfile ? {
         id: company.buyerProfile.id,
@@ -138,6 +139,7 @@ router.put("/my", requireAuth, async (req, res) => {
       data: {
         name: body.name,
         representative: body.representative,
+        ...(body.attachmentEmail !== undefined && { attachmentEmail: body.attachmentEmail }),
       },
     });
 

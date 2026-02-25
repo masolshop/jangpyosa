@@ -65,25 +65,28 @@ model Branch {
 }
 
 model Company {
-  id              String           @id @default(cuid())
-  name            String
-  bizNo           String           @unique
-  representative  String?
-  type            String
-  buyerType       String?          // 🆕 BUYER 전용: PRIVATE_COMPANY, PUBLIC_INSTITUTION, GOVERNMENT
-  isVerified      Boolean          @default(false)
-  apickData       String?
-  ownerUserId     String           @unique      // 🆕 기존 필드 유지 (호환성)
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  members         User[]           @relation("CompanyMembers") // 🆕 1:N 관계 (회사에 소속된 모든 담당자)
-  ownerUser       User             @relation("CompanyOwner", fields: [ownerUserId], references: [id])
-  buyerProfile    BuyerProfile?
-  supplierProfile SupplierProfile?
-  invitations     TeamInvitation[] // 🆕 초대 코드 목록
-  announcements   CompanyAnnouncement[] // 🆕 회사 공지사항
-  workOrders      WorkOrder[]      // 🆕 업무지시 목록
-  activityLogs    ActivityLog[]    // 🆕 활동 로그
+  id                String           @id @default(cuid())
+  name              String
+  bizNo             String           @unique
+  representative    String?
+  type              String
+  buyerType         String?          // 🆕 BUYER 전용: PRIVATE_COMPANY, PUBLIC_INSTITUTION, GOVERNMENT
+  isVerified        Boolean          @default(false)
+  apickData         String?
+  ownerUserId       String           @unique      // 🆕 기존 필드 유지 (호환성)
+  attachmentEmail   String?          // 🆕 첨부파일 수신용 이메일 (휴가 증빙서류, 업무지시 파일 등)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  members           User[]           @relation("CompanyMembers") // 🆕 1:N 관계 (회사에 소속된 모든 담당자)
+  ownerUser         User             @relation("CompanyOwner", fields: [ownerUserId], references: [id])
+  buyerProfile      BuyerProfile?
+  supplierProfile   SupplierProfile?
+  invitations       TeamInvitation[] // 🆕 초대 코드 목록
+  announcements     CompanyAnnouncement[] // 🆕 회사 공지사항
+  workOrders        WorkOrder[]      // 🆕 업무지시 목록
+  activityLogs      ActivityLog[]    // 🆕 활동 로그
+  leaveTypes        LeaveType[]      // 🆕 휴가 유형 목록
+  leaveRequests     LeaveRequest[]   // 🆕 휴가 신청 목록
 }
 
 model SupplierRegistry {
@@ -611,4 +614,52 @@ model Notification {
   @@index([userId, read, createdAt])
   @@index([userId, createdAt])
   @@index([type])
+}
+
+// 🆕 휴가 유형 (회사별 관리)
+model LeaveType {
+  id                     String         @id @default(cuid())
+  companyId              String         // 회사 ID
+  name                   String         // 휴가 유형명 (예: 연차, 병가, 경조사)
+  description            String?        // 설명
+  requiresDocument       Boolean        @default(false) // 증빙서류 필요 여부
+  maxDaysPerYear         Int?           // 연간 최대 사용일수
+  isPaid                 Boolean        @default(true)  // 유급 여부
+  isActive               Boolean        @default(true)  // 활성 상태
+  displayOrder           Int            @default(0)     // 표시 순서
+  createdAt              DateTime       @default(now())
+  updatedAt              DateTime       @updatedAt
+  company                Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  leaveRequests          LeaveRequest[]
+  
+  @@unique([companyId, name])
+  @@index([companyId, isActive])
+}
+
+// 🆕 휴가 신청
+model LeaveRequest {
+  id                String       @id @default(cuid())
+  companyId         String       // 회사 ID
+  leaveTypeId       String       // 휴가 유형 ID
+  employeeId        String       // DisabledEmployee ID
+  userId            String       // User ID (직원 계정)
+  startDate         DateTime     // 시작일
+  endDate           DateTime     // 종료일
+  days              Float        // 일수 (0.5일 단위 가능)
+  reason            String?      // 사유
+  status            String       @default("PENDING") // PENDING, APPROVED, REJECTED, CANCELLED
+  documentSent      Boolean      @default(false) // 증빙서류 전송 여부
+  documentNote      String?      // 서류 관련 메모
+  reviewedBy        String?      // 검토자 User ID
+  reviewedAt        DateTime?    // 검토 시각
+  reviewNote        String?      // 검토 메모
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  company           Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  leaveType         LeaveType    @relation(fields: [leaveTypeId], references: [id])
+  
+  @@index([companyId, status])
+  @@index([employeeId, status])
+  @@index([userId])
+  @@index([startDate, endDate])
 }
