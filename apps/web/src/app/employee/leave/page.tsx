@@ -10,6 +10,7 @@ interface LeaveType {
   requiresDocument: boolean;
   maxDaysPerYear: number | null;
   isPaid: boolean;
+  isActive: boolean;
 }
 
 interface LeaveRequest {
