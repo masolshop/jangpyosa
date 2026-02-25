@@ -82,7 +82,7 @@ export default function Sidebar() {
           left: isOpen ? 0 : -350,
           width: 330,
           height: "100vh",
-          background: "#1a1a1a",
+          background: "#0f3a5f",
           color: "white",
           padding: "20px",
           transition: "left 0.3s ease",
@@ -192,6 +192,14 @@ export default function Sidebar() {
               label="회사공지업무방"
               icon="📢"
               active={isActive("/dashboard/announcements")}
+              requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]}
+              currentRole={userRole}
+            />
+            <MenuItem
+              href="/dashboard/leave"
+              label="장애인직원휴가관리"
+              icon="🏖️"
+              active={isActive("/dashboard/leave")}
               requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]}
               currentRole={userRole}
             />
