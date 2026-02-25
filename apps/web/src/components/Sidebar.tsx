@@ -110,8 +110,18 @@ export default function Sidebar() {
             e.currentTarget.style.opacity = "1";
           }}
         >
-          <h2 style={{ margin: 0, fontSize: 28.8 }}>🏢 장표사닷컴</h2>
-          <p style={{ margin: "4px 0 0 0", fontSize: 17.28, color: "#999", lineHeight: 1.4 }}>
+          <img 
+            src="/logo.png" 
+            alt="장표사닷컴" 
+            style={{ 
+              width: "100%",
+              maxWidth: 280,
+              height: "auto",
+              margin: "0 auto",
+              display: "block"
+            }} 
+          />
+          <p style={{ margin: "12px 0 0 0", fontSize: 17.28, color: "#999", lineHeight: 1.4 }}>
             장애인표준사업장<br />
             연계고용플랫폼
           </p>
