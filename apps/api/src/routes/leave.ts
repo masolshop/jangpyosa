@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
-import { auth } from '../middleware/auth.js';
+import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -8,7 +8,7 @@ const prisma = new PrismaClient();
 // ==================== 휴가 유형 관리 (관리자용) ====================
 
 // 휴가 유형 목록 조회
-router.get('/types', auth, async (req, res) => {
+router.get('/types', requireAuth, async (req, res) => {
   try {
     const user = (req as any).user;
     
@@ -32,7 +32,7 @@ router.get('/types', auth, async (req, res) => {
 });
 
 // 휴가 유형 생성
-router.post('/types', auth, async (req, res) => {
+router.post('/types', requireAuth, async (req, res) => {
   try {
     const user = (req as any).user;
     
@@ -82,7 +82,7 @@ router.post('/types', auth, async (req, res) => {
 });
 
 // 휴가 유형 수정
-router.put('/types/:id', auth, async (req, res) => {
+router.put('/types/:id', requireAuth, async (req, res) => {
   try {
     const user = (req as any).user;
     const { id } = req.params;
@@ -145,7 +145,7 @@ router.put('/types/:id', auth, async (req, res) => {
 });
 
 // 휴가 유형 삭제
-router.delete('/types/:id', auth, async (req, res) => {
+router.delete('/types/:id', requireAuth, async (req, res) => {
   try {
     const user = (req as any).user;
     const { id } = req.params;
@@ -196,7 +196,7 @@ router.delete('/types/:id', auth, async (req, res) => {
 // ==================== 휴가 신청 (직원용) ====================
 
 // 내 휴가 신청 목록
-router.get('/requests/my', auth, async (req, res) => {
+router.get('/requests/my', requireAuth, async (req, res) => {
   try {
     const user = (req as any).user;
     
@@ -220,7 +220,7 @@ router.get('/requests/my', auth, async (req, res) => {
 });
 
 // 휴가 신청
-router.post('/requests', auth, async (req, res) => {
+router.post('/requests', requireAuth, async (req, res) => {
   try {
     const user = (req as any).user;
     
@@ -275,7 +275,7 @@ router.post('/requests', auth, async (req, res) => {
 });
 
 // 휴가 신청 취소
-router.patch('/requests/:id/cancel', auth, async (req, res) => {
+router.patch('/requests/:id/cancel', requireAuth, async (req, res) => {
   try {
     const user = (req as any).user;
     const { id } = req.params;
@@ -309,7 +309,7 @@ router.patch('/requests/:id/cancel', auth, async (req, res) => {
 });
 
 // 서류 전송 완료 표시
-router.patch('/requests/:id/document-sent', auth, async (req, res) => {
+router.patch('/requests/:id/document-sent', requireAuth, async (req, res) => {
   try {
     const user = (req as any).user;
     const { id } = req.params;
@@ -345,7 +345,7 @@ router.patch('/requests/:id/document-sent', auth, async (req, res) => {
 // ==================== 휴가 승인/거부 (관리자용) ====================
 
 // 전체 휴가 신청 목록 (관리자용)
-router.get('/requests', auth, async (req, res) => {
+router.get('/requests', requireAuth, async (req, res) => {
   try {
     const user = (req as any).user;
     
@@ -392,7 +392,7 @@ router.get('/requests', auth, async (req, res) => {
 });
 
 // 휴가 승인
-router.patch('/requests/:id/approve', auth, async (req, res) => {
+router.patch('/requests/:id/approve', requireAuth, async (req, res) => {
   try {
     const user = (req as any).user;
     const { id } = req.params;
@@ -436,7 +436,7 @@ router.patch('/requests/:id/approve', auth, async (req, res) => {
 });
 
 // 휴가 거부
-router.patch('/requests/:id/reject', auth, async (req, res) => {
+router.patch('/requests/:id/reject', requireAuth, async (req, res) => {
   try {
     const user = (req as any).user;
     const { id } = req.params;
