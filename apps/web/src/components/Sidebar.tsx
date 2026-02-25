@@ -150,22 +150,14 @@ export default function Sidebar() {
 
         {/* 메인 메뉴 */}
         <nav>
-          {/* 기업장애인고용관리_실무자용 */}
+          {/* 장애인직원관리솔루션 */}
           <div style={{ marginBottom: 24 }}>
             <div style={{ fontSize: 20.6, color: "#fff", marginBottom: 12, fontWeight: "bold" }}>
-              기업장애인고용관리_실무자용
+              장애인직원관리솔루션
             </div>
             <MenuItem
-              href="/dashboard/company"
-              label="기업 대시보드"
-              icon="🏢"
-              active={isActive("/dashboard/company")}
-              requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]}
-              currentRole={userRole}
-            />
-            <MenuItem
               href="/dashboard/employees"
-              label="장애인 직원 등록·관리"
+              label="장애인직원등록관리"
               icon="👥"
               active={isActive("/dashboard/employees")}
               requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]}
@@ -173,7 +165,7 @@ export default function Sidebar() {
             />
             <MenuItem
               href="/dashboard/monthly"
-              label="월별 고용장려금부담금 관리"
+              label="고용장려금부담금관리"
               icon="📅"
               active={isActive("/dashboard/monthly")}
               requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]}
@@ -189,17 +181,17 @@ export default function Sidebar() {
             />
             <MenuItem
               href="/dashboard/announcements"
-              label="회사공지업무방"
+              label="장애인직원업무관리"
               icon="📢"
               active={isActive("/dashboard/announcements")}
               requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]}
               currentRole={userRole}
             />
             <MenuItem
-              href="/dashboard/leave"
-              label="장애인직원휴가관리"
-              icon="🏖️"
-              active={isActive("/dashboard/leave")}
+              href="/dashboard/company"
+              label="기업대시보드"
+              icon="🏢"
+              active={isActive("/dashboard/company")}
               requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]}
               currentRole={userRole}
             />
