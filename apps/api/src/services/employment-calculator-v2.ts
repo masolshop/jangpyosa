@@ -99,15 +99,16 @@ export interface MonthlyResult {
 // 상수 정의 (2026년 기준)
 // ============================================
 
-// 고용장려금 기본 단가 (월)
+// 고용장려금 기본 단가 (월) - 2026년 고용노동부 공식 단가
+// 주의: 나이 구분 없음! (2023년 발생분부터 적용)
 const INCENTIVE_RATES = {
-  SEVERE: {
-    M: { under35: 600000, age35to55: 500000, over55: 450000 },
-    F: { under35: 700000, age35to55: 600000, over55: 500000 },
-  },
   MILD: {
-    M: { under35: 400000, age35to55: 350000, over55: 300000 },
-    F: { under35: 500000, age35to55: 450000, over55: 400000 },
+    M: 350000,  // 경증 남성: 35만원
+    F: 500000,  // 경증 여성: 50만원
+  },
+  SEVERE: {
+    M: 700000,  // 중증 남성: 70만원
+    F: 900000,  // 중증 여성: 90만원
   },
 };
 
@@ -128,7 +129,7 @@ const QUOTA_RATES: { [key: string]: number } = {
 };
 
 // 중증 장애인 인정 배수
-const SEVERE_MULTIPLIER_THRESHOLD = 60; // 주 60시간 이상
+const SEVERE_MULTIPLIER_THRESHOLD = 60; // 월 60시간 이상 (주 60시간 아님!)
 const SEVERE_MULTIPLIER = 2.0;
 
 // 지원 기간 제한
@@ -167,25 +168,22 @@ function calculateMonthsWorked(hireDate: Date, targetDate: Date): number {
 }
 
 /**
- * 장려금 기본 단가 조회
+ * 장려금 기본 단가 조회 (2026년 공식 - 나이 구분 없음!)
  */
 function getBaseIncentiveRate(
   severity: "SEVERE" | "MILD",
-  gender: "M" | "F",
-  age: number
+  gender: "M" | "F"
 ): number {
-  // Fallback: rates가 undefined일 경우 기본값 사용
-  const rates = INCENTIVE_RATES[severity]?.[gender];
+  // 2026년 고용노동부 공식 단가 (2023년 발생분부터 적용)
+  const rate = INCENTIVE_RATES[severity]?.[gender];
   
-  if (!rates) {
-    // 기본값: 중증 남성 35-55세 기준
-    console.warn(`⚠️  장려금 단가 조회 실패: severity=${severity}, gender=${gender}, 기본값(500,000원) 사용`);
-    return 500000;
+  if (!rate) {
+    // Fallback: 중증 남성 기준
+    console.warn(`⚠️  장려금 단가 조회 실패: severity=${severity}, gender=${gender}, 기본값(700,000원) 사용`);
+    return 700000;
   }
 
-  if (age < 35) return rates.under35;
-  if (age <= 55) return rates.age35to55;
-  return rates.over55;
+  return rate;
 }
 
 /**
@@ -306,13 +304,11 @@ export function calculateMonthlyData(
     }
 
     // 장려금 계산 (기준인원 초과 + 자격이 있는 경우만)
-    const baseRate = getBaseIncentiveRate(emp.severity, emp.gender, age);
-    const salaryLimit = emp.severity === "SEVERE" ? Math.round(emp.monthlySalary * 0.6) : 0;
-    let finalRate = baseRate;
-
-    if (emp.severity === "SEVERE" && salaryLimit > 0) {
-      finalRate = Math.min(baseRate, salaryLimit);
-    }
+    const baseRate = getBaseIncentiveRate(emp.severity, emp.gender);
+    
+    // 월임금액 60% 상한 적용 (모든 장애인에게 적용)
+    const salaryLimit = Math.round(emp.monthlySalary * 0.6);
+    const finalRate = Math.min(baseRate, salaryLimit);
 
     // 장려금 지급: 기준인원 초과 && 제외사유 없음
     if (!isWithinBaseline && !excludeReason) {
@@ -321,8 +317,10 @@ export function calculateMonthlyData(
     }
 
     // 부담금 인정 인원 (제외 조건 없음, 모든 재직자 인정)
+    // 중증: 월 60시간 이상 근무 시 2명 인정 (주 60시간 아님!)
     let levyRecognizedCount = 1.0;
-    if (emp.severity === "SEVERE" && emp.workHoursPerWeek >= SEVERE_MULTIPLIER_THRESHOLD) {
+    const monthlyHours = emp.workHoursPerWeek * 4.33; // 주당 → 월간 환산
+    if (emp.severity === "SEVERE" && monthlyHours >= SEVERE_MULTIPLIER_THRESHOLD) {
       levyRecognizedCount = SEVERE_MULTIPLIER;
     }
     totalRecognizedCount += levyRecognizedCount;
