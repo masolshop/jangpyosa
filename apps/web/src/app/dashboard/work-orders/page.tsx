@@ -7,7 +7,8 @@ import { getToken } from "@/lib/auth";
 interface WorkOrder {
   id: string;
   title: string;
-  description: string;
+  description?: string | null;
+  content?: string | null;
   priority: string;
   status: string;
   dueDate: string | null;
@@ -29,7 +30,8 @@ interface WorkOrder {
 interface WorkOrderDetail {
   id: string;
   title: string;
-  description: string;
+  description?: string | null;
+  content?: string | null;
   priority: string;
   status: string;
   dueDate: string | null;
@@ -182,7 +184,7 @@ export default function WorkOrdersPage() {
       ? `마감일 ${new Date(workOrder.dueDate).toLocaleDateString('ko-KR')}`
       : '';
     
-    const text = `업무지시. 긴급도 ${priorityText}. ${workOrder.title}. ${workOrder.description}. ${dueDateText}`;
+    const text = `업무지시. 긴급도 ${priorityText}. ${workOrder.title}. ${workOrder.content || workOrder.description || ''}. ${dueDateText}`;
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = 'ko-KR';
     utterance.rate = 1.0;
@@ -242,7 +244,7 @@ export default function WorkOrdersPage() {
         },
         body: JSON.stringify({
           title,
-          description,
+          content: description,  // backend expects 'content', not 'description'
           priority,
           dueDate: dueDate || null,
           recipientType,
@@ -469,9 +471,12 @@ export default function WorkOrdersPage() {
                       </div>
                       
                       <p style={{ fontSize: 14, color: "#6b7280", margin: "8px 0" }}>
-                        {workOrder.description.length > 100 
-                          ? `${workOrder.description.substring(0, 100)}...` 
-                          : workOrder.description}
+                        {(() => {
+                          const desc = workOrder.content || workOrder.description || "";
+                          return desc.length > 100 
+                            ? `${desc.substring(0, 100)}...` 
+                            : desc;
+                        })()}
                       </p>
                       
                       <div style={{ display: "flex", gap: 16, fontSize: 13, color: "#6b7280", marginTop: 12 }}>
@@ -817,7 +822,7 @@ export default function WorkOrdersPage() {
               whiteSpace: "pre-wrap",
               lineHeight: 1.6,
             }}>
-              {selectedWorkOrder.description}
+              {selectedWorkOrder.content || selectedWorkOrder.description || ""}
             </div>
 
             <div style={{ fontSize: 14, color: "#6b7280", marginBottom: 24 }}>
