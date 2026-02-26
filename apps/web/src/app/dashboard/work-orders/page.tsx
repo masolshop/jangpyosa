@@ -11,7 +11,7 @@ interface WorkOrder {
   priority: string;
   status: string;
   dueDate: string | null;
-  attachmentUrls: string[];
+  attachmentUrls: string[] | null;
   createdAt: string;
   sender: {
     id: string;
@@ -33,7 +33,7 @@ interface WorkOrderDetail {
   priority: string;
   status: string;
   dueDate: string | null;
-  attachmentUrls: string[];
+  attachmentUrls: string[] | null;
   createdAt: string;
   sender: {
     id: string;
@@ -832,7 +832,7 @@ export default function WorkOrdersPage() {
               <div style={{ marginBottom: 24 }}>
                 <h3 style={{ fontSize: 16, marginBottom: 12 }}>📎 첨부파일</h3>
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  {selectedWorkOrder.attachmentUrls.map((url, index) => (
+                  {(selectedWorkOrder.attachmentUrls || []).map((url, index) => (
                     <a
                       key={index}
                       href={url}
