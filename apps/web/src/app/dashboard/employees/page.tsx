@@ -976,13 +976,14 @@ export default function EmployeesPage() {
                   <div>
                     <label>월 급여 (원) *</label>
                     <input
-                      type="number"
-                      value={form.monthlySalary}
-                      onChange={(e) =>
-                        setForm({ ...form, monthlySalary: Number(e.target.value) })
-                      }
-                      min="0"
-                      step="1000"
+                      type="text"
+                      value={form.monthlySalary.toLocaleString()}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/,/g, "");
+                        if (!isNaN(Number(value))) {
+                          setForm({ ...form, monthlySalary: Number(value) });
+                        }
+                      }}
                       required
                     />
                     <p style={{ fontSize: 12, color: "#10b981", marginTop: 4 }}>
