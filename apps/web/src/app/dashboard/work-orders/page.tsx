@@ -112,7 +112,8 @@ export default function WorkOrdersPage() {
       const token = getToken();
       if (!token) return;
 
-      const res = await fetch(`${API_BASE}/employees`, {
+      // 기업 팀원 목록 조회 (장애인 직원 아님!)
+      const res = await fetch(`${API_BASE}/team/members`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -120,10 +121,15 @@ export default function WorkOrdersPage() {
 
       if (res.ok) {
         const data = await res.json();
-        setEmployees(data.employees || []);
+        // members를 employees 형식으로 변환
+        const teamMembers = (data.members || []).map((member: any) => ({
+          id: member.id,
+          name: member.name || member.managerName || '이름 없음'
+        }));
+        setEmployees(teamMembers);
       }
     } catch (e) {
-      console.error("직원 목록 로드 실패:", e);
+      console.error("팀원 목록 로드 실패:", e);
     }
   }
 
@@ -567,7 +573,7 @@ export default function WorkOrdersPage() {
                   fontSize: 14,
                 }}
               >
-                <option value="ALL">전체 직원</option>
+                <option value="ALL">전체 팀원 (기업 관리자)</option>
                 <option value="INDIVIDUAL">개별 선택</option>
               </select>
             </div>
