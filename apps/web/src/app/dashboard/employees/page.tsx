@@ -169,6 +169,7 @@ export default function EmployeesPage() {
         },
         body: JSON.stringify({
           ...form,
+          monthlySalary: calculateMonthlySalary(form.monthlyWorkHours || 0),
           monthlyWorkHours: form.monthlyWorkHours || null,
           birthDate: form.birthDate || null,
         }),
@@ -272,10 +273,9 @@ export default function EmployeesPage() {
         "생년월일",
         "입사일*",
         "퇴사일",
-        "월급여*",
         "고용보험*",
         "최저임금*",
-        "월근로시간",
+        "월근로시간*",
         "근무형태",
         "메모",
       ],
@@ -290,7 +290,6 @@ export default function EmployeesPage() {
         "1985-03-15",
         "2020-01-01",
         "",
-        "2500000",
         "가입",
         "이상",
         "60",
@@ -308,7 +307,6 @@ export default function EmployeesPage() {
         "1990-07-20",
         "2021-06-01",
         "",
-        "2800000",
         "가입",
         "이상",
         "60",
@@ -326,7 +324,6 @@ export default function EmployeesPage() {
         "1988-11-30",
         "2022-03-15",
         "",
-        "2200000",
         "가입",
         "이상",
         "60",
@@ -371,9 +368,10 @@ export default function EmployeesPage() {
       ["- 이상 또는 미만으로 입력"],
       [],
       ["[월근로시간]"],
-      ["- 월간 근로시간을 숫자로 입력 (예: 60, 최소 60시간 이상)"],
+      ["- 월간 근로시간을 숫자로 입력 (예: 60, 최소 60시간 이상) *필수*"],
       ["- 입력하지 않으면 60시간으로 자동 설정됩니다"],
       ["- 60시간이 최소 근무시간입니다"],
+      ["- ⭐ 월급여는 자동 계산됩니다: 월근로시간 × 10,320원 (1,000원 단위 반올림)"],
       [],
       ["[근무형태]"],
       ["- 사무실: 회사에서 근무 (OFFICE)"],
@@ -398,7 +396,6 @@ export default function EmployeesPage() {
       { wch: 12 },  // 생년월일
       { wch: 12 },  // 입사일
       { wch: 12 },  // 퇴사일
-      { wch: 12 },  // 월급여
       { wch: 10 },  // 고용보험
       { wch: 10 },  // 최저임금
       { wch: 12 },  // 월근로시간
@@ -458,12 +455,14 @@ export default function EmployeesPage() {
 
         try {
           // 데이터 매핑 (핸드폰번호 추가)
-          const workTypeStr = row[14]?.toString().trim() || "";
+          const workTypeStr = row[13]?.toString().trim() || "";
           let workType: "OFFICE" | "REMOTE" | "HYBRID" = "OFFICE";
           if (workTypeStr === "재택") workType = "REMOTE";
           else if (workTypeStr === "혼합") workType = "HYBRID";
           else workType = "OFFICE"; // 기본값 또는 "사무실"
 
+          const monthlyWorkHours = Number(row[12]) || 60;
+          
           const employeeData = {
             name: row[0]?.toString().trim() || "",
             phone: row[1]?.toString().trim() || "",                  // 핸드폰번호
@@ -475,12 +474,12 @@ export default function EmployeesPage() {
             birthDate: row[7] ? formatExcelDate(row[7]) : "",
             hireDate: row[8] ? formatExcelDate(row[8]) : "",
             resignDate: row[9] ? formatExcelDate(row[9]) : "",
-            monthlySalary: Number(row[10]) || 2060740,
-            hasEmploymentInsurance: row[11]?.toString().trim() === "가입",
-            meetsMinimumWage: row[12]?.toString().trim() === "이상",
-            monthlyWorkHours: Number(row[13]) || 60,
+            monthlySalary: calculateMonthlySalary(monthlyWorkHours),
+            hasEmploymentInsurance: row[10]?.toString().trim() === "가입",
+            meetsMinimumWage: row[11]?.toString().trim() === "이상",
+            monthlyWorkHours: monthlyWorkHours,
             workType: workType,
-            memo: row[15]?.toString().trim() || "",
+            memo: row[14]?.toString().trim() || "",
           };
 
           // 필수 항목 검증
@@ -974,17 +973,15 @@ export default function EmployeesPage() {
                   </div>
 
                   <div>
-                    <label>월 급여 (원) *</label>
+                    <label>월 급여 (원) * (자동 계산)</label>
                     <input
                       type="text"
-                      value={form.monthlySalary.toLocaleString()}
-                      onChange={(e) => {
-                        const value = e.target.value.replace(/,/g, "");
-                        if (!isNaN(Number(value))) {
-                          setForm({ ...form, monthlySalary: Number(value) });
-                        }
+                      value={calculateMonthlySalary(form.monthlyWorkHours || 0).toLocaleString()}
+                      readOnly
+                      style={{
+                        background: "#f3f4f6",
+                        cursor: "not-allowed",
                       }}
-                      required
                     />
                     <p style={{ fontSize: 12, color: "#10b981", marginTop: 4 }}>
                       ✅ 월 {form.monthlyWorkHours || 0}시간 × 10,320원 = {calculateMonthlySalary(form.monthlyWorkHours || 0).toLocaleString()}원 (자동 계산됨)
