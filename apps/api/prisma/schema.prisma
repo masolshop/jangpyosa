@@ -287,7 +287,8 @@ model DisabledEmployee {
   id                     String             @id @default(cuid())
   buyerId                String
   name                   String
-  registrationNumber     String?
+  phone                  String?            // 핸드폰번호 추가 (직원 인증용)
+  registrationNumber     String?            // 주민등록번호 앞 6자리만 (예: 850315)
   disabilityType         String
   disabilityGrade        String?
   severity               String

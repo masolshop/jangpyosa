@@ -13,7 +13,8 @@ import * as XLSX from "xlsx";
 type Employee = {
   id: string;
   name: string;
-  registrationNumber?: string;
+  phone?: string;                 // 핸드폰번호 (직원 인증용)
+  registrationNumber?: string;    // 주민번호 앞 6자리만 (예: 850315)
   disabilityType: string;
   disabilityGrade?: string;
   severity: "MILD" | "SEVERE";
@@ -53,7 +54,8 @@ export default function EmployeesPage() {
 
   const [form, setForm] = useState({
     name: "",
-    registrationNumber: "",
+    phone: "",                      // 핸드폰번호
+    registrationNumber: "",        // 주민번호 앞 6자리만
     disabilityType: "",
     disabilityGrade: "",
     severity: "MILD" as "MILD" | "SEVERE",
@@ -209,6 +211,7 @@ export default function EmployeesPage() {
   function startEdit(emp: Employee) {
     setForm({
       name: emp.name,
+      phone: emp.phone || "",
       registrationNumber: emp.registrationNumber || "",
       disabilityType: emp.disabilityType,
       disabilityGrade: emp.disabilityGrade || "",
@@ -231,6 +234,7 @@ export default function EmployeesPage() {
   function resetForm() {
     setForm({
       name: "",
+      phone: "",
       registrationNumber: "",
       disabilityType: "",
       disabilityGrade: "",
@@ -259,6 +263,7 @@ export default function EmployeesPage() {
     const sampleData = [
       [
         "성명*",
+        "핸드폰번호*",
         "주민번호앞자리*",
         "장애유형*",
         "장애등급",
@@ -276,6 +281,7 @@ export default function EmployeesPage() {
       ],
       [
         "홍길동",
+        "010-1234-5678",
         "850315",
         "지체",
         "3급",
@@ -293,6 +299,7 @@ export default function EmployeesPage() {
       ],
       [
         "김영희",
+        "010-2345-6789",
         "900720",
         "시각",
         "2급",
@@ -310,6 +317,7 @@ export default function EmployeesPage() {
       ],
       [
         "이철수",
+        "010-3456-7890",
         "881130",
         "청각",
         "5급",
@@ -334,6 +342,11 @@ export default function EmployeesPage() {
       [],
       ["📋 작성 안내"],
       ["* 표시가 있는 항목은 필수 입력 항목입니다."],
+      [],
+      ["[핸드폰번호]"],
+      ["- 직원 핸드폰번호를 입력합니다 (예: 010-1234-5678)"],
+      ["- 직원 회원가입 시 본인 인증에 사용됩니다"],
+      ["- 하이픈(-) 포함 또는 미포함 모두 가능합니다"],
       [],
       ["[주민번호 앞자리]"],
       ["- 주민등록번호 앞 6자리를 입력합니다 (예: 850315)"],
@@ -376,6 +389,7 @@ export default function EmployeesPage() {
     const ws = XLSX.utils.aoa_to_sheet(sampleData);
     ws["!cols"] = [
       { wch: 10 },  // 성명
+      { wch: 15 },  // 핸드폰번호
       { wch: 15 },  // 주민번호앞자리
       { wch: 12 },  // 장애유형
       { wch: 10 },  // 장애등급
@@ -443,8 +457,8 @@ export default function EmployeesPage() {
         if (!row || row.length === 0 || !row[0]) continue; // 빈 행 스킵
 
         try {
-          // 데이터 매핑
-          const workTypeStr = row[13]?.toString().trim() || "";
+          // 데이터 매핑 (핸드폰번호 추가)
+          const workTypeStr = row[14]?.toString().trim() || "";
           let workType: "OFFICE" | "REMOTE" | "HYBRID" = "OFFICE";
           if (workTypeStr === "재택") workType = "REMOTE";
           else if (workTypeStr === "혼합") workType = "HYBRID";
@@ -452,25 +466,26 @@ export default function EmployeesPage() {
 
           const employeeData = {
             name: row[0]?.toString().trim() || "",
-            registrationNumber: row[1]?.toString().trim() || "",
-            disabilityType: row[2]?.toString().trim() || "",
-            disabilityGrade: row[3]?.toString().trim() || "",
-            severity: (row[4]?.toString().trim() === "중증" ? "SEVERE" : "MILD") as "SEVERE" | "MILD",
-            gender: (row[5]?.toString().trim() === "여" ? "F" : "M") as "M" | "F",
-            birthDate: row[6] ? formatExcelDate(row[6]) : "",
-            hireDate: row[7] ? formatExcelDate(row[7]) : "",
-            resignDate: row[8] ? formatExcelDate(row[8]) : "",
-            monthlySalary: Number(row[9]) || 2060740,
-            hasEmploymentInsurance: row[10]?.toString().trim() === "가입",
-            meetsMinimumWage: row[11]?.toString().trim() === "이상",
-            workHoursPerWeek: Number(row[12]) || 60,
+            phone: row[1]?.toString().trim() || "",                  // 핸드폰번호
+            registrationNumber: row[2]?.toString().trim() || "",      // 주민번호 앞자리
+            disabilityType: row[3]?.toString().trim() || "",
+            disabilityGrade: row[4]?.toString().trim() || "",
+            severity: (row[5]?.toString().trim() === "중증" ? "SEVERE" : "MILD") as "SEVERE" | "MILD",
+            gender: (row[6]?.toString().trim() === "여" ? "F" : "M") as "M" | "F",
+            birthDate: row[7] ? formatExcelDate(row[7]) : "",
+            hireDate: row[8] ? formatExcelDate(row[8]) : "",
+            resignDate: row[9] ? formatExcelDate(row[9]) : "",
+            monthlySalary: Number(row[10]) || 2060740,
+            hasEmploymentInsurance: row[11]?.toString().trim() === "가입",
+            meetsMinimumWage: row[12]?.toString().trim() === "이상",
+            workHoursPerWeek: Number(row[13]) || 60,
             workType: workType,
-            memo: row[14]?.toString().trim() || "",
+            memo: row[15]?.toString().trim() || "",
           };
 
           // 필수 항목 검증
-          if (!employeeData.name || !employeeData.registrationNumber || !employeeData.disabilityType || !employeeData.hireDate) {
-            errors.push(`${i + 2}행: 필수 항목 누락 (성명, 주민번호앞자리, 장애유형, 입사일)`);
+          if (!employeeData.name || !employeeData.phone || !employeeData.registrationNumber || !employeeData.disabilityType || !employeeData.hireDate) {
+            errors.push(`${i + 2}행: 필수 항목 누락 (성명, 핸드폰번호, 주민번호앞자리, 장애유형, 입사일)`);
             failCount++;
             continue;
           }
@@ -830,6 +845,20 @@ export default function EmployeesPage() {
                   </div>
 
                   <div>
+                    <label>핸드폰번호 * (직원 인증용)</label>
+                    <input
+                      type="tel"
+                      value={form.phone}
+                      onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                      placeholder="예: 010-1234-5678"
+                      required
+                    />
+                    <p style={{ fontSize: 12, color: "#666", marginTop: 4 }}>
+                      💡 직원 회원가입 시 본인 인증에 사용됩니다
+                    </p>
+                  </div>
+
+                  <div>
                     <label>주민번호 앞자리 * (직원 인증용)</label>
                     <input
                       type="text"
@@ -841,7 +870,7 @@ export default function EmployeesPage() {
                       required
                     />
                     <p style={{ fontSize: 12, color: "#666", marginTop: 4 }}>
-                      💡 직원 회원가입 시 본인 인증에 사용됩니다
+                      💡 주민등록번호 앞 6자리만 입력 (직원 인증용)
                     </p>
                   </div>
 
@@ -1133,6 +1162,11 @@ export default function EmployeesPage() {
                           🏷️ {emp.disabilityType}
                           {emp.disabilityGrade && ` ${emp.disabilityGrade}`}
                         </p>
+                        {emp.phone && (
+                          <p style={{ margin: "6px 0 0 0", fontSize: 14, color: "#666" }}>
+                            📱 핸드폰: {emp.phone}
+                          </p>
+                        )}
                         {emp.registrationNumber && (
                           <p style={{ margin: "6px 0 0 0", fontSize: 14, color: "#666" }}>
                             🆔 주민번호: {emp.registrationNumber.substring(0, 3)}***

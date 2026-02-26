@@ -135,16 +135,14 @@ async function createMockEmployees() {
           employeeIndex++;
           
           const name = generateRandomName();
-          const phone = generateRandomPhone();
+          const phone = `010-${String(Math.floor(Math.random() * 9000) + 1000)}-${String(Math.floor(Math.random() * 9000) + 1000)}`;
           const address = getRandomAddress();
           
-          // 성별에 맞는 주민등록번호 생성
+          // 성별에 맞는 주민등록번호 앞 6자리만 생성
           const year = Math.floor(Math.random() * 40) + 60; // 60-99
           const month = String(Math.floor(Math.random() * 12) + 1).padStart(2, '0');
           const day = String(Math.floor(Math.random() * 28) + 1).padStart(2, '0');
-          const genderCode = dist.gender === 'M' ? '1' : '2'; // 1:남, 2:여
-          const random = String(Math.floor(Math.random() * 10000)).padStart(4, '0');
-          const regNo = `${year}${month}${day}-${genderCode}${random}`;
+          const regNo = `${year}${month}${day}`; // 앞 6자리만
           
           // 중증도와 성별
           const severity = dist.severity;
@@ -167,7 +165,8 @@ async function createMockEmployees() {
               data: {
                 buyerId: company.buyerProfile.id,
                 name,
-                registrationNumber: regNo,
+                phone,                              // 핸드폰번호 추가
+                registrationNumber: regNo,          // 주민번호 앞 6자리만
                 gender,
                 disabilityType,
                 disabilityGrade: `${disabilityGrade}급`,

@@ -876,21 +876,31 @@ r.post("/verify-company", async (req, res) => {
 
 r.post("/verify-employee", async (req, res) => {
   try {
-    const { buyerProfileId, registrationNumber } = z.object({
+    const { buyerProfileId, name, phone, registrationNumber } = z.object({
       buyerProfileId: z.string().min(1, "기업 정보가 필요합니다"),
+      name: z.string().min(1, "이름을 입력하세요"),
+      phone: z.string().min(10, "핸드폰번호를 입력하세요"),
       registrationNumber: z.string().min(6, "주민등록번호 앞자리 6자리를 입력하세요"),
     }).parse(req.body);
 
-    // 장애인 직원 매칭 (주민등록번호 앞자리로 매칭)
+    // 핸드폰번호 정규화 (하이픈 제거)
+    const cleanPhone = phone.replace(/[^0-9]/g, "");
+
+    // 장애인 직원 매칭 (이름 + 핸드폰번호 + 주민등록번호 앞자리)
     const employee = await prisma.disabledEmployee.findFirst({
       where: {
         buyerId: buyerProfileId,
+        name: name,
+        phone: {
+          contains: cleanPhone, // 하이픈 유무 관계없이 매칭
+        },
         registrationNumber: registrationNumber,
         resignDate: null, // 재직 중인 직원만
       },
       select: {
         id: true,
         name: true,
+        phone: true,
         workType: true,
         disabilityType: true,
         registrationNumber: true,
@@ -900,7 +910,7 @@ r.post("/verify-employee", async (req, res) => {
     if (!employee) {
       return res.status(404).json({ 
         error: "EMPLOYEE_NOT_FOUND", 
-        message: "해당 인증번호로 등록된 직원 정보를 찾을 수 없습니다" 
+        message: "등록된 직원 정보를 찾을 수 없습니다. 이름, 핸드폰번호, 주민번호 앞자리를 확인해주세요" 
       });
     }
 
