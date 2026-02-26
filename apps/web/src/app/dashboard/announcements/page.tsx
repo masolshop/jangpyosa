@@ -41,7 +41,7 @@ interface AnnouncementDetail {
 
 export default function AnnouncementsPage() {
   // 탭 상태
-  const [activeTab, setActiveTab] = useState<"announcements" | "work-orders">("announcements");
+  const [activeTab, setActiveTab] = useState<"announcements" | "checklist">("announcements");
   
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(false);
@@ -65,6 +65,10 @@ export default function AnnouncementsPage() {
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<AnnouncementDetail | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
+  // 확인리스트 - 전체 직원 목록
+  const [allEmployees, setAllEmployees] = useState<Employee[]>([]);
+  const [employeesLoading, setEmployeesLoading] = useState(false);
+
   // 음성 읽기 관련 상태
   const [autoReadEnabled, setAutoReadEnabled] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -79,6 +83,12 @@ export default function AnnouncementsPage() {
       setAutoReadEnabled(true);
     }
   }, []);
+
+  useEffect(() => {
+    if (activeTab === 'checklist') {
+      loadAllEmployees();
+    }
+  }, [activeTab]);
 
   async function loadAnnouncements() {
     try {
@@ -101,6 +111,37 @@ export default function AnnouncementsPage() {
       console.error("공지사항 로드 실패:", e);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadAllEmployees() {
+    try {
+      setEmployeesLoading(true);
+      const token = getToken();
+      if (!token) return;
+
+      const res = await fetch(`${API_BASE}/team/members`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        cache: 'no-store',
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        // members를 Employee 형식으로 변환
+        const employees = (data.members || []).map((member: any) => ({
+          id: member.id,
+          name: member.name || member.managerName || '이름 없음',
+          phone: member.phone,
+          registrationNumber: member.registrationNumber,
+        }));
+        setAllEmployees(employees);
+      }
+    } catch (e) {
+      console.error("직원 목록 로드 실패:", e);
+    } finally {
+      setEmployeesLoading(false);
     }
   }
 
@@ -412,11 +453,11 @@ export default function AnnouncementsPage() {
           📢 공지사항
         </button>
         <button
-          onClick={() => setActiveTab("work-orders")}
+          onClick={() => setActiveTab("checklist")}
           style={{
             padding: "12px 24px",
-            background: activeTab === "work-orders" ? "#3b82f6" : "transparent",
-            color: activeTab === "work-orders" ? "white" : "#6b7280",
+            background: activeTab === "checklist" ? "#3b82f6" : "transparent",
+            color: activeTab === "checklist" ? "white" : "#6b7280",
             border: "none",
             borderRadius: "8px 8px 0 0",
             fontSize: 16,
@@ -424,10 +465,10 @@ export default function AnnouncementsPage() {
             cursor: "pointer",
             transition: "all 0.2s",
             marginBottom: -2,
-            borderBottom: activeTab === "work-orders" ? "2px solid #3b82f6" : "none",
+            borderBottom: activeTab === "checklist" ? "2px solid #3b82f6" : "none",
           }}
         >
-          📋 업무지시
+          ✅ 확인리스트
         </button>
       </div>
 
@@ -603,24 +644,56 @@ export default function AnnouncementsPage() {
         )}
       </div>
       ) : (
-        /* 업무지시 탭 - iframe으로 표시 */
+        /* 확인리스트 탭 - 전체 직원 목록 */
         <div style={{
           background: "white",
           borderRadius: 12,
           boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
           overflow: "hidden",
-          height: "calc(100vh - 250px)",
-          minHeight: 600,
+          padding: 24,
         }}>
-          <iframe
-            src="/dashboard/work-orders?embed=true"
-            style={{
-              width: "100%",
-              height: "100%",
-              border: "none",
-            }}
-            title="업무지시"
-          />
+          <h2 style={{ fontSize: 20, marginBottom: 20, color: "#374151" }}>
+            ✅ 전체 직원 확인리스트 ({allEmployees.length}명)
+          </h2>
+          
+          {employeesLoading ? (
+            <div style={{ padding: 40, textAlign: "center", color: "#999" }}>
+              로딩 중...
+            </div>
+          ) : allEmployees.length === 0 ? (
+            <div style={{ padding: 40, textAlign: "center", color: "#999" }}>
+              등록된 직원이 없습니다.
+            </div>
+          ) : (
+            <div style={{
+              border: "1px solid #d1d5db",
+              borderRadius: 8,
+              overflow: "hidden",
+            }}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr style={{ background: "#f9fafb" }}>
+                    <th style={{ padding: 16, textAlign: "left", fontWeight: 600, fontSize: 14, width: "30%" }}>이름</th>
+                    <th style={{ padding: 16, textAlign: "left", fontWeight: 600, fontSize: 14, width: "40%" }}>전화번호</th>
+                    <th style={{ padding: 16, textAlign: "left", fontWeight: 600, fontSize: 14, width: "30%" }}>주민번호</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {allEmployees.map((emp) => (
+                    <tr key={emp.id} style={{ borderTop: "1px solid #e5e7eb" }}>
+                      <td style={{ padding: 16, fontSize: 14, fontWeight: 500 }}>{emp.name}</td>
+                      <td style={{ padding: 16, fontSize: 14, color: "#3b82f6", fontWeight: 500 }}>
+                        {emp.phone || '-'}
+                      </td>
+                      <td style={{ padding: 16, fontSize: 14, color: "#6b7280" }}>
+                        {emp.registrationNumber || '-'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
 
