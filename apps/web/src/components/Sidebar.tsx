@@ -9,6 +9,7 @@ export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(true);
   const [userName, setUserName] = useState<string | null>(null);
   const [companyName, setCompanyName] = useState<string | null>(null);
+  const [managerName, setManagerName] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
 
   useEffect(() => {
@@ -26,6 +27,7 @@ export default function Sidebar() {
           const user = JSON.parse(userStr);
           setUserName(user.name || null);
           setCompanyName(user.company?.name || user.companyName || null);
+          setManagerName(user.managerName || null);
         } catch (e) {
           console.error("사용자 정보 파싱 실패:", e);
         }
@@ -137,7 +139,7 @@ export default function Sidebar() {
         </a>
 
         <nav>
-          {(userName || companyName) && (
+          {companyName && (
             <div
               style={{
                 marginBottom: 20,
@@ -149,9 +151,12 @@ export default function Sidebar() {
                 textAlign: "center",
               }}
             >
-              {companyName && userName && (
-                <div style={{ fontSize: 17, fontWeight: 600, color: "#fff" }}>
-                  🏢 {companyName} &nbsp; 👤 {userName}
+              <div style={{ fontSize: 17, fontWeight: 600, color: "#fff", marginBottom: managerName ? 8 : 0 }}>
+                {companyName}
+              </div>
+              {managerName && (
+                <div style={{ fontSize: 15, fontWeight: 400, color: "#d0d0d0" }}>
+                  {managerName}
                 </div>
               )}
             </div>

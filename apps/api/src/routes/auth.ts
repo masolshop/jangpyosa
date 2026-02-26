@@ -117,6 +117,10 @@ r.post("/login", async (req, res) => {
         branchName: user.branch?.name,
         refCode: user.refCode,
         company: user.company,
+        managerName: user.managerName,
+        managerTitle: user.managerTitle,
+        managerEmail: user.managerEmail,
+        managerPhone: user.managerPhone,
       },
     });
   } catch (error: any) {
