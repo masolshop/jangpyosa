@@ -22,7 +22,8 @@ interface Announcement {
 interface Employee {
   id: string;
   name: string;
-  registrationNumber: string;
+  registrationNumber?: string;  // 주민번호 (optional)
+  phone?: string;  // 전화번호 추가
   readAt?: string;
 }
 
@@ -995,7 +996,7 @@ export default function AnnouncementsPage() {
                     <thead>
                       <tr style={{ background: "#f9fafb" }}>
                         <th style={{ padding: 12, textAlign: "left", fontWeight: 600, fontSize: 14 }}>이름</th>
-                        <th style={{ padding: 12, textAlign: "left", fontWeight: 600, fontSize: 14 }}>주민번호</th>
+                        <th style={{ padding: 12, textAlign: "left", fontWeight: 600, fontSize: 14 }}>전화번호</th>
                         <th style={{ padding: 12, textAlign: "left", fontWeight: 600, fontSize: 14 }}>읽은 시간</th>
                       </tr>
                     </thead>
@@ -1003,7 +1004,7 @@ export default function AnnouncementsPage() {
                       {selectedAnnouncement.readEmployees.map((emp) => (
                         <tr key={emp.id} style={{ borderTop: "1px solid #e5e7eb" }}>
                           <td style={{ padding: 12, fontSize: 14 }}>{emp.name}</td>
-                          <td style={{ padding: 12, fontSize: 14 }}>{emp.registrationNumber}</td>
+                          <td style={{ padding: 12, fontSize: 14 }}>{emp.phone || emp.registrationNumber || '-'}</td>
                           <td style={{ padding: 12, fontSize: 14 }}>
                             {emp.readAt ? new Date(emp.readAt).toLocaleString("ko-KR") : "-"}
                           </td>
@@ -1030,14 +1031,14 @@ export default function AnnouncementsPage() {
                     <thead>
                       <tr style={{ background: "#f9fafb" }}>
                         <th style={{ padding: 12, textAlign: "left", fontWeight: 600, fontSize: 14 }}>이름</th>
-                        <th style={{ padding: 12, textAlign: "left", fontWeight: 600, fontSize: 14 }}>주민번호</th>
+                        <th style={{ padding: 12, textAlign: "left", fontWeight: 600, fontSize: 14 }}>전화번호</th>
                       </tr>
                     </thead>
                     <tbody>
                       {selectedAnnouncement.unreadEmployees.map((emp) => (
                         <tr key={emp.id} style={{ borderTop: "1px solid #e5e7eb" }}>
                           <td style={{ padding: 12, fontSize: 14 }}>{emp.name}</td>
-                          <td style={{ padding: 12, fontSize: 14 }}>{emp.registrationNumber}</td>
+                          <td style={{ padding: 12, fontSize: 14 }}>{emp.phone || emp.registrationNumber || '-'}</td>
                         </tr>
                       ))}
                     </tbody>
