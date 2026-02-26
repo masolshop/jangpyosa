@@ -108,72 +108,108 @@ async function createMockEmployees() {
       });
       console.log(`🗑️  기존 직원 ${deletedCount.count}명 삭제\n`);
 
-      const employeeCount = Math.floor(Math.random() * 6) + 10; // 10-15명
+      // 📊 명확한 직원 구성 (중증/경증, 남성/여성)
+      const employeeDistribution = [
+        // 중증 장애인 (SEVERE)
+        { severity: 'SEVERE', gender: 'M', count: 5 },   // 중증 남성 5명
+        { severity: 'SEVERE', gender: 'F', count: 3 },   // 중증 여성 3명
+        
+        // 경증 장애인 (MILD)
+        { severity: 'MILD', gender: 'M', count: 7 },     // 경증 남성 7명
+        { severity: 'MILD', gender: 'F', count: 3 },     // 경증 여성 3명
+      ];
+
+      const employeeCount = employeeDistribution.reduce((sum, d) => sum + d.count, 0);
+      
       console.log(`\n🏢 ${company.name} (${company.buyerType || company.type})`);
       console.log(`   👤 소유자: ${user.username || user.phone}`);
-      console.log(`   📝 생성할 직원 수: ${employeeCount}명\n`);
+      console.log(`   📝 생성할 직원 수: ${employeeCount}명`);
+      console.log(`   📊 구성: 중증 남 5명, 중증 여 3명, 경증 남 7명, 경증 여 3명\n`);
 
       const employees = [];
+      let employeeIndex = 0;
 
-      for (let i = 0; i < employeeCount; i++) {
-        const name = generateRandomName();
-        const regNo = generateRandomRegNo();
-        const phone = generateRandomPhone();
-        const address = getRandomAddress();
-        
-        // 중증(50%) vs 경증(50%)
-        const severity = Math.random() > 0.5 ? 'SEVERE' : 'MILD';
-        
-        // 월 근로시간: 60시간 ~ 209시간 랜덤 (최소 60시간, 최대 주 52시간 × 4주)
-        const monthlyWorkHours = Math.floor(Math.random() * 150) + MIN_WORK_HOURS; // 60-209시간
-        
-        // 월급 = 월 근로시간 × 최저시급 (10,320원)
-        const monthlySalary = monthlyWorkHours * MIN_HOURLY_WAGE;
-        
-        const disabilityType = disabilityTypes[Math.floor(Math.random() * disabilityTypes.length)];
-        const disabilityGrade = Math.floor(Math.random() * 3) + 1; // 1-3급
-        const jobTitle = jobTitles[Math.floor(Math.random() * jobTitles.length)];
-        
-        // 성별 (주민등록번호에서 추출)
-        const genderCode = regNo.split('-')[1][0];
-        const gender = (genderCode === '1' || genderCode === '3') ? 'M' : 'F';
+      // 각 분류별로 직원 생성
+      for (const dist of employeeDistribution) {
+        for (let i = 0; i < dist.count; i++) {
+          employeeIndex++;
+          
+          const name = generateRandomName();
+          const phone = generateRandomPhone();
+          const address = getRandomAddress();
+          
+          // 성별에 맞는 주민등록번호 생성
+          const year = Math.floor(Math.random() * 40) + 60; // 60-99
+          const month = String(Math.floor(Math.random() * 12) + 1).padStart(2, '0');
+          const day = String(Math.floor(Math.random() * 28) + 1).padStart(2, '0');
+          const genderCode = dist.gender === 'M' ? '1' : '2'; // 1:남, 2:여
+          const random = String(Math.floor(Math.random() * 10000)).padStart(4, '0');
+          const regNo = `${year}${month}${day}-${genderCode}${random}`;
+          
+          // 중증도와 성별
+          const severity = dist.severity;
+          const gender = dist.gender;
+          
+          // 월 근로시간: 60시간 ~ 209시간 랜덤 (최소 60시간, 최대 주 52시간 × 4주)
+          const monthlyWorkHours = Math.floor(Math.random() * 150) + MIN_WORK_HOURS; // 60-209시간
+          
+          // 월급 = 월 근로시간 × 최저시급 (10,320원)
+          const monthlySalary = monthlyWorkHours * MIN_HOURLY_WAGE;
+          
+          const disabilityType = disabilityTypes[Math.floor(Math.random() * disabilityTypes.length)];
+          const disabilityGrade = severity === 'SEVERE' ? 
+            Math.floor(Math.random() * 3) + 1 :  // 중증: 1-3급
+            Math.floor(Math.random() * 3) + 4;   // 경증: 4-6급
+          const jobTitle = jobTitles[Math.floor(Math.random() * jobTitles.length)];
 
-        try {
-          const employee = await prisma.disabledEmployee.create({
-            data: {
-              buyerId: company.buyerProfile.id,
-              name,
-              registrationNumber: regNo,
-              gender,
-              disabilityType,
-              disabilityGrade: `${disabilityGrade}급`,
-              severity,
-              monthlyWorkHours: monthlyWorkHours, // 월 근로시간
-              workHoursPerWeek: Math.round(monthlyWorkHours / 4.33), // 주당 근무시간 (참고용)
-              monthlySalary,
-              hireDate: new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1)
-            }
-          });
+          try {
+            const employee = await prisma.disabledEmployee.create({
+              data: {
+                buyerId: company.buyerProfile.id,
+                name,
+                registrationNumber: regNo,
+                gender,
+                disabilityType,
+                disabilityGrade: `${disabilityGrade}급`,
+                severity,
+                monthlyWorkHours: monthlyWorkHours, // 월 근로시간
+                workHoursPerWeek: Math.round(monthlyWorkHours / 4.33), // 주당 근무시간 (참고용)
+                monthlySalary,
+                hireDate: new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1)
+              }
+            });
 
-          employees.push(employee);
-          console.log(`   ✅ ${i + 1}/${employeeCount}: ${name} (${severity}, ${gender}, 월 ${monthlyWorkHours}시간, ${monthlySalary.toLocaleString()}원)`);
-        } catch (error: any) {
-          console.log(`   ❌ ${i + 1}/${employeeCount}: ${name} - 오류: ${error.message}`);
+            employees.push(employee);
+            
+            const severityKr = severity === 'SEVERE' ? '중증' : '경증';
+            const genderKr = gender === 'M' ? '남성' : '여성';
+            console.log(`   ✅ ${employeeIndex}/${employeeCount}: ${name} (${severityKr} ${genderKr}, ${disabilityGrade}급, 월 ${monthlyWorkHours}h, ${monthlySalary.toLocaleString()}원)`);
+          } catch (error: any) {
+            console.log(`   ❌ ${employeeIndex}/${employeeCount}: ${name} - 오류: ${error.message}`);
+          }
         }
       }
 
       console.log(`\n   📊 ${company.name} 총 ${employees.length}명 등록 완료`);
       
-      // 통계 출력
-      const severeCount = employees.filter(e => e.severity === 'SEVERE').length;
-      const mildCount = employees.filter(e => e.severity === 'MILD').length;
-      const maleCount = employees.filter(e => e.gender === 'M').length;
-      const femaleCount = employees.filter(e => e.gender === 'F').length;
+      // 📊 상세 통계 출력
+      const severeMale = employees.filter(e => e.severity === 'SEVERE' && e.gender === 'M').length;
+      const severeFemale = employees.filter(e => e.severity === 'SEVERE' && e.gender === 'F').length;
+      const mildMale = employees.filter(e => e.severity === 'MILD' && e.gender === 'M').length;
+      const mildFemale = employees.filter(e => e.severity === 'MILD' && e.gender === 'F').length;
+      
       const totalSalary = employees.reduce((sum, e) => sum + (e.monthlySalary || 0), 0);
       const avgSalary = totalSalary > 0 ? Math.round(totalSalary / employees.length) : 0;
 
-      console.log(`   - 중증: ${severeCount}명, 경증: ${mildCount}명`);
-      console.log(`   - 남성: ${maleCount}명, 여성: ${femaleCount}명`);
+      console.log(`\n   📈 중증도 & 성별 분포:`);
+      console.log(`   ┌─────────┬──────┬──────┬──────┐`);
+      console.log(`   │         │ 남성 │ 여성 │ 합계 │`);
+      console.log(`   ├─────────┼──────┼──────┼──────┤`);
+      console.log(`   │ 중증    │  ${String(severeMale).padStart(2, ' ')}  │  ${String(severeFemale).padStart(2, ' ')}  │  ${String(severeMale + severeFemale).padStart(2, ' ')}  │`);
+      console.log(`   │ 경증    │  ${String(mildMale).padStart(2, ' ')}  │  ${String(mildFemale).padStart(2, ' ')}  │  ${String(mildMale + mildFemale).padStart(2, ' ')}  │`);
+      console.log(`   ├─────────┼──────┼──────┼──────┤`);
+      console.log(`   │ 합계    │  ${String(severeMale + mildMale).padStart(2, ' ')}  │  ${String(severeFemale + mildFemale).padStart(2, ' ')}  │  ${String(employees.length).padStart(2, ' ')}  │`);
+      console.log(`   └─────────┴──────┴──────┴──────┘`);
       console.log(`   - 평균 급여: ${avgSalary.toLocaleString()}원/월`);
       console.log(`   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
     }

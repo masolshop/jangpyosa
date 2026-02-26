@@ -143,6 +143,25 @@ router.get("/", requireAuth, async (req, res) => {
     const maxReductionByLevy = totalLevy * yearSetting.maxReductionRate;
     const estimatedReduction = Math.min(maxReductionByLevy, totalLevy * 0.5); // 임시 50%
 
+    // 📊 직원 통계 계산 (경증/중증, 남성/여성)
+    const activeEmployees = employees.filter((e) => !e.resignDate);
+    const employeeStats = {
+      // 전체 직원 수
+      total: activeEmployees.length,
+      
+      // 중증도별 통계
+      severeMale: activeEmployees.filter(e => e.severity === 'SEVERE' && e.gender === 'M').length,
+      severeFemale: activeEmployees.filter(e => e.severity === 'SEVERE' && e.gender === 'F').length,
+      mildMale: activeEmployees.filter(e => e.severity === 'MILD' && e.gender === 'M').length,
+      mildFemale: activeEmployees.filter(e => e.severity === 'MILD' && e.gender === 'F').length,
+      
+      // 합계
+      severe: activeEmployees.filter(e => e.severity === 'SEVERE').length,
+      mild: activeEmployees.filter(e => e.severity === 'MILD').length,
+      male: activeEmployees.filter(e => e.gender === 'M').length,
+      female: activeEmployees.filter(e => e.gender === 'F').length,
+    };
+
     return res.json({
       year,
       company: {
@@ -156,8 +175,9 @@ router.get("/", requireAuth, async (req, res) => {
         estimatedReduction,
         netAmount: totalLevy - totalIncentive - estimatedReduction,
         employeeCount: employees.length,
-        activeEmployeeCount: employees.filter((e) => !e.resignDate).length,
+        activeEmployeeCount: activeEmployees.length,
       },
+      employeeStats, // 📊 직원 통계 추가
       monthlyResults,
     });
   } catch (error: any) {

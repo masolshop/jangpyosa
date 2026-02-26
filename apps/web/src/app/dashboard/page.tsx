@@ -20,6 +20,17 @@ type DashboardData = {
     employeeCount: number;
     activeEmployeeCount: number;
   };
+  employeeStats?: {
+    total: number;
+    severeMale: number;
+    severeFemale: number;
+    mildMale: number;
+    mildFemale: number;
+    severe: number;
+    mild: number;
+    male: number;
+    female: number;
+  };
 };
 
 type CartItem = {
@@ -239,7 +250,9 @@ export default function DashboardPage() {
         {/* 직원 현황 */}
         <div style={{ marginTop: 24, padding: 20, background: "white", borderRadius: 8, boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }}>
           <h2>👥 장애인 직원 현황</h2>
-          <div style={{ marginTop: 16, display: "flex", gap: 16 }}>
+          
+          {/* 전체 요약 */}
+          <div style={{ marginTop: 16, display: "flex", gap: 16, flexWrap: "wrap" }}>
             <div>
               <p style={{ margin: 0, fontSize: 14, color: "#666" }}>전체 직원</p>
               <p style={{ margin: "8px 0 0 0", fontSize: 20, fontWeight: "bold" }}>
@@ -259,6 +272,148 @@ export default function DashboardPage() {
               </p>
             </div>
           </div>
+
+          {/* 📊 상세 통계 (중증/경증, 남성/여성) */}
+          {data.employeeStats && (
+            <div style={{ 
+              marginTop: 20, 
+              padding: 16, 
+              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+              borderRadius: 8,
+              color: "white"
+            }}>
+              <h3 style={{ margin: 0, fontSize: 16, fontWeight: "bold", marginBottom: 12 }}>
+                📊 {data.company.name}
+              </h3>
+              <p style={{ margin: 0, fontSize: 13, opacity: 0.9, marginBottom: 16 }}>
+                장애인 직원 정보: 중증도 & 성별 분포
+              </p>
+
+              {/* 통계 카드 그리드 */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+                {/* 중증 남성 */}
+                <div style={{ 
+                  background: "rgba(255,255,255,0.2)", 
+                  padding: 12, 
+                  borderRadius: 6,
+                  textAlign: "center",
+                  backdropFilter: "blur(10px)"
+                }}>
+                  <div style={{ fontSize: 11, opacity: 0.9, marginBottom: 4 }}>
+                    💪 체력 중점 관리 
+                  </div>
+                  <div style={{ fontSize: 24, fontWeight: "bold", marginBottom: 4 }}>
+                    {data.employeeStats.severeMale}명
+                  </div>
+                  <div style={{ fontSize: 13, fontWeight: "600" }}>
+                    중증
+                  </div>
+                  <div style={{ fontSize: 11, opacity: 0.8 }}>
+                    남성
+                  </div>
+                </div>
+
+                {/* 중증 여성 */}
+                <div style={{ 
+                  background: "rgba(255,182,193,0.3)", 
+                  padding: 12, 
+                  borderRadius: 6,
+                  textAlign: "center",
+                  backdropFilter: "blur(10px)"
+                }}>
+                  <div style={{ fontSize: 11, opacity: 0.9, marginBottom: 4 }}>
+                    🌸 출산모성 관리
+                  </div>
+                  <div style={{ fontSize: 24, fontWeight: "bold", marginBottom: 4 }}>
+                    {data.employeeStats.severeFemale}명
+                  </div>
+                  <div style={{ fontSize: 13, fontWeight: "600" }}>
+                    중증
+                  </div>
+                  <div style={{ fontSize: 11, opacity: 0.8 }}>
+                    여성
+                  </div>
+                </div>
+
+                {/* 경증 남성 */}
+                <div style={{ 
+                  background: "rgba(135,206,250,0.3)", 
+                  padding: 12, 
+                  borderRadius: 6,
+                  textAlign: "center",
+                  backdropFilter: "blur(10px)"
+                }}>
+                  <div style={{ fontSize: 11, opacity: 0.9, marginBottom: 4 }}>
+                    ⚡ 생산 활동
+                  </div>
+                  <div style={{ fontSize: 24, fontWeight: "bold", marginBottom: 4 }}>
+                    {data.employeeStats.mildMale}명
+                  </div>
+                  <div style={{ fontSize: 13, fontWeight: "600" }}>
+                    경증
+                  </div>
+                  <div style={{ fontSize: 11, opacity: 0.8 }}>
+                    남성
+                  </div>
+                </div>
+
+                {/* 경증 여성 */}
+                <div style={{ 
+                  background: "rgba(255,218,185,0.3)", 
+                  padding: 12, 
+                  borderRadius: 6,
+                  textAlign: "center",
+                  backdropFilter: "blur(10px)"
+                }}>
+                  <div style={{ fontSize: 11, opacity: 0.9, marginBottom: 4 }}>
+                    ✨ 세심한 업무
+                  </div>
+                  <div style={{ fontSize: 24, fontWeight: "bold", marginBottom: 4 }}>
+                    {data.employeeStats.mildFemale}명
+                  </div>
+                  <div style={{ fontSize: 13, fontWeight: "600" }}>
+                    경증
+                  </div>
+                  <div style={{ fontSize: 11, opacity: 0.8 }}>
+                    여성
+                  </div>
+                </div>
+              </div>
+
+              {/* 합계 표시 */}
+              <div style={{ 
+                marginTop: 12, 
+                display: "grid", 
+                gridTemplateColumns: "repeat(2, 1fr)", 
+                gap: 8,
+                fontSize: 13
+              }}>
+                <div style={{ 
+                  background: "rgba(255,255,255,0.15)", 
+                  padding: 8, 
+                  borderRadius: 4,
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center"
+                }}>
+                  <span>중증 합계</span>
+                  <strong style={{ fontSize: 16 }}>{data.employeeStats.severe}명</strong>
+                </div>
+                <div style={{ 
+                  background: "rgba(255,255,255,0.15)", 
+                  padding: 8, 
+                  borderRadius: 4,
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center"
+                }}>
+                  <span>경증 합계</span>
+                  <strong style={{ fontSize: 16 }}>{data.employeeStats.mild}명</strong>
+                </div>
+              </div>
+            </div>
+          )}
+          
           <div
             style={{
               marginTop: 16,
