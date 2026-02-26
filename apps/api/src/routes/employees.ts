@@ -171,7 +171,10 @@ router.get("/monthly", requireAuth, async (req, res) => {
       birthDate: emp.birthDate || undefined,
       hireDate: emp.hireDate,
       resignDate: emp.resignDate || undefined,
-      workHoursPerWeek: emp.workHoursPerWeek || 40,
+      // monthlyWorkHours를 workHoursPerWeek로 변환 (월 4.33주 기준)
+      workHoursPerWeek: emp.monthlyWorkHours 
+        ? Math.round(emp.monthlyWorkHours / 4.33)
+        : (emp.workHoursPerWeek || 40),
       monthlySalary: emp.monthlySalary,
       meetsMinimumWage: emp.meetsMinimumWage,
       hasEmploymentInsurance: emp.hasEmploymentInsurance,
@@ -213,7 +216,6 @@ router.get("/monthly", requireAuth, async (req, res) => {
         incentiveExcludedCount: result.incentiveExcludedCount,
         incentiveEligibleCount: result.incentiveEligibleCount,
         shortfallCount: result.shortfallCount,
-        surplusCount: result.surplusCount,
         levy: result.levy,
         incentive: result.incentive,
         netAmount: result.netAmount,
@@ -309,7 +311,6 @@ router.put("/monthly", requireAuth, async (req, res) => {
           recognizedCount: result.recognizedCount,
           obligatedCount: result.obligatedCount,
           shortfallCount: result.shortfallCount,
-          surplusCount: result.surplusCount,
           levy: result.levy,
           incentive: result.incentive,
           netAmount: result.netAmount,
@@ -324,7 +325,6 @@ router.put("/monthly", requireAuth, async (req, res) => {
           recognizedCount: result.recognizedCount,
           obligatedCount: result.obligatedCount,
           shortfallCount: result.shortfallCount,
-          surplusCount: result.surplusCount,
           levy: result.levy,
           incentive: result.incentive,
           netAmount: result.netAmount,
