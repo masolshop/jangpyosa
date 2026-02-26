@@ -190,6 +190,12 @@ export default function Sidebar() {
                 active={isActive("/employee/attendance")}
               />
               <MenuItem
+                href="/employee/work-orders"
+                label="업무 관리"
+                icon="📋"
+                active={isActive("/employee/work-orders")}
+              />
+              <MenuItem
                 href="/employee/leave"
                 label="휴가 신청"
                 icon="🏖️"
