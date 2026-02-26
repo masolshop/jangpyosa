@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { API_BASE } from '@/lib/api';
 
 interface LeaveType {
   id: string;
@@ -64,7 +65,7 @@ export default function LeaveManagementPage() {
       }
 
       // 회사 정보
-      const companyRes = await fetch('/api/companies/my', {
+      const companyRes = await fetch(`${API_BASE}/companies/my`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (companyRes.ok) {
@@ -73,7 +74,7 @@ export default function LeaveManagementPage() {
       }
 
       // 휴가 유형
-      const typesRes = await fetch('/api/leave/types', {
+      const typesRes = await fetch(`${API_BASE}/leave/types`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (typesRes.ok) {
@@ -82,7 +83,7 @@ export default function LeaveManagementPage() {
       }
 
       // 휴가 신청 목록
-      const requestsRes = await fetch('/api/leave/requests', {
+      const requestsRes = await fetch(`${API_BASE}/leave/requests`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (requestsRes.ok) {
@@ -105,7 +106,7 @@ export default function LeaveManagementPage() {
 
     try {
       const token = localStorage.getItem('token');
-      const url = editingType ? `/api/leave/types/${editingType.id}` : '/api/leave/types';
+      const url = editingType ? `${API_BASE}/leave/types/${editingType.id}` : `${API_BASE}/leave/types`;
       const method = editingType ? 'PUT' : 'POST';
 
       const res = await fetch(url, {
@@ -153,7 +154,7 @@ export default function LeaveManagementPage() {
 
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`/api/leave/types/${id}`, {
+      const res = await fetch(`${API_BASE}/leave/types/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -173,7 +174,7 @@ export default function LeaveManagementPage() {
   const handleApprove = async (id: string) => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`/api/leave/requests/${id}/approve`, {
+      const res = await fetch(`${API_BASE}/leave/requests/${id}/approve`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -197,7 +198,7 @@ export default function LeaveManagementPage() {
 
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`/api/leave/requests/${id}/reject`, {
+      const res = await fetch(`${API_BASE}/leave/requests/${id}/reject`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
