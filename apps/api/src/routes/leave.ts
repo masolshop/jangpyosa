@@ -5,14 +5,33 @@ import { requireAuth } from '../middleware/auth.js';
 const router = Router();
 const prisma = new PrismaClient();
 
+// 사용자 정보 조회 헬퍼 함수
+async function getUserWithCompany(userId: string) {
+  return await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      role: true,
+      companyId: true,
+      employeeId: true
+    }
+  });
+}
+
 // ==================== 휴가 유형 관리 (관리자용) ====================
 
 // 휴가 유형 목록 조회
 router.get('/types', requireAuth, async (req, res) => {
   try {
-    const user = (req as any).user;
+    const reqUser = req.user!;
     
-    if (!user.companyId) {
+    // DB에서 User 정보 조회
+    const user = await prisma.user.findUnique({
+      where: { id: reqUser.id },
+      select: { companyId: true }
+    });
+    
+    if (!user?.companyId) {
       return res.status(403).json({ error: '회사 소속이 아닙니다' });
     }
 
@@ -347,7 +366,14 @@ router.patch('/requests/:id/document-sent', requireAuth, async (req, res) => {
 // 전체 휴가 신청 목록 (관리자용)
 router.get('/requests', requireAuth, async (req, res) => {
   try {
-    const user = (req as any).user;
+    const reqUser = req.user!;
+    
+    // DB에서 User 정보 조회
+    const user = await getUserWithCompany(reqUser.id);
+    
+    if (!user) {
+      return res.status(404).json({ error: '사용자를 찾을 수 없습니다' });
+    }
     
     if (user.role !== 'BUYER' && user.role !== 'SUPER_ADMIN') {
       return res.status(403).json({ error: '권한이 없습니다' });
@@ -384,7 +410,7 @@ router.get('/requests', requireAuth, async (req, res) => {
       employeeName: employeeMap.get(request.employeeId)?.name || '알 수 없음'
     }));
 
-    res.json({ requests: requestsWithEmployee });
+    res.json({ leaveRequests: requestsWithEmployee });
   } catch (error: any) {
     console.error('[GET /leave/requests] Error:', error);
     res.status(500).json({ error: error.message });
