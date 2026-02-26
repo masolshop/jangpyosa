@@ -189,9 +189,21 @@ export default function EmployeeWorkOrdersPage() {
 
       if (res.ok) {
         setMessage("✅ 업무가 완료 처리되었습니다");
+        
+        // UI 즉시 업데이트: 현재 workOrder의 상태를 완료로 변경
+        setWorkOrders(prevOrders => 
+          prevOrders.map(order => 
+            order.id === selectedWorkOrder.id 
+              ? { ...order, isConfirmed: true, confirmedAt: new Date().toISOString(), note: completionReport }
+              : order
+          )
+        );
+        
         setIsDetailModalOpen(false);
         setSelectedWorkOrder(null);
         setCompletionReport("");
+        
+        // 서버 데이터와 동기화
         await loadWorkOrders();
         setTimeout(() => setMessage(""), 3000);
       } else {
