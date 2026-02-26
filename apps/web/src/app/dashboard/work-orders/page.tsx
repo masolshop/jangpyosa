@@ -23,7 +23,7 @@ interface WorkOrder {
     status: string;
     completedAt: string | null;
     completionReport: string | null;
-  }[];
+  }[] | null;
 }
 
 interface WorkOrderDetail {
@@ -45,7 +45,7 @@ interface WorkOrderDetail {
     status: string;
     completedAt: string | null;
     completionReport: string | null;
-  }[];
+  }[] | null;
 }
 
 export default function WorkOrdersPage() {
@@ -429,8 +429,9 @@ export default function WorkOrdersPage() {
         ) : (
           <div>
             {workOrders.map((workOrder) => {
-              const completedCount = workOrder.recipients.filter(r => r.status === "COMPLETED").length;
-              const totalCount = workOrder.recipients.length;
+              const recipients = workOrder.recipients || [];
+              const completedCount = recipients.filter(r => r.status === "COMPLETED").length;
+              const totalCount = recipients.length;
               const completionRate = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
               
               return (
@@ -873,7 +874,7 @@ export default function WorkOrdersPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {selectedWorkOrder.recipients.map((recipient) => (
+                    {(selectedWorkOrder.recipients || []).map((recipient) => (
                       <tr key={recipient.id} style={{ borderTop: "1px solid #e5e7eb" }}>
                         <td style={{ padding: 12, fontSize: 14 }}>{recipient.name}</td>
                         <td style={{ padding: 12, fontSize: 14 }}>
