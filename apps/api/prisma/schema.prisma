@@ -400,7 +400,10 @@ model PaymentHistory {
 // 출퇴근 기록
 model AttendanceRecord {
   id           String           @id @default(cuid())
+  companyId    String           // Company ID (바이어 회사)
+  buyerId      String           // BuyerProfile ID
   employeeId   String           // DisabledEmployee ID
+  userId       String           // User ID (직원 계정)
   date         String           // YYYY-MM-DD 형식
   workType     String           // OFFICE (회사 출근), REMOTE (재택 근무)
   clockIn      String?          // 출근 시간 (HH:MM:SS)
@@ -414,6 +417,9 @@ model AttendanceRecord {
   
   @@unique([employeeId, date])
   @@index([employeeId, date])
+  @@index([companyId, date])
+  @@index([buyerId, date])
+  @@index([userId])
   @@index([date])
 }
 
@@ -441,6 +447,8 @@ model CompanyAnnouncement {
 model AnnouncementReadLog {
   id              String              @id @default(cuid())
   announcementId  String
+  companyId       String              // Company ID (검색 최적화)
+  buyerId         String              // BuyerProfile ID (검색 최적화)
   employeeId      String              // DisabledEmployee ID
   userId          String              // User ID (직원 계정)
   readAt          DateTime            @default(now())
@@ -448,6 +456,8 @@ model AnnouncementReadLog {
   
   @@unique([announcementId, employeeId])
   @@index([announcementId])
+  @@index([companyId])
+  @@index([buyerId])
   @@index([employeeId])
   @@index([userId])
 }
@@ -560,6 +570,8 @@ model WorkOrder {
 model WorkOrderRecipient {
   id                String      @id @default(cuid())
   workOrderId       String
+  companyId         String      // Company ID (검색 최적화)
+  buyerId           String      // BuyerProfile ID (검색 최적화)
   employeeId        String      // DisabledEmployee ID
   userId            String      // User ID (직원 계정)
   status            String      @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED, REJECTED
@@ -577,6 +589,8 @@ model WorkOrderRecipient {
   
   @@unique([workOrderId, employeeId])
   @@index([workOrderId])
+  @@index([companyId])
+  @@index([buyerId])
   @@index([employeeId])
   @@index([userId])
   @@index([status])
@@ -587,6 +601,8 @@ model WorkOrderRecipient {
 model WorkOrderConfirmation {
   id              String      @id @default(cuid())
   workOrderId     String
+  companyId       String      // Company ID (검색 최적화)
+  buyerId         String      // BuyerProfile ID (검색 최적화)
   employeeId      String      // DisabledEmployee ID
   userId          String      // User ID (직원 계정)
   confirmedAt     DateTime    @default(now())
@@ -594,6 +610,8 @@ model WorkOrderConfirmation {
   
   @@unique([workOrderId, employeeId])
   @@index([workOrderId])
+  @@index([companyId])
+  @@index([buyerId])
   @@index([employeeId])
   @@index([userId])
 }
@@ -640,6 +658,7 @@ model LeaveType {
 model LeaveRequest {
   id                String       @id @default(cuid())
   companyId         String       // 회사 ID
+  buyerId           String       // BuyerProfile ID
   leaveTypeId       String       // 휴가 유형 ID
   employeeId        String       // DisabledEmployee ID
   userId            String       // User ID (직원 계정)
@@ -659,6 +678,7 @@ model LeaveRequest {
   leaveType         LeaveType    @relation(fields: [leaveTypeId], references: [id])
   
   @@index([companyId, status])
+  @@index([buyerId, status])
   @@index([employeeId, status])
   @@index([userId])
   @@index([startDate, endDate])

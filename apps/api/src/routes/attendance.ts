@@ -32,13 +32,28 @@ router.post("/clock-in", requireAuth, async (req, res) => {
 
     const body = schema.parse(req.body);
 
-    // 사용자 정보 조회
+    // 사용자 정보 조회 (companyId 포함)
     const user = await prisma.user.findUnique({
       where: { id: userId },
+      select: {
+        id: true,
+        employeeId: true,
+        companyId: true,
+      },
     });
 
-    if (!user || !user.employeeId) {
+    if (!user || !user.employeeId || !user.companyId) {
       return res.status(404).json({ error: "직원 정보를 찾을 수 없습니다." });
+    }
+
+    // DisabledEmployee 정보 조회 (buyerId 획득)
+    const employee = await prisma.disabledEmployee.findUnique({
+      where: { id: user.employeeId },
+      select: { id: true, buyerId: true },
+    });
+
+    if (!employee) {
+      return res.status(404).json({ error: "장애인 직원 정보를 찾을 수 없습니다." });
     }
 
     // 오늘 날짜 (한국 시간)
@@ -66,7 +81,10 @@ router.post("/clock-in", requireAuth, async (req, res) => {
     // 출근 기록 생성
     const record = await prisma.attendanceRecord.create({
       data: {
+        companyId: user.companyId,
+        buyerId: employee.buyerId,
         employeeId: user.employeeId,
+        userId: user.id,
         date: today,
         workType: body.workType,
         clockIn: clockInTime,
