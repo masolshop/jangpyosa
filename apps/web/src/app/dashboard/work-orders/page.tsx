@@ -14,10 +14,11 @@ interface WorkOrder {
   dueDate: string | null;
   attachmentUrls: string[] | null;
   createdAt: string;
-  sender: {
+  createdByName?: string | null;
+  sender?: {
     id: string;
     name: string;
-  };
+  } | null;
   recipients: {
     id: string;
     name: string;
@@ -37,10 +38,11 @@ interface WorkOrderDetail {
   dueDate: string | null;
   attachmentUrls: string[] | null;
   createdAt: string;
-  sender: {
+  createdByName?: string | null;
+  sender?: {
     id: string;
     name: string;
-  };
+  } | null;
   recipients: {
     id: string;
     name: string;
@@ -484,7 +486,7 @@ export default function WorkOrdersPage() {
                         {workOrder.dueDate && (
                           <span>⏰ 마감 {new Date(workOrder.dueDate).toLocaleDateString("ko-KR")}</span>
                         )}
-                        <span>👤 발신: {workOrder.sender.name}</span>
+                        <span>👤 발신: {workOrder.createdByName || workOrder.sender?.name || '알 수 없음'}</span>
                         <span>👥 수신: {totalCount}명</span>
                         <span style={{ color: "#10b981", fontWeight: "600" }}>
                           ✓ 완료 {completedCount}명 ({completionRate}%)
@@ -830,7 +832,7 @@ export default function WorkOrdersPage() {
               {selectedWorkOrder.dueDate && (
                 <div>⏰ 마감일: {new Date(selectedWorkOrder.dueDate).toLocaleString("ko-KR")}</div>
               )}
-              <div>👤 발신자: {selectedWorkOrder.sender.name}</div>
+              <div>👤 발신자: {selectedWorkOrder.createdByName || selectedWorkOrder.sender?.name || '알 수 없음'}</div>
             </div>
 
             {/* 첨부파일 */}
