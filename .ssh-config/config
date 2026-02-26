@@ -1,0 +1,7 @@
+# Jangpyosa AWS EC2 SSH Configuration
+Host jangpyosa-ec2
+    HostName 43.201.0.129
+    User ubuntu
+    IdentityFile ~/.ssh/jangpyosa
+    StrictHostKeyChecking no
+    UserKnownHostsFile=/dev/null

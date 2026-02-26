@@ -57,7 +57,7 @@ export default function AttendancePage() {
   // 필터
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
-  const [viewMode, setViewMode] = useState<"month" | "today">("month");
+  const [viewMode, setViewMode] = useState<"month" | "today">("today");
 
   // ============================================
   // 초기 로드
@@ -92,7 +92,9 @@ export default function AttendancePage() {
       let url = `${API_BASE}/attendance/company`;
       
       if (viewMode === "today") {
-        const today = new Date().toISOString().split("T")[0];
+        // 한국시간 기준 오늘 날짜 계산
+        const koreaTime = new Date(new Date().getTime() + (9 * 60 * 60 * 1000));
+        const today = koreaTime.toISOString().split("T")[0];
         url += `?date=${today}`;
       } else {
         url += `?year=${selectedYear}&month=${selectedMonth}`;
@@ -129,7 +131,9 @@ export default function AttendancePage() {
     );
   }
 
-  const today = new Date().toISOString().split("T")[0];
+  // 한국시간 기준 오늘 날짜
+  const koreaTime = new Date(new Date().getTime() + (9 * 60 * 60 * 1000));
+  const today = koreaTime.toISOString().split("T")[0];
 
   return (
     <div className="container">
@@ -200,6 +204,32 @@ export default function AttendancePage() {
           </div>
         )}
 
+        {/* 안내 박스 - 일별/월별 탭 바로 아래로 이동 */}
+        <div
+          style={{
+            marginTop: 24,
+            padding: 20,
+            background: "#eff6ff",
+            borderRadius: 8,
+            border: "1px solid #bfdbfe",
+          }}
+        >
+          <h4 style={{ margin: 0, color: "#1e40af", fontSize: 16 }}>
+            💡 근태관리 안내
+          </h4>
+          <ul style={{ marginTop: 12, paddingLeft: 20, color: "#1e3a8a", fontSize: 14, lineHeight: 1.8 }}>
+            <li>
+              <strong>출퇴근 기록:</strong> 직원 계정에서 출근/퇴근 버튼을 눌러 자동 기록됩니다.
+            </li>
+            <li>
+              <strong>근무형태:</strong> 출근 시 회사 근무 또는 재택 근무를 선택할 수 있습니다.
+            </li>
+            <li>
+              <strong>근무시간:</strong> 출근~퇴근 시간이 자동으로 계산되어 표시됩니다.
+            </li>
+          </ul>
+        </div>
+
         {/* 필터 */}
         <div style={{ 
           marginTop: 24, 
@@ -269,6 +299,96 @@ export default function AttendancePage() {
                   <option key={m} value={m}>{m}월</option>
                 ))}
               </select>
+            </div>
+          )}
+        </div>
+
+        {/* 오늘 근태 기록 - 탭 바로 아래로 이동 */}
+        <div style={{ marginTop: 32 }}>
+          <h2>오늘 근태 기록</h2>
+          {records.length === 0 ? (
+            <div style={{
+              textAlign: "center",
+              padding: 60,
+              background: "#f9fafb",
+              borderRadius: 8,
+              border: "2px dashed #d1d5db"
+            }}>
+              <div style={{ fontSize: 48, marginBottom: 16 }}>📋</div>
+              <p style={{ color: "#999", margin: 0, fontSize: 16 }}>
+                기록이 없습니다.
+              </p>
+            </div>
+          ) : (
+            <div style={{ overflowX: "auto" }}>
+              <table style={{
+                width: "100%",
+                borderCollapse: "collapse",
+                background: "white",
+                borderRadius: 8,
+                overflow: "hidden",
+              }}>
+                <thead>
+                  <tr style={{ background: "#f9fafb" }}>
+                    <th style={{ padding: "12px 16px", textAlign: "left", borderBottom: "2px solid #e5e7eb" }}>날짜</th>
+                    <th style={{ padding: "12px 16px", textAlign: "left", borderBottom: "2px solid #e5e7eb" }}>직원명</th>
+                    <th style={{ padding: "12px 16px", textAlign: "center", borderBottom: "2px solid #e5e7eb" }}>근무형태</th>
+                    <th style={{ padding: "12px 16px", textAlign: "center", borderBottom: "2px solid #e5e7eb" }}>출근시간</th>
+                    <th style={{ padding: "12px 16px", textAlign: "center", borderBottom: "2px solid #e5e7eb" }}>퇴근시간</th>
+                    <th style={{ padding: "12px 16px", textAlign: "center", borderBottom: "2px solid #e5e7eb" }}>근무시간</th>
+                    <th style={{ padding: "12px 16px", textAlign: "left", borderBottom: "2px solid #e5e7eb" }}>메모</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {records.map((record) => (
+                    <tr key={record.id} style={{ borderBottom: "1px solid #f3f4f6" }}>
+                      <td style={{ padding: "12px 16px" }}>
+                        {record.date}
+                        {record.date === today && (
+                          <span style={{ 
+                            marginLeft: 8, 
+                            padding: "2px 8px", 
+                            background: "#10b981", 
+                            color: "white", 
+                            borderRadius: 4, 
+                            fontSize: 12 
+                          }}>
+                            오늘
+                          </span>
+                        )}
+                      </td>
+                      <td style={{ padding: "12px 16px", fontWeight: "600" }}>
+                        {record.employee?.name || "N/A"}
+                      </td>
+                      <td style={{ padding: "12px 16px", textAlign: "center" }}>
+                        <span style={{
+                          padding: "4px 12px",
+                          background: record.workType === "OFFICE" ? "#dbeafe" : "#fef3c7",
+                          color: record.workType === "OFFICE" ? "#1e3a8a" : "#92400e",
+                          borderRadius: 4,
+                          fontSize: 13,
+                        }}>
+                          {record.workType === "OFFICE" ? "🏢 회사" : "🏠 재택"}
+                        </span>
+                      </td>
+                      <td style={{ padding: "12px 16px", textAlign: "center", fontFamily: "monospace" }}>
+                        {record.clockIn || "-"}
+                      </td>
+                      <td style={{ padding: "12px 16px", textAlign: "center", fontFamily: "monospace" }}>
+                        {record.clockOut || (
+                          <span style={{ color: "#10b981", fontWeight: "600" }}>근무 중</span>
+                        )}
+                      </td>
+                      <td style={{ padding: "12px 16px", textAlign: "center", fontWeight: "600" }}>
+                        {record.workHours ? `${record.workHours}h` : "-"}
+                      </td>
+                      <td style={{ padding: "12px 16px", fontSize: 13, color: "#666" }}>
+                        {record.note || "-"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </div>
@@ -375,125 +495,6 @@ export default function AttendancePage() {
               ))}
             </div>
           )}
-        </div>
-
-        {/* 상세 근태 기록 */}
-        <div style={{ marginTop: 32 }}>
-          <h2>상세 근태 기록</h2>
-          {records.length === 0 ? (
-            <div style={{
-              textAlign: "center",
-              padding: 60,
-              background: "#f9fafb",
-              borderRadius: 8,
-              border: "2px dashed #d1d5db"
-            }}>
-              <div style={{ fontSize: 48, marginBottom: 16 }}>📋</div>
-              <p style={{ color: "#999", margin: 0, fontSize: 16 }}>
-                기록이 없습니다.
-              </p>
-            </div>
-          ) : (
-            <div style={{ overflowX: "auto" }}>
-              <table style={{
-                width: "100%",
-                borderCollapse: "collapse",
-                background: "white",
-                borderRadius: 8,
-                overflow: "hidden",
-              }}>
-                <thead>
-                  <tr style={{ background: "#f9fafb" }}>
-                    <th style={{ padding: "12px 16px", textAlign: "left", borderBottom: "2px solid #e5e7eb" }}>날짜</th>
-                    <th style={{ padding: "12px 16px", textAlign: "left", borderBottom: "2px solid #e5e7eb" }}>직원명</th>
-                    <th style={{ padding: "12px 16px", textAlign: "center", borderBottom: "2px solid #e5e7eb" }}>근무형태</th>
-                    <th style={{ padding: "12px 16px", textAlign: "center", borderBottom: "2px solid #e5e7eb" }}>출근시간</th>
-                    <th style={{ padding: "12px 16px", textAlign: "center", borderBottom: "2px solid #e5e7eb" }}>퇴근시간</th>
-                    <th style={{ padding: "12px 16px", textAlign: "center", borderBottom: "2px solid #e5e7eb" }}>근무시간</th>
-                    <th style={{ padding: "12px 16px", textAlign: "left", borderBottom: "2px solid #e5e7eb" }}>메모</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {records.map((record) => (
-                    <tr key={record.id} style={{ borderBottom: "1px solid #f3f4f6" }}>
-                      <td style={{ padding: "12px 16px" }}>
-                        {record.date}
-                        {record.date === today && (
-                          <span style={{ 
-                            marginLeft: 8, 
-                            padding: "2px 8px", 
-                            background: "#10b981", 
-                            color: "white", 
-                            borderRadius: 4, 
-                            fontSize: 12 
-                          }}>
-                            오늘
-                          </span>
-                        )}
-                      </td>
-                      <td style={{ padding: "12px 16px", fontWeight: "600" }}>
-                        {record.employee?.name || "N/A"}
-                      </td>
-                      <td style={{ padding: "12px 16px", textAlign: "center" }}>
-                        <span style={{
-                          padding: "4px 12px",
-                          background: record.workType === "OFFICE" ? "#dbeafe" : "#fef3c7",
-                          color: record.workType === "OFFICE" ? "#1e3a8a" : "#92400e",
-                          borderRadius: 4,
-                          fontSize: 13,
-                        }}>
-                          {record.workType === "OFFICE" ? "🏢 회사" : "🏠 재택"}
-                        </span>
-                      </td>
-                      <td style={{ padding: "12px 16px", textAlign: "center", fontFamily: "monospace" }}>
-                        {record.clockIn || "-"}
-                      </td>
-                      <td style={{ padding: "12px 16px", textAlign: "center", fontFamily: "monospace" }}>
-                        {record.clockOut || (
-                          <span style={{ color: "#10b981", fontWeight: "600" }}>근무 중</span>
-                        )}
-                      </td>
-                      <td style={{ padding: "12px 16px", textAlign: "center", fontWeight: "600" }}>
-                        {record.workHours ? `${record.workHours}h` : "-"}
-                      </td>
-                      <td style={{ padding: "12px 16px", fontSize: 13, color: "#666" }}>
-                        {record.note || "-"}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-
-        {/* 안내 박스 */}
-        <div
-          style={{
-            marginTop: 32,
-            padding: 20,
-            background: "#eff6ff",
-            borderRadius: 8,
-            border: "1px solid #bfdbfe",
-          }}
-        >
-          <h4 style={{ margin: 0, color: "#1e40af", fontSize: 16 }}>
-            💡 근태관리 안내
-          </h4>
-          <ul style={{ marginTop: 12, paddingLeft: 20, color: "#1e3a8a", fontSize: 14, lineHeight: 1.8 }}>
-            <li>
-              <strong>직원 계정 생성:</strong> 직원이 핸드폰 번호와 사업자등록번호로 회원가입하면 자동으로 매칭됩니다.
-            </li>
-            <li>
-              <strong>출퇴근 기록:</strong> 직원 계정에서 출근/퇴근 버튼을 눌러 자동 기록됩니다.
-            </li>
-            <li>
-              <strong>근무형태:</strong> 출근 시 회사 근무 또는 재택 근무를 선택할 수 있습니다.
-            </li>
-            <li>
-              <strong>근무시간:</strong> 출근~퇴근 시간이 자동으로 계산되어 표시됩니다.
-            </li>
-          </ul>
         </div>
       </div>
     </div>

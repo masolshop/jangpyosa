@@ -2,14 +2,18 @@
 
 import './globals.css'
 import Sidebar from '@/components/Sidebar'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, usePathname } from 'next/navigation'
 import { Suspense } from 'react'
 
 function LayoutContent({ children }: { children: React.ReactNode }) {
   const searchParams = useSearchParams()
+  const pathname = usePathname()
   const isEmbedded = searchParams.get('embed') === 'true'
+  
+  // 장애인직원 페이지에서는 기업용 사이드바 숨김
+  const isEmployeePage = pathname?.startsWith('/employee')
 
-  if (isEmbedded) {
+  if (isEmbedded || isEmployeePage) {
     return (
       <main style={{ minHeight: '100vh', padding: 0 }}>
         {children}
