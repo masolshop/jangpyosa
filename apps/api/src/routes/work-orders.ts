@@ -82,7 +82,7 @@ router.get('/list', requireAuth, async (req, res) => {
         { createdAt: 'desc' }
       ],
       include: {
-        WorkOrderRecipient: true
+        recipients: true
       }
     });
 
@@ -103,7 +103,7 @@ router.get('/list', requireAuth, async (req, res) => {
           targetCount = targetEmployees.length;
         }
         
-        const confirmedCount = workOrder.WorkOrderRecipient.length;
+        const confirmedCount = workOrder.recipients.length;
         const unconfirmedCount = targetCount - confirmedCount;
 
         return {
@@ -141,7 +141,7 @@ router.get('/:id/confirmations', requireAuth, async (req, res) => {
     const workOrder = await prisma.workOrder.findUnique({
       where: { id: workOrderId },
       include: {
-        WorkOrderRecipient: true
+        recipients: true
       }
     });
 
@@ -178,16 +178,16 @@ router.get('/:id/confirmations', requireAuth, async (req, res) => {
     }
 
     // 확인한 직원과 미확인 직원 분리
-    const confirmedEmployeeIds = new Set(workOrder.WorkOrderRecipient.map((c: any) => c.employeeId));
+    const confirmedEmployeeIds = new Set(workOrder.recipients.map((c: any) => c.employeeId));
     
     const confirmedEmployees = targetEmployees
       .filter(emp => confirmedEmployeeIds.has(emp.id))
       .map(emp => {
-        const confirmation = workOrder.WorkOrderRecipient.find((c: any) => c.employeeId === emp.id);
+        const confirmation = workOrder.recipients.find((c: any) => c.employeeId === emp.id);
         return {
           ...emp,
-          confirmedAt: confirmation?.confirmedAt,
-          note: confirmation?.note
+          confirmedAt: confirmation?.completedAt,
+          note: confirmation?.completionReport
         };
       });
 
@@ -455,7 +455,7 @@ router.get('/my-work-orders', requireAuth, async (req, res) => {
         { createdAt: 'desc' }
       ],
       include: {
-        WorkOrderRecipient: {
+        recipients: {
           where: {
             employeeId: employee.id
           }
@@ -479,9 +479,9 @@ router.get('/my-work-orders', requireAuth, async (req, res) => {
     // 각 업무지시에 확인 여부 추가
     const workOrdersWithConfirmStatus = myWorkOrders.map(workOrder => ({
       ...workOrder,
-      isConfirmed: workOrder.WorkOrderRecipient.length > 0,
-      confirmedAt: workOrder.WorkOrderRecipient[0]?.confirmedAt || null,
-      note: workOrder.WorkOrderRecipient[0]?.note || null
+      isConfirmed: workOrder.recipients.length > 0,
+      confirmedAt: workOrder.recipients[0]?.completedAt || null,
+      note: workOrder.recipients[0]?.completionReport || null
     }));
 
     return res.json({ workOrders: workOrdersWithConfirmStatus });
