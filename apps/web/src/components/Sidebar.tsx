@@ -169,7 +169,7 @@ export default function Sidebar() {
             <MenuItem href="/dashboard/employees" label="장애인직원등록관리" icon="👥" active={isActive("/dashboard/employees")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} />
             <MenuItem href="/dashboard/monthly" label="고용장려금부담금관리" icon="📅" active={isActive("/dashboard/monthly")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} />
             <MenuItem href="/dashboard/attendance" label="장애인직원근태관리" icon="⏰" active={isActive("/dashboard/attendance")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} />
-            <MenuItem href="/dashboard/disability-work-management" label="장애인직원업무관리" icon="📝" active={isActive("/dashboard/disability-work-management")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} />
+            <MenuItem href="/dashboard/work-orders" label="장애인직원업무관리" icon="📝" active={isActive("/dashboard/work-orders")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} />
             <MenuItem href="/dashboard/leave-management" label="장애인직원휴가관리" icon="🏖️" active={isActive("/dashboard/leave-management")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} />
             <MenuItem href="/dashboard/company" label="기업대시보드" icon="🏢" active={isActive("/dashboard/company")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} />
           </div>
