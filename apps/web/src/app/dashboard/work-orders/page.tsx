@@ -858,7 +858,7 @@ export default function WorkOrdersPage() {
             {/* 수신자 목록 */}
             <div>
               <h3 style={{ fontSize: 18, marginBottom: 16 }}>
-                👥 수신자 목록 ({selectedWorkOrder.recipients.length}명)
+                👥 수신자 목록 ({(selectedWorkOrder.recipients || []).length}명)
               </h3>
               <div style={{
                 border: "1px solid #d1d5db",
