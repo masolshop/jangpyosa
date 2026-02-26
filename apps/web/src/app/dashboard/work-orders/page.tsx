@@ -90,7 +90,7 @@ export default function WorkOrdersPage() {
       const token = getToken();
       if (!token) return;
 
-      const res = await fetch(`${API_BASE}/work-orders`, {
+      const res = await fetch(`${API_BASE}/work-orders/list`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
