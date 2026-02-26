@@ -162,17 +162,20 @@ export default function Sidebar() {
             </div>
           )}
 
-          <div style={{ marginBottom: 24 }}>
-            <div style={{ fontSize: 21.424, color: "#fff", marginBottom: 12, fontWeight: "bold", textAlign: "center" }}>
-              장애인직원관리솔루션
+          {/* 관리자용 메뉴 (BUYER, SUPPLIER, SUPER_ADMIN 역할인 경우) */}
+          {userRole && ["BUYER", "SUPPLIER", "SUPER_ADMIN"].includes(userRole) && (
+            <div style={{ marginBottom: 24 }}>
+              <div style={{ fontSize: 21.424, color: "#fff", marginBottom: 12, fontWeight: "bold", textAlign: "center" }}>
+                장애인직원관리솔루션
+              </div>
+              <MenuItem href="/dashboard/employees" label="장애인직원등록관리" icon="👥" active={isActive("/dashboard/employees")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} />
+              <MenuItem href="/dashboard/monthly" label="고용장려금부담금관리" icon="📅" active={isActive("/dashboard/monthly")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} />
+              <MenuItem href="/dashboard/attendance" label="장애인직원근태관리" icon="⏰" active={isActive("/dashboard/attendance")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} />
+              <MenuItem href="/dashboard/work-orders" label="장애인직원업무관리" icon="📝" active={isActive("/dashboard/work-orders")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} />
+              <MenuItem href="/dashboard/leave-management" label="장애인직원휴가관리" icon="🏖️" active={isActive("/dashboard/leave-management")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} />
+              <MenuItem href="/dashboard/company" label="기업대시보드" icon="🏢" active={isActive("/dashboard/company")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} />
             </div>
-            <MenuItem href="/dashboard/employees" label="장애인직원등록관리" icon="👥" active={isActive("/dashboard/employees")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} />
-            <MenuItem href="/dashboard/monthly" label="고용장려금부담금관리" icon="📅" active={isActive("/dashboard/monthly")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} />
-            <MenuItem href="/dashboard/attendance" label="장애인직원근태관리" icon="⏰" active={isActive("/dashboard/attendance")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} />
-            <MenuItem href="/dashboard/work-orders" label="장애인직원업무관리" icon="📝" active={isActive("/dashboard/work-orders")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} />
-            <MenuItem href="/dashboard/leave-management" label="장애인직원휴가관리" icon="🏖️" active={isActive("/dashboard/leave-management")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} />
-            <MenuItem href="/dashboard/company" label="기업대시보드" icon="🏢" active={isActive("/dashboard/company")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} />
-          </div>
+          )}
 
           {/* 직원용 메뉴 (EMPLOYEE 역할인 경우) */}
           {userRole === "EMPLOYEE" && (
@@ -187,46 +190,46 @@ export default function Sidebar() {
                 active={isActive("/employee/attendance")}
               />
               <MenuItem
-                href="/employee/work-orders"
-                label="업무관리"
-                icon="📋"
-                active={isActive("/employee/work-orders")}
-              />
-              <MenuItem
-                href="/employee/leave-management"
-                label="장애인직원휴가관리"
+                href="/employee/leave"
+                label="휴가 신청"
                 icon="🏖️"
-                active={isActive("/employee/leave-management")}
+                active={isActive("/employee/leave")}
               />
             </div>
           )}
 
-          <div style={{ marginBottom: 24 }}>
-            <div style={{ fontSize: 21.424, color: "#fff", marginBottom: 12, fontWeight: "bold", textAlign: "center" }}>
-              고용부담금감면계산기
+          {/* 계산기 메뉴 (직원이 아닌 경우만 표시) */}
+          {userRole !== "EMPLOYEE" && (
+            <div style={{ marginBottom: 24 }}>
+              <div style={{ fontSize: 21.424, color: "#fff", marginBottom: 12, fontWeight: "bold", textAlign: "center" }}>
+                고용부담금감면계산기
+              </div>
+              <MenuItem href="/calculators/incentive-annual" label="고용장려금계산기" icon="💸" active={isActive("/calculators/incentive-annual")} />
+              <MenuItem href="/calculators/levy-annual" label="고용부담금계산기" icon="💰" active={isActive("/calculators/levy-annual") || isActive("/calculators/levy")} subItems={[{ href: "/calculators/levy", label: "간단부담금계산" }, { href: "/calculators/levy-annual", label: "월별부담금계산" }]} />
+              <MenuItem href="/calculators/linkage" label="고용연계감면계산기" icon="📉" active={isActive("/calculators/linkage")} />
+              <MenuItem href="/calculators/standard-benefit" label="표준사업장혜택계산기" icon="🎁" active={isActive("/calculators/standard-benefit")} />
             </div>
-            <MenuItem href="/calculators/incentive-annual" label="고용장려금계산기" icon="💸" active={isActive("/calculators/incentive-annual")} />
-            <MenuItem href="/calculators/levy-annual" label="고용부담금계산기" icon="💰" active={isActive("/calculators/levy-annual") || isActive("/calculators/levy")} subItems={[{ href: "/calculators/levy", label: "간단부담금계산" }, { href: "/calculators/levy-annual", label: "월별부담금계산" }]} />
-            <MenuItem href="/calculators/linkage" label="고용연계감면계산기" icon="📉" active={isActive("/calculators/linkage")} />
-            <MenuItem href="/calculators/standard-benefit" label="표준사업장혜택계산기" icon="🎁" active={isActive("/calculators/standard-benefit")} />
-          </div>
+          )}
 
-          <div style={{ marginBottom: 24 }}>
-            <div style={{ fontSize: 21.424, color: "#fff", marginBottom: 12, fontWeight: "bold", textAlign: "center" }}>
-              연계고용감면센터
+          {/* 연계고용감면센터 메뉴 (직원이 아닌 경우만 표시) */}
+          {userRole !== "EMPLOYEE" && (
+            <div style={{ marginBottom: 24 }}>
+              <div style={{ fontSize: 21.424, color: "#fff", marginBottom: 12, fontWeight: "bold", textAlign: "center" }}>
+                연계고용감면센터
+              </div>
+              {userRole === "SUPPLIER" && (
+                <MenuItem href="/products/manage" label="연계고용감면상품관리" icon="🏭" active={isActive("/products/manage") || isActive("/supplier/profile")} />
+              )}
+              <MenuItem href="/catalog" label="상품 카탈로그" icon="🛒" active={pathname?.startsWith("/catalog")} />
+              {userRole === "BUYER" && (
+                <MenuItem href="/cart" label="도급계약장바구니" icon="🛍️" active={isActive("/cart")} />
+              )}
+              <MenuItem href="/dashboard/contracts" label="도급계약 이행·결제 관리" icon="📋" active={pathname?.startsWith("/dashboard/contracts")} requiresRole={["BUYER", "SUPER_ADMIN", "SUPPLIER"]} currentRole={userRole} />
+              <MenuItem href="/dashboard/performances" label="월별 도급계약감면관리" icon="📊" active={pathname?.startsWith("/dashboard/performances")} requiresRole={["BUYER", "SUPER_ADMIN", "SUPPLIER"]} currentRole={userRole} />
+              <MenuItem href="/purchase-cases" label="장애인표준사업장생산품 구매 사례" icon="📦" active={isActive("/purchase-cases")} />
+              <MenuItem href="/contract-sample" label="표준도급계약서 샘플" icon="📄" active={isActive("/contract-sample")} />
             </div>
-            {userRole === "SUPPLIER" && (
-              <MenuItem href="/products/manage" label="연계고용감면상품관리" icon="🏭" active={isActive("/products/manage") || isActive("/supplier/profile")} />
-            )}
-            <MenuItem href="/catalog" label="상품 카탈로그" icon="🛒" active={pathname?.startsWith("/catalog")} />
-            {userRole === "BUYER" && (
-              <MenuItem href="/cart" label="도급계약장바구니" icon="🛍️" active={isActive("/cart")} />
-            )}
-            <MenuItem href="/dashboard/contracts" label="도급계약 이행·결제 관리" icon="📋" active={pathname?.startsWith("/dashboard/contracts")} requiresRole={["BUYER", "SUPER_ADMIN", "SUPPLIER"]} currentRole={userRole} />
-            <MenuItem href="/dashboard/performances" label="월별 도급계약감면관리" icon="📊" active={pathname?.startsWith("/dashboard/performances")} requiresRole={["BUYER", "SUPER_ADMIN", "SUPPLIER"]} currentRole={userRole} />
-            <MenuItem href="/purchase-cases" label="장애인표준사업장생산품 구매 사례" icon="📦" active={isActive("/purchase-cases")} />
-            <MenuItem href="/contract-sample" label="표준도급계약서 샘플" icon="📄" active={isActive("/contract-sample")} />
-          </div>
+          )}
 
           <div style={{ marginBottom: 24 }}>
             <div style={{ fontSize: 13.2, color: "#666", marginBottom: 8, fontWeight: "bold" }}>
