@@ -976,7 +976,7 @@ export default function EmployeesPage() {
                     <label>월 급여 (원) * (자동 계산)</label>
                     <input
                       type="text"
-                      value={calculateMonthlySalary(form.monthlyWorkHours || 0).toLocaleString()}
+                      value={new Intl.NumberFormat('ko-KR').format(calculateMonthlySalary(form.monthlyWorkHours || 0))}
                       readOnly
                       style={{
                         background: "#f3f4f6",
@@ -984,7 +984,7 @@ export default function EmployeesPage() {
                       }}
                     />
                     <p style={{ fontSize: 12, color: "#10b981", marginTop: 4 }}>
-                      ✅ 월 {form.monthlyWorkHours || 0}시간 × 10,320원 = {calculateMonthlySalary(form.monthlyWorkHours || 0).toLocaleString()}원 (자동 계산됨)
+                      ✅ 월 {form.monthlyWorkHours || 0}시간 × 10,320원 = {new Intl.NumberFormat('ko-KR').format(calculateMonthlySalary(form.monthlyWorkHours || 0))}원 (자동 계산됨)
                     </p>
                   </div>
 
@@ -1171,7 +1171,7 @@ export default function EmployeesPage() {
                           </p>
                         )}
                         <p style={{ margin: "6px 0 0 0", fontSize: 14, color: "#666" }}>
-                          ⏰ 근로시간: 월 {emp.monthlyWorkHours || 60}시간 | 💰 월급: {Number(emp.monthlySalary).toLocaleString()}원 (시급 {Math.round(Number(emp.monthlySalary) / (emp.monthlyWorkHours || 60)).toLocaleString()}원)
+                          ⏰ 근로시간: 월 {emp.monthlyWorkHours || 60}시간 | 💰 월급: {new Intl.NumberFormat('ko-KR').format(Number(emp.monthlySalary))}원 (시급 {new Intl.NumberFormat('ko-KR').format(Math.round(Number(emp.monthlySalary) / (emp.monthlyWorkHours || 60)))}원)
                         </p>
                         <p style={{ margin: "6px 0 0 0", fontSize: 14, color: "#666" }}>
                           🏢 근무형태: {
