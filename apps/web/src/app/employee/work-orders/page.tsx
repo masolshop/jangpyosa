@@ -7,16 +7,14 @@ import { getToken } from "@/lib/auth";
 interface WorkOrder {
   id: string;
   title: string;
-  description: string;
+  content: string;
   priority: string;
-  status: string;
+  targetType: string;
   dueDate: string | null;
   createdAt: string;
-  sender: {
-    name: string;
-  };
-  completedAt: string | null;
-  completionReport: string | null;
+  isConfirmed: boolean;
+  confirmedAt: string | null;
+  note: string | null;
 }
 
 export default function EmployeeWorkOrdersPage() {
@@ -54,7 +52,7 @@ export default function EmployeeWorkOrdersPage() {
       const token = getToken();
       if (!token) return;
 
-      const res = await fetch(`${API_BASE}/work-orders/my-tasks`, {
+      const res = await fetch(`${API_BASE}/work-orders/my-work-orders`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -122,7 +120,7 @@ export default function EmployeeWorkOrdersPage() {
       ? `마감일 ${new Date(workOrder.dueDate).toLocaleDateString('ko-KR')}`
       : '';
     
-    const text = `업무지시. 긴급도 ${priorityText}. ${workOrder.title}. ${workOrder.description}. ${dueDateText}`;
+    const text = `업무지시. 긴급도 ${priorityText}. ${workOrder.title}. ${workOrder.content}. ${dueDateText}`;
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = 'ko-KR';
     utterance.rate = 1.0;
@@ -158,7 +156,7 @@ export default function EmployeeWorkOrdersPage() {
 
   function openDetailModal(workOrder: WorkOrder) {
     setSelectedWorkOrder(workOrder);
-    setCompletionReport(workOrder.completionReport || "");
+    setCompletionReport(workOrder.note || "");
     setIsDetailModalOpen(true);
   }
 
@@ -178,14 +176,14 @@ export default function EmployeeWorkOrdersPage() {
       const token = getToken();
       if (!token) return;
 
-      const res = await fetch(`${API_BASE}/work-orders/${selectedWorkOrder.id}/complete`, {
+      const res = await fetch(`${API_BASE}/work-orders/${selectedWorkOrder.id}/confirm`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          completionReport,
+          note: completionReport,
         }),
       });
 
@@ -228,22 +226,12 @@ export default function EmployeeWorkOrdersPage() {
     }
   }
 
-  function getStatusLabel(status: string) {
-    switch (status) {
-      case "PENDING": return "대기중";
-      case "IN_PROGRESS": return "진행중";
-      case "COMPLETED": return "완료";
-      default: return status;
-    }
+  function getStatusLabel(isConfirmed: boolean) {
+    return isConfirmed ? "완료" : "대기중";
   }
 
-  function getStatusColor(status: string) {
-    switch (status) {
-      case "PENDING": return "#f59e0b";
-      case "IN_PROGRESS": return "#3b82f6";
-      case "COMPLETED": return "#10b981";
-      default: return "#6b7280";
-    }
+  function getStatusColor(isConfirmed: boolean) {
+    return isConfirmed ? "#10b981" : "#f59e0b";
   }
 
   return (
@@ -346,22 +334,22 @@ export default function EmployeeWorkOrdersPage() {
                         {getPriorityLabel(workOrder.priority)}
                       </span>
                       <span style={{
-                        background: getStatusColor(workOrder.status),
+                        background: getStatusColor(workOrder.isConfirmed),
                         color: "white",
                         fontSize: 12,
                         fontWeight: "bold",
                         padding: "4px 10px",
                         borderRadius: 4,
                       }}>
-                        {getStatusLabel(workOrder.status)}
+                        {getStatusLabel(workOrder.isConfirmed)}
                       </span>
                       <h3 style={{ margin: 0, fontSize: 18 }}>{workOrder.title}</h3>
                     </div>
                     
                     <p style={{ fontSize: 14, color: "#6b7280", margin: "8px 0" }}>
-                      {workOrder.description.length > 100 
-                        ? `${workOrder.description.substring(0, 100)}...` 
-                        : workOrder.description}
+                      {workOrder.content.length > 100 
+                        ? `${workOrder.content.substring(0, 100)}...` 
+                        : workOrder.content}
                     </p>
                     
                     <div style={{ display: "flex", gap: 16, fontSize: 13, color: "#6b7280", marginTop: 12 }}>
@@ -369,9 +357,8 @@ export default function EmployeeWorkOrdersPage() {
                       {workOrder.dueDate && (
                         <span>⏰ 마감 {new Date(workOrder.dueDate).toLocaleDateString("ko-KR")}</span>
                       )}
-                      <span>👤 발신: {workOrder.sender.name}</span>
-                      {workOrder.completedAt && (
-                        <span style={{ color: "#10b981" }}>✓ 완료: {new Date(workOrder.completedAt).toLocaleDateString("ko-KR")}</span>
+                      {workOrder.confirmedAt && (
+                        <span style={{ color: "#10b981" }}>✓ 완료: {new Date(workOrder.confirmedAt).toLocaleDateString("ko-KR")}</span>
                       )}
                     </div>
                   </div>
@@ -411,7 +398,7 @@ export default function EmployeeWorkOrdersPage() {
                         cursor: "pointer",
                       }}
                     >
-                      {workOrder.status === "COMPLETED" ? "상세보기" : "완료하기"}
+                      {workOrder.isConfirmed ? "상세보기" : "완료하기"}
                     </button>
                   </div>
                 </div>
@@ -458,14 +445,14 @@ export default function EmployeeWorkOrdersPage() {
                     {getPriorityLabel(selectedWorkOrder.priority)}
                   </span>
                   <span style={{
-                    background: getStatusColor(selectedWorkOrder.status),
+                    background: getStatusColor(selectedWorkOrder.isConfirmed),
                     color: "white",
                     fontSize: 12,
                     fontWeight: "bold",
                     padding: "4px 10px",
                     borderRadius: 4,
                   }}>
-                    {getStatusLabel(selectedWorkOrder.status)}
+                    {getStatusLabel(selectedWorkOrder.isConfirmed)}
                   </span>
                 </div>
                 <h2 style={{ marginTop: 0, marginBottom: 0 }}>
@@ -502,7 +489,7 @@ export default function EmployeeWorkOrdersPage() {
               whiteSpace: "pre-wrap",
               lineHeight: 1.6,
             }}>
-              {selectedWorkOrder.description}
+              {selectedWorkOrder.content}
             </div>
 
             <div style={{ fontSize: 14, color: "#6b7280", marginBottom: 24 }}>
@@ -510,23 +497,22 @@ export default function EmployeeWorkOrdersPage() {
               {selectedWorkOrder.dueDate && (
                 <div>⏰ 마감일: {new Date(selectedWorkOrder.dueDate).toLocaleString("ko-KR")}</div>
               )}
-              <div>👤 발신자: {selectedWorkOrder.sender.name}</div>
-              {selectedWorkOrder.completedAt && (
-                <div style={{ color: "#10b981" }}>✓ 완료일시: {new Date(selectedWorkOrder.completedAt).toLocaleString("ko-KR")}</div>
+              {selectedWorkOrder.confirmedAt && (
+                <div style={{ color: "#10b981" }}>✓ 완료일시: {new Date(selectedWorkOrder.confirmedAt).toLocaleString("ko-KR")}</div>
               )}
             </div>
 
             {/* 완료 보고서 입력 또는 보기 */}
             <div style={{ marginBottom: 24 }}>
               <label style={{ display: "block", marginBottom: 8, fontWeight: "600", fontSize: 16 }}>
-                {selectedWorkOrder.status === "COMPLETED" ? "완료 보고서" : "완료 보고서 작성"}
+                {selectedWorkOrder.isConfirmed ? "완료 보고서" : "완료 보고서 작성"}
               </label>
               <textarea
                 value={completionReport}
                 onChange={(e) => setCompletionReport(e.target.value)}
                 placeholder="업무 완료 내용을 상세히 작성해주세요..."
                 rows={8}
-                disabled={selectedWorkOrder.status === "COMPLETED"}
+                disabled={selectedWorkOrder.isConfirmed}
                 style={{
                   width: "100%",
                   padding: 12,
@@ -534,13 +520,13 @@ export default function EmployeeWorkOrdersPage() {
                   borderRadius: 8,
                   fontSize: 14,
                   resize: "vertical",
-                  background: selectedWorkOrder.status === "COMPLETED" ? "#f9fafb" : "white",
+                  background: selectedWorkOrder.isConfirmed ? "#f9fafb" : "white",
                 }}
               />
             </div>
 
             {/* 완료 버튼 (완료되지 않은 경우만) */}
-            {selectedWorkOrder.status !== "COMPLETED" && (
+            {!selectedWorkOrder.isConfirmed && (
               <div style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}>
                 <button
                   onClick={completeWorkOrder}
