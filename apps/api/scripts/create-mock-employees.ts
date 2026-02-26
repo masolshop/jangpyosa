@@ -220,6 +220,44 @@ async function createMockEmployees() {
     const totalEmployees = await prisma.disabledEmployee.count();
     console.log(`📊 전체 등록된 직원 수: ${totalEmployees}명\n`);
 
+    // 🔧 User-DisabledEmployee 매핑 설정
+    console.log('🔧 User-DisabledEmployee 매핑 설정 중...\n');
+    
+    const mappings = [
+      { companyId: 'cmlu4gobz000910vpj1izl197', userIds: ['user_emp_1', 'user_emp_2', 'user_emp_3', 'user_emp_4', 'user_emp_5'], name: '주식회사 페마연' },
+      { companyId: 'cmlu4gokt000h10vp9paz1nwl', userIds: ['user_emp_6', 'user_emp_7', 'user_emp_8'], name: '공공기관1' },
+      { companyId: 'cmlu4gose000p10vpecg64uct', userIds: ['user_emp_9', 'user_emp_10', 'user_emp_11'], name: '교육청1' }
+    ];
+    
+    for (const mapping of mappings) {
+      const company = await prisma.company.findUnique({
+        where: { id: mapping.companyId },
+        include: { buyerProfile: true }
+      });
+      
+      if (!company?.buyerProfile) {
+        console.log(`⚠️  ${mapping.name}: 회사 또는 buyerProfile 없음, 건너뜀`);
+        continue;
+      }
+      
+      const employees = await prisma.disabledEmployee.findMany({
+        where: { buyerId: company.buyerProfile.id },
+        orderBy: { createdAt: 'asc' },
+        take: mapping.userIds.length
+      });
+      
+      console.log(`📋 ${mapping.name}:`);
+      for (let i = 0; i < mapping.userIds.length && i < employees.length; i++) {
+        await prisma.user.update({
+          where: { id: mapping.userIds[i] },
+          data: { employeeId: employees[i].id }
+        });
+        console.log(`   ✅ ${mapping.userIds[i]} → ${employees[i].name}`);
+      }
+    }
+    
+    console.log('\n✅ User-DisabledEmployee 매핑 완료!\n');
+
   } catch (error) {
     console.error('❌ 오류 발생:', error);
   } finally {
