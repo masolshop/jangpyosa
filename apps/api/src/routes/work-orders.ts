@@ -520,6 +520,15 @@ router.post('/:id/confirm', requireAuth, async (req, res) => {
       return res.status(404).json({ error: '직원 정보를 찾을 수 없습니다' });
     }
 
+    // 업무지시 정보 조회 (companyId와 buyerId를 가져오기 위해)
+    const workOrder = await prisma.workOrder.findUnique({
+      where: { id: workOrderId }
+    });
+
+    if (!workOrder) {
+      return res.status(404).json({ error: '업무지시를 찾을 수 없습니다' });
+    }
+
     // 이미 확인했는지 체크
     const existingConfirmation = await prisma.workOrderConfirmation.findUnique({
       where: {
@@ -537,10 +546,12 @@ router.post('/:id/confirm', requireAuth, async (req, res) => {
       });
     }
 
-    // 확인 기록 생성
+    // 확인 기록 생성 (companyId와 buyerId 포함)
     const confirmation = await prisma.workOrderConfirmation.create({
       data: {
         workOrderId,
+        companyId: workOrder.companyId,
+        buyerId: workOrder.buyerId,
         employeeId: user.employeeId,
         userId: userId,
         confirmedAt: getKSTNow(),

@@ -1,0 +1,56 @@
+#!/bin/bash
+
+echo "======================================"
+echo "서버 배포 방법 안내"
+echo "======================================"
+
+echo ""
+echo "현재 SSH 연결이 불가능합니다."
+echo "다음 방법 중 하나를 사용하여 배포해주세요:"
+echo ""
+
+echo "방법 1: 서버 관리자에게 요청"
+echo "----------------------------------------"
+echo "서버 관리자에게 다음 명령 실행 요청:"
+echo ""
+echo "  ssh ubuntu@15.164.103.96"
+echo "  cd /home/ubuntu/jangpyosa"
+echo "  git pull origin main"
+echo "  pm2 restart jangpyosa-api"
+echo ""
+
+echo "방법 2: 웹 기반 배포 도구 사용"
+echo "----------------------------------------"
+echo "GitHub Actions, Jenkins 등의 CI/CD 도구 사용"
+echo ""
+
+echo "방법 3: 로컬 Git 푸시 확인"
+echo "----------------------------------------"
+echo "Git 커밋이 푸시되었는지 확인:"
+git log --oneline -3
+echo ""
+echo "GitHub 확인: https://github.com/masolshop/jangpyosa/commits/main"
+echo ""
+
+echo "방법 4: 수동 파일 교체"
+echo "----------------------------------------"
+echo "수정된 파일 위치:"
+echo "  로컬: /home/user/webapp/apps/api/src/routes/work-orders.ts"
+echo "  서버: /home/ubuntu/jangpyosa/apps/api/src/routes/work-orders.ts"
+echo ""
+echo "파일을 FTP, 웹 콘솔 등으로 업로드 후 PM2 재시작"
+echo ""
+
+echo "======================================"
+echo "배포 검증 방법"
+echo "======================================"
+echo ""
+echo "배포 후 다음 스크립트로 확인:"
+echo "  cd /home/user/webapp"
+echo "  ./check-server-code.sh"
+echo ""
+echo "예상 결과:"
+echo "  확인 상태: true ✅"
+echo "  ✅ 서버 코드가 최신 버전입니다"
+echo ""
+

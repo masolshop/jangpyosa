@@ -1,0 +1,55 @@
+# 수정 위치: apps/api/src/routes/work-orders.ts
+# 라인: 447-485
+
+# ========== 변경 전 코드 (삭제) ==========
+# 라인 447-464를 다음과 같이 변경:
+
+    // 활성화된 업무지시 조회
+    const allWorkOrders = await prisma.workOrder.findMany({
+      where: {
+        buyerId: employee.buyerId,
+        isActive: true
+      },
+      orderBy: [
+        { priority: 'asc' },
+        { createdAt: 'desc' }
+      ]
+    });
+
+    // 내가 대상인 업무지시만 필터링
+    const myWorkOrders = allWorkOrders.filter(workOrder => {
+      if (workOrder.targetType === 'ALL') {
+        return true;
+      } else if (workOrder.targetType === 'GROUP' || workOrder.targetType === 'INDIVIDUAL') {
+        const targetEmployees = workOrder.targetEmployees 
+          ? JSON.parse(workOrder.targetEmployees) 
+          : [];
+        return targetEmployees.includes(employee.id);
+      }
+      return false;
+    });
+
+    // 각 업무지시에 대한 확인 상태 조회
+    const confirmations = await prisma.workOrderConfirmation.findMany({
+      where: {
+        workOrderId: { in: myWorkOrders.map(wo => wo.id) },
+        employeeId: employee.id
+      }
+    });
+
+    // 확인 상태를 Map으로 변환
+    const confirmationMap = new Map(
+      confirmations.map(c => [c.workOrderId, c])
+    );
+
+    // 각 업무지시에 확인 여부 추가
+    const workOrdersWithConfirmStatus = myWorkOrders.map(workOrder => {
+      const confirmation = confirmationMap.get(workOrder.id);
+      return {
+        ...workOrder,
+        isConfirmed: !!confirmation,
+        confirmedAt: confirmation?.confirmedAt || null,
+        note: confirmation?.note || null
+      };
+    });
+

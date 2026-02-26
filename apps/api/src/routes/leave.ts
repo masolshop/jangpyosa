@@ -260,6 +260,16 @@ router.post('/requests', requireAuth, async (req, res) => {
       return res.status(403).json({ error: '직원 정보가 없습니다' });
     }
 
+    // DisabledEmployee 정보 조회 (buyerId 획득)
+    const employee = await prisma.disabledEmployee.findUnique({
+      where: { id: user.employeeId },
+      select: { id: true, buyerId: true }
+    });
+
+    if (!employee) {
+      return res.status(404).json({ error: '장애인 직원 정보를 찾을 수 없습니다' });
+    }
+
     const { leaveTypeId, startDate, endDate, days, reason } = req.body;
 
     if (!leaveTypeId || !startDate || !endDate || !days) {
@@ -282,6 +292,7 @@ router.post('/requests', requireAuth, async (req, res) => {
     const request = await prisma.leaveRequest.create({
       data: {
         companyId: user.companyId,
+        buyerId: employee.buyerId,
         leaveTypeId,
         employeeId: user.employeeId,
         userId: user.id,

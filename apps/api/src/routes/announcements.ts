@@ -388,6 +388,15 @@ router.post('/:id/read', requireAuth, async (req, res) => {
       return res.status(404).json({ error: '직원 정보를 찾을 수 없습니다' });
     }
 
+    // 공지사항 정보 조회 (companyId와 buyerId를 가져오기 위해)
+    const announcement = await prisma.companyAnnouncement.findUnique({
+      where: { id: announcementId }
+    });
+
+    if (!announcement) {
+      return res.status(404).json({ error: '공지사항을 찾을 수 없습니다' });
+    }
+
     // 이미 읽었는지 확인
     const existingLog = await prisma.announcementReadLog.findUnique({
       where: {
@@ -405,10 +414,12 @@ router.post('/:id/read', requireAuth, async (req, res) => {
       });
     }
 
-    // 읽음 기록 생성
+    // 읽음 기록 생성 (companyId와 buyerId 포함)
     const readLog = await prisma.announcementReadLog.create({
       data: {
         announcementId,
+        companyId: announcement.companyId,
+        buyerId: announcement.buyerId,
         employeeId: user.employeeId,
         userId: userId
       }
