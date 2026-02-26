@@ -66,7 +66,8 @@ export default function LeaveManagementPage() {
 
       // 회사 정보
       const companyRes = await fetch(`${API_BASE}/companies/my`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 'Authorization': `Bearer ${token}` },
+        cache: 'no-store'
       });
       if (companyRes.ok) {
         const data = await companyRes.json();
@@ -75,7 +76,8 @@ export default function LeaveManagementPage() {
 
       // 휴가 유형
       const typesRes = await fetch(`${API_BASE}/leave/types`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 'Authorization': `Bearer ${token}` },
+        cache: 'no-store'
       });
       if (typesRes.ok) {
         const data = await typesRes.json();
@@ -84,7 +86,8 @@ export default function LeaveManagementPage() {
 
       // 휴가 신청 목록
       const requestsRes = await fetch(`${API_BASE}/leave/requests`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 'Authorization': `Bearer ${token}` },
+        cache: 'no-store'
       });
       if (requestsRes.ok) {
         const data = await requestsRes.json();

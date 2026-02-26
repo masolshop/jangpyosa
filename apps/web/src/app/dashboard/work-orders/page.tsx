@@ -94,6 +94,7 @@ export default function WorkOrdersPage() {
         headers: {
           Authorization: `Bearer ${token}`,
         },
+        cache: 'no-store',
       });
 
       if (res.ok) {
@@ -117,6 +118,7 @@ export default function WorkOrdersPage() {
         headers: {
           Authorization: `Bearer ${token}`,
         },
+        cache: 'no-store',
       });
 
       if (res.ok) {

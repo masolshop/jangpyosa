@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { API_BASE } from '@/lib/api';
 
 interface LeaveType {
   id: string;
@@ -79,8 +80,9 @@ export default function EmployeeLeavePage() {
       }
 
       // 휴가 유형 목록
-      const typesRes = await fetch('/api/leave/types', {
-        headers: { 'Authorization': `Bearer ${token}` }
+      const typesRes = await fetch(`${API_BASE}/leave/types`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+        cache: 'no-store'
       });
       if (typesRes.ok) {
         const data = await typesRes.json();
@@ -88,8 +90,9 @@ export default function EmployeeLeavePage() {
       }
 
       // 내 휴가 신청 목록
-      const requestsRes = await fetch('/api/leave/requests/my', {
-        headers: { 'Authorization': `Bearer ${token}` }
+      const requestsRes = await fetch(`${API_BASE}/leave/requests/my`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+        cache: 'no-store'
       });
       if (requestsRes.ok) {
         const data = await requestsRes.json();
@@ -133,7 +136,7 @@ export default function EmployeeLeavePage() {
 
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('/api/leave/requests', {
+      const res = await fetch(`${API_BASE}/leave/requests`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -166,7 +169,7 @@ export default function EmployeeLeavePage() {
 
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`/api/leave/requests/${id}/cancel`, {
+      const res = await fetch(`${API_BASE}/leave/requests/${id}/cancel`, {
         method: 'PATCH',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -185,7 +188,7 @@ export default function EmployeeLeavePage() {
 
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`/api/leave/requests/${id}/document-sent`, {
+      const res = await fetch(`${API_BASE}/leave/requests/${id}/document-sent`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
