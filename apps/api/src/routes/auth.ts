@@ -6,6 +6,7 @@ import { prisma } from "../index.js";
 import { config } from "../config.js";
 import { verifyBizNo } from "../services/apick.js";
 import { getKSTNow } from "../utils/kst.js";
+import { requireAuth } from "../middleware/auth.js";
 
 const r = Router();
 
@@ -1239,6 +1240,52 @@ r.post("/signup-invited", async (req, res) => {
     }
     console.error("Invited signup error:", error);
     return res.status(500).json({ error: "INTERNAL_ERROR", message: "회원가입 중 오류가 발생했습니다" });
+  }
+});
+
+// 현재 로그인한 사용자 정보 조회
+r.get('/me', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user!.id;
+    
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        company: true,
+        branch: true
+      }
+    });
+    
+    if (!user) {
+      return res.status(404).json({ error: 'USER_NOT_FOUND', message: '사용자를 찾을 수 없습니다' });
+    }
+    
+    return res.json({
+      user: {
+        id: user.id,
+        username: user.username,
+        phone: user.phone,
+        name: user.name,
+        role: user.role,
+        email: user.email,
+        employeeId: user.employeeId,
+        companyId: user.companyId,
+        branchId: user.branchId,
+        company: user.company ? {
+          id: user.company.id,
+          name: user.company.name,
+          bizNo: user.company.bizNo,
+          type: user.company.type
+        } : null,
+        branch: user.branch ? {
+          id: user.branch.id,
+          name: user.branch.name
+        } : null
+      }
+    });
+  } catch (error: any) {
+    console.error('Get me error:', error);
+    return res.status(500).json({ error: 'INTERNAL_ERROR', message: '사용자 정보 조회 중 오류가 발생했습니다' });
   }
 });
 

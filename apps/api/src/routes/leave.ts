@@ -241,10 +241,19 @@ router.get('/requests/my', requireAuth, async (req, res) => {
 // 휴가 신청
 router.post('/requests', requireAuth, async (req, res) => {
   try {
-    const user = (req as any).user;
+    const authUser = (req as any).user;
     
-    if (user.role !== 'EMPLOYEE') {
+    if (authUser.role !== 'EMPLOYEE') {
       return res.status(403).json({ error: '직원만 접근 가능합니다' });
+    }
+
+    // DB에서 사용자 정보 조회 (employeeId, companyId 확인)
+    const user = await prisma.user.findUnique({
+      where: { id: authUser.id }
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: '사용자를 찾을 수 없습니다' });
     }
 
     if (!user.employeeId || !user.companyId) {
