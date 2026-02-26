@@ -87,7 +87,7 @@ export default function LeaveManagementPage() {
       });
       if (requestsRes.ok) {
         const data = await requestsRes.json();
-        setLeaveRequests(data.requests);
+        setLeaveRequests(data.leaveRequests || data.requests || []);
       }
     } catch (error: any) {
       console.error('데이터 로딩 실패:', error);
