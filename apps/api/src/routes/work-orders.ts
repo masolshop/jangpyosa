@@ -453,14 +453,7 @@ router.get('/my-work-orders', requireAuth, async (req, res) => {
       orderBy: [
         { priority: 'asc' },
         { createdAt: 'desc' }
-      ],
-      include: {
-        recipients: {
-          where: {
-            employeeId: employee.id
-          }
-        }
-      }
+      ]
     });
 
     // 내가 대상인 업무지시만 필터링
@@ -476,13 +469,29 @@ router.get('/my-work-orders', requireAuth, async (req, res) => {
       return false;
     });
 
+    // 각 업무지시에 대한 확인 상태 조회
+    const confirmations = await prisma.workOrderConfirmation.findMany({
+      where: {
+        workOrderId: { in: myWorkOrders.map(wo => wo.id) },
+        employeeId: employee.id
+      }
+    });
+
+    // 확인 상태를 Map으로 변환
+    const confirmationMap = new Map(
+      confirmations.map(c => [c.workOrderId, c])
+    );
+
     // 각 업무지시에 확인 여부 추가
-    const workOrdersWithConfirmStatus = myWorkOrders.map(workOrder => ({
-      ...workOrder,
-      isConfirmed: workOrder.recipients.length > 0,
-      confirmedAt: workOrder.recipients[0]?.completedAt || null,
-      note: workOrder.recipients[0]?.completionReport || null
-    }));
+    const workOrdersWithConfirmStatus = myWorkOrders.map(workOrder => {
+      const confirmation = confirmationMap.get(workOrder.id);
+      return {
+        ...workOrder,
+        isConfirmed: !!confirmation,
+        confirmedAt: confirmation?.confirmedAt || null,
+        note: confirmation?.note || null
+      };
+    });
 
     return res.json({ workOrders: workOrdersWithConfirmStatus });
   } catch (error: any) {
