@@ -162,6 +162,11 @@ router.get("/monthly", requireAuth, async (req, res) => {
       orderBy: { hireDate: "asc" },
     });
 
+    console.log(`📊 [월별 데이터] 연도: ${year}, 전체 직원 수: ${dbEmployees.length}`);
+    dbEmployees.forEach((emp, idx) => {
+      console.log(`  ${idx + 1}. ${emp.name} - 입사: ${emp.hireDate.toISOString().slice(0,10)}, 퇴사: ${emp.resignDate ? emp.resignDate.toISOString().slice(0,10) : '재직중'}, 월${emp.monthlyWorkHours}h/주${emp.workHoursPerWeek}h`);
+    });
+
     // 타입 변환
     const employees: CalcEmployee[] = dbEmployees.map((emp) => ({
       id: emp.id,

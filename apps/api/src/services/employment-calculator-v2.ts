@@ -199,15 +199,28 @@ export function getEmployeesForMonth(
   const targetDate = new Date(year, month - 1, 1); // 해당 월 1일
   const monthEnd = new Date(year, month, 0); // 해당 월 마지막 날
 
-  return employees.filter((emp) => {
+  console.log(`🔍 [${year}년 ${month}월] 재직자 필터링 시작 (총 ${employees.length}명)`);
+  console.log(`   기준: 입사일 <= ${monthEnd.toISOString().slice(0,10)}, 퇴사일 없거나 >= ${targetDate.toISOString().slice(0,10)}`);
+
+  const filtered = employees.filter((emp) => {
     // 입사일이 해당 월 이후면 제외
-    if (emp.hireDate > monthEnd) return false;
+    if (emp.hireDate > monthEnd) {
+      console.log(`   ❌ ${emp.name}: 입사일(${emp.hireDate.toISOString().slice(0,10)}) > 월말(${monthEnd.toISOString().slice(0,10)})`);
+      return false;
+    }
 
     // 퇴사일이 있고, 해당 월 이전이면 제외
-    if (emp.resignDate && emp.resignDate < targetDate) return false;
+    if (emp.resignDate && emp.resignDate < targetDate) {
+      console.log(`   ❌ ${emp.name}: 퇴사일(${emp.resignDate.toISOString().slice(0,10)}) < 월초(${targetDate.toISOString().slice(0,10)})`);
+      return false;
+    }
 
+    console.log(`   ✅ ${emp.name}: 재직 중 (입사 ${emp.hireDate.toISOString().slice(0,10)})`);
     return true;
   });
+
+  console.log(`   ➡️  결과: ${filtered.length}명 재직`);
+  return filtered;
 }
 
 // ============================================
