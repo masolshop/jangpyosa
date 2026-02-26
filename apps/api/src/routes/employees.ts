@@ -6,7 +6,7 @@ import {
   calculateYearlyData,
   calculateMonthlyData,
   type CalcEmployee,
-} from "../services/employment-calculator-v2";
+} from "../services/employment-calculator-v2.js";
 
 const router = Router();
 
