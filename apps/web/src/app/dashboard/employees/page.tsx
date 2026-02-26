@@ -25,8 +25,8 @@ type Employee = {
   monthlySalary: number;
   hasEmploymentInsurance: boolean;
   meetsMinimumWage: boolean;
-  workHoursPerWeek?: number;  // 주당 근무시간 (호환성)
   monthlyWorkHours?: number;   // 월 근로시간 (메인)
+  workHoursPerWeek?: number;  // 주당 근무시간 (호환성, 사용하지 않음)
   workType?: "OFFICE" | "REMOTE" | "HYBRID";
   memo?: string;
 };
@@ -66,7 +66,7 @@ export default function EmployeesPage() {
     monthlySalary: 2060740,
     hasEmploymentInsurance: true,
     meetsMinimumWage: true,
-    workHoursPerWeek: 60,
+    monthlyWorkHours: 60,
     workType: "OFFICE" as "OFFICE" | "REMOTE" | "HYBRID",
     memo: "",
   });
@@ -86,7 +86,7 @@ export default function EmployeesPage() {
   const handleWorkHoursChange = (hours: number) => {
     setForm({
       ...form,
-      workHoursPerWeek: hours, // 실제로는 월간 근로시간
+      monthlyWorkHours: hours, // 월간 근로시간
       monthlySalary: calculateMonthlySalary(hours),
     });
   };
@@ -169,7 +169,7 @@ export default function EmployeesPage() {
         },
         body: JSON.stringify({
           ...form,
-          workHoursPerWeek: form.workHoursPerWeek || null,
+          monthlyWorkHours: form.monthlyWorkHours || null,
           birthDate: form.birthDate || null,
         }),
       });
@@ -223,7 +223,7 @@ export default function EmployeesPage() {
       monthlySalary: emp.monthlySalary,
       hasEmploymentInsurance: emp.hasEmploymentInsurance,
       meetsMinimumWage: emp.meetsMinimumWage,
-      workHoursPerWeek: emp.workHoursPerWeek || 40,
+      monthlyWorkHours: emp.monthlyWorkHours || 60,
       workType: emp.workType || "OFFICE",
       memo: emp.memo || "",
     });
@@ -246,7 +246,7 @@ export default function EmployeesPage() {
       monthlySalary: 2060740,
       hasEmploymentInsurance: true,
       meetsMinimumWage: true,
-      workHoursPerWeek: 60,
+      monthlyWorkHours: 60,
       workType: "OFFICE",
       memo: "",
     });
@@ -478,7 +478,7 @@ export default function EmployeesPage() {
             monthlySalary: Number(row[10]) || 2060740,
             hasEmploymentInsurance: row[11]?.toString().trim() === "가입",
             meetsMinimumWage: row[12]?.toString().trim() === "이상",
-            workHoursPerWeek: Number(row[13]) || 60,
+            monthlyWorkHours: Number(row[13]) || 60,
             workType: workType,
             memo: row[15]?.toString().trim() || "",
           };
@@ -962,9 +962,9 @@ export default function EmployeesPage() {
                     <label>월간 근로시간 *</label>
                     <input
                       type="number"
-                      value={form.workHoursPerWeek}
+                      value={form.monthlyWorkHours}
                       onChange={(e) => handleWorkHoursChange(Number(e.target.value))}
-                      min="1"
+                      min="60"
                       max="240"
                       required
                     />
@@ -986,7 +986,7 @@ export default function EmployeesPage() {
                       required
                     />
                     <p style={{ fontSize: 12, color: "#10b981", marginTop: 4 }}>
-                      ✅ 월 {form.workHoursPerWeek || 0}시간 × 10,320원 = {calculateMonthlySalary(form.workHoursPerWeek || 0).toLocaleString()}원 (자동 계산됨)
+                      ✅ 월 {form.monthlyWorkHours || 0}시간 × 10,320원 = {calculateMonthlySalary(form.monthlyWorkHours || 0).toLocaleString()}원 (자동 계산됨)
                     </p>
                   </div>
 
@@ -1173,7 +1173,7 @@ export default function EmployeesPage() {
                           </p>
                         )}
                         <p style={{ margin: "6px 0 0 0", fontSize: 14, color: "#666" }}>
-                          ⏰ 근로시간 월 {emp.monthlyWorkHours || emp.workHoursPerWeek || 60}시간 | 💰 월 {emp.monthlySalary.toLocaleString()}원 (시급 {Math.round(emp.monthlySalary / (emp.monthlyWorkHours || emp.workHoursPerWeek || 60)).toLocaleString()}원)
+                          ⏰ 근로시간: 월 {emp.monthlyWorkHours || 60}시간 | 💰 월급: {emp.monthlySalary.toLocaleString()}원 (시급 {Math.round(emp.monthlySalary / (emp.monthlyWorkHours || 60)).toLocaleString()}원)
                         </p>
                         <p style={{ margin: "6px 0 0 0", fontSize: 14, color: "#666" }}>
                           🏢 근무형태: {
