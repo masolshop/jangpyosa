@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { API_BASE } from '@/lib/api';
+import { getToken } from '@/lib/auth';
 
 interface LeaveType {
   id: string;
@@ -58,7 +59,7 @@ export default function LeaveManagementPage() {
 
   const fetchData = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = getToken();
       if (!token) {
         router.push('/login');
         return;
@@ -108,7 +109,7 @@ export default function LeaveManagementPage() {
     }
 
     try {
-      const token = localStorage.getItem('token');
+      const token = getToken();
       const url = editingType ? `${API_BASE}/leave/types/${editingType.id}` : `${API_BASE}/leave/types`;
       const method = editingType ? 'PUT' : 'POST';
 
@@ -156,7 +157,7 @@ export default function LeaveManagementPage() {
     }
 
     try {
-      const token = localStorage.getItem('token');
+      const token = getToken();
       const res = await fetch(`${API_BASE}/leave/types/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
@@ -176,7 +177,7 @@ export default function LeaveManagementPage() {
 
   const handleApprove = async (id: string) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = getToken();
       const res = await fetch(`${API_BASE}/leave/requests/${id}/approve`, {
         method: 'PATCH',
         headers: {
@@ -200,7 +201,7 @@ export default function LeaveManagementPage() {
     if (!reason) return;
 
     try {
-      const token = localStorage.getItem('token');
+      const token = getToken();
       const res = await fetch(`${API_BASE}/leave/requests/${id}/reject`, {
         method: 'PATCH',
         headers: {

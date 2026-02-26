@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { API_BASE } from '@/lib/api';
+import { getToken } from '@/lib/auth';
 
 interface LeaveType {
   id: string;
@@ -56,7 +57,7 @@ export default function EmployeeLeavePage() {
 
   const fetchData = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = getToken();
       if (!token) {
         router.push('/employee/login');
         return;
@@ -135,7 +136,7 @@ export default function EmployeeLeavePage() {
     }
 
     try {
-      const token = localStorage.getItem('token');
+      const token = getToken();
       const res = await fetch(`${API_BASE}/leave/requests`, {
         method: 'POST',
         headers: {
@@ -168,7 +169,7 @@ export default function EmployeeLeavePage() {
     if (!confirm('휴가 신청을 취소하시겠습니까?')) return;
 
     try {
-      const token = localStorage.getItem('token');
+      const token = getToken();
       const res = await fetch(`${API_BASE}/leave/requests/${id}/cancel`, {
         method: 'PATCH',
         headers: { 'Authorization': `Bearer ${token}` }
@@ -187,7 +188,7 @@ export default function EmployeeLeavePage() {
     if (!confirm('증빙서류를 이메일로 전송하셨습니까?')) return;
 
     try {
-      const token = localStorage.getItem('token');
+      const token = getToken();
       const res = await fetch(`${API_BASE}/leave/requests/${id}/document-sent`, {
         method: 'PATCH',
         headers: {
