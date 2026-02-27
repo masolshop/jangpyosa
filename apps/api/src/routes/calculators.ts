@@ -2,6 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../index.js";
 import { calcLevyEstimate, calcLinkageReduction } from "../services/calculation.js";
+import { calculateLevy } from "../services/employment-calculator-v2.js";
 import PDFDocument from "pdfkit";
 
 const r = Router();
@@ -152,6 +153,43 @@ r.post("/levy", async (req, res) => {
     });
   } catch (error: any) {
     console.error("Levy calculation error:", error);
+    if (error.name === "ZodError") {
+      return res.status(400).json({ error: "VALIDATION_ERROR", details: error.errors });
+    }
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 부담금 계산기 V2 (2026년 최신 로직 - 고용률 구간별 적용)
+r.post("/levy-v2", async (req, res) => {
+  try {
+    const schema = z.object({
+      totalEmployeeCount: z.number().int().min(0).describe("상시근로자 수"),
+      disabledEmployeeCount: z.number().int().min(0).describe("장애인 직원 수"),
+      recognizedCount: z.number().min(0).describe("인정 장애인 수 (중증 2배 포함)"),
+      companyType: z.enum([
+        "PRIVATE_COMPANY",
+        "PUBLIC_INSTITUTION", 
+        "GOVERNMENT"
+      ]).default("PRIVATE_COMPANY"),
+    });
+    
+    const body = schema.parse(req.body);
+    
+    const result = calculateLevy({
+      totalEmployeeCount: body.totalEmployeeCount,
+      disabledEmployeeCount: body.disabledEmployeeCount,
+      recognizedCount: body.recognizedCount,
+      companyType: body.companyType,
+    });
+    
+    res.json({
+      ok: true,
+      ...result,
+      note: "2026년 기준 부담금 계산 (최저임금 2,156,880원, 기초액 1,294,128원). 실제 납부액은 한국장애인고용공단 확인 필요.",
+    });
+  } catch (error: any) {
+    console.error("Levy V2 calculation error:", error);
     if (error.name === "ZodError") {
       return res.status(400).json({ error: "VALIDATION_ERROR", details: error.errors });
     }

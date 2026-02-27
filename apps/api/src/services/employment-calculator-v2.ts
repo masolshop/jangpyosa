@@ -83,7 +83,10 @@ export interface MonthlyResult {
   
   // 부담금
   shortfallCount: number; // 미달 인원
-  levy: number; // 부담금 (원)
+  employmentRate: number; // 고용률 (%)
+  levyApplicationRate: number; // 부담금 적용률 (0 ~ 1.0)
+  levyPerPerson: number; // 1인당 부담금 (원)
+  levy: number; // 총 부담금 (원)
   
   // 장려금
   incentive: number; // 장려금 (원)
@@ -112,8 +115,9 @@ const INCENTIVE_RATES = {
   },
 };
 
-// 부담금 단가 (월)
-const LEVY_BASE_AMOUNT = 1260000; // 2026년 기준
+// 부담금 기초액 (2026년 기준: 최저임금의 60%)
+const MIN_WAGE_2026 = 2156880; // 2026년 월 최저임금
+const LEVY_BASE_AMOUNT = Math.round(MIN_WAGE_2026 * 0.6); // 1,294,128원
 
 // 의무고용률 (buyerType 기반)
 const QUOTA_RATES: { [key: string]: number } = {
@@ -352,16 +356,43 @@ export function calculateMonthlyData(
     });
   });
 
-  // 5. 부담금 계산
+  // 5. 부담금 계산 (2026년 최신 로직)
   const shortfallCount = Math.max(0, obligatedCount - totalRecognizedCount);
-  const levy = Math.round(shortfallCount * LEVY_BASE_AMOUNT);
+  
+  // 고용률 계산
+  const employmentRate = obligatedCount > 0 
+    ? (totalRecognizedCount / obligatedCount) * 100 
+    : 0;
+  
+  // 부담금 적용률 결정 (고용률 구간별)
+  let levyApplicationRate = 0;
+  if (employmentRate >= 100) {
+    levyApplicationRate = 0;      // 100% 이상: 부담금 없음
+  } else if (employmentRate >= 75) {
+    levyApplicationRate = 0.25;   // 75~100%: 25% 적용
+  } else if (employmentRate >= 50) {
+    levyApplicationRate = 0.50;   // 50~75%: 50% 적용
+  } else if (employmentRate >= 25) {
+    levyApplicationRate = 0.75;   // 25~50%: 75% 적용
+  } else {
+    levyApplicationRate = 1.00;   // 0~25%: 100% 적용
+  }
+  
+  // 1인당 부담금
+  const levyPerPerson = Math.round(LEVY_BASE_AMOUNT * levyApplicationRate);
+  
+  // 총 부담금 (0명 고용 시 = 미달인원 × 기초액)
+  const levy = Math.round(shortfallCount * levyPerPerson);
 
   console.log(`📊 [${year}년 ${month}월] 최종 계산 결과:`);
   console.log(`  - 장애인 직원 수: ${activeEmployees.length}명`);
   console.log(`  - 총 인정수: ${totalRecognizedCount.toFixed(1)}명`);
   console.log(`  - 의무고용인원: ${obligatedCount}명`);
   console.log(`  - 미달인원: ${shortfallCount.toFixed(1)}명`);
-  console.log(`  - 부담금: ${levy.toLocaleString()}원\n`);
+  console.log(`  - 고용률: ${employmentRate.toFixed(1)}%`);
+  console.log(`  - 부담금 적용률: ${(levyApplicationRate * 100).toFixed(0)}%`);
+  console.log(`  - 1인당 부담금: ${levyPerPerson.toLocaleString()}원`);
+  console.log(`  - 총 부담금: ${levy.toLocaleString()}원\n`);
 
   // 6. 지급인원 및 순액 계산
   // 공식: 지급인원 = 장애인근로자수 - 기준인원 - 제외인원
@@ -380,6 +411,9 @@ export function calculateMonthlyData(
     incentiveExcludedCount: excludedCount,
     incentiveEligibleCount: eligibleCount, // ★ 수정된 계산식
     shortfallCount: Math.max(0, shortfallCount),
+    employmentRate,
+    levyApplicationRate,
+    levyPerPerson,
     levy,
     incentive: totalIncentive,
     netAmount,
@@ -405,4 +439,107 @@ export function calculateYearlyData(
   }
 
   return results;
+}
+
+// ============================================
+// 부담금 계산 전용 함수
+// ============================================
+
+export interface LevyCalculationInput {
+  totalEmployeeCount: number;  // 상시근로자 수
+  disabledEmployeeCount: number;  // 실제 장애인 직원 수
+  recognizedCount: number;  // 인정 장애인 수 (중증 2배 포함)
+  companyType: string;  // PRIVATE_COMPANY | PUBLIC_INSTITUTION | GOVERNMENT
+}
+
+export interface LevyCalculationResult {
+  // 입력값
+  totalEmployeeCount: number;
+  disabledEmployeeCount: number;
+  recognizedCount: number;
+  companyType: string;
+  
+  // 계산 결과
+  quotaRate: number;  // 의무고용률 (0.031 or 0.038)
+  obligatedCount: number;  // 의무고용인원 (floor)
+  shortfallCount: number;  // 미달인원
+  employmentRate: number;  // 고용률 (%)
+  
+  // 부담금 상세
+  levyBaseAmount: number;  // 부담금 기초액 (2026: 1,294,128원)
+  levyApplicationRate: number;  // 적용률 (0 ~ 1.0)
+  levyPerPerson: number;  // 1인당 부담금
+  totalLevy: number;  // 총 부담금
+  
+  // 참고 정보
+  rateDescription: string;  // 고용률 구간 설명
+}
+
+/**
+ * 부담금 계산기
+ * 2026년 기준 최저임금(2,156,880원)의 60% = 1,294,128원
+ */
+export function calculateLevy(input: LevyCalculationInput): LevyCalculationResult {
+  const { totalEmployeeCount, disabledEmployeeCount, recognizedCount, companyType } = input;
+  
+  // 1. 의무고용률 결정
+  const quotaRate = QUOTA_RATES[companyType] || 0.031;
+  
+  // 2. 의무고용인원 (floor)
+  const obligatedCount = Math.floor(totalEmployeeCount * quotaRate);
+  
+  // 3. 미달인원
+  const shortfallCount = Math.max(0, obligatedCount - recognizedCount);
+  
+  // 4. 고용률 계산
+  const employmentRate = obligatedCount > 0 
+    ? (recognizedCount / obligatedCount) * 100 
+    : 0;
+  
+  // 5. 부담금 적용률 결정
+  let levyApplicationRate = 0;
+  let rateDescription = "";
+  
+  if (recognizedCount === 0) {
+    // ★ 0명 고용: 100% 적용 (기초액 전액)
+    levyApplicationRate = 1.00;
+    rateDescription = "0명 고용: 100% 적용 (기초액 전액)";
+  } else if (employmentRate >= 100) {
+    levyApplicationRate = 0;
+    rateDescription = "100% 이상: 부담금 없음";
+  } else if (employmentRate >= 75) {
+    levyApplicationRate = 0.25;
+    rateDescription = "75~100%: 25% 적용";
+  } else if (employmentRate >= 50) {
+    levyApplicationRate = 0.50;
+    rateDescription = "50~75%: 50% 적용";
+  } else if (employmentRate >= 25) {
+    levyApplicationRate = 0.75;
+    rateDescription = "25~50%: 75% 적용";
+  } else {
+    levyApplicationRate = 1.00;
+    rateDescription = "0~25%: 100% 적용";
+  }
+  
+  // 6. 1인당 부담금
+  const levyPerPerson = Math.round(LEVY_BASE_AMOUNT * levyApplicationRate);
+  
+  // 7. 총 부담금
+  const totalLevy = Math.round(shortfallCount * levyPerPerson);
+  
+  return {
+    totalEmployeeCount,
+    disabledEmployeeCount,
+    recognizedCount,
+    companyType,
+    quotaRate,
+    obligatedCount,
+    shortfallCount,
+    employmentRate,
+    levyBaseAmount: LEVY_BASE_AMOUNT,
+    levyApplicationRate,
+    levyPerPerson,
+    totalLevy,
+    rateDescription,
+  };
 }
