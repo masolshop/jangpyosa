@@ -19,13 +19,13 @@ type Employee = {
   disabilityGrade?: string;
   severity: "MILD" | "SEVERE";
   gender: "M" | "F";
-  birthDate?: string;
+  birthDate?: string | null;
   hireDate: string;
-  resignDate?: string;
+  resignDate?: string | null;
   monthlySalary: number;
   hasEmploymentInsurance: boolean;
   meetsMinimumWage: boolean;
-  monthlyWorkHours?: number;   // 월 근로시간 (메인)
+  monthlyWorkHours?: number | null;   // 월 근로시간 (메인)
   workHoursPerWeek?: number;  // 주당 근무시간 (호환성, 사용하지 않음)
   workType?: "OFFICE" | "REMOTE" | "HYBRID";
   memo?: string;
@@ -128,22 +128,16 @@ export default function EmployeesPage() {
     setLoading(true);
     setError("");
     
-    const token = getToken();
-    if (!token) {
-      router.push("/login");
-      return;
-    }
-
     try {
-      const res = await fetch(`${API_BASE}/employees`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (!res.ok) throw new Error("직원 목록 조회 실패");
-
-      const json = await res.json();
-      setEmployees(json.employees || []);
+      // ✅ 통합 API 사용: Company → BuyerProfile → DisabledEmployee
+      const { getCompanyEmployees } = await import("@/lib/unified-api");
+      const data = await getCompanyEmployees();
+      setEmployees(data.employees || []);
     } catch (e: any) {
+      if (e.message.includes("로그인")) {
+        router.push("/login");
+        return;
+      }
       setError(e.message);
     } finally {
       setLoading(false);
@@ -152,30 +146,23 @@ export default function EmployeesPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const token = getToken();
-    if (!token) return;
 
     try {
-      const url = editingId
-        ? `${API_BASE}/employees/${editingId}`
-        : `${API_BASE}/employees`;
-      const method = editingId ? "PUT" : "POST";
+      // ✅ 통합 API 사용
+      const { createEmployee, updateEmployee } = await import("@/lib/unified-api");
+      
+      const employeeData = {
+        ...form,
+        monthlySalary: calculateMonthlySalary(form.monthlyWorkHours || 0),
+        monthlyWorkHours: form.monthlyWorkHours || null,
+        birthDate: form.birthDate || null,
+      };
 
-      const res = await fetch(url, {
-        method,
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ...form,
-          monthlySalary: calculateMonthlySalary(form.monthlyWorkHours || 0),
-          monthlyWorkHours: form.monthlyWorkHours || null,
-          birthDate: form.birthDate || null,
-        }),
-      });
-
-      if (!res.ok) throw new Error(editingId ? "수정 실패" : "등록 실패");
+      if (editingId) {
+        await updateEmployee(editingId, employeeData);
+      } else {
+        await createEmployee(employeeData);
+      }
 
       // 성공 후 데이터 갱신
       await fetchEmployees();
@@ -190,17 +177,10 @@ export default function EmployeesPage() {
   async function handleDelete(id: string) {
     if (!confirm("정말 삭제하시겠습니까?")) return;
 
-    const token = getToken();
-    if (!token) return;
-
     try {
-      const res = await fetch(`${API_BASE}/employees/${id}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (!res.ok) throw new Error("삭제 실패");
-
+      // ✅ 통합 API 사용
+      const { deleteEmployee } = await import("@/lib/unified-api");
+      await deleteEmployee(id);
       await fetchEmployees();
       setMessage("✅ 직원이 삭제되었습니다.");
       setTimeout(() => setMessage(""), 3000);

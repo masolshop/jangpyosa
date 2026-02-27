@@ -130,20 +130,15 @@ export default function MonthlyManagementPage() {
     setLoading(true);
     setError("");
 
-    const token = getToken();
-    if (!token) {
-      router.push("/login");
-      return;
-    }
-
     try {
-      const res = await fetch(`${API_BASE}/employees/monthly?year=${year}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (!res.ok) throw new Error("월별 데이터 조회 실패");
-
-      const data = await res.json();
+      // ✅ 통합 API 사용: 먼저 회사 정보 가져오기
+      const { getMonthlyData, getCurrentUserCompany } = await import("@/lib/unified-api");
+      
+      // 회사 정보 가져오기
+      const { companyName } = await getCurrentUserCompany();
+      
+      // 월별 데이터 가져오기
+      const data = await getMonthlyData(year);
       
       // 월별 데이터에 여성 장려금 정보 추가
       const enrichedMonthlyData = data.monthlyData.map((monthData: MonthlyData) => {
@@ -166,24 +161,28 @@ export default function MonthlyManagementPage() {
           const quotaRate = buyerType === "PRIVATE_COMPANY" ? 0.031 : 0.038;
           
           setCompanyInfo({
-            name: data.companyName || user.company?.name || "",
+            name: companyName || user.company?.name || "",
             buyerType,
             quotaRate,
           });
         } catch (e) {
           console.error("사용자 정보 파싱 실패:", e);
           setCompanyInfo({
-            name: data.companyName || "",
+            name: companyName || "",
             quotaRate: 0.031,
           });
         }
       } else {
         setCompanyInfo({
-          name: data.companyName || "",
+          name: companyName || "",
           quotaRate: 0.031,
         });
       }
     } catch (e: any) {
+      if (e.message.includes("로그인")) {
+        router.push("/login");
+        return;
+      }
       setError(e.message);
     } finally {
       setLoading(false);
@@ -191,36 +190,23 @@ export default function MonthlyManagementPage() {
   }
 
   async function saveMonthlyData() {
-    const token = getToken();
-    if (!token) return;
-
     setSaving(true);
     setMessage("");
     setError("");
 
     try {
-      // 월별 상시근로자 수 맵 생성
-      const monthlyEmployeeCounts: { [key: number]: number } = {};
-      monthlyData.forEach((data) => {
-        monthlyEmployeeCounts[data.month] = data.totalEmployeeCount;
-      });
-
-      const res = await fetch(`${API_BASE}/employees/monthly`, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          year,
-          monthlyEmployeeCounts,
-        }),
-      });
-
-      if (!res.ok) throw new Error("저장 실패");
-
-      const result = await res.json();
-      setMessage("✅ " + result.message);
+      // ✅ 통합 API 사용
+      const { saveMonthlyData: saveData } = await import("@/lib/unified-api");
+      
+      // 월별 데이터를 API 형식으로 변환
+      const monthlyDataToSave = monthlyData.map(data => ({
+        year: data.year,
+        month: data.month,
+        totalEmployeeCount: data.totalEmployeeCount,
+      }));
+      
+      await saveData(monthlyDataToSave);
+      setMessage("✅ 저장되었습니다");
 
       // 데이터 다시 불러오기
       await fetchMonthlyData();
