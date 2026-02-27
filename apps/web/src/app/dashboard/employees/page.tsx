@@ -130,9 +130,14 @@ export default function EmployeesPage() {
     
     try {
       // ✅ 통합 API 사용: Company → BuyerProfile → DisabledEmployee
-      const { getCompanyEmployees } = await import("@/lib/unified-api");
-      const data = await getCompanyEmployees();
-      setEmployees(data.employees || []);
+      const { getCurrentUserCompany, getCompanyEmployees } = await import("@/lib/unified-api");
+      const companyData = await getCurrentUserCompany();
+      if (!companyData) {
+        router.push("/login");
+        return;
+      }
+      const data = await getCompanyEmployees(companyData.companyId);
+      setEmployees(data as any || []);
     } catch (e: any) {
       if (e.message.includes("로그인")) {
         router.push("/login");
@@ -159,9 +164,9 @@ export default function EmployeesPage() {
       };
 
       if (editingId) {
-        await updateEmployee(editingId, employeeData);
+        await updateEmployee(editingId, employeeData as any);
       } else {
-        await createEmployee(employeeData);
+        await createEmployee(employeeData as any);
       }
 
       // 성공 후 데이터 갱신

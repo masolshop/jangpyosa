@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { requireAuth } from '../middleware/auth.js';
+import { cacheMiddleware } from '../middleware/cache.js';
 import { prisma } from '../lib/prisma.js';
 import { handleError, NotFoundError, UnauthorizedError, BadRequestError } from '../lib/errors.js';
 import {
@@ -41,9 +42,9 @@ async function checkUserPermission(userId: string, companyId: string) {
 
 /**
  * GET /api/annual-leave/company/:companyId
- * 회사의 모든 직원 연차 현황 조회 (최적화됨)
+ * 회사의 모든 직원 연차 현황 조회 (최적화됨 + 캐싱)
  */
-router.get('/company/:companyId', requireAuth, async (req, res) => {
+router.get('/company/:companyId', requireAuth, cacheMiddleware('short'), async (req, res) => {
   try {
     const { companyId } = req.params;
     const year = req.query.year ? parseInt(req.query.year as string) : new Date().getFullYear();
@@ -82,9 +83,9 @@ router.get('/company/:companyId', requireAuth, async (req, res) => {
 
 /**
  * GET /api/annual-leave/employee/:employeeId
- * 특정 직원의 연차 현황 조회 (최적화됨)
+ * 특정 직원의 연차 현황 조회 (최적화됨 + 캐싱)
  */
-router.get('/employee/:employeeId', requireAuth, async (req, res) => {
+router.get('/employee/:employeeId', requireAuth, cacheMiddleware('short'), async (req, res) => {
   try {
     const { employeeId } = req.params;
     const year = req.query.year ? parseInt(req.query.year as string) : new Date().getFullYear();
@@ -312,9 +313,9 @@ router.post('/recalculate', requireAuth, async (req, res) => {
 
 /**
  * GET /api/annual-leave/promotion-notices
- * 연차 촉진 알림 대상 조회 (최적화됨)
+ * 연차 촉진 알림 대상 조회 (최적화됨 + 캐싱)
  */
-router.get('/promotion-notices', requireAuth, async (req, res) => {
+router.get('/promotion-notices', requireAuth, cacheMiddleware('medium'), async (req, res) => {
   try {
     const reqUser = req.user!;
     

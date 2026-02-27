@@ -1,11 +1,13 @@
 import express from "express";
 import cors from "cors";
+import compression from "compression";
 import { config } from "./config.js";
 import { PrismaClient } from "@prisma/client";
 import path from "path";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
 import { getKSTNow } from "./utils/kst.js";
+import { createPrismaWithMonitoring, startPerformanceReporting } from "./lib/prisma-monitoring.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -36,10 +38,27 @@ import notificationsRoutes from "./routes/notifications.js";
 import leaveRoutes from "./routes/leave.js";
 import annualLeaveRoutes from "./routes/annual-leave.js";
 
-export const prisma = new PrismaClient();
+// Prisma Client with monitoring
+export const prisma = createPrismaWithMonitoring();
+startPerformanceReporting(prisma);
 
 const app = express();
+
+// CORS 설정
 app.use(cors({ origin: config.corsOrigin, credentials: true }));
+
+// Compression 미들웨어 (응답 압축)
+app.use(compression({
+  level: 6, // 압축 레벨 (0-9, 6이 기본값이자 최적값)
+  threshold: 1024, // 1KB 이상만 압축
+  filter: (req, res) => {
+    if (req.headers['x-no-compression']) {
+      return false;
+    }
+    return compression.filter(req, res);
+  }
+}));
+
 app.use(express.json({ limit: "2mb" }));
 
 // Static file serving for uploads
