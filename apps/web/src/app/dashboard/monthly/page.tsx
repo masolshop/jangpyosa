@@ -271,7 +271,7 @@ export default function MonthlyManagementPage() {
                 recognizedCount: newRecognizedCount,
                 obligatedCount,
                 shortfallCount,
-                surplusCount,
+
                 levy,
                 incentive: newIncentive,
                 femaleIncentiveCount: serverData.femaleIncentiveCount || 0,
@@ -313,7 +313,7 @@ export default function MonthlyManagementPage() {
           totalEmployeeCount: numValue,
           obligatedCount,
           shortfallCount,
-          surplusCount,
+
           levy,
           netAmount,
         };
@@ -360,7 +360,7 @@ export default function MonthlyManagementPage() {
           recognizedCount: firstRecognized,
           obligatedCount,
           shortfallCount,
-          surplusCount,
+
           incentive: firstIncentive,
           femaleIncentiveCount: firstFemaleIncentiveCount,
           femaleIncentiveAmount: firstFemaleIncentiveAmount,
@@ -391,7 +391,7 @@ export default function MonthlyManagementPage() {
             totalEmployeeCount: previousCount,
             obligatedCount,
             shortfallCount,
-            surplusCount,
+
             levy,
             netAmount,
           };
@@ -611,8 +611,8 @@ export default function MonthlyManagementPage() {
                   >
                     {data.shortfallCount > 0
                       ? `▼${data.shortfallCount}명`
-                      : data.surplusCount > 0
-                      ? `▲${data.surplusCount.toFixed(1)}명`
+                      : data.recognizedCount > data.obligatedCount
+                      ? `▲${(data.recognizedCount - data.obligatedCount).toFixed(1)}명`
                       : "-"}
                   </td>
                   <td
