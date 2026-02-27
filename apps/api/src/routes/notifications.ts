@@ -51,6 +51,8 @@ router.get('/unread-count', requireAuth, async (req, res) => {
       const leaveRejectionCount = await getUnreadCount(userId, 'LEAVE_REJECTED');
       const workOrderCount = await getUnreadCount(userId, 'WORK_ORDER');
       const announcementCount = await getUnreadCount(userId, 'ANNOUNCEMENT');
+      const attendanceReminderCount = await getUnreadCount(userId, 'ATTENDANCE_REMINDER');
+      const attendanceIssueCount = await getUnreadCount(userId, 'ATTENDANCE_ISSUE');
       
       res.json({
         total: totalCount,
@@ -60,6 +62,8 @@ router.get('/unread-count', requireAuth, async (req, res) => {
           LEAVE_REJECTED: leaveRejectionCount,
           WORK_ORDER: workOrderCount,
           ANNOUNCEMENT: announcementCount,
+          ATTENDANCE_REMINDER: attendanceReminderCount,
+          ATTENDANCE_ISSUE: attendanceIssueCount,
         }
       });
     }

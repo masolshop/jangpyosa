@@ -19,7 +19,8 @@ export default function Sidebar() {
     leave: number;
     workOrder: number;
     announcement: number;
-  }>({ total: 0, leave: 0, workOrder: 0, announcement: 0 });
+    attendance: number;
+  }>({ total: 0, leave: 0, workOrder: 0, announcement: 0, attendance: 0 });
 
   // 읽지 않은 알림 개수 조회 (타입별)
   const fetchUnreadCount = async () => {
@@ -42,6 +43,7 @@ export default function Sidebar() {
           leave: (byType.LEAVE_REQUEST || 0) + (byType.LEAVE_APPROVED || 0) + (byType.LEAVE_REJECTED || 0),
           workOrder: byType.WORK_ORDER || 0,
           announcement: byType.ANNOUNCEMENT || 0,
+          attendance: (byType.ATTENDANCE_REMINDER || 0) + (byType.ATTENDANCE_ISSUE || 0),
         });
       }
     } catch (error) {
@@ -216,7 +218,7 @@ export default function Sidebar() {
               </div>
               <MenuItem href="/dashboard/employees" label="장애인직원등록관리" icon="👥" active={isActive("/dashboard/employees")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} />
               <MenuItem href="/dashboard/monthly" label="고용장려금부담금관리" icon="📅" active={isActive("/dashboard/monthly")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} />
-              <MenuItem href="/dashboard/attendance" label="장애인직원근태관리" icon="⏰" active={isActive("/dashboard/attendance")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} />
+              <MenuItem href="/dashboard/attendance" label="장애인직원근태관리" active={isActive("/dashboard/attendance")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} notificationCount={notificationCounts.attendance} />
               <MenuItem href="/dashboard/work-orders" label="장애인직원업무관리" active={isActive("/dashboard/work-orders")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} notificationCount={notificationCounts.workOrder} />
               <MenuItem href="/dashboard/announcements" label="장애인직원공지관리" active={isActive("/dashboard/announcements")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} notificationCount={notificationCounts.announcement} />
               <MenuItem href="/dashboard/leave" label="장애인직원휴가관리" active={isActive("/dashboard/leave")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} notificationCount={notificationCounts.leave} />
@@ -233,8 +235,8 @@ export default function Sidebar() {
               <MenuItem
                 href="/employee/attendance"
                 label="출퇴근 관리"
-                icon="⏰"
                 active={isActive("/employee/attendance")}
+                notificationCount={notificationCounts.attendance}
               />
               <MenuItem
                 href="/employee/work-orders"
