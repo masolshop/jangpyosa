@@ -12,11 +12,12 @@ async function main() {
   await prisma.leaveType.deleteMany({});
   await prisma.annualLeaveBalance.deleteMany({});
   await prisma.disabledEmployee.deleteMany({});
-  await prisma.user.deleteMany({ where: { phone: { startsWith: '010-1000' } } });
-  await prisma.user.deleteMany({ where: { phone: { startsWith: '010-2000' } } });
   await prisma.buyerProfile.deleteMany({});
   await prisma.supplierProfile.deleteMany({});
   await prisma.company.deleteMany({ where: { bizNo: { in: ['123-45-67890', '234-56-78901', '345-67-89012'] } } });
+  await prisma.user.deleteMany({ where: { phone: { startsWith: '010-1000' } } });
+  await prisma.user.deleteMany({ where: { phone: { startsWith: '010-2000' } } });
+  await prisma.user.deleteMany({ where: { phone: { startsWith: '010-3000' } } });
   console.log('✅ Test data cleared');
 
   // 1. Create admin users first (without company)
