@@ -1,23 +1,16 @@
-/**
- * 🎯 통합 API 유틸리티
- * 
- * 모든 Company → BuyerProfile → DisabledEmployee 데이터를
- * 일관된 방식으로 가져오는 유틸리티 함수들
- */
+import { get, post, put, del, APIError } from './api-client';
 
-import { API_BASE } from './api';
-import { getToken } from './auth';
-
-// ============================================
-// 타입 정의
-// ============================================
+// ==================== 타입 정의 ====================
 
 export interface Company {
   id: string;
   name: string;
   bizNo: string;
-  type: 'BUYER' | 'SUPPLIER';
-  buyerType?: 'PRIVATE_COMPANY' | 'PUBLIC_INSTITUTION' | 'EDUCATION' | 'LOCAL_GOVERNMENT';
+  representative?: string;
+  type: string;
+  buyerType?: string;
+  isVerified: boolean;
+  attachmentEmail?: string;
 }
 
 export interface BuyerProfile {
@@ -25,6 +18,7 @@ export interface BuyerProfile {
   companyId: string;
   employeeCount: number;
   disabledCount: number;
+  hasLevyExemption: boolean;
 }
 
 export interface DisabledEmployee {
@@ -35,270 +29,270 @@ export interface DisabledEmployee {
   registrationNumber?: string;
   disabilityType: string;
   disabilityGrade?: string;
-  severity: 'MILD' | 'SEVERE';
-  gender: 'M' | 'F';
-  birthDate?: string | null;
-  hireDate: string;
-  resignDate?: string | null;
+  severity: string;
+  gender: string;
+  birthDate?: string;
+  hireDate: Date | string;
+  resignDate?: Date | string | null;
   monthlySalary: number;
   hasEmploymentInsurance: boolean;
   meetsMinimumWage: boolean;
-  monthlyWorkHours?: number | null;
-  workType?: 'OFFICE' | 'REMOTE' | 'HYBRID';
+  workHoursPerWeek?: number;
+  monthlyWorkHours?: number;
+  workType: string;
   memo?: string;
 }
 
-export interface CompanyWithEmployees {
-  company: Company;
-  profile: BuyerProfile;
-  employees: DisabledEmployee[];
-  summary: {
+export interface UserCompanyInfo {
+  companyId: string;
+  companyName: string;
+  buyerId: string;
+}
+
+export interface AnnualLeaveBalance {
+  id: string;
+  employeeId: string;
+  employeeName?: string;
+  phone?: string;
+  year: number;
+  totalGenerated: number;
+  baseLeave: number;
+  bonusLeave: number;
+  used: number;
+  remaining: number;
+  isUnderOneYear: boolean;
+  expiryDate: string;
+  workYears: number;
+  workMonths: number;
+}
+
+// ==================== 캐시 관리 ====================
+
+interface CacheEntry<T> {
+  data: T;
+  timestamp: number;
+}
+
+class APICache {
+  private cache = new Map<string, CacheEntry<any>>();
+  private ttl = 5 * 60 * 1000; // 5분
+
+  get<T>(key: string): T | null {
+    const entry = this.cache.get(key);
+    if (!entry) return null;
+
+    if (Date.now() - entry.timestamp > this.ttl) {
+      this.cache.delete(key);
+      return null;
+    }
+
+    return entry.data;
+  }
+
+  set<T>(key: string, data: T): void {
+    this.cache.set(key, { data, timestamp: Date.now() });
+  }
+
+  invalidate(pattern?: string): void {
+    if (!pattern) {
+      this.cache.clear();
+      return;
+    }
+
+    for (const key of this.cache.keys()) {
+      if (key.includes(pattern)) {
+        this.cache.delete(key);
+      }
+    }
+  }
+}
+
+const cache = new APICache();
+
+// ==================== 회사 관련 API ====================
+
+/**
+ * 현재 사용자의 회사 정보 조회 (캐싱)
+ */
+export async function getCurrentUserCompany(): Promise<UserCompanyInfo> {
+  const cacheKey = 'current-user-company';
+  const cached = cache.get<UserCompanyInfo>(cacheKey);
+  if (cached) return cached;
+
+  try {
+    const response = await get<{
+      company: Company;
+      buyerProfile: BuyerProfile;
+    }>('/companies/my');
+
+    const result: UserCompanyInfo = {
+      companyId: response.company.id,
+      companyName: response.company.name,
+      buyerId: response.buyerProfile.id
+    };
+
+    cache.set(cacheKey, result);
+    return result;
+  } catch (error) {
+    if (error instanceof APIError && error.statusCode === 404) {
+      throw new Error('회사 정보를 찾을 수 없습니다. 회사에 소속되어 있는지 확인해주세요.');
+    }
+    throw error;
+  }
+}
+
+/**
+ * 회사 목록 조회
+ */
+export async function getCompaniesList() {
+  return get<{ companies: Company[] }>('/calculators/companies/list');
+}
+
+// ==================== 직원 관련 API ====================
+
+/**
+ * 회사의 직원 목록 조회 (캐싱)
+ */
+export async function getCompanyEmployees(companyId: string) {
+  const cacheKey = `company-employees-${companyId}`;
+  const cached = cache.get<DisabledEmployee[]>(cacheKey);
+  if (cached) return cached;
+
+  const response = await get<{
+    employees: DisabledEmployee[];
+  }>(`/calculators/company/${companyId}/employees`);
+
+  cache.set(cacheKey, response.employees);
+  return response.employees;
+}
+
+/**
+ * 재직 중인 직원만 필터링
+ */
+export async function getActiveEmployees(companyId: string) {
+  const employees = await getCompanyEmployees(companyId);
+  return employees.filter(emp => !emp.resignDate);
+}
+
+/**
+ * 직원 생성
+ */
+export async function createEmployee(data: Partial<DisabledEmployee>) {
+  const result = await post<{ employee: DisabledEmployee }>('/employees', data);
+  cache.invalidate('company-employees');
+  cache.invalidate('annual-leave');
+  return result.employee;
+}
+
+/**
+ * 직원 수정
+ */
+export async function updateEmployee(id: string, data: Partial<DisabledEmployee>) {
+  const result = await put<{ employee: DisabledEmployee }>(`/employees/${id}`, data);
+  cache.invalidate('company-employees');
+  cache.invalidate('annual-leave');
+  return result.employee;
+}
+
+/**
+ * 직원 삭제
+ */
+export async function deleteEmployee(id: string) {
+  const result = await del(`/employees/${id}`);
+  cache.invalidate('company-employees');
+  cache.invalidate('annual-leave');
+  return result;
+}
+
+// ==================== 연차 관련 API ====================
+
+/**
+ * 회사 전체 직원 연차 현황 조회 (캐싱)
+ */
+export async function getCompanyAnnualLeaves(companyId: string, year?: number) {
+  const cacheKey = `annual-leave-company-${companyId}-${year || 'current'}`;
+  const cached = cache.get<AnnualLeaveBalance[]>(cacheKey);
+  if (cached) return cached;
+
+  const response = await get<{
+    company: Company;
+    year: number;
     totalEmployees: number;
-    severeCount: number;
-    mildCount: number;
-    recognizedCount: number;
-  };
+    balances: AnnualLeaveBalance[];
+  }>(`/annual-leave/company/${companyId}`, { year });
+
+  cache.set(cacheKey, response.balances);
+  return response.balances;
 }
 
-// ============================================
-// API 함수들
-// ============================================
+/**
+ * 개별 직원 연차 현황 조회
+ */
+export async function getEmployeeAnnualLeave(employeeId: string, year?: number) {
+  return get<{
+    balance: AnnualLeaveBalance;
+    employee: {
+      id: string;
+      name: string;
+      phone?: string;
+      hireDate: Date;
+    };
+    usedLeaves: any[];
+    promotion: {
+      needsFirstNotice: boolean;
+      needsSecondNotice: boolean;
+      daysUntilExpiry: number;
+    };
+  }>(`/annual-leave/employee/${employeeId}`, { year });
+}
 
 /**
- * 현재 로그인한 사용자의 회사 정보 가져오기
+ * 연차 재계산 (배치)
  */
-export async function getCurrentUserCompany(): Promise<{ companyId: string; companyName: string; buyerId: string }> {
-  const token = getToken();
-  if (!token) {
-    throw new Error('로그인이 필요합니다');
-  }
+export async function recalculateAnnualLeaves(year?: number) {
+  const result = await post('/annual-leave/recalculate', { year });
+  cache.invalidate('annual-leave');
+  return result;
+}
 
-  // localStorage에서 사용자 정보 가져오기
-  const userStr = localStorage.getItem('user');
-  if (!userStr) {
-    throw new Error('사용자 정보를 찾을 수 없습니다');
-  }
+// ==================== 월별 데이터 관련 API ====================
 
-  const user = JSON.parse(userStr);
+/**
+ * 월별 직원 데이터 조회
+ */
+export async function getMonthlyData(year: number) {
+  const companyInfo = await getCurrentUserCompany();
   
-  // companyId가 있는지 확인
-  if (!user.companyId) {
-    throw new Error('회사 정보가 없습니다');
-  }
-
-  // 회사 상세 정보 가져오기 (buyerId 포함)
-  const res = await fetch(`${API_BASE}/calculators/company/${user.companyId}/employees`, {
-    headers: { Authorization: `Bearer ${token}` },
+  return get<{
+    year: number;
+    data: Record<string, { totalEmployeeCount: number; disabledCount: number }>;
+  }>(`/employees/monthly`, {
+    year,
+    buyerId: companyInfo.buyerId
   });
-
-  if (!res.ok) {
-    throw new Error('회사 정보 조회 실패');
-  }
-
-  const data = await res.json();
-  
-  return {
-    companyId: data.company.id,
-    companyName: data.company.name,
-    buyerId: data.profile.id,
-  };
-}
-
-/**
- * 회사의 모든 장애인 직원 가져오기
- */
-export async function getCompanyEmployees(companyId?: string): Promise<CompanyWithEmployees> {
-  const token = getToken();
-  if (!token) {
-    throw new Error('로그인이 필요합니다');
-  }
-
-  // companyId가 없으면 현재 사용자의 회사 ID 사용
-  if (!companyId) {
-    const { companyId: currentCompanyId } = await getCurrentUserCompany();
-    companyId = currentCompanyId;
-  }
-
-  const res = await fetch(`${API_BASE}/calculators/company/${companyId}/employees`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-
-  if (!res.ok) {
-    throw new Error('직원 목록 조회 실패');
-  }
-
-  const data = await res.json();
-  return data;
-}
-
-/**
- * 재직 중인 직원만 가져오기
- */
-export async function getActiveEmployees(companyId?: string): Promise<DisabledEmployee[]> {
-  const data = await getCompanyEmployees(companyId);
-  return data.employees.filter(emp => !emp.resignDate);
-}
-
-/**
- * 퇴사한 직원 가져오기
- */
-export async function getResignedEmployees(companyId?: string): Promise<DisabledEmployee[]> {
-  const data = await getCompanyEmployees(companyId);
-  return data.employees.filter(emp => emp.resignDate);
-}
-
-/**
- * 특정 직원 생성
- */
-export async function createEmployee(employeeData: Partial<DisabledEmployee>): Promise<DisabledEmployee> {
-  const token = getToken();
-  if (!token) {
-    throw new Error('로그인이 필요합니다');
-  }
-
-  const res = await fetch(`${API_BASE}/employees`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(employeeData),
-  });
-
-  if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.error || '직원 등록 실패');
-  }
-
-  return res.json();
-}
-
-/**
- * 특정 직원 수정
- */
-export async function updateEmployee(employeeId: string, employeeData: Partial<DisabledEmployee>): Promise<DisabledEmployee> {
-  const token = getToken();
-  if (!token) {
-    throw new Error('로그인이 필요합니다');
-  }
-
-  const res = await fetch(`${API_BASE}/employees/${employeeId}`, {
-    method: 'PUT',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(employeeData),
-  });
-
-  if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.error || '직원 수정 실패');
-  }
-
-  return res.json();
-}
-
-/**
- * 특정 직원 삭제
- */
-export async function deleteEmployee(employeeId: string): Promise<void> {
-  const token = getToken();
-  if (!token) {
-    throw new Error('로그인이 필요합니다');
-  }
-
-  const res = await fetch(`${API_BASE}/employees/${employeeId}`, {
-    method: 'DELETE',
-    headers: { Authorization: `Bearer ${token}` },
-  });
-
-  if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.error || '직원 삭제 실패');
-  }
-}
-
-/**
- * 월별 데이터 가져오기 (고용장려금부담금관리용)
- */
-export async function getMonthlyData(year: number, companyId?: string) {
-  const token = getToken();
-  if (!token) {
-    throw new Error('로그인이 필요합니다');
-  }
-
-  // companyId가 없으면 현재 사용자의 회사 ID 사용
-  if (!companyId) {
-    const { companyId: currentCompanyId } = await getCurrentUserCompany();
-    companyId = currentCompanyId;
-  }
-
-  const res = await fetch(`${API_BASE}/employees/monthly?year=${year}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-
-  if (!res.ok) {
-    throw new Error('월별 데이터 조회 실패');
-  }
-
-  return res.json();
 }
 
 /**
  * 월별 데이터 저장
  */
-export async function saveMonthlyData(monthlyData: any[]) {
-  const token = getToken();
-  if (!token) {
-    throw new Error('로그인이 필요합니다');
-  }
-
-  const res = await fetch(`${API_BASE}/employees/monthly`, {
-    method: 'PUT',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ monthlyData }),
-  });
-
-  if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.error || '월별 데이터 저장 실패');
-  }
-
-  return res.json();
+export async function saveMonthlyData(year: number, monthlyData: Record<number, number>) {
+  const result = await put('/employees/monthly', { year, monthlyData });
+  cache.invalidate('monthly-data');
+  return result;
 }
 
-// ============================================
-// 유틸리티 함수
-// ============================================
+// ==================== 캐시 제어 ====================
 
 /**
- * 인정 인원 계산
+ * 특정 패턴의 캐시 무효화
  */
-export function calculateRecognizedCount(employee: DisabledEmployee): number {
-  // 중증 + 60시간 이상 = 2명
-  if (employee.severity === 'SEVERE' && (employee.monthlyWorkHours || 0) >= 60) {
-    return 2.0;
-  }
-  // 기타 = 1명
-  return 1.0;
+export function invalidateCache(pattern?: string) {
+  cache.invalidate(pattern);
 }
 
 /**
- * 직원 통계 계산
+ * 모든 캐시 초기화
  */
-export function calculateEmployeeStats(employees: DisabledEmployee[]) {
-  const activeEmployees = employees.filter(emp => !emp.resignDate);
-  
-  return {
-    total: activeEmployees.length,
-    severe: activeEmployees.filter(emp => emp.severity === 'SEVERE').length,
-    mild: activeEmployees.filter(emp => emp.severity === 'MILD').length,
-    female: activeEmployees.filter(emp => emp.gender === 'F').length,
-    male: activeEmployees.filter(emp => emp.gender === 'M').length,
-    recognized: activeEmployees.reduce((sum, emp) => sum + calculateRecognizedCount(emp), 0),
-  };
+export function clearCache() {
+  cache.invalidate();
 }
