@@ -71,6 +71,13 @@ export default function WorkOrdersPage() {
   // 업무지시 상세 모달
   const [selectedWorkOrder, setSelectedWorkOrder] = useState<WorkOrderDetail | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  
+  // 업무지시 수정 모달
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editTitle, setEditTitle] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editPriority, setEditPriority] = useState("NORMAL");
+  const [editDueDate, setEditDueDate] = useState("");
 
   // 음성 읽기 관련 상태
   const [autoReadEnabled, setAutoReadEnabled] = useState(false);
@@ -312,6 +319,98 @@ export default function WorkOrdersPage() {
       console.error("❌ 업무지시 상세 로드 실패:", e);
       setError(e.message || "업무지시 상세 정보를 불러오는 중 오류가 발생했습니다");
       setTimeout(() => setError(""), 5000);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function deleteWorkOrder(workOrderId: string) {
+    if (!confirm("정말 이 업무지시를 삭제하시겠습니까?")) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const token = getToken();
+      if (!token) return;
+
+      const encodedId = encodeURIComponent(workOrderId);
+      const res = await fetch(`${API_BASE}/work-orders/${encodedId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (res.ok) {
+        setMessage("✅ 업무지시가 삭제되었습니다");
+        setIsDetailModalOpen(false);
+        setSelectedWorkOrder(null);
+        await loadWorkOrders();
+        setTimeout(() => setMessage(""), 3000);
+      } else {
+        const data = await res.json();
+        throw new Error(data.error || "업무지시 삭제 실패");
+      }
+    } catch (e: any) {
+      setError(e.message);
+      setTimeout(() => setError(""), 3000);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function openEditModal(workOrder: WorkOrderDetail) {
+    setEditTitle(workOrder.title);
+    setEditDescription(workOrder.content || workOrder.description || "");
+    setEditPriority(workOrder.priority);
+    setEditDueDate(workOrder.dueDate ? new Date(workOrder.dueDate).toISOString().split('T')[0] : "");
+    setIsEditModalOpen(true);
+    setIsDetailModalOpen(false);
+  }
+
+  async function updateWorkOrder() {
+    if (!selectedWorkOrder) return;
+    
+    if (!editTitle || !editDescription) {
+      setError("제목과 내용을 입력해주세요");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError("");
+      
+      const token = getToken();
+      if (!token) return;
+
+      const encodedId = encodeURIComponent(selectedWorkOrder.id);
+      const res = await fetch(`${API_BASE}/work-orders/${encodedId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          title: editTitle,
+          content: editDescription,
+          priority: editPriority,
+          dueDate: editDueDate || null,
+        }),
+      });
+
+      if (res.ok) {
+        setMessage("✅ 업무지시가 수정되었습니다");
+        setIsEditModalOpen(false);
+        setSelectedWorkOrder(null);
+        await loadWorkOrders();
+        setTimeout(() => setMessage(""), 3000);
+      } else {
+        const data = await res.json();
+        throw new Error(data.error || "업무지시 수정 실패");
+      }
+    } catch (e: any) {
+      setError(e.message);
     } finally {
       setLoading(false);
     }
@@ -819,24 +918,58 @@ export default function WorkOrdersPage() {
                   {selectedWorkOrder.title}
                 </h2>
               </div>
-              <button
-                onClick={() => {
-                  setIsDetailModalOpen(false);
-                  setSelectedWorkOrder(null);
-                }}
-                style={{
-                  padding: "8px 16px",
-                  background: "#6b7280",
-                  color: "white",
-                  border: "none",
-                  borderRadius: 6,
-                  fontSize: 14,
-                  fontWeight: "600",
-                  cursor: "pointer",
-                }}
-              >
-                닫기
-              </button>
+              
+              <div style={{ display: "flex", gap: 8 }}>
+                <button
+                  onClick={() => openEditModal(selectedWorkOrder)}
+                  style={{
+                    padding: "8px 16px",
+                    background: "#3b82f6",
+                    color: "white",
+                    border: "none",
+                    borderRadius: 6,
+                    fontSize: 14,
+                    fontWeight: "600",
+                    cursor: "pointer",
+                  }}
+                >
+                  ✏️ 수정
+                </button>
+                <button
+                  onClick={() => deleteWorkOrder(selectedWorkOrder.id)}
+                  disabled={loading}
+                  style={{
+                    padding: "8px 16px",
+                    background: loading ? "#9ca3af" : "#ef4444",
+                    color: "white",
+                    border: "none",
+                    borderRadius: 6,
+                    fontSize: 14,
+                    fontWeight: "600",
+                    cursor: loading ? "not-allowed" : "pointer",
+                  }}
+                >
+                  🗑️ 삭제
+                </button>
+                <button
+                  onClick={() => {
+                    setIsDetailModalOpen(false);
+                    setSelectedWorkOrder(null);
+                  }}
+                  style={{
+                    padding: "8px 16px",
+                    background: "#6b7280",
+                    color: "white",
+                    border: "none",
+                    borderRadius: 6,
+                    fontSize: 14,
+                    fontWeight: "600",
+                    cursor: "pointer",
+                  }}
+                >
+                  닫기
+                </button>
+              </div>
             </div>
 
             <div style={{
@@ -927,6 +1060,151 @@ export default function WorkOrdersPage() {
                   </tbody>
                 </table>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 업무지시 수정 모달 */}
+      {isEditModalOpen && selectedWorkOrder && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: "rgba(0,0,0,0.5)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 1000,
+        }}>
+          <div style={{
+            background: "white",
+            borderRadius: 12,
+            padding: 32,
+            maxWidth: 600,
+            width: "90%",
+            maxHeight: "90vh",
+            overflowY: "auto",
+          }}>
+            <h2 style={{ marginTop: 0, marginBottom: 24 }}>✏️ 업무지시 수정</h2>
+            
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ display: "block", marginBottom: 8, fontWeight: "600" }}>
+                긴급도
+              </label>
+              <select
+                value={editPriority}
+                onChange={(e) => setEditPriority(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: 12,
+                  border: "1px solid #d1d5db",
+                  borderRadius: 8,
+                  fontSize: 14,
+                }}
+              >
+                <option value="LOW">낮음</option>
+                <option value="NORMAL">보통</option>
+                <option value="HIGH">높음</option>
+                <option value="URGENT">긴급</option>
+              </select>
+            </div>
+
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ display: "block", marginBottom: 8, fontWeight: "600" }}>
+                제목
+              </label>
+              <input
+                type="text"
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                placeholder="업무지시 제목을 입력하세요"
+                style={{
+                  width: "100%",
+                  padding: 12,
+                  border: "1px solid #d1d5db",
+                  borderRadius: 8,
+                  fontSize: 14,
+                }}
+              />
+            </div>
+
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ display: "block", marginBottom: 8, fontWeight: "600" }}>
+                내용
+              </label>
+              <textarea
+                value={editDescription}
+                onChange={(e) => setEditDescription(e.target.value)}
+                placeholder="업무지시 내용을 입력하세요"
+                rows={10}
+                style={{
+                  width: "100%",
+                  padding: 12,
+                  border: "1px solid #d1d5db",
+                  borderRadius: 8,
+                  fontSize: 14,
+                  resize: "vertical",
+                }}
+              />
+            </div>
+
+            <div style={{ marginBottom: 24 }}>
+              <label style={{ display: "block", marginBottom: 8, fontWeight: "600" }}>
+                마감일 (선택)
+              </label>
+              <input
+                type="date"
+                value={editDueDate}
+                onChange={(e) => setEditDueDate(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: 12,
+                  border: "1px solid #d1d5db",
+                  borderRadius: 8,
+                  fontSize: 14,
+                }}
+              />
+            </div>
+
+            <div style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}>
+              <button
+                onClick={() => {
+                  setIsEditModalOpen(false);
+                  setIsDetailModalOpen(true);
+                  setError("");
+                }}
+                style={{
+                  padding: "12px 24px",
+                  background: "#6b7280",
+                  color: "white",
+                  border: "none",
+                  borderRadius: 8,
+                  fontSize: 14,
+                  fontWeight: "600",
+                  cursor: "pointer",
+                }}
+              >
+                취소
+              </button>
+              <button
+                onClick={updateWorkOrder}
+                disabled={loading}
+                style={{
+                  padding: "12px 24px",
+                  background: loading ? "#9ca3af" : "#3b82f6",
+                  color: "white",
+                  border: "none",
+                  borderRadius: 8,
+                  fontSize: 14,
+                  fontWeight: "600",
+                  cursor: loading ? "not-allowed" : "pointer",
+                }}
+              >
+                {loading ? "수정 중..." : "수정"}
+              </button>
             </div>
           </div>
         </div>
