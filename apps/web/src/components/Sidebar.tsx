@@ -14,9 +14,14 @@ export default function Sidebar() {
   const [companyName, setCompanyName] = useState<string | null>(null);
   const [managerName, setManagerName] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
-  const [unreadCount, setUnreadCount] = useState(0);
+  const [notificationCounts, setNotificationCounts] = useState<{
+    total: number;
+    leave: number;
+    workOrder: number;
+    announcement: number;
+  }>({ total: 0, leave: 0, workOrder: 0, announcement: 0 });
 
-  // 읽지 않은 알림 개수 조회
+  // 읽지 않은 알림 개수 조회 (타입별)
   const fetchUnreadCount = async () => {
     try {
       const token = getToken();
@@ -30,7 +35,14 @@ export default function Sidebar() {
 
       if (response.ok) {
         const data = await response.json();
-        setUnreadCount(data.count || 0);
+        const byType = data.byType || {};
+        
+        setNotificationCounts({
+          total: data.total || 0,
+          leave: (byType.LEAVE_REQUEST || 0) + (byType.LEAVE_APPROVED || 0) + (byType.LEAVE_REJECTED || 0),
+          workOrder: byType.WORK_ORDER || 0,
+          announcement: byType.ANNOUNCEMENT || 0,
+        });
       }
     } catch (error) {
       console.error('알림 개수 조회 실패:', error);
@@ -170,12 +182,7 @@ export default function Sidebar() {
           </p>
         </a>
 
-        {/* 알림 드롭다운 (로그인한 사용자만) */}
-        {userRole && (
-          <div style={{ marginTop: 16, marginBottom: 8, display: 'flex', justifyContent: 'center' }}>
-            <NotificationDropdown onUnreadCountChange={(count) => setUnreadCount(count)} />
-          </div>
-        )}
+        {/* 알림 드롭다운 제거 - 각 메뉴에 개별 표시 */}
 
         <nav>
           {companyName && (
@@ -210,9 +217,9 @@ export default function Sidebar() {
               <MenuItem href="/dashboard/employees" label="장애인직원등록관리" icon="👥" active={isActive("/dashboard/employees")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} />
               <MenuItem href="/dashboard/monthly" label="고용장려금부담금관리" icon="📅" active={isActive("/dashboard/monthly")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} />
               <MenuItem href="/dashboard/attendance" label="장애인직원근태관리" icon="⏰" active={isActive("/dashboard/attendance")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} />
-              <MenuItem href="/dashboard/work-orders" label="장애인직원업무관리" icon="📝" active={isActive("/dashboard/work-orders")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} />
-              <MenuItem href="/dashboard/announcements" label="장애인직원공지관리" icon="📢" active={isActive("/dashboard/announcements")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} />
-              <MenuItem href="/dashboard/leave" label="장애인직원휴가관리" icon="🏖️" active={isActive("/dashboard/leave")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} badge={userRole && ["BUYER", "SUPPLIER", "SUPER_ADMIN"].includes(userRole) ? unreadCount : 0} />
+              <MenuItem href="/dashboard/work-orders" label="장애인직원업무관리" active={isActive("/dashboard/work-orders")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} notificationCount={notificationCounts.workOrder} />
+              <MenuItem href="/dashboard/announcements" label="장애인직원공지관리" active={isActive("/dashboard/announcements")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} notificationCount={notificationCounts.announcement} />
+              <MenuItem href="/dashboard/leave" label="장애인직원휴가관리" active={isActive("/dashboard/leave")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} notificationCount={notificationCounts.leave} />
               <MenuItem href="/dashboard/company" label="기업대시보드" icon="🏢" active={isActive("/dashboard/company")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} />
             </div>
           )}
@@ -232,15 +239,14 @@ export default function Sidebar() {
               <MenuItem
                 href="/employee/work-orders"
                 label="업무 관리"
-                icon="📋"
                 active={isActive("/employee/work-orders")}
+                notificationCount={notificationCounts.workOrder}
               />
               <MenuItem
                 href="/employee/leave"
                 label="휴가 신청"
-                icon="🏖️"
                 active={isActive("/employee/leave")}
-                badge={userRole === "EMPLOYEE" ? unreadCount : 0}
+                notificationCount={notificationCounts.leave}
               />
             </div>
           )}
@@ -323,19 +329,22 @@ export default function Sidebar() {
 interface MenuItemProps {
   href: string;
   label: string;
-  icon: string;
+  icon?: string;
   active?: boolean;
   onClick?: () => void;
   subItems?: { href: string; label: string }[];
   requiresRole?: string[];
   currentRole?: string | null;
-  badge?: number; // 알림 배지 개수
+  notificationCount?: number; // 알림 개수 (종으로 표시)
 }
 
-function MenuItem({ href, label, icon, active = false, onClick, subItems, requiresRole, currentRole, badge }: MenuItemProps) {
+function MenuItem({ href, label, icon, active = false, onClick, subItems, requiresRole, currentRole, notificationCount }: MenuItemProps) {
   const pathname = usePathname();
   const [showSubItems, setShowSubItems] = useState(false);
   const hasAccess = !requiresRole || (currentRole && requiresRole.includes(currentRole));
+  
+  // 알림이 있는 메뉴인지 확인
+  const hasNotifications = notificationCount !== undefined && notificationCount > 0;
 
   return (
     <>
@@ -397,30 +406,39 @@ function MenuItem({ href, label, icon, active = false, onClick, subItems, requir
         }}
       >
         <span style={{ flex: 1 }}>{label}</span>
-        {badge && badge > 0 && (
-          <span
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              minWidth: 22,
-              height: 22,
-              padding: '0 6px',
-              marginLeft: 8,
-              fontSize: 12,
-              fontWeight: 'bold',
-              color: 'white',
-              background: active ? 'rgba(255, 255, 255, 0.3)' : '#ef4444',
-              borderRadius: 11,
-              lineHeight: 1,
-            }}
-          >
-            {badge > 99 ? '99+' : badge}
+        
+        {/* 알림 종 + 개수 (알림이 있는 경우) */}
+        {hasNotifications && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ fontSize: 18 }}>🔔</span>
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                minWidth: 22,
+                height: 22,
+                padding: '0 6px',
+                fontSize: 12,
+                fontWeight: 'bold',
+                color: 'white',
+                background: active ? 'rgba(255, 255, 255, 0.3)' : '#ef4444',
+                borderRadius: 11,
+                lineHeight: 1,
+              }}
+            >
+              {notificationCount! > 99 ? '99+' : notificationCount}
+            </span>
+          </div>
+        )}
+        
+        {/* 기존 아이콘 (알림이 없고 icon이 제공된 경우만) */}
+        {!hasNotifications && icon && (
+          <span className="menu-icon" style={{ fontSize: 22, opacity: active ? "1" : "0", transition: "opacity 0.3s ease" }}>
+            {icon}
           </span>
         )}
-        <span className="menu-icon" style={{ fontSize: 22, opacity: active ? "1" : "0", transition: "opacity 0.3s ease" }}>
-          {icon}
-        </span>
+        
         {!hasAccess && <span style={{ fontSize: 14, marginLeft: 4 }}>🔒</span>}
         {subItems && <span style={{ fontSize: 12, marginLeft: 4 }}>{showSubItems ? "▼" : "▶"}</span>}
       </a>

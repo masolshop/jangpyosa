@@ -32,14 +32,37 @@ router.get('/', requireAuth, async (req, res) => {
 
 /**
  * GET /notifications/unread-count
- * 읽지 않은 알림 개수
+ * 읽지 않은 알림 개수 (타입별)
  */
 router.get('/unread-count', requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
-    const count = await getUnreadCount(userId);
+    const type = req.query.type as string | undefined;
     
-    res.json({ count });
+    if (type) {
+      // 특정 타입의 개수만 조회
+      const count = await getUnreadCount(userId, type);
+      res.json({ count, type });
+    } else {
+      // 전체 개수 + 타입별 개수
+      const totalCount = await getUnreadCount(userId);
+      const leaveCount = await getUnreadCount(userId, 'LEAVE_REQUEST');
+      const leaveApprovalCount = await getUnreadCount(userId, 'LEAVE_APPROVED');
+      const leaveRejectionCount = await getUnreadCount(userId, 'LEAVE_REJECTED');
+      const workOrderCount = await getUnreadCount(userId, 'WORK_ORDER');
+      const announcementCount = await getUnreadCount(userId, 'ANNOUNCEMENT');
+      
+      res.json({
+        total: totalCount,
+        byType: {
+          LEAVE_REQUEST: leaveCount,
+          LEAVE_APPROVED: leaveApprovalCount,
+          LEAVE_REJECTED: leaveRejectionCount,
+          WORK_ORDER: workOrderCount,
+          ANNOUNCEMENT: announcementCount,
+        }
+      });
+    }
   } catch (error: any) {
     console.error('읽지 않은 알림 개수 조회 실패:', error);
     res.status(500).json({ error: error.message });

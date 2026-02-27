@@ -211,13 +211,17 @@ export async function cleanupOldNotifications() {
 /**
  * 읽지 않은 알림 개수 조회
  */
-export async function getUnreadCount(userId: string) {
-  const count = await prisma.notification.count({
-    where: {
-      userId,
-      read: false,
-    },
-  });
+export async function getUnreadCount(userId: string, type?: string) {
+  const where: any = {
+    userId,
+    read: false,
+  };
+  
+  if (type) {
+    where.type = type;
+  }
+  
+  const count = await prisma.notification.count({ where });
   
   return count;
 }
