@@ -910,3 +910,42 @@ Proprietary - (주)장표사닷컴
 ---
 
 **🎉 MVP 구현 완료! 이제 바로 사용 가능합니다!**
+
+---
+
+## 📊 ID 체계 정리 (2026-02-27 업데이트)
+
+### 시스템 ID 구조
+
+```
+Company ID (최상위)
+  └─ BuyerProfile ID (고용의무기업 프로필)
+      └─ DisabledEmployee ID (장애인 직원)
+          └─ User.employeeId (로그인 계정 연동)
+```
+
+### 주요 ID 타입
+
+1. **Company ID**: 기업의 최상위 식별자
+   - BUYER (고용의무기업): 민간/공공/국가지자체교육청
+   - SUPPLIER (표준사업장)
+
+2. **BuyerProfile ID**: 고용의무기업의 상세 프로필
+   - 전체 직원 수 관리
+   - 장애인 직원 수 관리
+
+3. **DisabledEmployee ID**: 등록된 장애인 직원 식별자
+   - User 테이블과 `phone` 필드로 연동
+   - 중증/경증 구분 및 근로시간 관리
+
+4. **User.employeeId**: 로그인 계정의 직원 정보 연동
+   - DisabledEmployee.id 참조
+   - 업무지시 시스템 등에서 활용
+
+### 데이터 정합성 현황 ✅
+
+- **Company → BuyerProfile**: 6개 기업 모두 정상
+- **BuyerProfile.disabledCount**: 실제 DisabledEmployee 수와 일치
+- **User.employeeId 연동**: 16개 계정 모두 정상
+
+상세 정보: [docs/ID_SYSTEM_ARCHITECTURE.md](./docs/ID_SYSTEM_ARCHITECTURE.md)
