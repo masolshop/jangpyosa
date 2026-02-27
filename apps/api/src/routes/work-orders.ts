@@ -216,6 +216,8 @@ router.get('/:id', requireAuth, async (req, res) => {
     const userRole = req.user!.role;
     const workOrderId = req.params.id;
     
+    console.log(`[GET /:id] workOrderId: ${workOrderId}, userId: ${userId}, userRole: ${userRole}`);
+    
     if (!['BUYER', 'SUPPLIER', 'SUPER_ADMIN', 'EMPLOYEE'].includes(userRole)) {
       return res.status(403).json({ error: '접근 권한이 없습니다' });
     }
@@ -223,31 +225,18 @@ router.get('/:id', requireAuth, async (req, res) => {
     const workOrder = await prisma.workOrder.findUnique({
       where: { id: workOrderId },
       include: {
-        sender: {
-          select: {
-            id: true,
-            name: true
-          }
-        },
-        recipients: {
-          select: {
-            id: true,
-            name: true,
-            status: true,
-            completedAt: true,
-            completionReport: true
-          }
-        }
+        recipients: true
       }
     });
 
     if (!workOrder) {
+      console.log(`[GET /:id] Work order not found: ${workOrderId}`);
       return res.status(404).json({ error: '업무지시를 찾을 수 없습니다' });
     }
 
     // 권한 확인: 발신자 또는 수신자만 조회 가능
-    const isRecipient = workOrder.recipients?.some(r => r.id === userId);
-    const isSender = workOrder.senderId === userId;
+    const isRecipient = workOrder.recipients?.some(r => r.userId === userId);
+    const isSender = workOrder.createdById === userId;
     
     if (userRole === 'EMPLOYEE' && !isRecipient) {
       return res.status(403).json({ error: '해당 업무지시를 조회할 권한이 없습니다' });
@@ -261,10 +250,28 @@ router.get('/:id', requireAuth, async (req, res) => {
       }
     }
 
+    // recipients 정보에 이름 추가 (User 조회)
+    const recipientsWithNames = await Promise.all(
+      workOrder.recipients.map(async (recipient) => {
+        const user = await prisma.user.findUnique({
+          where: { id: recipient.userId },
+          select: { id: true, name: true }
+        });
+        return {
+          id: user?.id || recipient.userId,
+          name: user?.name || '알 수 없음',
+          status: recipient.status,
+          completedAt: recipient.completedAt,
+          completionReport: recipient.completionReport
+        };
+      })
+    );
+
+    console.log(`[GET /:id] Successfully retrieved work order: ${workOrder.title}`);
     return res.json({ 
       workOrder: {
         ...workOrder,
-        createdByName: workOrder.sender?.name || workOrder.createdByName
+        recipients: recipientsWithNames
       }
     });
   } catch (error: any) {
