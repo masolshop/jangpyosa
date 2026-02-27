@@ -2,7 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { clearToken, getUserRole } from "@/lib/auth";
+import { clearToken, getUserRole, getToken } from "@/lib/auth";
+import NotificationDropdown from "./NotificationDropdown";
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -11,6 +14,28 @@ export default function Sidebar() {
   const [companyName, setCompanyName] = useState<string | null>(null);
   const [managerName, setManagerName] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  // 읽지 않은 알림 개수 조회
+  const fetchUnreadCount = async () => {
+    try {
+      const token = getToken();
+      if (!token) return;
+
+      const response = await fetch(`${API_BASE}/notifications/unread-count`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUnreadCount(data.count || 0);
+      }
+    } catch (error) {
+      console.error('알림 개수 조회 실패:', error);
+    }
+  };
 
   useEffect(() => {
     // 로그인한 사용자 정보 가져오기
@@ -32,6 +57,13 @@ export default function Sidebar() {
           console.error("사용자 정보 파싱 실패:", e);
         }
       }
+
+      // 알림 개수 조회
+      fetchUnreadCount();
+
+      // 30초마다 알림 개수 업데이트 (폴링)
+      const interval = setInterval(fetchUnreadCount, 30000);
+      return () => clearInterval(interval);
     }
   }, []);
 
@@ -138,6 +170,13 @@ export default function Sidebar() {
           </p>
         </a>
 
+        {/* 알림 드롭다운 (로그인한 사용자만) */}
+        {userRole && (
+          <div style={{ marginTop: 16, marginBottom: 8, display: 'flex', justifyContent: 'center' }}>
+            <NotificationDropdown onUnreadCountChange={(count) => setUnreadCount(count)} />
+          </div>
+        )}
+
         <nav>
           {companyName && (
             <div
@@ -173,7 +212,7 @@ export default function Sidebar() {
               <MenuItem href="/dashboard/attendance" label="장애인직원근태관리" icon="⏰" active={isActive("/dashboard/attendance")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} />
               <MenuItem href="/dashboard/work-orders" label="장애인직원업무관리" icon="📝" active={isActive("/dashboard/work-orders")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} />
               <MenuItem href="/dashboard/announcements" label="장애인직원공지관리" icon="📢" active={isActive("/dashboard/announcements")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} />
-              <MenuItem href="/dashboard/leave" label="장애인직원휴가관리" icon="🏖️" active={isActive("/dashboard/leave")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} />
+              <MenuItem href="/dashboard/leave" label="장애인직원휴가관리" icon="🏖️" active={isActive("/dashboard/leave")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} badge={userRole && ["BUYER", "SUPPLIER", "SUPER_ADMIN"].includes(userRole) ? unreadCount : 0} />
               <MenuItem href="/dashboard/company" label="기업대시보드" icon="🏢" active={isActive("/dashboard/company")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} />
             </div>
           )}
@@ -201,6 +240,7 @@ export default function Sidebar() {
                 label="휴가 신청"
                 icon="🏖️"
                 active={isActive("/employee/leave")}
+                badge={userRole === "EMPLOYEE" ? unreadCount : 0}
               />
             </div>
           )}
@@ -289,9 +329,10 @@ interface MenuItemProps {
   subItems?: { href: string; label: string }[];
   requiresRole?: string[];
   currentRole?: string | null;
+  badge?: number; // 알림 배지 개수
 }
 
-function MenuItem({ href, label, icon, active = false, onClick, subItems, requiresRole, currentRole }: MenuItemProps) {
+function MenuItem({ href, label, icon, active = false, onClick, subItems, requiresRole, currentRole, badge }: MenuItemProps) {
   const pathname = usePathname();
   const [showSubItems, setShowSubItems] = useState(false);
   const hasAccess = !requiresRole || (currentRole && requiresRole.includes(currentRole));
@@ -356,6 +397,27 @@ function MenuItem({ href, label, icon, active = false, onClick, subItems, requir
         }}
       >
         <span style={{ flex: 1 }}>{label}</span>
+        {badge && badge > 0 && (
+          <span
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              minWidth: 22,
+              height: 22,
+              padding: '0 6px',
+              marginLeft: 8,
+              fontSize: 12,
+              fontWeight: 'bold',
+              color: 'white',
+              background: active ? 'rgba(255, 255, 255, 0.3)' : '#ef4444',
+              borderRadius: 11,
+              lineHeight: 1,
+            }}
+          >
+            {badge > 99 ? '99+' : badge}
+          </span>
+        )}
         <span className="menu-icon" style={{ fontSize: 22, opacity: active ? "1" : "0", transition: "opacity 0.3s ease" }}>
           {icon}
         </span>

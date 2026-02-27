@@ -46,6 +46,7 @@ model User {
   referrals         User[]   @relation("Referrals")
   branch            Branch?  @relation(fields: [branchId], references: [id])
   sentInvitations   TeamInvitation[] @relation("InvitationSender")
+  notifications     Notification[] @relation("UserNotifications")
   
   @@index([companyId])
   @@index([isCompanyOwner])
@@ -621,18 +622,24 @@ model WorkOrderConfirmation {
 model Notification {
   id          String    @id @default(cuid())
   userId      String    // 수신자 User ID
-  type        String    // ANNOUNCEMENT, WORK_ORDER, ATTENDANCE, SYSTEM, etc.
+  type        String    // LEAVE_REQUEST, LEAVE_APPROVED, LEAVE_REJECTED, LEAVE_EXPIRING, WORK_ORDER, ANNOUNCEMENT, ATTENDANCE, SYSTEM
   title       String    // 알림 제목
   message     String    // 알림 내용
   link        String?   // 관련 링크 (선택)
   data        String?   // 추가 데이터 (JSON)
   read        Boolean   @default(false)
   readAt      DateTime? // 읽은 시각
+  priority    String    @default("NORMAL") // URGENT, NORMAL, LOW
+  category    String    @default("GENERAL") // LEAVE, WORK, SALARY, SYSTEM, GENERAL
   createdAt   DateTime  @default(now())
+  
+  user        User      @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
   
   @@index([userId, read, createdAt])
   @@index([userId, createdAt])
   @@index([type])
+  @@index([category])
+  @@index([priority])
 }
 
 // 🆕 휴가 유형 (회사별 관리)

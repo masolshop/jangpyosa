@@ -1,0 +1,19 @@
+백업 날짜: 2026-02-27_22-25-57
+현재 브랜치: main
+최근 커밋: 44908b2 chore: DB 정리 완료 - 모든 장애인 직원 계정 정리 및 연결 - 42명 전화번호 형식 통일 (11자리, 하이픈 없음) - User ↔ DisabledEmployee employeeId 연결 100% - User ↔ Company companyId 연결 100% - 중복 User 레코드 제거 - 모든 비밀번호 test1234로 통일 - 로그인 테스트 7/7 성공
+
+최근 10개 커밋:
+44908b2 chore: DB 정리 완료 - 모든 장애인 직원 계정 정리 및 연결 - 42명 전화번호 형식 통일 (11자리, 하이픈 없음) - User ↔ DisabledEmployee employeeId 연결 100% - User ↔ Company companyId 연결 100% - 중복 User 레코드 제거 - 모든 비밀번호 test1234로 통일 - 로그인 테스트 7/7 성공
+35fa81a fix: 연차 API 응답 필드명 수정 + DB 전화번호 정규화 - totalGenerated, used, remaining 필드 사용 - User 전화번호를 하이픈 없는 형식으로 정규화 - 중복 User 레코드 제거 - 페마연구소 장애인 직원 3명 employeeId 연결 완료
+4cf3648 fix: 연차 조회 시 User.employeeId 사용하도록 수정 - userData.user.id 대신 userData.user.employeeId 사용 - DisabledEmployee ID와 매칭 - 상세한 디버그 로그 추가
+05d5e16 feat: 장애인 직원 휴가 페이지에 연차 현황 카드 추가 - 관리자 대시보드 연차 데이터와 연동 - 입사일 기반 연차 자동 계산 (총/사용/잔여) - 그라데이션 배경(보라→자주)과 금색 강조 - API: GET /annual-leave/employee/:employeeId
+5e38318 revert: 휴가 페이지를 489aca4 버전으로 복구 - 입사일 기반 연차 계산 정상 작동 버전 (be9c2fe 기반)
+b666fe8 feat: 장애인직원 휴가 페이지에 연차 현황 카드 복원 - 입사일 기반 연차 계산 + 연차 현황 UI 표시 - 총 연차/사용 연차/잔여 연차를 카드 형태로 표시 - 그라데이션 배경과 금색 강조로 시각적 개선
+489aca4 revert: 휴가 페이지를 입사일 연동 버전으로 복구 (be9c2fe)
+0cfced6 feat: 장애인직원 휴가 페이지에 연차 잔여일수 표시 추가
+c9311c0 chore: 배포 타임스탬프 업데이트
+c326713 feat: 업무지시 수정/삭제 기능 추가
+
+원격 저장소:
+origin	https://github.com/masolshop/jangpyosa.git (fetch)
+origin	https://github.com/masolshop/jangpyosa.git (push)

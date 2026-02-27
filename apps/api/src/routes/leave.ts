@@ -306,6 +306,41 @@ router.post('/requests', requireAuth, async (req, res) => {
       }
     });
 
+    // 🔔 관리자에게 알림 전송
+    try {
+      const { notifyLeaveRequest } = await import('../services/notificationService.js');
+      
+      // 해당 회사의 관리자 조회 (BUYER, SUPPLIER 역할)
+      const managers = await prisma.user.findMany({
+        where: {
+          companyId: user.companyId,
+          role: { in: ['BUYER', 'SUPPLIER'] }
+        },
+        select: { id: true }
+      });
+      
+      // 직원 정보 조회
+      const employeeInfo = await prisma.disabledEmployee.findUnique({
+        where: { id: user.employeeId },
+        select: { name: true }
+      });
+      
+      if (managers.length > 0 && employeeInfo) {
+        await notifyLeaveRequest({
+          managerIds: managers.map(m => m.id),
+          employeeName: employeeInfo.name,
+          leaveTypeId: request.leaveTypeId,
+          leaveTypeName: request.leaveType.name,
+          startDate: startDate,
+          endDate: endDate,
+          days: parseFloat(days),
+          requestId: request.id
+        });
+      }
+    } catch (notifError) {
+      console.error('알림 전송 실패 (무시):', notifError);
+    }
+
     res.json({ request });
   } catch (error: any) {
     console.error('[POST /leave/requests] Error:', error);
@@ -471,8 +506,26 @@ router.patch('/requests/:id/approve', requireAuth, async (req, res) => {
         reviewedAt: new Date(),
         reviewNote: reviewNote || null
       },
-      include: { leaveType: true }
+      include: { 
+        leaveType: true
+      }
     });
+
+    // 🔔 직원에게 승인 알림 전송
+    try {
+      const { notifyLeaveApproved } = await import('../services/notificationService.js');
+      
+      await notifyLeaveApproved({
+        employeeId: updated.userId,
+        leaveTypeName: updated.leaveType.name,
+        startDate: updated.startDate.toISOString().split('T')[0],
+        endDate: updated.endDate.toISOString().split('T')[0],
+        days: updated.days,
+        requestId: updated.id
+      });
+    } catch (notifError) {
+      console.error('알림 전송 실패 (무시):', notifError);
+    }
 
     res.json({ request: updated });
   } catch (error: any) {
@@ -519,8 +572,27 @@ router.patch('/requests/:id/reject', requireAuth, async (req, res) => {
         reviewedAt: new Date(),
         reviewNote
       },
-      include: { leaveType: true }
+      include: { 
+        leaveType: true
+      }
     });
+
+    // 🔔 직원에게 반려 알림 전송
+    try {
+      const { notifyLeaveRejected } = await import('../services/notificationService.js');
+      
+      await notifyLeaveRejected({
+        employeeId: updated.userId,
+        leaveTypeName: updated.leaveType.name,
+        startDate: updated.startDate.toISOString().split('T')[0],
+        endDate: updated.endDate.toISOString().split('T')[0],
+        days: updated.days,
+        rejectionReason: reviewNote,
+        requestId: updated.id
+      });
+    } catch (notifError) {
+      console.error('알림 전송 실패 (무시):', notifError);
+    }
 
     res.json({ request: updated });
   } catch (error: any) {
