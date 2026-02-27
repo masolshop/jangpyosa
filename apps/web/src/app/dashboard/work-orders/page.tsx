@@ -279,22 +279,37 @@ export default function WorkOrdersPage() {
   async function loadWorkOrderDetail(workOrderId: string) {
     try {
       setLoading(true);
+      setError(""); // Clear any previous errors
       const token = getToken();
-      if (!token) return;
+      if (!token) {
+        setError("로그인이 필요합니다");
+        setTimeout(() => setError(""), 3000);
+        return;
+      }
 
+      console.log("🔍 Loading work order detail:", workOrderId);
       const res = await fetch(`${API_BASE}/work-orders/${workOrderId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
+      console.log("📡 Response status:", res.status);
       if (res.ok) {
         const data = await res.json();
+        console.log("✅ Work order loaded:", data.workOrder?.title);
         setSelectedWorkOrder(data.workOrder);
         setIsDetailModalOpen(true);
+      } else {
+        const errorData = await res.json().catch(() => ({ error: "응답 파싱 실패" }));
+        console.error("❌ Failed to load work order:", errorData);
+        setError(errorData.error || "업무지시 상세 정보를 불러올 수 없습니다");
+        setTimeout(() => setError(""), 5000);
       }
-    } catch (e) {
-      console.error("업무지시 상세 로드 실패:", e);
+    } catch (e: any) {
+      console.error("❌ 업무지시 상세 로드 실패:", e);
+      setError(e.message || "업무지시 상세 정보를 불러오는 중 오류가 발생했습니다");
+      setTimeout(() => setError(""), 5000);
     } finally {
       setLoading(false);
     }
@@ -517,19 +532,25 @@ export default function WorkOrdersPage() {
                       </button>
                       
                       <button
-                        onClick={() => loadWorkOrderDetail(workOrder.id)}
+                        onClick={() => {
+                          console.log("🔘 상세보기 버튼 클릭:", workOrder.id, workOrder.title);
+                          loadWorkOrderDetail(workOrder.id);
+                        }}
+                        disabled={loading}
                         style={{
                           padding: "8px 16px",
-                          background: "#3b82f6",
+                          background: loading ? "#9ca3af" : "#3b82f6",
                           color: "white",
                           border: "none",
                           borderRadius: 6,
                           fontSize: 14,
                           fontWeight: "600",
-                          cursor: "pointer",
+                          cursor: loading ? "not-allowed" : "pointer",
+                          opacity: loading ? 0.6 : 1,
                         }}
+                        title={loading ? "로딩 중..." : "상세 정보 보기"}
                       >
-                        상세보기
+                        {loading ? "⏳ 로딩 중..." : "상세보기"}
                       </button>
                     </div>
                   </div>
