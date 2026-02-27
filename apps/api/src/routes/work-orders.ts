@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { prisma } from '../index.js';
 import { requireAuth } from '../middleware/auth.js';
 import { getKSTNow } from '../utils/kst.js';
-import { sendNotificationToUsers } from './notifications.js';
+// import { sendNotificationToUsers } from './notifications.js';
 
 // 사용자의 회사 정보 조회 헬퍼 함수
 async function getUserCompany(userId: string, userRole: string) {
@@ -463,15 +463,15 @@ router.post('/create', requireAuth, async (req, res) => {
         ));
 
         // 실시간 SSE 알림 전송
-        sendNotificationToUsers(userIds, {
-          type: 'WORK_ORDER',
-          title: `📋 새 업무지시: ${validated.title}`,
-          message: validated.content.substring(0, 100),
-          link: `/dashboard/work-orders`,
-          workOrderId: workOrder.id,
-          priority: validated.priority,
-          createdAt: workOrder.createdAt
-        });
+//         sendNotificationToUsers(userIds, {
+//           type: 'WORK_ORDER',
+//           title: `📋 새 업무지시: ${validated.title}`,
+//           message: validated.content.substring(0, 100),
+//           link: `/dashboard/work-orders`,
+//           workOrderId: workOrder.id,
+//           priority: validated.priority,
+//           createdAt: workOrder.createdAt
+//         });
 
         console.log(`[업무지시] ${userIds.length}명에게 알림 전송 완료`);
       }

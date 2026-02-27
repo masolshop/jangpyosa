@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { prisma } from '../index.js';
 import { requireAuth } from '../middleware/auth.js';
-import { sendNotificationToUsers } from './notifications.js';
+// import { sendNotificationToUsers } from './notifications.js';
 
 // 사용자의 회사 정보 조회 헬퍼 함수 (getUserCompany)
 async function getUserCompany(userId: string, userRole: string) {
@@ -225,15 +225,15 @@ router.post('/create', requireAuth, async (req, res) => {
         ));
 
         // 실시간 SSE 알림 전송
-        sendNotificationToUsers(userIds, {
-          type: 'ANNOUNCEMENT',
-          title: `📢 새 공지: ${title}`,
-          message: content.substring(0, 100),
-          link: `/dashboard/announcements`,
-          announcementId: announcement.id,
-          priority,
-          createdAt: announcement.createdAt
-        });
+//         sendNotificationToUsers(userIds, {
+//           type: 'ANNOUNCEMENT',
+//           title: `📢 새 공지: ${title}`,
+//           message: content.substring(0, 100),
+//           link: `/dashboard/announcements`,
+//           announcementId: announcement.id,
+//           priority,
+//           createdAt: announcement.createdAt
+//         });
 
         console.log(`[공지사항] ${userIds.length}명에게 알림 전송 완료`);
       }
