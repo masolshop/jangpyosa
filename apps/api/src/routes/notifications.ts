@@ -6,7 +6,7 @@ import {
   markAllAsRead,
   deleteNotification,
   getUnreadCount,
-} from '../services/notificationService';
+} from '../services/notificationService.js';
 
 const router = Router();
 
