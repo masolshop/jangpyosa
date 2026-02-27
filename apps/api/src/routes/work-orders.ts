@@ -127,6 +127,88 @@ router.get('/list', requireAuth, async (req, res) => {
   }
 });
 
+// 내 업무지시 조회 (직원)
+router.get('/my-work-orders', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user!.id;
+    const userRole = req.user!.role;
+    
+    if (userRole !== 'EMPLOYEE') {
+      return res.status(403).json({ error: '직원만 접근 가능합니다' });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId }
+    });
+
+    if (!user || !user.employeeId) {
+      return res.status(404).json({ error: '직원 정보를 찾을 수 없습니다' });
+    }
+
+    const employee = await prisma.disabledEmployee.findUnique({
+      where: { id: user.employeeId }
+    });
+
+    if (!employee) {
+      return res.status(404).json({ error: '직원 정보를 찾을 수 없습니다' });
+    }
+
+    // 활성화된 업무지시 조회
+    const allWorkOrders = await prisma.workOrder.findMany({
+      where: {
+        buyerId: employee.buyerId,
+        isActive: true
+      },
+      orderBy: [
+        { priority: 'asc' },
+        { createdAt: 'desc' }
+      ]
+    });
+
+    // 내가 대상인 업무지시만 필터링
+    const myWorkOrders = allWorkOrders.filter(workOrder => {
+      if (workOrder.targetType === 'ALL') {
+        return true;
+      } else if (workOrder.targetType === 'GROUP' || workOrder.targetType === 'INDIVIDUAL') {
+        const targetEmployees = workOrder.targetEmployees 
+          ? JSON.parse(workOrder.targetEmployees) 
+          : [];
+        return targetEmployees.includes(employee.id);
+      }
+      return false;
+    });
+
+    // 각 업무지시에 대한 확인 상태 조회
+    const confirmations = await prisma.workOrderConfirmation.findMany({
+      where: {
+        workOrderId: { in: myWorkOrders.map(wo => wo.id) },
+        employeeId: employee.id
+      }
+    });
+
+    // 확인 상태를 Map으로 변환
+    const confirmationMap = new Map(
+      confirmations.map(c => [c.workOrderId, c])
+    );
+
+    // 각 업무지시에 확인 여부 추가
+    const workOrdersWithConfirmStatus = myWorkOrders.map(workOrder => {
+      const confirmation = confirmationMap.get(workOrder.id);
+      return {
+        ...workOrder,
+        isConfirmed: !!confirmation,
+        confirmedAt: confirmation?.confirmedAt || null,
+        note: confirmation?.note || null
+      };
+    });
+
+    return res.json({ workOrders: workOrdersWithConfirmStatus });
+  } catch (error: any) {
+    console.error('직원 업무지시 조회 오류:', error);
+    return res.status(500).json({ error: error.message });
+  }
+});
+
 // 업무지시 단일 조회 (상세보기)
 router.get('/:id', requireAuth, async (req, res) => {
   try {
@@ -478,88 +560,6 @@ router.delete('/:id', requireAuth, async (req, res) => {
     return res.json({ message: '업무지시가 삭제되었습니다' });
   } catch (error: any) {
     console.error('업무지시 삭제 오류:', error);
-    return res.status(500).json({ error: error.message });
-  }
-});
-
-// 내 업무지시 조회 (직원)
-router.get('/my-work-orders', requireAuth, async (req, res) => {
-  try {
-    const userId = req.user!.id;
-    const userRole = req.user!.role;
-    
-    if (userRole !== 'EMPLOYEE') {
-      return res.status(403).json({ error: '직원만 접근 가능합니다' });
-    }
-
-    const user = await prisma.user.findUnique({
-      where: { id: userId }
-    });
-
-    if (!user || !user.employeeId) {
-      return res.status(404).json({ error: '직원 정보를 찾을 수 없습니다' });
-    }
-
-    const employee = await prisma.disabledEmployee.findUnique({
-      where: { id: user.employeeId }
-    });
-
-    if (!employee) {
-      return res.status(404).json({ error: '직원 정보를 찾을 수 없습니다' });
-    }
-
-    // 활성화된 업무지시 조회
-    const allWorkOrders = await prisma.workOrder.findMany({
-      where: {
-        buyerId: employee.buyerId,
-        isActive: true
-      },
-      orderBy: [
-        { priority: 'asc' },
-        { createdAt: 'desc' }
-      ]
-    });
-
-    // 내가 대상인 업무지시만 필터링
-    const myWorkOrders = allWorkOrders.filter(workOrder => {
-      if (workOrder.targetType === 'ALL') {
-        return true;
-      } else if (workOrder.targetType === 'GROUP' || workOrder.targetType === 'INDIVIDUAL') {
-        const targetEmployees = workOrder.targetEmployees 
-          ? JSON.parse(workOrder.targetEmployees) 
-          : [];
-        return targetEmployees.includes(employee.id);
-      }
-      return false;
-    });
-
-    // 각 업무지시에 대한 확인 상태 조회
-    const confirmations = await prisma.workOrderConfirmation.findMany({
-      where: {
-        workOrderId: { in: myWorkOrders.map(wo => wo.id) },
-        employeeId: employee.id
-      }
-    });
-
-    // 확인 상태를 Map으로 변환
-    const confirmationMap = new Map(
-      confirmations.map(c => [c.workOrderId, c])
-    );
-
-    // 각 업무지시에 확인 여부 추가
-    const workOrdersWithConfirmStatus = myWorkOrders.map(workOrder => {
-      const confirmation = confirmationMap.get(workOrder.id);
-      return {
-        ...workOrder,
-        isConfirmed: !!confirmation,
-        confirmedAt: confirmation?.confirmedAt || null,
-        note: confirmation?.note || null
-      };
-    });
-
-    return res.json({ workOrders: workOrdersWithConfirmStatus });
-  } catch (error: any) {
-    console.error('직원 업무지시 조회 오류:', error);
     return res.status(500).json({ error: error.message });
   }
 });
