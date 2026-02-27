@@ -176,9 +176,8 @@ router.get("/monthly", requireAuth, async (req, res) => {
       birthDate: emp.birthDate || undefined,
       hireDate: emp.hireDate,
       resignDate: emp.resignDate || undefined,
-      // 우선순위: workHoursPerWeek (DB 저장값) > monthlyWorkHours 환산 > 기본값 40
-      workHoursPerWeek: emp.workHoursPerWeek || 
-        (emp.monthlyWorkHours ? Math.round(emp.monthlyWorkHours / 4.33) : 40),
+      // 월간 근로시간 사용 (workHoursPerWeek 완전 차단)
+      monthlyWorkHours: emp.monthlyWorkHours || 60,  // 기본값: 월 60시간
       monthlySalary: emp.monthlySalary,
       meetsMinimumWage: emp.meetsMinimumWage,
       hasEmploymentInsurance: emp.hasEmploymentInsurance,
@@ -280,7 +279,7 @@ router.put("/monthly", requireAuth, async (req, res) => {
       birthDate: emp.birthDate || undefined,
       hireDate: emp.hireDate,
       resignDate: emp.resignDate || undefined,
-      workHoursPerWeek: emp.workHoursPerWeek || 40,
+      monthlyWorkHours: emp.monthlyWorkHours || 60,  // 기본값: 월 60시간
       monthlySalary: emp.monthlySalary,
       meetsMinimumWage: emp.meetsMinimumWage,
       hasEmploymentInsurance: emp.hasEmploymentInsurance,

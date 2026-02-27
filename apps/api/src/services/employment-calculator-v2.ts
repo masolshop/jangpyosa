@@ -21,7 +21,7 @@ export interface CalcEmployee {
   birthDate?: Date;
   hireDate: Date;
   resignDate?: Date;
-  workHoursPerWeek: number;
+  monthlyWorkHours: number;  // 월간 근로시간 (주간 아님!)
   monthlySalary: number;
   meetsMinimumWage: boolean;
   hasEmploymentInsurance: boolean;
@@ -36,7 +36,7 @@ export interface EmployeeMonthlyDetail {
   gender: string;
   age: number;
   hireDate: string;
-  workHoursPerWeek: number;
+  monthlyWorkHours: number;  // 월간 근로시간
   monthlySalary: number;
   monthsWorked: number;
   
@@ -319,14 +319,13 @@ export function calculateMonthlyData(
     }
 
     // 부담금 인정 인원 (제외 조건 없음, 모든 재직자 인정)
-    // 중증: 월 60시간 이상 근무 시 2명 인정 (주 60시간 아님!)
+    // 중증: 월 60시간 이상 근무 시 2명 인정
     let levyRecognizedCount = 1.0;
-    const monthlyHours = emp.workHoursPerWeek * 4.33; // 주당 → 월간 환산
-    if (emp.severity === "SEVERE" && monthlyHours >= SEVERE_MULTIPLIER_THRESHOLD) {
+    if (emp.severity === "SEVERE" && emp.monthlyWorkHours >= SEVERE_MULTIPLIER_THRESHOLD) {
       levyRecognizedCount = SEVERE_MULTIPLIER;
-      console.log(`  ✅ ${emp.name} (중증): ${emp.workHoursPerWeek}주 * 4.33 = ${monthlyHours.toFixed(1)}월 >= 60 → 2배 인정`);
+      console.log(`  ✅ ${emp.name} (중증): 월 ${emp.monthlyWorkHours}시간 >= 60 → 2배 인정`);
     } else {
-      console.log(`  - ${emp.name} (${emp.severity}): ${emp.workHoursPerWeek}주 * 4.33 = ${monthlyHours.toFixed(1)}월 → 1배 인정`);
+      console.log(`  - ${emp.name} (${emp.severity}): 월 ${emp.monthlyWorkHours}시간 → 1배 인정`);
     }
     totalRecognizedCount += levyRecognizedCount;
 
@@ -337,7 +336,7 @@ export function calculateMonthlyData(
       gender: emp.gender,
       age,
       hireDate: emp.hireDate.toISOString().slice(0, 10),
-      workHoursPerWeek: emp.workHoursPerWeek,
+      monthlyWorkHours: emp.monthlyWorkHours,
       monthlySalary: emp.monthlySalary,
       monthsWorked,
       hasEmploymentInsurance: emp.hasEmploymentInsurance,
