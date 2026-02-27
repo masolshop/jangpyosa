@@ -1,324 +1,320 @@
-import { PrismaClient } from "@prisma/client";
-import bcrypt from "bcryptjs";
+import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log("🌱 Seeding database...");
+  console.log('🌱 Starting database seeding...');
 
-  // 1. 지사(Branch) 생성
-  console.log("📍 Creating branches...");
+  // 1. Create test companies
+  console.log('\n📦 Creating companies...');
   
-  const branches = [
-    { name: "서울남부지사", code: "SEOUL_SOUTH", region: "서울특별시", phone: "02-1234-5678" },
-    { name: "서울북부지사", code: "SEOUL_NORTH", region: "서울특별시", phone: "02-2345-6789" },
-    { name: "부산지역본부", code: "BUSAN", region: "부산광역시", phone: "051-1234-5678" },
-    { name: "대구지사", code: "DAEGU", region: "대구광역시", phone: "053-1234-5678" },
-    { name: "인천지사", code: "INCHEON", region: "인천광역시", phone: "032-1234-5678" },
-    { name: "광주지역본부", code: "GWANGJU", region: "광주광역시", phone: "062-1234-5678" },
-    { name: "대전지사", code: "DAEJEON", region: "대전광역시", phone: "042-1234-5678" },
-    { name: "울산지사", code: "ULSAN", region: "울산광역시", phone: "052-1234-5678" },
-    { name: "경기지사", code: "GYEONGGI", region: "경기도", phone: "031-1234-5678" },
-    { name: "강원지사", code: "GANGWON", region: "강원도", phone: "033-1234-5678" },
+  const pemaCompany = await prisma.company.upsert({
+    where: { bizNo: '123-45-67890' },
+    update: {},
+    create: {
+      name: '페마연구소',
+      bizNo: '123-45-67890',
+      representative: '김대표',
+      type: 'BUYER',
+      buyerType: 'PRIVATE_COMPANY',
+      isVerified: true,
+      attachmentEmail: 'hr@pema.com',
+      ownerUserId: 'temp-owner-id' // Will be updated after user creation
+    }
+  });
+
+  const publicCompany = await prisma.company.upsert({
+    where: { bizNo: '234-56-78901' },
+    update: {},
+    create: {
+      name: '공공기관A',
+      bizNo: '234-56-78901',
+      representative: '이기관',
+      type: 'BUYER',
+      buyerType: 'PUBLIC_INSTITUTION',
+      isVerified: true,
+      attachmentEmail: 'hr@public.go.kr',
+      ownerUserId: 'temp-owner-id'
+    }
+  });
+
+  const standardCompany = await prisma.company.upsert({
+    where: { bizNo: '345-67-89012' },
+    update: {},
+    create: {
+      name: '행복한표준사업장',
+      bizNo: '345-67-89012',
+      representative: '박표준',
+      type: 'SUPPLIER',
+      isVerified: true,
+      attachmentEmail: 'info@happy-standard.com',
+      ownerUserId: 'temp-owner-id'
+    }
+  });
+
+  console.log('✅ Companies created');
+
+  // 2. Create BuyerProfiles
+  console.log('\n👥 Creating BuyerProfiles...');
+  
+  const pemaBuyer = await prisma.buyerProfile.upsert({
+    where: { companyId: pemaCompany.id },
+    update: {},
+    create: {
+      companyId: pemaCompany.id,
+      employeeCount: 45,
+      disabledCount: 0, // Will be calculated
+      hasLevyExemption: false
+    }
+  });
+
+  const publicBuyer = await prisma.buyerProfile.upsert({
+    where: { companyId: publicCompany.id },
+    update: {},
+    create: {
+      companyId: publicCompany.id,
+      employeeCount: 38,
+      disabledCount: 0,
+      hasLevyExemption: false
+    }
+  });
+
+  const standardBuyer = await prisma.buyerProfile.upsert({
+    where: { companyId: standardCompany.id },
+    update: {},
+    create: {
+      companyId: standardCompany.id,
+      employeeCount: 25,
+      disabledCount: 0,
+      hasLevyExemption: false
+    }
+  });
+
+  console.log('✅ BuyerProfiles created');
+
+  // 3. Create SupplierProfile for standard company
+  console.log('\n🏢 Creating SupplierProfile...');
+  
+  await prisma.supplierProfile.upsert({
+    where: { companyId: standardCompany.id },
+    update: {},
+    create: {
+      companyId: standardCompany.id,
+      isStandard: true,
+      region: '서울',
+      industry: '제조업',
+      contactName: '박담당',
+      contactTel: '02-1234-5678'
+    }
+  });
+
+  console.log('✅ SupplierProfile created');
+
+  // 4. Create admin users
+  console.log('\n👤 Creating admin users...');
+  
+  const passwordHash = await bcrypt.hash('test1234', 10);
+
+  const pemaAdmin = await prisma.user.upsert({
+    where: { phone: '010-1000-0001' },
+    update: {},
+    create: {
+      phone: '010-1000-0001',
+      username: 'pema_admin',
+      email: 'admin@pema.com',
+      passwordHash,
+      name: '김관리자',
+      role: 'BUYER',
+      companyId: pemaCompany.id,
+      isCompanyOwner: true,
+      managerName: '김관리자',
+      managerTitle: '인사팀장',
+      managerEmail: 'admin@pema.com',
+      managerPhone: '010-1000-0001',
+      privacyAgreed: true,
+      privacyAgreedAt: new Date()
+    }
+  });
+
+  const publicAdmin = await prisma.user.upsert({
+    where: { phone: '010-2000-0001' },
+    update: {},
+    create: {
+      phone: '010-2000-0001',
+      username: 'public_admin',
+      email: 'admin@public.go.kr',
+      passwordHash,
+      name: '이관리자',
+      role: 'BUYER',
+      companyId: publicCompany.id,
+      isCompanyOwner: true,
+      managerName: '이관리자',
+      managerTitle: '총무과장',
+      managerEmail: 'admin@public.go.kr',
+      managerPhone: '010-2000-0001',
+      privacyAgreed: true,
+      privacyAgreedAt: new Date()
+    }
+  });
+
+  // Update ownerUserId
+  await prisma.company.update({
+    where: { id: pemaCompany.id },
+    data: { ownerUserId: pemaAdmin.id }
+  });
+
+  await prisma.company.update({
+    where: { id: publicCompany.id },
+    data: { ownerUserId: publicAdmin.id }
+  });
+
+  console.log('✅ Admin users created');
+
+  // 5. Create disabled employees
+  console.log('\n👨‍💼 Creating disabled employees...');
+
+  const employees = [
+    // Pema employees (15)
+    { name: '김철수', buyerId: pemaBuyer.id, hireDate: new Date('2020-01-01'), monthlySalary: 3000000, severity: 'SEVERE', type: '지체장애' },
+    { name: '이영희', buyerId: pemaBuyer.id, hireDate: new Date('2021-03-15'), monthlySalary: 2800000, severity: 'MILD', type: '시각장애' },
+    { name: '박민수', buyerId: pemaBuyer.id, hireDate: new Date('2022-06-01'), monthlySalary: 2600000, severity: 'SEVERE', type: '청각장애' },
+    { name: '정수진', buyerId: pemaBuyer.id, hireDate: new Date('2023-01-10'), monthlySalary: 2500000, severity: 'MILD', type: '지적장애' },
+    { name: '최동욱', buyerId: pemaBuyer.id, hireDate: new Date('2024-04-01'), monthlySalary: 2400000, severity: 'MILD', type: '지체장애' },
+    { name: '한미래', buyerId: pemaBuyer.id, hireDate: new Date('2025-01-15'), monthlySalary: 2300000, severity: 'MILD', type: '시각장애' },
+    { name: '강준호', buyerId: pemaBuyer.id, hireDate: new Date('2025-07-01'), monthlySalary: 2200000, severity: 'MILD', type: '청각장애' },
+    { name: '윤서연', buyerId: pemaBuyer.id, hireDate: new Date('2019-05-01'), monthlySalary: 3200000, severity: 'SEVERE', type: '지체장애' },
+    { name: '임하늘', buyerId: pemaBuyer.id, hireDate: new Date('2021-09-01'), monthlySalary: 2700000, severity: 'MILD', type: '지적장애' },
+    { name: '오지훈', buyerId: pemaBuyer.id, hireDate: new Date('2022-11-15'), monthlySalary: 2600000, severity: 'MILD', type: '시각장애' },
+    { name: '송민지', buyerId: pemaBuyer.id, hireDate: new Date('2023-08-01'), monthlySalary: 2500000, severity: 'MILD', type: '청각장애' },
+    { name: '안지원', buyerId: pemaBuyer.id, hireDate: new Date('2024-02-01'), monthlySalary: 2400000, severity: 'MILD', type: '지체장애' },
+    { name: '배성호', buyerId: pemaBuyer.id, hireDate: new Date('2024-10-01'), monthlySalary: 2300000, severity: 'MILD', type: '지적장애' },
+    { name: '홍서준', buyerId: pemaBuyer.id, hireDate: new Date('2025-03-01'), monthlySalary: 2200000, severity: 'MILD', type: '시각장애' },
+    { name: '양지수', buyerId: pemaBuyer.id, hireDate: new Date('2025-08-15'), monthlySalary: 2100000, severity: 'MILD', type: '청각장애' },
+    
+    // Public institution employees (12)
+    { name: '서준영', buyerId: publicBuyer.id, hireDate: new Date('2020-03-01'), monthlySalary: 3100000, severity: 'SEVERE', type: '지체장애' },
+    { name: '구민아', buyerId: publicBuyer.id, hireDate: new Date('2021-05-01'), monthlySalary: 2900000, severity: 'MILD', type: '시각장애' },
+    { name: '신동혁', buyerId: publicBuyer.id, hireDate: new Date('2022-01-15'), monthlySalary: 2700000, severity: 'MILD', type: '청각장애' },
+    { name: '권나연', buyerId: publicBuyer.id, hireDate: new Date('2023-04-01'), monthlySalary: 2600000, severity: 'MILD', type: '지적장애' },
+    { name: '유재석', buyerId: publicBuyer.id, hireDate: new Date('2024-01-01'), monthlySalary: 2500000, severity: 'MILD', type: '지체장애' },
+    { name: '문소희', buyerId: publicBuyer.id, hireDate: new Date('2024-07-01'), monthlySalary: 2400000, severity: 'MILD', type: '시각장애' },
+    { name: '탁현수', buyerId: publicBuyer.id, hireDate: new Date('2025-02-01'), monthlySalary: 2300000, severity: 'MILD', type: '청각장애' },
+    { name: '석지혜', buyerId: publicBuyer.id, hireDate: new Date('2025-06-15'), monthlySalary: 2200000, severity: 'MILD', type: '지체장애' },
+    { name: '진민재', buyerId: publicBuyer.id, hireDate: new Date('2021-11-01'), monthlySalary: 2800000, severity: 'SEVERE', type: '지적장애' },
+    { name: '표은지', buyerId: publicBuyer.id, hireDate: new Date('2022-08-15'), monthlySalary: 2700000, severity: 'MILD', type: '시각장애' },
+    { name: '반다솜', buyerId: publicBuyer.id, hireDate: new Date('2023-10-01'), monthlySalary: 2600000, severity: 'MILD', type: '청각장애' },
+    { name: '함태양', buyerId: publicBuyer.id, hireDate: new Date('2024-12-01'), monthlySalary: 2500000, severity: 'MILD', type: '지체장애' },
+    
+    // Standard company employees (15)
+    { name: '차승환', buyerId: standardBuyer.id, hireDate: new Date('2019-01-01'), monthlySalary: 3300000, severity: 'SEVERE', type: '지체장애' },
+    { name: '하유진', buyerId: standardBuyer.id, hireDate: new Date('2020-06-01'), monthlySalary: 3000000, severity: 'SEVERE', type: '시각장애' },
+    { name: '추민호', buyerId: standardBuyer.id, hireDate: new Date('2021-01-15'), monthlySalary: 2800000, severity: 'MILD', type: '청각장애' },
+    { name: '곽수연', buyerId: standardBuyer.id, hireDate: new Date('2022-03-01'), monthlySalary: 2700000, severity: 'MILD', type: '지적장애' },
+    { name: '도재원', buyerId: standardBuyer.id, hireDate: new Date('2023-05-15'), monthlySalary: 2600000, severity: 'MILD', type: '지체장애' },
+    { name: '소라', buyerId: standardBuyer.id, hireDate: new Date('2024-01-10'), monthlySalary: 2500000, severity: 'MILD', type: '시각장애' },
+    { name: '노준서', buyerId: standardBuyer.id, hireDate: new Date('2024-08-01'), monthlySalary: 2400000, severity: 'MILD', type: '청각장애' },
+    { name: '모정민', buyerId: standardBuyer.id, hireDate: new Date('2025-01-20'), monthlySalary: 2300000, severity: 'MILD', type: '지체장애' },
+    { name: '조서윤', buyerId: standardBuyer.id, hireDate: new Date('2025-05-01'), monthlySalary: 2200000, severity: 'MILD', type: '지적장애' },
+    { name: '용지안', buyerId: standardBuyer.id, hireDate: new Date('2020-09-01'), monthlySalary: 3100000, severity: 'SEVERE', type: '시각장애' },
+    { name: '두시우', buyerId: standardBuyer.id, hireDate: new Date('2021-12-15'), monthlySalary: 2900000, severity: 'MILD', type: '청각장애' },
+    { name: '마예린', buyerId: standardBuyer.id, hireDate: new Date('2022-10-01'), monthlySalary: 2700000, severity: 'MILD', type: '지체장애' },
+    { name: '갈도윤', buyerId: standardBuyer.id, hireDate: new Date('2023-07-15'), monthlySalary: 2600000, severity: 'MILD', type: '지적장애' },
+    { name: '여현우', buyerId: standardBuyer.id, hireDate: new Date('2024-05-01'), monthlySalary: 2500000, severity: 'MILD', type: '시각장애' },
+    { name: '국채원', buyerId: standardBuyer.id, hireDate: new Date('2025-09-01'), monthlySalary: 2400000, severity: 'MILD', type: '청각장애' }
   ];
 
-  for (const branchData of branches) {
-    await prisma.branch.upsert({
-      where: { code: branchData.code },
-      update: branchData,
-      create: branchData,
+  for (const emp of employees) {
+    await prisma.disabledEmployee.create({
+      data: {
+        buyerId: emp.buyerId,
+        name: emp.name,
+        phone: `010-${Math.floor(Math.random() * 9000 + 1000)}-${Math.floor(Math.random() * 9000 + 1000)}`,
+        disabilityType: emp.type,
+        disabilityGrade: emp.severity === 'SEVERE' ? '1급' : '3급',
+        severity: emp.severity,
+        gender: 'MALE',
+        hireDate: emp.hireDate,
+        monthlySalary: emp.monthlySalary,
+        hasEmploymentInsurance: true,
+        meetsMinimumWage: true,
+        monthlyWorkHours: 209,
+        workType: 'OFFICE'
+      }
     });
   }
 
-  console.log(`✅ Created ${branches.length} branches`);
+  console.log('✅ 42 disabled employees created');
 
-  // 2. 슈퍼어드민 계정 생성
-  console.log("👤 Creating super admin...");
-  
-  const adminPassword = await bcrypt.hash("admin1234", 10);
-  const admin = await prisma.user.upsert({
-    where: { phone: "01012345678" },
-    update: {},
-    create: {
-      phone: "01012345678",
-      email: "admin@jangpyosa.com",
-      passwordHash: adminPassword,
-      name: "슈퍼관리자",
-      role: "SUPER_ADMIN",
-    },
+  // 6. Create leave types
+  console.log('\n🏖️ Creating leave types...');
+
+  const leaveTypes = [
+    { companyId: pemaCompany.id, name: '연차', description: '근로기준법 기준 연차휴가', requiresDocument: false, maxDaysPerYear: null, isPaid: true, displayOrder: 1 },
+    { companyId: pemaCompany.id, name: '병가', description: '질병으로 인한 휴가', requiresDocument: true, maxDaysPerYear: 5, isPaid: false, displayOrder: 2 },
+    { companyId: pemaCompany.id, name: '경조사', description: '경조사 휴가', requiresDocument: true, maxDaysPerYear: 3, isPaid: true, displayOrder: 3 },
+    { companyId: pemaCompany.id, name: '공가', description: '공적 사유로 인한 휴가', requiresDocument: true, maxDaysPerYear: null, isPaid: true, displayOrder: 4 },
+    
+    { companyId: publicCompany.id, name: '연차', description: '근로기준법 기준 연차휴가', requiresDocument: false, maxDaysPerYear: null, isPaid: true, displayOrder: 1 },
+    { companyId: publicCompany.id, name: '병가', description: '질병으로 인한 휴가', requiresDocument: true, maxDaysPerYear: 7, isPaid: true, displayOrder: 2 },
+    { companyId: publicCompany.id, name: '경조사', description: '경조사 휴가', requiresDocument: true, maxDaysPerYear: 5, isPaid: true, displayOrder: 3 },
+    
+    { companyId: standardCompany.id, name: '연차', description: '근로기준법 기준 연차휴가', requiresDocument: false, maxDaysPerYear: null, isPaid: true, displayOrder: 1 },
+    { companyId: standardCompany.id, name: '병가', description: '질병으로 인한 휴가', requiresDocument: true, maxDaysPerYear: 5, isPaid: false, displayOrder: 2 }
+  ];
+
+  for (const type of leaveTypes) {
+    await prisma.leaveType.create({ data: type });
+  }
+
+  console.log('✅ Leave types created');
+
+  // 7. Update disabled counts
+  console.log('\n🔢 Updating disabled counts...');
+
+  const pemaCount = await prisma.disabledEmployee.count({ where: { buyerId: pemaBuyer.id } });
+  const publicCount = await prisma.disabledEmployee.count({ where: { buyerId: publicBuyer.id } });
+  const standardCount = await prisma.disabledEmployee.count({ where: { buyerId: standardBuyer.id } });
+
+  await prisma.buyerProfile.update({
+    where: { id: pemaBuyer.id },
+    data: { disabledCount: pemaCount }
   });
 
-  console.log(`✅ Super admin created: ${admin.phone}`);
-
-  // 3. 매니저(Agent) 계정 생성
-  console.log("👥 Creating agents...");
-
-  const seoulSouthBranch = await prisma.branch.findUnique({ where: { code: "SEOUL_SOUTH" } });
-  const busanBranch = await prisma.branch.findUnique({ where: { code: "BUSAN" } });
-
-  const agentPassword = await bcrypt.hash("agent1234", 10);
-  
-  const agent1 = await prisma.user.upsert({
-    where: { phone: "01098765432" },
-    update: {},
-    create: {
-      phone: "01098765432",
-      email: "agent1@jangpyosa.com",
-      passwordHash: agentPassword,
-      name: "김매니저",
-      role: "AGENT",
-      branchId: seoulSouthBranch!.id,
-      refCode: "AGENT001",
-    },
+  await prisma.buyerProfile.update({
+    where: { id: publicBuyer.id },
+    data: { disabledCount: publicCount }
   });
 
-  const agent2 = await prisma.user.upsert({
-    where: { phone: "01087654321" },
-    update: {},
-    create: {
-      phone: "01087654321",
-      email: "agent2@jangpyosa.com",
-      passwordHash: agentPassword,
-      name: "이매니저",
-      role: "AGENT",
-      branchId: busanBranch!.id,
-      refCode: "AGENT002",
-    },
+  await prisma.buyerProfile.update({
+    where: { id: standardBuyer.id },
+    data: { disabledCount: standardCount }
   });
 
-  console.log(`✅ Agents created: ${agent1.phone}, ${agent2.phone}`);
+  console.log('✅ Disabled counts updated');
 
-  // 4. 표준사업장(Supplier) 테스트 계정 생성
-  console.log("🏭 Creating supplier test account...");
+  console.log('\n✨ Database seeding completed successfully!');
+  console.log(`
+📊 Summary:
+- Companies: 3
+- BuyerProfiles: 3
+- SupplierProfiles: 1
+- Admin Users: 2
+- Disabled Employees: 42
+  - 페마연구소: ${pemaCount}명
+  - 공공기관A: ${publicCount}명
+  - 행복한표준사업장: ${standardCount}명
+- Leave Types: 9
 
-  const supplierPassword = await bcrypt.hash("test1234", 10);
-  
-  const supplier = await prisma.user.upsert({
-    where: { phone: "01099998888" },
-    update: {},
-    create: {
-      phone: "01099998888",
-      email: "supplier@test.com",
-      passwordHash: supplierPassword,
-      name: "테스트표준사업장",
-      role: "SUPPLIER",
-      referredById: agent1.id, // 김매니저가 추천
-      company: {
-        create: {
-          name: "(주)테스트표준사업장",
-          bizNo: "1234567890",
-          representative: "김대표",
-          type: "SUPPLIER",
-          isVerified: true,
-          supplierProfile: {
-            create: {
-              region: "서울특별시",
-              industry: "제조업",
-              contactTel: "010-9999-8888",
-              approved: true,
-            },
-          },
-        },
-      },
-    },
-    include: { company: true },
-  });
-
-  console.log(`✅ Supplier created: ${supplier.phone}`);
-
-  // 5. 부담금기업(Buyer) 테스트 계정 생성
-  console.log("🏢 Creating buyer test account...");
-
-  const buyerPassword = await bcrypt.hash("test1234", 10);
-  
-  const buyer = await prisma.user.upsert({
-    where: { phone: "01055556666" },
-    update: {},
-    create: {
-      phone: "01055556666",
-      email: "buyer@test.com",
-      passwordHash: buyerPassword,
-      name: "테스트부담금기업",
-      role: "BUYER",
-      companyType: "PRIVATE", // 민간기업
-      referredById: agent1.id, // 김매니저가 추천
-      company: {
-        create: {
-          name: "(주)테스트부담금기업",
-          bizNo: "9876543210",
-          representative: "이대표",
-          type: "BUYER",
-          isVerified: true,
-          buyerProfile: {
-            create: {
-              employeeCount: 150,
-              disabledCount: 2,
-            },
-          },
-        },
-      },
-    },
-    include: { company: true },
-  });
-
-  console.log(`✅ Buyer created: ${buyer.phone}`);
-
-  // 6. 부담금기업(국가/지자체) 테스트 계정 생성
-  console.log("🏢 Creating government buyer test account...");
-
-  const govBuyer = await prisma.user.upsert({
-    where: { phone: "01077778888" },
-    update: {},
-    create: {
-      phone: "01077778888",
-      email: "govbuyer@test.com",
-      passwordHash: buyerPassword,
-      name: "테스트국가기관",
-      role: "BUYER",
-      companyType: "GOVERNMENT", // 국가/지자체/교육청
-      referredById: agent2.id, // 이매니저가 추천
-      company: {
-        create: {
-          name: "서울시교육청",
-          bizNo: "1122334455",
-          representative: "박교육감",
-          type: "BUYER",
-          isVerified: true,
-          buyerProfile: {
-            create: {
-              employeeCount: 500,
-              disabledCount: 12,
-            },
-          },
-        },
-      },
-    },
-    include: { company: true },
-  });
-
-  console.log(`✅ Government buyer created: ${govBuyer.phone}`);
-
-  // 7. 연도별 설정 생성
-  console.log("📅 Creating year settings...");
-
-  await prisma.yearSetting.upsert({
-    where: { year: 2026 },
-    update: {},
-    create: {
-      year: 2026,
-      privateQuotaRate: 0.031, // 3.1%
-      publicQuotaRate: 0.038,  // 3.8%
-      baseLevyAmount: 1261000,
-      maxReductionRate: 0.9,
-      maxReductionByContract: 0.5,
-    },
-  });
-
-  await prisma.yearSetting.upsert({
-    where: { year: 2027 },
-    update: {},
-    create: {
-      year: 2027,
-      privateQuotaRate: 0.033, // 3.3%
-      publicQuotaRate: 0.038,  // 3.8%
-      baseLevyAmount: 1300000, // 예상값
-      maxReductionRate: 0.9,
-      maxReductionByContract: 0.5,
-    },
-  });
-
-  console.log("✅ Year settings created for 2026, 2027");
-
-  // 8. CMS 페이지 생성
-  console.log("📄 Creating CMS pages...");
-
-  await prisma.page.upsert({
-    where: { slug: "establishment" },
-    update: {},
-    create: {
-      slug: "establishment",
-      title: "장애인표준사업장 설립 안내",
-      contentMd: `# 장애인표준사업장 설립 안내
-
-## 설립 요건
-- 장애인 근로자가 10명 이상
-- 장애인 근로자 비율이 70% 이상
-- ...`,
-    },
-  });
-
-  await prisma.page.upsert({
-    where: { slug: "linkage" },
-    update: {},
-    create: {
-      slug: "linkage",
-      title: "연계고용 제도 안내",
-      contentMd: `# 연계고용 제도 안내
-
-## 연계고용이란?
-장애인 미고용 부담금 납부 대상 기업이 장애인표준사업장과 도급계약을 체결하면 부담금을 감면받을 수 있는 제도입니다.
-...`,
-    },
-  });
-
-  await prisma.page.upsert({
-    where: { slug: "health-voucher" },
-    update: {},
-    create: {
-      slug: "health-voucher",
-      title: "헬스바우처 제도 안내",
-      contentMd: `# 헬스바우처 제도 안내
-
-## 헬스바우처란?
-장애인 근로자의 건강관리를 위한 지원 제도입니다.
-...`,
-    },
-  });
-
-  console.log("✅ CMS pages created");
-
-  console.log("\n🎉 Seeding completed!");
-  console.log("\n📝 Initial accounts:");
-  console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-  console.log("🔑 슈퍼어드민");
-  console.log("   Phone: 010-1234-5678");
-  console.log("   Password: admin1234");
-  console.log("   기능: 전체 관리");
-  console.log("");
-  console.log("👤 매니저 1 (서울남부지사)");
-  console.log("   Phone: 010-9876-5432");
-  console.log("   Password: agent1234");
-  console.log("   RefCode: AGENT001");
-  console.log("   기능: 지사 관리 및 회원 관리");
-  console.log("");
-  console.log("👤 매니저 2 (부산지역본부)");
-  console.log("   Phone: 010-8765-4321");
-  console.log("   Password: agent1234");
-  console.log("   RefCode: AGENT002");
-  console.log("   기능: 지사 관리 및 회원 관리");
-  console.log("");
-  console.log("🏭 표준사업장");
-  console.log("   Phone: 010-9999-8888");
-  console.log("   Password: test1234");
-  console.log("   기능: 상품 등록 및 계약 관리 ✅");
-  console.log("");
-  console.log("🏢 부담금기업 (민간/공공기업)");
-  console.log("   Phone: 010-5555-6666");
-  console.log("   Password: test1234");
-  console.log("   CompanyType: PRIVATE");
-  console.log("   기능: 상품 구매 및 계약 요청");
-  console.log("");
-  console.log("🏛️ 부담금기업 (국가/지자체/교육청)");
-  console.log("   Phone: 010-7777-8888");
-  console.log("   Password: test1234");
-  console.log("   CompanyType: GOVERNMENT");
-  console.log("   기능: 상품 구매 및 계약 요청");
-  console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+🔑 Test Credentials:
+- 페마연구소 관리자: 010-1000-0001 / test1234
+- 공공기관A 관리자: 010-2000-0001 / test1234
+  `);
 }
 
 main()
   .catch((e) => {
-    console.error(e);
+    console.error('❌ Error during seeding:', e);
     process.exit(1);
   })
   .finally(async () => {
