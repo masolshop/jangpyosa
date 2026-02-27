@@ -34,11 +34,19 @@ interface Company {
   attachmentEmail: string | null;
 }
 
+interface AnnualLeaveBalance {
+  year: number;
+  totalDays: number;
+  usedDays: number;
+  remainingDays: number;
+}
+
 export default function EmployeeLeavePage() {
   const router = useRouter();
   const [leaveTypes, setLeaveTypes] = useState<LeaveType[]>([]);
   const [myRequests, setMyRequests] = useState<LeaveRequest[]>([]);
   const [company, setCompany] = useState<Company | null>(null);
+  const [annualLeave, setAnnualLeave] = useState<AnnualLeaveBalance | null>(null);
   const [loading, setLoading] = useState(true);
   const [showRequestForm, setShowRequestForm] = useState(false);
   
@@ -67,8 +75,10 @@ export default function EmployeeLeavePage() {
       const userRes = await fetch('/api/auth/me', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
+      let employeeId = null;
       if (userRes.ok) {
         const userData = await userRes.json();
+        employeeId = userData.user.id;
         if (userData.user.companyId) {
           const companyRes = await fetch('/api/companies/my', {
             headers: { 'Authorization': `Bearer ${token}` }
@@ -77,6 +87,28 @@ export default function EmployeeLeavePage() {
             const companyData = await companyRes.json();
             setCompany(companyData.company);
           }
+        }
+      }
+
+      // 연차 현황 조회
+      if (employeeId) {
+        const year = new Date().getFullYear();
+        try {
+          const annualLeaveRes = await fetch(`${API_BASE}/annual-leave/employee/${employeeId}?year=${year}`, {
+            headers: { 'Authorization': `Bearer ${token}` },
+            cache: 'no-store'
+          });
+          if (annualLeaveRes.ok) {
+            const annualLeaveData = await annualLeaveRes.json();
+            setAnnualLeave({
+              year: year,
+              totalDays: annualLeaveData.balance.totalDays,
+              usedDays: annualLeaveData.usedDays,
+              remainingDays: annualLeaveData.balance.remainingDays
+            });
+          }
+        } catch (err) {
+          console.error('연차 현황 조회 실패:', err);
         }
       }
 
@@ -259,6 +291,87 @@ export default function EmployeeLeavePage() {
           color: message.startsWith('✅') ? '#155724' : '#721c24'
         }}>
           {message}
+        </div>
+      )}
+
+      {annualLeave && (
+        <div style={{
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          padding: '24px',
+          borderRadius: '12px',
+          marginBottom: '24px',
+          color: 'white',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+        }}>
+          <h3 style={{ 
+            margin: '0 0 16px 0', 
+            fontSize: '18px', 
+            fontWeight: 'bold',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}>
+            📊 {annualLeave.year}년 연차 현황
+          </h3>
+          <div style={{ 
+            display: 'flex', 
+            gap: '20px', 
+            flexWrap: 'wrap',
+            justifyContent: 'space-around'
+          }}>
+            <div style={{ flex: 1, minWidth: '120px', textAlign: 'center' }}>
+              <div style={{ 
+                fontSize: '14px', 
+                opacity: 0.9, 
+                marginBottom: '8px',
+                fontWeight: '500'
+              }}>
+                총 연차
+              </div>
+              <div style={{ 
+                fontSize: '36px', 
+                fontWeight: 'bold',
+                textShadow: '2px 2px 4px rgba(0,0,0,0.2)'
+              }}>
+                {annualLeave.totalDays}일
+              </div>
+            </div>
+            <div style={{ flex: 1, minWidth: '120px', textAlign: 'center' }}>
+              <div style={{ 
+                fontSize: '14px', 
+                opacity: 0.9, 
+                marginBottom: '8px',
+                fontWeight: '500'
+              }}>
+                사용 연차
+              </div>
+              <div style={{ 
+                fontSize: '36px', 
+                fontWeight: 'bold',
+                textShadow: '2px 2px 4px rgba(0,0,0,0.2)'
+              }}>
+                {annualLeave.usedDays}일
+              </div>
+            </div>
+            <div style={{ flex: 1, minWidth: '120px', textAlign: 'center' }}>
+              <div style={{ 
+                fontSize: '14px', 
+                opacity: 0.9, 
+                marginBottom: '8px',
+                fontWeight: '500'
+              }}>
+                잔여 연차
+              </div>
+              <div style={{ 
+                fontSize: '36px', 
+                fontWeight: 'bold', 
+                color: '#ffd700',
+                textShadow: '2px 2px 4px rgba(0,0,0,0.3)'
+              }}>
+                {annualLeave.remainingDays}일
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
