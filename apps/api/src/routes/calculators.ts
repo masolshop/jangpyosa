@@ -582,6 +582,7 @@ r.get("/company/:companyId/employees", async (req, res) => {
       employees: employees.map(emp => ({
         id: emp.id,
         name: emp.name,
+        phone: emp.phone,
         severity: emp.severity,
         gender: emp.gender,
         birthDate: emp.birthDate,
