@@ -111,9 +111,9 @@ export default function EmployeeLeavePage() {
             console.log('✅ 연차 데이터:', annualLeaveData);
             setAnnualLeave({
               year: year,
-              totalDays: annualLeaveData.balance.totalDays,
-              usedDays: annualLeaveData.usedDays,
-              remainingDays: annualLeaveData.balance.remainingDays
+              totalDays: annualLeaveData.balance.totalGenerated,
+              usedDays: annualLeaveData.balance.used,
+              remainingDays: annualLeaveData.balance.remaining
             });
           } else {
             const errorData = await annualLeaveRes.json();
