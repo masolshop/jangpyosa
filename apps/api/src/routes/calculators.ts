@@ -2,7 +2,11 @@ import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../index.js";
 import { calcLevyEstimate, calcLinkageReduction } from "../services/calculation.js";
-import { calculateLevy } from "../services/employment-calculator-v2.js";
+import { 
+  calculateLevy,
+  calculateMonthlyData,
+  CalcEmployee 
+} from "../services/employment-calculator-v2.js";
 import PDFDocument from "pdfkit";
 
 const r = Router();
@@ -386,6 +390,135 @@ r.post("/standard-workplace-benefit-v2/report.pdf", async (req, res) => {
     doc.end();
   } catch (error: any) {
     console.error("PDF report error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// =====================
+// 월별 시뮬레이션 계산기
+// =====================
+r.post("/monthly-simulation", async (req, res) => {
+  try {
+    const schema = z.object({
+      companyId: z.string().optional(),
+      year: z.number().int().default(2026),
+      monthlyEmployeeCounts: z.array(z.number().int().min(0)).length(12).describe("1월~12월 상시근로자 수"),
+      companyType: z.enum(["PRIVATE_COMPANY", "PUBLIC_INSTITUTION", "GOVERNMENT"]).default("PRIVATE_COMPANY"),
+      // 장애인 직원 데이터 (companyId가 없을 경우 필수)
+      disabledEmployees: z.array(z.object({
+        id: z.string(),
+        name: z.string(),
+        severity: z.enum(["SEVERE", "MILD"]),
+        gender: z.enum(["M", "F"]),
+        birthDate: z.string().optional(),
+        hireDate: z.string(),
+        resignDate: z.string().optional(),
+        monthlyWorkHours: z.number(),
+        monthlySalary: z.number(),
+        hasEmploymentInsurance: z.boolean().default(true),
+        meetsMinimumWage: z.boolean().default(true),
+      })).optional(),
+    });
+
+    const body = schema.parse(req.body);
+    
+    let employees: CalcEmployee[] = [];
+    
+    // companyId가 있으면 DB에서 조회
+    if (body.companyId) {
+      const company = await prisma.company.findUnique({
+        where: { id: body.companyId },
+        include: {
+          buyerProfile: {
+            include: {
+              disabledEmployees: true
+            }
+          }
+        }
+      });
+      
+      if (!company || !company.buyerProfile) {
+        return res.status(404).json({ error: "COMPANY_NOT_FOUND" });
+      }
+      
+      employees = company.buyerProfile.disabledEmployees.map(emp => ({
+        id: emp.id,
+        name: emp.name,
+        severity: emp.severity as "SEVERE" | "MILD",
+        gender: emp.gender as "M" | "F",
+        birthDate: emp.birthDate ? new Date(emp.birthDate) : undefined,
+        hireDate: new Date(emp.hireDate),
+        resignDate: emp.resignDate ? new Date(emp.resignDate) : undefined,
+        monthlyWorkHours: emp.monthlyWorkHours || 0,
+        monthlySalary: emp.monthlySalary || 0,
+        hasEmploymentInsurance: emp.hasEmploymentInsurance,
+        meetsMinimumWage: emp.meetsMinimumWage,
+      }));
+    } else if (body.disabledEmployees) {
+      // 수동 입력 데이터 사용
+      employees = body.disabledEmployees.map(emp => ({
+        id: emp.id,
+        name: emp.name,
+        severity: emp.severity,
+        gender: emp.gender,
+        birthDate: emp.birthDate ? new Date(emp.birthDate) : undefined,
+        hireDate: new Date(emp.hireDate),
+        resignDate: emp.resignDate ? new Date(emp.resignDate) : undefined,
+        monthlyWorkHours: emp.monthlyWorkHours,
+        monthlySalary: emp.monthlySalary,
+        hasEmploymentInsurance: emp.hasEmploymentInsurance,
+        meetsMinimumWage: emp.meetsMinimumWage,
+      }));
+    } else {
+      return res.status(400).json({ error: "MISSING_EMPLOYEE_DATA", message: "companyId 또는 disabledEmployees가 필요합니다" });
+    }
+    
+    // 월별 계산
+    const monthlyResults = body.monthlyEmployeeCounts.map((employeeCount, index) => {
+      const month = index + 1;
+      return calculateMonthlyData(
+        employees,
+        employeeCount,
+        body.year,
+        month,
+        body.companyType
+      );
+    });
+    
+    // 연간 집계
+    const yearlyTotal = {
+      totalLevy: monthlyResults.reduce((sum, m) => sum + m.levy, 0),
+      totalIncentive: monthlyResults.reduce((sum, m) => sum + m.incentive, 0),
+      netAmount: monthlyResults.reduce((sum, m) => sum + m.netAmount, 0),
+    };
+    
+    res.json({
+      ok: true,
+      year: body.year,
+      companyType: body.companyType,
+      totalEmployees: employees.length,
+      monthly: monthlyResults.map(m => ({
+        month: m.month,
+        totalEmployeeCount: m.totalEmployeeCount,
+        disabledCount: m.disabledCount,
+        recognizedCount: m.recognizedCount,
+        quotaRate: m.quotaRate,
+        obligatedCount: m.obligatedCount,
+        shortfallCount: m.shortfallCount,
+        employmentRate: m.employmentRate,
+        levyApplicationRate: m.levyApplicationRate,
+        levyPerPerson: m.levyPerPerson,
+        levy: m.levy,
+        incentive: m.incentive,
+        netAmount: m.netAmount,
+      })),
+      yearly: yearlyTotal,
+    });
+  } catch (error: any) {
+    console.error("Monthly simulation error:", error);
+    if (error.name === "ZodError") {
+      return res.status(400).json({ error: "VALIDATION_ERROR", details: error.errors });
+    }
     res.status(500).json({ error: error.message });
   }
 });
