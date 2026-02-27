@@ -176,10 +176,9 @@ router.get("/monthly", requireAuth, async (req, res) => {
       birthDate: emp.birthDate || undefined,
       hireDate: emp.hireDate,
       resignDate: emp.resignDate || undefined,
-      // monthlyWorkHours를 workHoursPerWeek로 변환 (월 4.33주 기준)
-      workHoursPerWeek: emp.monthlyWorkHours 
-        ? Math.round(emp.monthlyWorkHours / 4.33)
-        : (emp.workHoursPerWeek || 40),
+      // 우선순위: workHoursPerWeek (DB 저장값) > monthlyWorkHours 환산 > 기본값 40
+      workHoursPerWeek: emp.workHoursPerWeek || 
+        (emp.monthlyWorkHours ? Math.round(emp.monthlyWorkHours / 4.33) : 40),
       monthlySalary: emp.monthlySalary,
       meetsMinimumWage: emp.meetsMinimumWage,
       hasEmploymentInsurance: emp.hasEmploymentInsurance,
