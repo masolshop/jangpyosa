@@ -684,3 +684,51 @@ model LeaveRequest {
   @@index([userId])
   @@index([startDate, endDate])
 }
+
+// 🆕 연차(휴가) 잔여 현황
+model AnnualLeaveBalance {
+  id                  String    @id @default(cuid())
+  companyId           String    // 회사 ID
+  buyerId             String    // BuyerProfile ID
+  employeeId          String    @unique // DisabledEmployee ID
+  userId              String?   // User ID (직원 계정, 있으면)
+  
+  // 근속 정보
+  hireDate            DateTime  // 입사일
+  workYears           Int       // 근속연수
+  workMonths          Int       // 총 근속개월수
+  
+  // 연차 발생
+  year                Int       // 귀속 연도 (예: 2026)
+  totalGenerated      Float     // 총 발생 연차
+  baseLeave           Float     // 기본 연차 (15일 or 개근일수)
+  bonusLeave          Float     // 가산 연차 (2년마다 1일)
+  
+  // 연차 사용 및 잔여
+  used                Float     @default(0) // 사용한 연차
+  remaining           Float     // 남은 연차 (= totalGenerated - used)
+  
+  // 추가 정보
+  isUnderOneYear      Boolean   // 1년 미만 여부
+  expiryDate          DateTime  // 연차 소멸일 (발생일로부터 1년 후)
+  
+  // 연차 촉진 알림
+  firstNoticeDate     DateTime  // 1차 촉진 알림일 (소멸 6개월 전)
+  secondNoticeDate    DateTime  // 2차 촉진 알림일 (소멸 2개월 전)
+  firstNoticeSent     Boolean   @default(false) // 1차 알림 발송 여부
+  secondNoticeSent    Boolean   @default(false) // 2차 알림 발송 여부
+  
+  // 퇴사 시 정산
+  dailyWage           Float?    // 1일 통상임금 (퇴사 시 계산용)
+  unusedPayment       Float?    // 미사용 연차 수당 (퇴사 시)
+  
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  
+  @@index([companyId, year])
+  @@index([buyerId, year])
+  @@index([employeeId, year])
+  @@index([expiryDate])
+  @@index([firstNoticeDate])
+  @@index([secondNoticeDate])
+}

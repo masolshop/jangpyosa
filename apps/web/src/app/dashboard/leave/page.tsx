@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { API_BASE } from '@/lib/api';
 import { getToken } from '@/lib/auth';
+import { getCurrentUserCompany } from '@/lib/unified-api';
 
 interface LeaveType {
   id: string;
@@ -34,13 +35,31 @@ interface Company {
   attachmentEmail: string | null;
 }
 
+interface AnnualLeaveBalance {
+  id: string;
+  employeeId: string;
+  employeeName: string;
+  phone: string | null;
+  year: number;
+  totalGenerated: number;
+  baseLeave: number;
+  bonusLeave: number;
+  used: number;
+  remaining: number;
+  isUnderOneYear: boolean;
+  expiryDate: string;
+  workYears: number;
+  workMonths: number;
+}
+
 export default function LeaveManagementPage() {
   const router = useRouter();
   const [leaveTypes, setLeaveTypes] = useState<LeaveType[]>([]);
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
+  const [annualLeaveBalances, setAnnualLeaveBalances] = useState<AnnualLeaveBalance[]>([]);
   const [company, setCompany] = useState<Company | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'types' | 'requests'>('types');
+  const [activeTab, setActiveTab] = useState<'types' | 'requests' | 'balances'>('types');
   
   // 휴가 유형 등록 폼
   const [showTypeForm, setShowTypeForm] = useState(false);
@@ -65,14 +84,28 @@ export default function LeaveManagementPage() {
         return;
       }
 
-      // 회사 정보
-      const companyRes = await fetch(`${API_BASE}/companies/my`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-        cache: 'no-store'
-      });
-      if (companyRes.ok) {
-        const data = await companyRes.json();
-        setCompany(data.company);
+      // 회사 정보 조회
+      const companyData = await getCurrentUserCompany();
+      if (companyData) {
+        // Company 정보에서 필요한 필드 추출
+        const companyInfo = await fetch(`${API_BASE}/companies/my`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+          cache: 'no-store'
+        });
+        if (companyInfo.ok) {
+          const data = await companyInfo.json();
+          setCompany(data.company);
+        }
+        
+        // 연차 잔여 현황 조회
+        const balancesRes = await fetch(`${API_BASE}/annual-leave/company/${companyData.companyId}`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+          cache: 'no-store'
+        });
+        if (balancesRes.ok) {
+          const data = await balancesRes.json();
+          setAnnualLeaveBalances(data.balances || []);
+        }
       }
 
       // 휴가 유형
@@ -333,6 +366,21 @@ export default function LeaveManagementPage() {
           }}
         >
           휴가 신청 목록
+        </button>
+        <button
+          onClick={() => setActiveTab('balances')}
+          style={{
+            padding: '12px 24px',
+            fontSize: '16px',
+            fontWeight: 'bold',
+            border: 'none',
+            borderBottom: activeTab === 'balances' ? '3px solid #4CAF50' : 'none',
+            background: 'none',
+            cursor: 'pointer',
+            color: activeTab === 'balances' ? '#4CAF50' : '#666'
+          }}
+        >
+          연차 현황
         </button>
       </div>
 
@@ -637,6 +685,192 @@ export default function LeaveManagementPage() {
                     </td>
                   </tr>
                 ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {activeTab === 'balances' && (
+        <div>
+          <div style={{
+            background: '#f0f8ff',
+            border: '1px solid #2196F3',
+            borderRadius: '8px',
+            padding: '15px',
+            marginBottom: '20px'
+          }}>
+            <h3 style={{ marginBottom: '10px', fontWeight: 'bold', color: '#1976D2' }}>
+              📋 연차(휴가) 관리 안내
+            </h3>
+            <ul style={{ marginLeft: '20px', lineHeight: '1.8' }}>
+              <li><strong>1년 미만 근무자:</strong> 매월 개근 시 1일 발생 (최대 11일)</li>
+              <li><strong>1년 이상 근무자:</strong> 기본 15일 + 3년 이상부터 2년마다 1일 추가 (최대 25일)</li>
+              <li><strong>연차 소멸:</strong> 발생일로부터 1년 경과 시 소멸</li>
+              <li><strong>연차 촉진:</strong> 소멸 6개월 전, 2개월 전 각각 알림 발송 필요</li>
+              <li><strong>퇴사 시:</strong> 미사용 연차에 대해 수당 지급 필요</li>
+            </ul>
+          </div>
+
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(4, 1fr)',
+            gap: '15px',
+            marginBottom: '20px'
+          }}>
+            <div style={{
+              background: 'white',
+              padding: '20px',
+              borderRadius: '8px',
+              border: '1px solid #e0e0e0'
+            }}>
+              <div style={{ fontSize: '14px', color: '#666', marginBottom: '8px' }}>전체 직원</div>
+              <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#333' }}>
+                {annualLeaveBalances.length}명
+              </div>
+            </div>
+            <div style={{
+              background: 'white',
+              padding: '20px',
+              borderRadius: '8px',
+              border: '1px solid #e0e0e0'
+            }}>
+              <div style={{ fontSize: '14px', color: '#666', marginBottom: '8px' }}>평균 발생 연차</div>
+              <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#4CAF50' }}>
+                {annualLeaveBalances.length > 0
+                  ? (annualLeaveBalances.reduce((sum, b) => sum + b.totalGenerated, 0) / annualLeaveBalances.length).toFixed(1)
+                  : '0'}일
+              </div>
+            </div>
+            <div style={{
+              background: 'white',
+              padding: '20px',
+              borderRadius: '8px',
+              border: '1px solid #e0e0e0'
+            }}>
+              <div style={{ fontSize: '14px', color: '#666', marginBottom: '8px' }}>평균 사용 연차</div>
+              <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#FF9800' }}>
+                {annualLeaveBalances.length > 0
+                  ? (annualLeaveBalances.reduce((sum, b) => sum + b.used, 0) / annualLeaveBalances.length).toFixed(1)
+                  : '0'}일
+              </div>
+            </div>
+            <div style={{
+              background: 'white',
+              padding: '20px',
+              borderRadius: '8px',
+              border: '1px solid #e0e0e0'
+            }}>
+              <div style={{ fontSize: '14px', color: '#666', marginBottom: '8px' }}>평균 잔여 연차</div>
+              <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2196F3' }}>
+                {annualLeaveBalances.length > 0
+                  ? (annualLeaveBalances.reduce((sum, b) => sum + b.remaining, 0) / annualLeaveBalances.length).toFixed(1)
+                  : '0'}일
+              </div>
+            </div>
+          </div>
+
+          <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white' }}>
+            <thead>
+              <tr style={{ background: '#f5f5f5' }}>
+                <th style={{ padding: '12px', border: '1px solid #ddd', textAlign: 'left' }}>직원명</th>
+                <th style={{ padding: '12px', border: '1px solid #ddd', textAlign: 'center' }}>근속연수</th>
+                <th style={{ padding: '12px', border: '1px solid #ddd', textAlign: 'center' }}>발생 연차</th>
+                <th style={{ padding: '12px', border: '1px solid #ddd', textAlign: 'center' }}>사용 연차</th>
+                <th style={{ padding: '12px', border: '1px solid #ddd', textAlign: 'center' }}>잔여 연차</th>
+                <th style={{ padding: '12px', border: '1px solid #ddd', textAlign: 'center' }}>사용률</th>
+                <th style={{ padding: '12px', border: '1px solid #ddd', textAlign: 'left' }}>소멸일</th>
+              </tr>
+            </thead>
+            <tbody>
+              {annualLeaveBalances.length === 0 ? (
+                <tr>
+                  <td colSpan={7} style={{ padding: '40px', textAlign: 'center', color: '#999' }}>
+                    연차 데이터가 없습니다
+                  </td>
+                </tr>
+              ) : (
+                annualLeaveBalances.map((balance) => {
+                  const usageRate = balance.totalGenerated > 0
+                    ? ((balance.used / balance.totalGenerated) * 100).toFixed(1)
+                    : '0.0';
+                  
+                  const expiryDate = new Date(balance.expiryDate);
+                  const now = new Date();
+                  const daysUntilExpiry = Math.ceil((expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                  const isNearExpiry = daysUntilExpiry <= 60 && daysUntilExpiry > 0;
+                  const isExpired = daysUntilExpiry <= 0;
+
+                  return (
+                    <tr key={balance.id}>
+                      <td style={{ padding: '12px', border: '1px solid #ddd' }}>
+                        {balance.employeeName}
+                        {balance.isUnderOneYear && (
+                          <span style={{
+                            marginLeft: '8px',
+                            padding: '2px 8px',
+                            borderRadius: '8px',
+                            fontSize: '12px',
+                            background: '#e3f2fd',
+                            color: '#1976d2'
+                          }}>
+                            신입
+                          </span>
+                        )}
+                      </td>
+                      <td style={{ padding: '12px', border: '1px solid #ddd', textAlign: 'center' }}>
+                        {balance.isUnderOneYear
+                          ? `${balance.workMonths}개월`
+                          : `${balance.workYears}년`
+                        }
+                      </td>
+                      <td style={{ padding: '12px', border: '1px solid #ddd', textAlign: 'center', fontWeight: 'bold' }}>
+                        {balance.totalGenerated}일
+                        {!balance.isUnderOneYear && balance.bonusLeave > 0 && (
+                          <span style={{ fontSize: '12px', color: '#4CAF50', marginLeft: '4px' }}>
+                            (+{balance.bonusLeave})
+                          </span>
+                        )}
+                      </td>
+                      <td style={{ padding: '12px', border: '1px solid #ddd', textAlign: 'center', color: '#FF9800' }}>
+                        {balance.used}일
+                      </td>
+                      <td style={{ padding: '12px', border: '1px solid #ddd', textAlign: 'center', fontWeight: 'bold', color: '#2196F3' }}>
+                        {balance.remaining}일
+                      </td>
+                      <td style={{ padding: '12px', border: '1px solid #ddd', textAlign: 'center' }}>
+                        {usageRate}%
+                      </td>
+                      <td style={{ padding: '12px', border: '1px solid #ddd' }}>
+                        {expiryDate.toLocaleDateString()}
+                        {isExpired && (
+                          <span style={{
+                            marginLeft: '8px',
+                            padding: '2px 8px',
+                            borderRadius: '8px',
+                            fontSize: '12px',
+                            background: '#ffebee',
+                            color: '#c62828'
+                          }}>
+                            소멸
+                          </span>
+                        )}
+                        {isNearExpiry && (
+                          <span style={{
+                            marginLeft: '8px',
+                            padding: '2px 8px',
+                            borderRadius: '8px',
+                            fontSize: '12px',
+                            background: '#fff3e0',
+                            color: '#ef6c00'
+                          }}>
+                            {daysUntilExpiry}일 남음
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
