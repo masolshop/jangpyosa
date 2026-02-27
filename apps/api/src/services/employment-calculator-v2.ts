@@ -271,6 +271,8 @@ export function calculateMonthlyData(
   let totalRecognizedCount = 0;
   let excludedCount = 0;
 
+  console.log(`📊 [${year}년 ${month}월] 직원별 인정수 계산 시작 (총 ${sortedEmployees.length}명)`);
+  
   sortedEmployees.forEach((emp, index) => {
     const age = calculateAge(emp.birthDate, targetDate);
     const monthsWorked = calculateMonthsWorked(emp.hireDate, targetDate);
@@ -322,6 +324,9 @@ export function calculateMonthlyData(
     const monthlyHours = emp.workHoursPerWeek * 4.33; // 주당 → 월간 환산
     if (emp.severity === "SEVERE" && monthlyHours >= SEVERE_MULTIPLIER_THRESHOLD) {
       levyRecognizedCount = SEVERE_MULTIPLIER;
+      console.log(`  ✅ ${emp.name} (중증): ${emp.workHoursPerWeek}주 * 4.33 = ${monthlyHours.toFixed(1)}월 >= 60 → 2배 인정`);
+    } else {
+      console.log(`  - ${emp.name} (${emp.severity}): ${emp.workHoursPerWeek}주 * 4.33 = ${monthlyHours.toFixed(1)}월 → 1배 인정`);
     }
     totalRecognizedCount += levyRecognizedCount;
 
@@ -351,6 +356,13 @@ export function calculateMonthlyData(
   // 5. 부담금 계산
   const shortfallCount = Math.max(0, obligatedCount - totalRecognizedCount);
   const levy = Math.round(shortfallCount * LEVY_BASE_AMOUNT);
+
+  console.log(`📊 [${year}년 ${month}월] 최종 계산 결과:`);
+  console.log(`  - 장애인 직원 수: ${activeEmployees.length}명`);
+  console.log(`  - 총 인정수: ${totalRecognizedCount.toFixed(1)}명`);
+  console.log(`  - 의무고용인원: ${obligatedCount}명`);
+  console.log(`  - 미달인원: ${shortfallCount.toFixed(1)}명`);
+  console.log(`  - 부담금: ${levy.toLocaleString()}원\n`);
 
   // 6. 지급인원 및 순액 계산
   // 공식: 지급인원 = 장애인근로자수 - 기준인원 - 제외인원
