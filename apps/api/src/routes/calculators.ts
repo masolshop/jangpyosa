@@ -542,13 +542,7 @@ r.get("/company/:companyId/employees", async (req, res) => {
             }
           }
         },
-        supplierProfile: {
-          include: {
-            disabledEmployees: {
-              orderBy: { hireDate: 'asc' }
-            }
-          }
-        }
+        supplierProfile: true
       }
     });
     
@@ -561,7 +555,8 @@ r.get("/company/:companyId/employees", async (req, res) => {
       return res.status(404).json({ error: "PROFILE_NOT_FOUND" });
     }
     
-    const employees = profile.disabledEmployees;
+    // BuyerProfile만 disabledEmployees를 가지고 있음
+    const employees = company.buyerProfile?.disabledEmployees || [];
     
     // 인정수 계산
     const severeCount = employees.filter(e => e.severity === 'SEVERE').length;
@@ -636,12 +631,7 @@ r.get("/companies/list", async (req, res) => {
         },
         supplierProfile: {
           select: {
-            id: true,
-            employeeCount: true,
-            disabledCount: true,
-            _count: {
-              select: { disabledEmployees: true }
-            }
+            id: true
           }
         }
       },
