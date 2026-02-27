@@ -265,7 +265,24 @@ export async function getMonthlyData(year: number) {
   
   return get<{
     year: number;
-    data: Record<string, { totalEmployeeCount: number; disabledCount: number }>;
+    companyName: string;
+    companyType: string;
+    monthlyData: Array<{
+      year: number;
+      month: number;
+      totalEmployeeCount: number;
+      disabledCount: number;
+      recognizedCount: number;
+      obligatedCount: number;
+      incentiveBaselineCount: number;
+      incentiveExcludedCount: number;
+      incentiveEligibleCount: number;
+      shortfallCount: number;
+      levy: number;
+      incentive: number;
+      netAmount: number;
+      details: any[];
+    }>;
   }>(`/employees/monthly`, {
     year,
     buyerId: companyInfo.buyerId
