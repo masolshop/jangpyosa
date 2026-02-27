@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { get, post, put, del, patch } from '@/lib/api-client';
+import { API_BASE } from '@/lib/api';
+import { getToken } from '@/lib/auth';
 import { getCurrentUserCompany } from '@/lib/unified-api';
 
 interface LeaveType {
@@ -77,31 +78,58 @@ export default function LeaveManagementPage() {
 
   const fetchData = async () => {
     try {
-      // 회사 정보 조회
-      const companyData = await getCurrentUserCompany();
-      if (!companyData) {
+      const token = getToken();
+      if (!token) {
         router.push('/login');
         return;
       }
 
-      // 병렬로 모든 데이터 조회 (최적화)
-      const [companyInfo, balancesData, typesData, requestsData] = await Promise.all([
-        get<{ company: Company }>('/companies/my'),
-        get<{ balances: AnnualLeaveBalance[] }>(`/annual-leave/company/${companyData.companyId}`),
-        get<{ leaveTypes: LeaveType[] }>('/leave/types'),
-        get<{ leaveRequests?: LeaveRequest[]; requests?: LeaveRequest[] }>('/leave/requests')
-      ]);
+      // 회사 정보 조회
+      const companyData = await getCurrentUserCompany();
+      if (companyData) {
+        // Company 정보에서 필요한 필드 추출
+        const companyInfo = await fetch(`${API_BASE}/companies/my`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+          cache: 'no-store'
+        });
+        if (companyInfo.ok) {
+          const data = await companyInfo.json();
+          setCompany(data.company);
+        }
+        
+        // 연차 잔여 현황 조회
+        const balancesRes = await fetch(`${API_BASE}/annual-leave/company/${companyData.companyId}`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+          cache: 'no-store'
+        });
+        if (balancesRes.ok) {
+          const data = await balancesRes.json();
+          setAnnualLeaveBalances(data.balances || []);
+        }
+      }
 
-      setCompany(companyInfo.company);
-      setAnnualLeaveBalances(balancesData.balances || []);
-      setLeaveTypes(typesData.leaveTypes);
-      setLeaveRequests(requestsData.leaveRequests || requestsData.requests || []);
+      // 휴가 유형
+      const typesRes = await fetch(`${API_BASE}/leave/types`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+        cache: 'no-store'
+      });
+      if (typesRes.ok) {
+        const data = await typesRes.json();
+        setLeaveTypes(data.leaveTypes);
+      }
+
+      // 휴가 신청 목록
+      const requestsRes = await fetch(`${API_BASE}/leave/requests`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+        cache: 'no-store'
+      });
+      if (requestsRes.ok) {
+        const data = await requestsRes.json();
+        setLeaveRequests(data.leaveRequests || data.requests || []);
+      }
     } catch (error: any) {
       console.error('데이터 로딩 실패:', error);
       setMessage('❌ ' + error.message);
-      if (error.statusCode === 401) {
-        router.push('/login');
-      }
     } finally {
       setLoading(false);
     }
@@ -114,18 +142,28 @@ export default function LeaveManagementPage() {
     }
 
     try {
-      const data = {
-        name: typeName,
-        description: typeDescription || null,
-        requiresDocument,
-        maxDaysPerYear: maxDays ? parseInt(maxDays) : null,
-        isPaid
-      };
+      const token = getToken();
+      const url = editingType ? `${API_BASE}/leave/types/${editingType.id}` : `${API_BASE}/leave/types`;
+      const method = editingType ? 'PUT' : 'POST';
 
-      if (editingType) {
-        await put(`/leave/types/${editingType.id}`, data);
-      } else {
-        await post('/leave/types', data);
+      const res = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          name: typeName,
+          description: typeDescription || null,
+          requiresDocument,
+          maxDaysPerYear: maxDays ? parseInt(maxDays) : null,
+          isPaid
+        })
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error);
       }
 
       setMessage('✅ 저장되었습니다');
@@ -152,7 +190,17 @@ export default function LeaveManagementPage() {
     }
 
     try {
-      await del(`/leave/types/${id}`);
+      const token = getToken();
+      const res = await fetch(`${API_BASE}/leave/types/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error);
+      }
+
       setMessage('✅ 삭제되었습니다');
       fetchData();
     } catch (error: any) {
@@ -162,7 +210,18 @@ export default function LeaveManagementPage() {
 
   const handleApprove = async (id: string) => {
     try {
-      await patch(`/leave/requests/${id}/approve`, { reviewNote: '승인' });
+      const token = getToken();
+      const res = await fetch(`${API_BASE}/leave/requests/${id}/approve`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ reviewNote: '승인' })
+      });
+
+      if (!res.ok) throw new Error('승인 실패');
+
       setMessage('✅ 승인되었습니다');
       fetchData();
     } catch (error: any) {
@@ -175,7 +234,18 @@ export default function LeaveManagementPage() {
     if (!reason) return;
 
     try {
-      await patch(`/leave/requests/${id}/reject`, { reviewNote: reason });
+      const token = getToken();
+      const res = await fetch(`${API_BASE}/leave/requests/${id}/reject`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ reviewNote: reason })
+      });
+
+      if (!res.ok) throw new Error('거부 실패');
+
       setMessage('✅ 거부되었습니다');
       fetchData();
     } catch (error: any) {

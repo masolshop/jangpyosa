@@ -29,13 +29,6 @@ interface LeaveRequest {
   createdAt: string;
 }
 
-interface AnnualLeaveBalance {
-  totalDays: number;
-  usedDays: number;
-  remainingDays: number;
-  year: number;
-}
-
 interface Company {
   name: string;
   attachmentEmail: string | null;
@@ -45,7 +38,6 @@ export default function EmployeeLeavePage() {
   const router = useRouter();
   const [leaveTypes, setLeaveTypes] = useState<LeaveType[]>([]);
   const [myRequests, setMyRequests] = useState<LeaveRequest[]>([]);
-  const [annualLeaveBalance, setAnnualLeaveBalance] = useState<AnnualLeaveBalance | null>(null);
   const [company, setCompany] = useState<Company | null>(null);
   const [loading, setLoading] = useState(true);
   const [showRequestForm, setShowRequestForm] = useState(false);
@@ -71,17 +63,12 @@ export default function EmployeeLeavePage() {
         return;
       }
 
-      // 사용자 정보 조회
+      // 소속 회사 정보 (이메일 확인용)
       const userRes = await fetch('/api/auth/me', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      
-      let employeeId: string | null = null;
-      
       if (userRes.ok) {
         const userData = await userRes.json();
-        employeeId = userData.user.employeeId;
-        
         if (userData.user.companyId) {
           const companyRes = await fetch('/api/companies/my', {
             headers: { 'Authorization': `Bearer ${token}` }
@@ -90,25 +77,6 @@ export default function EmployeeLeavePage() {
             const companyData = await companyRes.json();
             setCompany(companyData.company);
           }
-        }
-      }
-
-      // 연차 잔여일수 조회
-      if (employeeId) {
-        const year = new Date().getFullYear();
-        const balanceRes = await fetch(`${API_BASE}/annual-leave/employee/${employeeId}?year=${year}`, {
-          headers: { 'Authorization': `Bearer ${token}` },
-          cache: 'no-store'
-        });
-        
-        if (balanceRes.ok) {
-          const balanceData = await balanceRes.json();
-          setAnnualLeaveBalance({
-            totalDays: balanceData.balance.totalDays,
-            usedDays: balanceData.usedDays,
-            remainingDays: balanceData.balance.remainingDays,
-            year: year
-          });
         }
       }
 
@@ -488,38 +456,6 @@ export default function EmployeeLeavePage() {
             >
               취소
             </button>
-          </div>
-        </div>
-      )}
-
-      {/* 연차 잔여일수 표시 */}
-      {annualLeaveBalance && (
-        <div style={{
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          borderRadius: '12px',
-          padding: '24px',
-          marginBottom: '24px',
-          color: 'white',
-          boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
-        }}>
-          <h3 style={{ margin: '0 0 16px 0', fontSize: '18px', fontWeight: 'bold' }}>
-            📊 {annualLeaveBalance.year}년 연차 현황
-          </h3>
-          <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
-            <div style={{ flex: 1, minWidth: '150px' }}>
-              <div style={{ fontSize: '14px', opacity: 0.9, marginBottom: '8px' }}>총 연차</div>
-              <div style={{ fontSize: '32px', fontWeight: 'bold' }}>{annualLeaveBalance.totalDays}일</div>
-            </div>
-            <div style={{ flex: 1, minWidth: '150px' }}>
-              <div style={{ fontSize: '14px', opacity: 0.9, marginBottom: '8px' }}>사용 연차</div>
-              <div style={{ fontSize: '32px', fontWeight: 'bold' }}>{annualLeaveBalance.usedDays}일</div>
-            </div>
-            <div style={{ flex: 1, minWidth: '150px' }}>
-              <div style={{ fontSize: '14px', opacity: 0.9, marginBottom: '8px' }}>잔여 연차</div>
-              <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#ffd700' }}>
-                {annualLeaveBalance.remainingDays}일
-              </div>
-            </div>
           </div>
         </div>
       )}
