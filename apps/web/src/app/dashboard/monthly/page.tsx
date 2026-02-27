@@ -17,8 +17,10 @@ type MonthlyData = {
   disabledCount: number;
   recognizedCount: number;
   obligatedCount: number;
+  incentiveBaselineCount: number;
+  incentiveExcludedCount: number;
+  incentiveEligibleCount: number;
   shortfallCount: number;
-  surplusCount: number;
   levy: number;
   incentive: number;
   femaleIncentiveCount?: number;
