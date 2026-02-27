@@ -524,3 +524,150 @@ r.post("/monthly-simulation", async (req, res) => {
 });
 
 export default r;
+
+// =====================
+// 실제 회사 데이터 조회 API
+// =====================
+r.get("/company/:companyId/employees", async (req, res) => {
+  try {
+    const { companyId } = req.params;
+    
+    const company = await prisma.company.findUnique({
+      where: { id: companyId },
+      include: {
+        buyerProfile: {
+          include: {
+            disabledEmployees: {
+              orderBy: { hireDate: 'asc' }
+            }
+          }
+        },
+        supplierProfile: {
+          include: {
+            disabledEmployees: {
+              orderBy: { hireDate: 'asc' }
+            }
+          }
+        }
+      }
+    });
+    
+    if (!company) {
+      return res.status(404).json({ error: "COMPANY_NOT_FOUND" });
+    }
+    
+    const profile = company.buyerProfile || company.supplierProfile;
+    if (!profile) {
+      return res.status(404).json({ error: "PROFILE_NOT_FOUND" });
+    }
+    
+    const employees = profile.disabledEmployees;
+    
+    // 인정수 계산
+    const severeCount = employees.filter(e => e.severity === 'SEVERE').length;
+    const mildCount = employees.filter(e => e.severity === 'MILD').length;
+    const recognizedCount = employees.reduce((sum, emp) => {
+      return sum + ((emp.severity === 'SEVERE' && emp.monthlyWorkHours >= 60) ? 2.0 : 1.0);
+    }, 0);
+    
+    res.json({
+      ok: true,
+      company: {
+        id: company.id,
+        name: company.name,
+        bizNo: company.bizNo,
+        type: company.type,
+        buyerType: company.buyerType,
+      },
+      profile: {
+        id: profile.id,
+        employeeCount: profile.employeeCount,
+        disabledCount: profile.disabledCount,
+      },
+      employees: employees.map(emp => ({
+        id: emp.id,
+        name: emp.name,
+        severity: emp.severity,
+        gender: emp.gender,
+        birthDate: emp.birthDate,
+        hireDate: emp.hireDate,
+        resignDate: emp.resignDate,
+        monthlyWorkHours: emp.monthlyWorkHours,
+        monthlySalary: emp.monthlySalary,
+        hasEmploymentInsurance: emp.hasEmploymentInsurance,
+        meetsMinimumWage: emp.meetsMinimumWage,
+        recognizedCount: (emp.severity === 'SEVERE' && emp.monthlyWorkHours >= 60) ? 2.0 : 1.0,
+      })),
+      summary: {
+        totalEmployees: employees.length,
+        severeCount,
+        mildCount,
+        recognizedCount,
+      }
+    });
+  } catch (error: any) {
+    console.error("Company employees query error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// =====================
+// 모든 바이어/표준사업장 목록 조회
+// =====================
+r.get("/companies/list", async (req, res) => {
+  try {
+    const companies = await prisma.company.findMany({
+      where: {
+        OR: [
+          { type: 'BUYER' },
+          { type: 'SUPPLIER' }
+        ]
+      },
+      include: {
+        buyerProfile: {
+          select: {
+            id: true,
+            employeeCount: true,
+            disabledCount: true,
+            _count: {
+              select: { disabledEmployees: true }
+            }
+          }
+        },
+        supplierProfile: {
+          select: {
+            id: true,
+            employeeCount: true,
+            disabledCount: true,
+            _count: {
+              select: { disabledEmployees: true }
+            }
+          }
+        }
+      },
+      orderBy: { name: 'asc' }
+    });
+    
+    res.json({
+      ok: true,
+      total: companies.length,
+      companies: companies.map(c => {
+        const profile = c.buyerProfile || c.supplierProfile;
+        return {
+          id: c.id,
+          name: c.name,
+          bizNo: c.bizNo,
+          type: c.type,
+          buyerType: c.buyerType,
+          profileId: profile?.id,
+          employeeCount: profile?.employeeCount || 0,
+          disabledCount: profile?.disabledCount || 0,
+          actualDisabledCount: profile?._count?.disabledEmployees || 0,
+        };
+      })
+    });
+  } catch (error: any) {
+    console.error("Companies list error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
