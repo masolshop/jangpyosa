@@ -288,7 +288,9 @@ export default function WorkOrdersPage() {
       }
 
       console.log("🔍 Loading work order detail:", workOrderId);
-      const res = await fetch(`${API_BASE}/work-orders/${workOrderId}`, {
+      // URL 인코딩하여 특수문자 처리
+      const encodedId = encodeURIComponent(workOrderId);
+      const res = await fetch(`${API_BASE}/work-orders/${encodedId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
