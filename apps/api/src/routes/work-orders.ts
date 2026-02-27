@@ -127,6 +127,70 @@ router.get('/list', requireAuth, async (req, res) => {
   }
 });
 
+// 업무지시 단일 조회 (상세보기)
+router.get('/:id', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user!.id;
+    const userRole = req.user!.role;
+    const workOrderId = req.params.id;
+    
+    if (!['BUYER', 'SUPPLIER', 'SUPER_ADMIN', 'EMPLOYEE'].includes(userRole)) {
+      return res.status(403).json({ error: '접근 권한이 없습니다' });
+    }
+
+    const workOrder = await prisma.workOrder.findUnique({
+      where: { id: workOrderId },
+      include: {
+        sender: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        recipients: {
+          select: {
+            id: true,
+            name: true,
+            status: true,
+            completedAt: true,
+            completionReport: true
+          }
+        }
+      }
+    });
+
+    if (!workOrder) {
+      return res.status(404).json({ error: '업무지시를 찾을 수 없습니다' });
+    }
+
+    // 권한 확인: 발신자 또는 수신자만 조회 가능
+    const isRecipient = workOrder.recipients?.some(r => r.id === userId);
+    const isSender = workOrder.senderId === userId;
+    
+    if (userRole === 'EMPLOYEE' && !isRecipient) {
+      return res.status(403).json({ error: '해당 업무지시를 조회할 권한이 없습니다' });
+    }
+    
+    if (['BUYER', 'SUPPLIER'].includes(userRole) && !isSender) {
+      // 관리자는 자신이 속한 회사의 업무지시만 조회 가능
+      const company = await getUserCompany(userId, userRole);
+      if (!company || !company.buyerProfile || workOrder.buyerId !== company.buyerProfile.id) {
+        return res.status(403).json({ error: '해당 업무지시를 조회할 권한이 없습니다' });
+      }
+    }
+
+    return res.json({ 
+      workOrder: {
+        ...workOrder,
+        createdByName: workOrder.sender?.name || workOrder.createdByName
+      }
+    });
+  } catch (error: any) {
+    console.error('업무지시 상세 조회 오류:', error);
+    return res.status(500).json({ error: error.message });
+  }
+});
+
 // 업무지시 상세 조회 (확인한 직원 리스트 포함)
 router.get('/:id/confirmations', requireAuth, async (req, res) => {
   try {
