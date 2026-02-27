@@ -174,7 +174,7 @@ async function main() {
   await prisma.supplierProfile.create({
     data: {
       companyId: standardCompany.id,
-      isStandard: true,
+      approved: true,
       region: '서울',
       industry: '제조업',
       contactName: '박담당',
