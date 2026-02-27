@@ -6,13 +6,82 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Starting database seeding...');
 
-  // 1. Create test companies
+  // Clear existing data (optional - comment out if you want to keep existing data)
+  console.log('\n🗑️ Clearing existing test data...');
+  await prisma.leaveRequest.deleteMany({});
+  await prisma.leaveType.deleteMany({});
+  await prisma.annualLeaveBalance.deleteMany({});
+  await prisma.disabledEmployee.deleteMany({});
+  await prisma.user.deleteMany({ where: { phone: { startsWith: '010-1000' } } });
+  await prisma.user.deleteMany({ where: { phone: { startsWith: '010-2000' } } });
+  await prisma.buyerProfile.deleteMany({});
+  await prisma.supplierProfile.deleteMany({});
+  await prisma.company.deleteMany({ where: { bizNo: { in: ['123-45-67890', '234-56-78901', '345-67-89012'] } } });
+  console.log('✅ Test data cleared');
+
+  // 1. Create admin users first (without company)
+  console.log('\n👤 Creating admin users...');
+  
+  const passwordHash = await bcrypt.hash('test1234', 10);
+
+  const pemaAdmin = await prisma.user.create({
+    data: {
+      phone: '010-1000-0001',
+      username: 'pema_admin',
+      email: 'admin@pema.com',
+      passwordHash,
+      name: '김관리자',
+      role: 'BUYER',
+      managerName: '김관리자',
+      managerTitle: '인사팀장',
+      managerEmail: 'admin@pema.com',
+      managerPhone: '010-1000-0001',
+      privacyAgreed: true,
+      privacyAgreedAt: new Date()
+    }
+  });
+
+  const publicAdmin = await prisma.user.create({
+    data: {
+      phone: '010-2000-0001',
+      username: 'public_admin',
+      email: 'admin@public.go.kr',
+      passwordHash,
+      name: '이관리자',
+      role: 'BUYER',
+      managerName: '이관리자',
+      managerTitle: '총무과장',
+      managerEmail: 'admin@public.go.kr',
+      managerPhone: '010-2000-0001',
+      privacyAgreed: true,
+      privacyAgreedAt: new Date()
+    }
+  });
+
+  const standardAdmin = await prisma.user.create({
+    data: {
+      phone: '010-3000-0001',
+      username: 'standard_admin',
+      email: 'admin@happy-standard.com',
+      passwordHash,
+      name: '박관리자',
+      role: 'SUPPLIER',
+      managerName: '박관리자',
+      managerTitle: '총무팀장',
+      managerEmail: 'admin@happy-standard.com',
+      managerPhone: '010-3000-0001',
+      privacyAgreed: true,
+      privacyAgreedAt: new Date()
+    }
+  });
+
+  console.log('✅ Admin users created');
+
+  // 2. Create test companies
   console.log('\n📦 Creating companies...');
   
-  const pemaCompany = await prisma.company.upsert({
-    where: { bizNo: '123-45-67890' },
-    update: {},
-    create: {
+  const pemaCompany = await prisma.company.create({
+    data: {
       name: '페마연구소',
       bizNo: '123-45-67890',
       representative: '김대표',
@@ -20,14 +89,12 @@ async function main() {
       buyerType: 'PRIVATE_COMPANY',
       isVerified: true,
       attachmentEmail: 'hr@pema.com',
-      ownerUserId: 'temp-owner-id' // Will be updated after user creation
+      ownerUserId: pemaAdmin.id
     }
   });
 
-  const publicCompany = await prisma.company.upsert({
-    where: { bizNo: '234-56-78901' },
-    update: {},
-    create: {
+  const publicCompany = await prisma.company.create({
+    data: {
       name: '공공기관A',
       bizNo: '234-56-78901',
       representative: '이기관',
@@ -35,33 +102,45 @@ async function main() {
       buyerType: 'PUBLIC_INSTITUTION',
       isVerified: true,
       attachmentEmail: 'hr@public.go.kr',
-      ownerUserId: 'temp-owner-id'
+      ownerUserId: publicAdmin.id
     }
   });
 
-  const standardCompany = await prisma.company.upsert({
-    where: { bizNo: '345-67-89012' },
-    update: {},
-    create: {
+  const standardCompany = await prisma.company.create({
+    data: {
       name: '행복한표준사업장',
       bizNo: '345-67-89012',
       representative: '박표준',
       type: 'SUPPLIER',
       isVerified: true,
       attachmentEmail: 'info@happy-standard.com',
-      ownerUserId: 'temp-owner-id'
+      ownerUserId: standardAdmin.id
     }
   });
 
   console.log('✅ Companies created');
 
-  // 2. Create BuyerProfiles
+  // 3. Update users with company IDs
+  await prisma.user.update({
+    where: { id: pemaAdmin.id },
+    data: { companyId: pemaCompany.id, isCompanyOwner: true }
+  });
+
+  await prisma.user.update({
+    where: { id: publicAdmin.id },
+    data: { companyId: publicCompany.id, isCompanyOwner: true }
+  });
+
+  await prisma.user.update({
+    where: { id: standardAdmin.id },
+    data: { companyId: standardCompany.id, isCompanyOwner: true }
+  });
+
+  // 4. Create BuyerProfiles
   console.log('\n👥 Creating BuyerProfiles...');
   
-  const pemaBuyer = await prisma.buyerProfile.upsert({
-    where: { companyId: pemaCompany.id },
-    update: {},
-    create: {
+  const pemaBuyer = await prisma.buyerProfile.create({
+    data: {
       companyId: pemaCompany.id,
       employeeCount: 45,
       disabledCount: 0, // Will be calculated
@@ -69,10 +148,8 @@ async function main() {
     }
   });
 
-  const publicBuyer = await prisma.buyerProfile.upsert({
-    where: { companyId: publicCompany.id },
-    update: {},
-    create: {
+  const publicBuyer = await prisma.buyerProfile.create({
+    data: {
       companyId: publicCompany.id,
       employeeCount: 38,
       disabledCount: 0,
@@ -80,10 +157,8 @@ async function main() {
     }
   });
 
-  const standardBuyer = await prisma.buyerProfile.upsert({
-    where: { companyId: standardCompany.id },
-    update: {},
-    create: {
+  const standardBuyer = await prisma.buyerProfile.create({
+    data: {
       companyId: standardCompany.id,
       employeeCount: 25,
       disabledCount: 0,
@@ -93,13 +168,11 @@ async function main() {
 
   console.log('✅ BuyerProfiles created');
 
-  // 3. Create SupplierProfile for standard company
+  // 5. Create SupplierProfile for standard company
   console.log('\n🏢 Creating SupplierProfile...');
   
-  await prisma.supplierProfile.upsert({
-    where: { companyId: standardCompany.id },
-    update: {},
-    create: {
+  await prisma.supplierProfile.create({
+    data: {
       companyId: standardCompany.id,
       isStandard: true,
       region: '서울',
@@ -111,67 +184,7 @@ async function main() {
 
   console.log('✅ SupplierProfile created');
 
-  // 4. Create admin users
-  console.log('\n👤 Creating admin users...');
-  
-  const passwordHash = await bcrypt.hash('test1234', 10);
-
-  const pemaAdmin = await prisma.user.upsert({
-    where: { phone: '010-1000-0001' },
-    update: {},
-    create: {
-      phone: '010-1000-0001',
-      username: 'pema_admin',
-      email: 'admin@pema.com',
-      passwordHash,
-      name: '김관리자',
-      role: 'BUYER',
-      companyId: pemaCompany.id,
-      isCompanyOwner: true,
-      managerName: '김관리자',
-      managerTitle: '인사팀장',
-      managerEmail: 'admin@pema.com',
-      managerPhone: '010-1000-0001',
-      privacyAgreed: true,
-      privacyAgreedAt: new Date()
-    }
-  });
-
-  const publicAdmin = await prisma.user.upsert({
-    where: { phone: '010-2000-0001' },
-    update: {},
-    create: {
-      phone: '010-2000-0001',
-      username: 'public_admin',
-      email: 'admin@public.go.kr',
-      passwordHash,
-      name: '이관리자',
-      role: 'BUYER',
-      companyId: publicCompany.id,
-      isCompanyOwner: true,
-      managerName: '이관리자',
-      managerTitle: '총무과장',
-      managerEmail: 'admin@public.go.kr',
-      managerPhone: '010-2000-0001',
-      privacyAgreed: true,
-      privacyAgreedAt: new Date()
-    }
-  });
-
-  // Update ownerUserId
-  await prisma.company.update({
-    where: { id: pemaCompany.id },
-    data: { ownerUserId: pemaAdmin.id }
-  });
-
-  await prisma.company.update({
-    where: { id: publicCompany.id },
-    data: { ownerUserId: publicAdmin.id }
-  });
-
-  console.log('✅ Admin users created');
-
-  // 5. Create disabled employees
+  // 6. Create disabled employees
   console.log('\n👨‍💼 Creating disabled employees...');
 
   const employees = [
@@ -246,7 +259,7 @@ async function main() {
 
   console.log('✅ 42 disabled employees created');
 
-  // 6. Create leave types
+  // 7. Create leave types
   console.log('\n🏖️ Creating leave types...');
 
   const leaveTypes = [
@@ -269,7 +282,7 @@ async function main() {
 
   console.log('✅ Leave types created');
 
-  // 7. Update disabled counts
+  // 8. Update disabled counts
   console.log('\n🔢 Updating disabled counts...');
 
   const pemaCount = await prisma.disabledEmployee.count({ where: { buyerId: pemaBuyer.id } });
