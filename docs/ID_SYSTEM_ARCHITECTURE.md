@@ -1,291 +1,668 @@
-# 장표사 시스템 ID 체계 정리
+# 🏗️ 장표사 ID 시스템 아키텍처
 
-## 📋 현재 ID 체계 분석 (2026-02-27)
-
-### 1️⃣ **Company ID** (기업 ID)
-모든 기업의 최상위 ID
-
-```
-테이블: Company
-필드: id (TEXT, PRIMARY KEY)
-타입: 
-  - BUYER: 고용의무기업 (바이어)
-  - SUPPLIER: 표준사업장
-
-buyerType (BUYER인 경우만):
-  - PRIVATE_COMPANY: 민간기업
-  - PUBLIC_INSTITUTION: 공공기관
-  - GOVERNMENT: 국가/지자체/교육청
-```
-
-#### 현재 등록된 기업:
-| Company ID | 기업명 | Type | Buyer Type |
-|------------|--------|------|------------|
-| `cmlu4go9a000510vpggruiy9v` | 행복한표준사업장 | SUPPLIER | - |
-| `cmlu4gobz000910vpj1izl197` | 주식회사 페마연 | BUYER | PRIVATE_COMPANY |
-| `cmlu4gokt000h10vp9paz1nwl` | 공공기관1 | BUYER | PUBLIC_INSTITUTION |
-| `cmlu4gop3000l10vpcorl01s2` | 공공기관2 | BUYER | PUBLIC_INSTITUTION |
-| `cmlu4gose000p10vpecg64uct` | 교육청1 | BUYER | GOVERNMENT |
-| `cmlu4gov8000t10vpfm0p3ryw` | 지자체1 | BUYER | GOVERNMENT |
+## 📋 문서 정보
+- **작성일**: 2026-02-27
+- **목적**: 시스템 전체 ID 구조 및 관계 명세
+- **대상**: 신규 개발자, 시스템 아키텍트
 
 ---
 
-### 2️⃣ **BuyerProfile ID** (고용의무기업 프로필 ID)
-Company 테이블의 BUYER 기업에 대한 상세 프로필
+## 🎯 핵심 개념
 
-```
-테이블: BuyerProfile
-필드: id (TEXT, PRIMARY KEY)
-관계: companyId -> Company.id (1:1)
-용도: 
-  - 전체 직원 수 (employeeCount)
-  - 등록된 장애인 직원 수 (disabledCount)
-  - 연도별 직원 수 (yearlyEmployeesJson)
-  - 부담금 면제 여부 (hasLevyExemption)
-```
+### 기본 원칙
 
-#### 현재 등록된 BuyerProfile:
-| BuyerProfile ID | Company ID | 기업명 | 직원수 | 장애인수 |
-|-----------------|------------|--------|--------|----------|
-| `cmlu4gobz000a10vplc93ruqy` | `cmlu4gobz000910vpj1izl197` | 주식회사 페마연 | 1,000 | 15 |
-| `cmlu4gokt000i10vpyowza6ci` | `cmlu4gokt000h10vp9paz1nwl` | 공공기관1 | 1,000 | 34 |
-| `cmlu4gop3000m10vpp7ohwgfj` | `cmlu4gop3000l10vpcorl01s2` | 공공기관2 | 1,000 | 41 |
-| `cmlu4gose000q10vpofzoyqu8` | `cmlu4gose000p10vpecg64uct` | 교육청1 | 1,000 | 49 |
-| `cmlu4gov8000u10vpwrh3ynf8` | `cmlu4gov8000t10vpfm0p3ryw` | 지자체1 | 1,000 | 57 |
-| `buyer_happystandard` | `cmlu4go9a000510vpggruiy9v` | 행복한표준사업장 | 0 | 0 |
+1. **단일 진실 공급원 (Single Source of Truth)**
+   - 모든 데이터는 하나의 정확한 출처를 가짐
+   - 중복 데이터 최소화
 
-⚠️ **주의**: 표준사업장도 BuyerProfile을 가지고 있음 (향후 구조 개선 필요)
+2. **명확한 관계 계층**
+   - Company (회사) → BuyerProfile/SupplierProfile (역할) → DisabledEmployee (직원)
+   - User (계정) → 각 엔티티 연결
+
+3. **타입 독립성**
+   - Company.type은 주요 사업 분류일 뿐
+   - 기능(Profile)은 독립적으로 존재
 
 ---
 
-### 3️⃣ **DisabledEmployee ID** (장애인 직원 ID)
-등록된 장애인 직원의 고유 ID
+## 🗺️ 전체 시스템 맵
 
 ```
-테이블: DisabledEmployee
-필드: id (TEXT, PRIMARY KEY)
-관계: buyerId -> BuyerProfile.id
-핵심 필드:
-  - name: 직원명
-  - phone: 전화번호 (User 테이블 연동 키)
-  - severity: SEVERE (중증) / MILD (경증)
-  - hireDate: 입사일
-  - resignDate: 퇴사일 (NULL이면 재직중)
-  - monthlyWorkHours: 월간 근로시간
-  - monthlySalary: 월 급여
-```
-
-#### 각 기업별 장애인 직원 수:
-| BuyerProfile ID | Company Name | 등록된 장애인 직원 수 |
-|-----------------|--------------|---------------------|
-| `cmlu4gokt000i10vpyowza6ci` | 공공기관1 | 12명 |
-| `cmlu4gose000q10vpofzoyqu8` | 교육청1 | 10명 |
-| `cmlu4gobz000a10vplc93ruqy` | 주식회사 페마연 | 15명 |
-| `buyer_happystandard` | 행복한표준사업장 | 15명 |
-
----
-
-### 4️⃣ **User ID와 employeeId 연동**
-로그인 사용자 계정과 장애인 직원 정보를 연결
-
-```
-테이블: User
-필드: 
-  - id (TEXT, PRIMARY KEY): 사용자 고유 ID
-  - employeeId (TEXT): DisabledEmployee.id 참조
-  - phone (TEXT): DisabledEmployee.phone과 매칭
-  - role: BUYER / EMPLOYEE / SUPER_ADMIN
-```
-
-#### employeeId 연동 상태 (2026-02-27 업데이트 완료):
-| 기업명 | User 계정 | employeeId 연동 상태 |
-|--------|-----------|---------------------|
-| 공공기관1 | 3명 | ✅ 모두 정상 |
-| 교육청1 | 3명 | ✅ 모두 정상 |
-| 주식회사 페마연 | 5명 | ✅ 모두 정상 |
-| 행복한표준사업장 | 5명 | ✅ 모두 정상 |
-
-**총 16명의 EMPLOYEE 계정 모두 정상 연동됨**
-
----
-
-## 🔗 ID 관계도
-
-```
-Company (기업)
-  └─ id: cmlu4gobz000910vpj1izl197
-      │
-      ├─ BuyerProfile (고용의무기업 프로필)
-      │   └─ id: cmlu4gobz000a10vplc93ruqy
-      │       │
-      │       ├─ DisabledEmployee (장애인 직원 #1)
-      │       │   └─ id: cmm3z01sx00016kbx8fvi8wdu
-      │       │       └─ phone: 01099990001
-      │       │           │
-      │       │           └─ User (로그인 계정)
-      │       │               └─ id: user_emp_1
-      │       │               └─ employeeId: cmm3z01sx00016kbx8fvi8wdu ✅
-      │       │
-      │       ├─ DisabledEmployee (장애인 직원 #2)
-      │       │   └─ id: cmm3z01ts00036kbx5d6ts600
-      │       │       └─ phone: 01099990002
-      │       │           │
-      │       │           └─ User (로그인 계정)
-      │       │               └─ id: user_emp_2
-      │       │               └─ employeeId: cmm3z01ts00036kbx5d6ts600 ✅
-      │       │
-      │       └─ ... (나머지 장애인 직원들)
-      │
-      └─ User (관리자 계정)
-          └─ id: cmlu4gobz000810vp2g2pjq94
-          └─ role: BUYER
-          └─ companyId: cmlu4gobz000910vpj1izl197
+┌─────────────────────────────────────────────────────────────┐
+│                         Company (회사)                       │
+│  id: cuid (최상위 통합 ID)                                   │
+│  bizNo: 사업자번호 (unique)                                  │
+│  type: BUYER | SUPPLIER                                     │
+│  ownerUserId: User.id (대표자)                               │
+└─────────────┬───────────────────────────┬───────────────────┘
+              │                           │
+              ↓ 1:1                      ↓ 1:1 (optional)
+┌─────────────────────────┐   ┌──────────────────────────┐
+│   BuyerProfile          │   │   SupplierProfile        │
+│   (고용의무 프로필)      │   │   (공급자 프로필)         │
+│                         │   │                          │
+│ id: cuid                │   │ id: cuid                 │
+│ companyId: Company.id   │   │ companyId: Company.id    │
+│ employeeCount: Int      │   │ region: String           │
+│ disabledCount: Int      │   │ industry: String         │
+└─────────┬───────────────┘   └─────────┬────────────────┘
+          │ 1:N                         │ 1:N
+          ↓                             ↓
+┌─────────────────────┐       ┌─────────────────────┐
+│ DisabledEmployee    │       │ Product             │
+│ (장애인 직원)        │       │ (제품)               │
+│                     │       │                     │
+│ id: cuid            │       │ id: cuid            │
+│ buyerId: BP.id      │       │ supplierId: SP.id   │
+│ name: String        │       │ name: String        │
+│ severity: SEVERE/MILD│       │ price: Int          │
+└──────────┬──────────┘       └─────────────────────┘
+           │ 1:1 (optional)
+           ↑
+    ┌──────────────┐
+    │   User       │
+    │   (로그인)    │
+    │              │
+    │ id: cuid     │
+    │ phone: String│
+    │ role: EMPLOYEE│
+    │ employeeId: DE.id │
+    └──────────────┘
 ```
 
 ---
 
-## 🚨 주요 문제점 및 해결 상태
+## 🔑 Entity별 상세 명세
 
-### ✅ 해결 완료:
-1. **User.employeeId 불일치 문제**
-   - 원인: User.employeeId가 DisabledEmployee.id와 불일치
-   - 해결: 16개 계정 모두 phone 기준으로 재연동 완료
-   - 상태: ✅ 모든 EMPLOYEE 계정 정상
+### 1. Company (회사)
 
-2. **페마연 상세보기 버튼 문제**
-   - 원인: employeeId 불일치로 API 오류
-   - 해결: employeeId 업데이트 후 정상 작동
-   - 상태: ✅ 15개 업무지시 목록 정상 표시
+**역할**: 시스템 최상위 엔티티, 모든 비즈니스의 기본 단위
 
-3. **BuyerProfile.disabledCount 불일치 문제**
-   - 원인: BuyerProfile.disabledCount가 실제 DisabledEmployee 수와 불일치
-   - 해결: 모든 BuyerProfile의 disabledCount를 실제 카운트로 동기화
-   - 상태: ✅ 6개 기업 모두 정합성 확보
-
----
-
-## 📊 데이터 정합성 체크리스트
-
-### Company → BuyerProfile
-```sql
--- 모든 BUYER Company는 BuyerProfile을 가져야 함
-SELECT c.id, c.name, bp.id AS buyerProfileId
-FROM Company c
-LEFT JOIN BuyerProfile bp ON c.id = bp.companyId
-WHERE c.type = 'BUYER';
-```
-✅ 정상: 모든 BUYER 기업이 BuyerProfile 보유
-
-### BuyerProfile → DisabledEmployee
-```sql
--- BuyerProfile.disabledCount와 실제 등록 직원 수 일치 여부
-SELECT 
-  bp.id,
-  bp.disabledCount AS declared_count,
-  COUNT(de.id) AS actual_count,
-  CASE 
-    WHEN bp.disabledCount = COUNT(de.id) THEN '✅ 일치'
-    ELSE '❌ 불일치'
-  END AS status
-FROM BuyerProfile bp
-LEFT JOIN DisabledEmployee de ON bp.id = de.buyerId
-GROUP BY bp.id, bp.disabledCount;
-```
-✅ **정상**: 모든 BuyerProfile의 disabledCount가 실제 DisabledEmployee 수와 일치
-- 공공기관1: 12명 ✅
-- 공공기관2: 0명 ✅
-- 교육청1: 10명 ✅
-- 주식회사 페마연: 15명 ✅
-- 지자체1: 0명 ✅
-- 행복한표준사업장: 15명 ✅
-
-### DisabledEmployee → User (employeeId)
-```sql
--- 전화번호 기준 employeeId 연동 여부
-SELECT 
-  de.phone,
-  de.name AS de_name,
-  u.name AS user_name,
-  u.employeeId,
-  CASE 
-    WHEN u.employeeId = de.id THEN '✅ 정상'
-    WHEN u.employeeId IS NULL THEN '❌ NULL'
-    WHEN u.employeeId != de.id THEN '❌ 불일치'
-    ELSE '❓ 알수없음'
-  END AS status
-FROM DisabledEmployee de
-LEFT JOIN User u ON de.phone = u.phone
-WHERE u.role = 'EMPLOYEE';
-```
-✅ 정상: 16개 계정 모두 정상 연동
-
----
-
-## 🎯 권장 사항
-
-### 1. BuyerProfile.disabledCount 자동 계산
-현재는 수동 입력이지만, 실제 DisabledEmployee 테이블 카운트와 동기화 필요
-
-```typescript
-// 추천: DisabledEmployee 추가/삭제 시 자동 업데이트
-async function syncDisabledCount(buyerId: string) {
-  const count = await prisma.disabledEmployee.count({
-    where: { buyerId, resignDate: null }
-  });
+#### Schema
+```prisma
+model Company {
+  id                String           @id @default(cuid())
+  name              String           // 회사명
+  bizNo             String           @unique  // 사업자등록번호
+  representative    String?          // 대표자명
+  type              String           // "BUYER" or "SUPPLIER"
+  buyerType         String?          // PRIVATE_COMPANY | PUBLIC_INSTITUTION | EDUCATION | LOCAL_GOVERNMENT
+  isVerified        Boolean          @default(false)
+  ownerUserId       String           @unique
   
-  await prisma.buyerProfile.update({
-    where: { id: buyerId },
-    data: { disabledCount: count }
+  // Relations
+  ownerUser         User             @relation("CompanyOwner")
+  members           User[]           @relation("CompanyMembers")
+  buyerProfile      BuyerProfile?
+  supplierProfile   SupplierProfile?
+}
+```
+
+#### 필드 설명
+- **id**: 회사 고유 ID (cuid) - **모든 관계의 기준점**
+- **bizNo**: 사업자등록번호 - 법적 식별자
+- **type**: 회사 주요 유형
+  - `BUYER`: 고용의무기업 (일반 기업, 공공기관 등)
+  - `SUPPLIER`: 표준사업장
+- **buyerType**: BUYER 전용 세부 분류
+  - `PRIVATE_COMPANY`: 민간 기업
+  - `PUBLIC_INSTITUTION`: 공공기관
+  - `EDUCATION`: 교육청
+  - `LOCAL_GOVERNMENT`: 지자체
+- **ownerUserId**: 회사 대표자/최초 생성자 User ID
+
+#### 관계
+- `1:1` BuyerProfile (optional)
+- `1:1` SupplierProfile (optional)
+- `1:N` User (members)
+
+#### 실제 데이터 예시
+
+**예시 1: 민간 기업 (페마연)**
+```json
+{
+  "id": "cmlu4gobz000910vpj1izl197",
+  "name": "주식회사 페마연",
+  "bizNo": "2668101215",
+  "type": "BUYER",
+  "buyerType": "PRIVATE_COMPANY",
+  "ownerUserId": "cmlu4gobz000810vp2g2pjq94"
+}
+```
+
+**예시 2: 표준사업장**
+```json
+{
+  "id": "cmlu4go9a000510vpggruiy9v",
+  "name": "행복한표준사업장",
+  "bizNo": "1234567890",
+  "type": "SUPPLIER",
+  "buyerType": null,
+  "ownerUserId": "cmlu4go9a000410vp3hkqwmnc"
+}
+```
+
+---
+
+### 2. BuyerProfile (고용의무 프로필)
+
+**역할**: 장애인 고용의무 대상 기업의 고용 현황 관리
+
+#### Schema
+```prisma
+model BuyerProfile {
+  id                  String               @id @default(cuid())
+  companyId           String               @unique
+  employeeCount       Int                  @default(0)  // 전체 상시근로자 수
+  disabledCount       Int                  @default(0)  // 장애인 직원 수
+  
+  company             Company              @relation(fields: [companyId], references: [id])
+  disabledEmployees   DisabledEmployee[]
+  monthlyData         MonthlyEmployeeData[]
+}
+```
+
+#### 필드 설명
+- **id**: BuyerProfile 고유 ID (cuid)
+- **companyId**: Company.id 참조 (1:1 관계, unique)
+- **employeeCount**: 전체 상시근로자 수 (부담금 계산 기준)
+- **disabledCount**: 현재 재직 중인 장애인 직원 수
+
+#### 관계
+- `N:1` Company
+- `1:N` DisabledEmployee
+
+#### 중요 사항
+⚠️ **모든 장애인 직원 데이터는 BuyerProfile을 통해서만 접근 가능**
+
+#### 실제 데이터 예시
+
+```json
+{
+  "id": "cmlu4gobz000a10vplc93ruqy",
+  "companyId": "cmlu4gobz000910vpj1izl197",  // 페마연
+  "employeeCount": 1000,
+  "disabledCount": 15
+}
+```
+
+---
+
+### 3. DisabledEmployee (장애인 직원)
+
+**역할**: 개별 장애인 직원 정보 관리
+
+#### Schema
+```prisma
+model DisabledEmployee {
+  id                     String           @id @default(cuid())
+  buyerId                String           // BuyerProfile.id 참조
+  name                   String
+  phone                  String?
+  registrationNumber     String?          // 주민등록번호 앞 6자리
+  severity               String           // "SEVERE" or "MILD"
+  gender                 String
+  birthDate              DateTime?
+  hireDate               DateTime
+  resignDate             DateTime?
+  monthlySalary          Int
+  hasEmploymentInsurance Boolean          @default(true)
+  meetsMinimumWage       Boolean          @default(true)
+  monthlyWorkHours       Int?             // 월 근로시간
+  
+  buyer                  BuyerProfile     @relation(fields: [buyerId], references: [id])
+}
+```
+
+#### 필드 설명
+- **id**: 직원 고유 ID (cuid 또는 custom ID)
+- **buyerId**: BuyerProfile.id 참조 ⚠️ **Company.id가 아님!**
+- **severity**: 장애 정도
+  - `SEVERE`: 중증 (인정 배수 2.0)
+  - `MILD`: 경증 (인정 배수 1.0)
+- **monthlyWorkHours**: 월 근로시간 (60시간 이상 시 인정)
+
+#### 관계
+- `N:1` BuyerProfile
+- `1:1` User (optional, employeeId로 연결)
+
+#### 인정 계산 로직
+```typescript
+function calculateRecognizedCount(emp: DisabledEmployee): number {
+  if (emp.severity === 'SEVERE' && emp.monthlyWorkHours >= 60) {
+    return 2.0;  // 중증 + 60시간 이상
+  }
+  return 1.0;  // 기타
+}
+```
+
+#### 실제 데이터 예시
+
+```json
+{
+  "id": "emp_pemayeon_06",
+  "buyerId": "cmlu4gobz000a10vplc93ruqy",  // 페마연 BuyerProfile.id
+  "name": "김민지",
+  "phone": "010-1234-5678",
+  "severity": "SEVERE",
+  "gender": "FEMALE",
+  "birthDate": "1992-03-15T00:00:00Z",
+  "hireDate": "2021-07-01T00:00:00Z",
+  "monthlyWorkHours": 75,
+  "monthlySalary": 774000
+}
+```
+
+---
+
+### 4. User (사용자 계정)
+
+**역할**: 로그인 인증 및 권한 관리
+
+#### Schema
+```prisma
+model User {
+  id                String    @id @default(cuid())
+  phone             String    @unique
+  username          String?   @unique  // 기업 담당자 전용 ID
+  email             String?
+  passwordHash      String
+  name              String
+  role              String    // BUYER | SUPPLIER | EMPLOYEE | SUPER_ADMIN
+  
+  // 기업 소속
+  companyId         String?
+  isCompanyOwner    Boolean   @default(false)
+  
+  // 직원 계정 전용
+  employeeId        String?   @unique  // DisabledEmployee.id
+  companyBizNo      String?
+  
+  company           Company?  @relation("CompanyMembers")
+  ownedCompany      Company?  @relation("CompanyOwner")
+}
+```
+
+#### 역할별 특징
+
+**BUYER / SUPPLIER (기업 담당자)**
+```json
+{
+  "id": "cmlu4gobz000810vp2g2pjq94",
+  "phone": "010-9999-0000",
+  "username": "pemayeon_admin",
+  "role": "BUYER",
+  "companyId": "cmlu4gobz000910vpj1izl197",
+  "isCompanyOwner": true,
+  "employeeId": null
+}
+```
+
+**EMPLOYEE (장애인 직원)**
+```json
+{
+  "id": "cmm3z01sx00006kbxrq82mlhn",
+  "phone": "010-1234-5678",
+  "username": null,  // 직원은 username 없음
+  "role": "EMPLOYEE",
+  "companyId": "cmlu4gobz000910vpj1izl197",
+  "employeeId": "emp_pemayeon_06",  // 핵심 연결!
+  "companyBizNo": "2668101215"
+}
+```
+
+#### 로그인 로직
+```typescript
+// 기업 담당자 로그인
+if (user.role === 'BUYER' || user.role === 'SUPPLIER') {
+  // 회사 정보 조회
+  const company = await prisma.company.findUnique({
+    where: { id: user.companyId }
+  });
+}
+
+// 직원 로그인
+if (user.role === 'EMPLOYEE') {
+  // 직원 정보 조회
+  const employee = await prisma.disabledEmployee.findUnique({
+    where: { id: user.employeeId }
   });
 }
 ```
 
-### 2. User.employeeId 자동 연동
-회원가입 또는 장애인 직원 등록 시 전화번호 기준 자동 연동
+---
 
-```typescript
-// 추천: 장애인 직원 등록 시 User 자동 생성/연동
-async function createDisabledEmployeeWithUser(data: CreateEmployeeData) {
-  const employee = await prisma.disabledEmployee.create({ data });
+### 5. SupplierProfile (공급자 프로필)
+
+**역할**: 표준사업장의 제품/서비스 공급 기능 관리
+
+#### Schema
+```prisma
+model SupplierProfile {
+  id                    String      @id @default(cuid())
+  companyId             String      @unique
+  region                String?
+  industry              String?
+  approved              Boolean     @default(false)
+  minContractAmount     Int?
+  maxContractAmount     Int?
   
-  // 해당 전화번호로 User가 있으면 employeeId 연동
-  await prisma.user.updateMany({
-    where: { phone: data.phone },
-    data: { employeeId: employee.id }
-  });
-  
-  return employee;
+  company               Company     @relation(fields: [companyId], references: [id])
+  products              Product[]
+  contractRequests      ContractRequest[]
 }
 ```
 
-### 3. 표준사업장 구조 개선
-현재 SUPPLIER도 BuyerProfile을 가지고 있음 → SupplierProfile 분리 고려
+#### 중요 사항
+⚠️ **SupplierProfile에는 장애인 직원 정보 없음**
+- 장애인 직원 데이터는 항상 BuyerProfile에만 존재
+- 표준사업장이라도 직원 정보는 BuyerProfile을 통해 관리
+
+#### 실제 데이터 예시
+
+```json
+{
+  "id": "cmlu4go9b000810vpu3ww9sic",
+  "companyId": "cmlu4go9a000510vpggruiy9v",  // 행복한표준사업장
+  "region": "서울",
+  "industry": "제조업",
+  "approved": true
+}
+```
 
 ---
 
-## 📝 업데이트 이력
+## 🔗 ID 연결 흐름도
 
-- **2026-02-27 10:00**: 최초 작성
-- **2026-02-27 10:30**: User.employeeId 16개 계정 연동 완료
-- **2026-02-27 10:45**: 데이터 정합성 체크 완료
-- **2026-02-27 11:00**: BuyerProfile.disabledCount 전체 동기화 완료 ✅
-  - 공공기관1: 34명 → 12명
-  - 공공기관2: 41명 → 0명
-  - 교육청1: 49명 → 10명
-  - 주식회사 페마연: 15명 (변경 없음)
-  - 지자체1: 57명 → 0명
-  - 행복한표준사업장: 0명 → 15명
+### 시나리오 1: 민간 기업 (BUYER)
+
+```
+페마연 (Company)
+  id: cmlu4gobz000910vpj1izl197
+  type: BUYER
+  bizNo: 2668101215
+    │
+    ├─ ownerUserId ──────────────┐
+    │                            ↓
+    │                     User (관리자)
+    │                       id: cmlu4gobz000810vp2g2pjq94
+    │                       role: BUYER
+    │                       phone: 010-9999-0000
+    │
+    └─ BuyerProfile
+         id: cmlu4gobz000a10vplc93ruqy
+         companyId: cmlu4gobz000910vpj1izl197
+         employeeCount: 1000
+         disabledCount: 15
+           │
+           └─ disabledEmployees[]
+                ├─ DisabledEmployee #1
+                │    id: emp_pemayeon_06
+                │    buyerId: cmlu4gobz000a10vplc93ruqy
+                │    name: 김민지
+                │       ↑
+                │       └─ User (직원)
+                │            id: cmm3z01sx00006kbxrq82mlhn
+                │            role: EMPLOYEE
+                │            employeeId: emp_pemayeon_06
+                │
+                ├─ DisabledEmployee #2
+                │    id: emp_pemayeon_07
+                │    name: 이정호
+                │    (로그인 계정 없음)
+                │
+                └─ ... (총 15명)
+```
+
+### 시나리오 2: 표준사업장 (SUPPLIER + 양쪽 프로필)
+
+```
+행복한표준사업장 (Company)
+  id: cmlu4go9a000510vpggruiy9v
+  type: SUPPLIER
+  bizNo: 1234567890
+    │
+    ├─ BuyerProfile (고용의무)
+    │    id: cmlu4go9a000610vp8plo7t4m
+    │    companyId: cmlu4go9a000510vpggruiy9v
+    │    disabledCount: 15
+    │      │
+    │      └─ disabledEmployees[]
+    │           ├─ DisabledEmployee #1
+    │           ├─ DisabledEmployee #2
+    │           └─ ... (총 15명)
+    │
+    └─ SupplierProfile (공급자 기능)
+         id: cmlu4go9b000810vpu3ww9sic
+         companyId: cmlu4go9a000510vpggruiy9v
+           │
+           └─ products[]
+                ├─ Product #1 (청소 서비스)
+                ├─ Product #2 (인쇄물 제작)
+                └─ ...
+```
 
 ---
 
-## 🎉 최종 검증 결과 (2026-02-27 11:00)
+## 🎓 개발자 참고 사항
 
-### 전체 시스템 데이터 정합성: ✅ 정상
+### Query Pattern 가이드
 
-| 검증 항목 | 상태 | 비고 |
-|-----------|------|------|
-| Company → BuyerProfile 관계 | ✅ 정상 | 6개 기업 모두 BuyerProfile 보유 |
-| BuyerProfile.disabledCount 정합성 | ✅ 정상 | 6개 기업 모두 실제 카운트와 일치 |
-| User.employeeId 연동 상태 | ✅ 정상 | 16개 계정 모두 정상 연동 |
+#### ✅ 올바른 패턴
 
-**모든 기업별 장애인 직원 ID 연동이 완벽하게 완료되었습니다!** 🎊
+**1. 회사 + 직원 정보 조회**
+```typescript
+const company = await prisma.company.findUnique({
+  where: { id: companyId },
+  include: {
+    buyerProfile: {
+      include: {
+        disabledEmployees: {
+          where: { resignDate: null },  // 재직 중인 직원만
+          orderBy: { hireDate: 'asc' }
+        }
+      }
+    },
+    supplierProfile: true  // 기본 정보만
+  }
+});
+
+// 직원 데이터 추출 (타입 무관)
+const employees = company.buyerProfile?.disabledEmployees || [];
+```
+
+**2. 특정 직원 상세 조회**
+```typescript
+const employee = await prisma.disabledEmployee.findUnique({
+  where: { id: employeeId },
+  include: {
+    buyer: {
+      include: {
+        company: true
+      }
+    }
+  }
+});
+
+// 회사 정보 접근
+const companyName = employee.buyer.company.name;
+```
+
+**3. 직원 계정 생성**
+```typescript
+// 1단계: DisabledEmployee 생성
+const employee = await prisma.disabledEmployee.create({
+  data: {
+    buyerId: buyerProfileId,  // ⚠️ Company.id가 아님!
+    name: "홍길동",
+    severity: "SEVERE",
+    // ...
+  }
+});
+
+// 2단계: User 계정 생성
+const user = await prisma.user.create({
+  data: {
+    phone: "010-1234-5678",
+    role: "EMPLOYEE",
+    companyId: companyId,
+    employeeId: employee.id,  // 핵심 연결!
+    // ...
+  }
+});
+```
+
+#### ❌ 잘못된 패턴
+
+```typescript
+// ❌ SupplierProfile에서 직원 조회 시도
+const employees = company.supplierProfile?.disabledEmployees;
+// → undefined! SupplierProfile에는 disabledEmployees 관계 없음
+
+// ❌ Company.id로 직접 DisabledEmployee 조회
+const employees = await prisma.disabledEmployee.findMany({
+  where: { buyerId: companyId }
+});
+// → buyerId는 BuyerProfile.id여야 함!
+
+// ❌ Type 기반 조건문
+if (company.type === 'BUYER') {
+  employees = company.buyerProfile.disabledEmployees;
+} else {
+  employees = company.supplierProfile.disabledEmployees;  // 오류!
+}
+// → SUPPLIER 타입도 BuyerProfile 가질 수 있음!
+```
+
+---
+
+### Type 체크 가이드
+
+```typescript
+// ✅ 고용의무 대상 여부
+const hasEmploymentObligation = company.buyerProfile !== null;
+
+// ✅ 표준사업장 여부
+const isSupplier = company.type === 'SUPPLIER';
+
+// ✅ 표준사업장 + 고용의무 대상
+const isStandardWorkplace = 
+  company.type === 'SUPPLIER' && 
+  company.buyerProfile !== null;
+
+// ✅ 직원 데이터 유무
+const hasEmployees = 
+  company.buyerProfile?.disabledEmployees.length > 0;
+```
+
+---
+
+### UI 표시 로직
+
+```typescript
+function getCompanyTypeLabel(company: Company): string {
+  if (company.type === 'SUPPLIER' && company.buyerProfile) {
+    return '표준사업장 (고용의무 대상)';
+  }
+  
+  if (company.type === 'SUPPLIER') {
+    return '표준사업장';
+  }
+  
+  // BUYER
+  switch (company.buyerType) {
+    case 'PRIVATE_COMPANY':
+      return '민간 기업';
+    case 'PUBLIC_INSTITUTION':
+      return '공공기관';
+    case 'EDUCATION':
+      return '교육청';
+    case 'LOCAL_GOVERNMENT':
+      return '지자체';
+    default:
+      return '고용의무기업';
+  }
+}
+```
+
+---
+
+## 📊 시스템 통계 (2026-02-27)
+
+### 전체 현황
+
+```
+Company: 5개
+├─ BUYER: 4개
+│  ├─ 민간 기업: 1개 (페마연)
+│  ├─ 공공기관: 1개
+│  ├─ 교육청: 1개
+│  └─ 지자체: 1개
+│
+└─ SUPPLIER: 1개 (행복한표준사업장)
+   ├─ BuyerProfile: ✅
+   └─ SupplierProfile: ✅
+
+BuyerProfile: 5개 (모든 Company가 보유)
+├─ 1:1 Company 연결: 100%
+└─ DisabledEmployee 연결: 62명
+
+DisabledEmployee: 62명
+├─ 재직 중: 62명
+├─ 퇴사: 0명
+└─ User 계정 연동: 16명 (25.8%)
+
+User: 21명
+├─ BUYER: 5명 (회사 관리자)
+├─ EMPLOYEE: 16명 (직원 계정)
+└─ SUPER_ADMIN: 0명
+```
+
+---
+
+## 🔒 데이터 무결성 규칙
+
+### 필수 제약 조건
+
+1. **Company ↔ BuyerProfile**
+   - `BuyerProfile.companyId` MUST reference valid `Company.id`
+   - Relationship: 1:1 (optional)
+
+2. **BuyerProfile ↔ DisabledEmployee**
+   - `DisabledEmployee.buyerId` MUST reference valid `BuyerProfile.id`
+   - Relationship: 1:N
+
+3. **User ↔ DisabledEmployee (EMPLOYEE 역할)**
+   - `User.employeeId` MUST reference valid `DisabledEmployee.id` when role = EMPLOYEE
+   - Relationship: 1:1 (optional)
+
+4. **Company ↔ User (Owner)**
+   - `Company.ownerUserId` MUST reference valid `User.id`
+   - Relationship: 1:1
+
+### Cascade 규칙
+
+```prisma
+// Company 삭제 시
+Company delete → BuyerProfile cascade delete → DisabledEmployee cascade delete
+
+// BuyerProfile 삭제 시
+BuyerProfile delete → DisabledEmployee cascade delete
+
+// DisabledEmployee 삭제 시
+DisabledEmployee delete → User.employeeId set null
+```
+
+---
+
+## 📚 관련 문서
+
+1. [ID 불일치 근본 원인 분석](./ID_MISMATCH_ROOT_CAUSE_ANALYSIS.md) - 문제 해결 과정
+2. [시스템 통일 작업 완료](./SYSTEM_UNIFICATION.md) - 최근 수정 사항
+3. [회사-직원 ID 매핑](../COMPANY_EMPLOYEE_ID_MAPPING.md) - 실제 데이터 예시
+
+---
+
+**작성자**: AI Assistant  
+**최종 업데이트**: 2026-02-27  
+**상태**: ✅ 완료
