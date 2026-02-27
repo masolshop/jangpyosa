@@ -200,14 +200,13 @@ export default function MonthlyManagementPage() {
       // ✅ 통합 API 사용
       const { saveMonthlyData: saveData } = await import("@/lib/unified-api");
       
-      // 월별 데이터를 API 형식으로 변환
-      const monthlyDataToSave = monthlyData.map(data => ({
-        year: data.year,
-        month: data.month,
-        totalEmployeeCount: data.totalEmployeeCount,
-      }));
+      // 월별 데이터를 API 형식으로 변환 (Record<month, totalEmployeeCount>)
+      const monthlyDataToSave: Record<number, number> = {};
+      monthlyData.forEach(data => {
+        monthlyDataToSave[data.month] = data.totalEmployeeCount;
+      });
       
-      await saveData(monthlyDataToSave);
+      await saveData(year, monthlyDataToSave);
       setMessage("✅ 저장되었습니다");
 
       // 데이터 다시 불러오기
