@@ -71,14 +71,19 @@ export default function EmployeeLeavePage() {
         return;
       }
 
-      // 소속 회사 정보 (이메일 확인용)
+      // 소속 회사 정보 및 employeeId 조회
       const userRes = await fetch('/api/auth/me', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       let employeeId = null;
       if (userRes.ok) {
         const userData = await userRes.json();
-        employeeId = userData.user.id;
+        console.log('👤 사용자 데이터:', userData);
+        
+        // User.employeeId 사용 (DisabledEmployee ID)
+        employeeId = userData.user.employeeId;
+        console.log('🆔 직원 ID:', employeeId);
+        
         if (userData.user.companyId) {
           const companyRes = await fetch('/api/companies/my', {
             headers: { 'Authorization': `Bearer ${token}` }
@@ -94,22 +99,31 @@ export default function EmployeeLeavePage() {
       if (employeeId) {
         const year = new Date().getFullYear();
         try {
+          console.log(`📊 연차 조회 시작: employeeId=${employeeId}, year=${year}`);
           const annualLeaveRes = await fetch(`${API_BASE}/annual-leave/employee/${employeeId}?year=${year}`, {
             headers: { 'Authorization': `Bearer ${token}` },
             cache: 'no-store'
           });
+          console.log('📡 연차 API 응답:', annualLeaveRes.status);
+          
           if (annualLeaveRes.ok) {
             const annualLeaveData = await annualLeaveRes.json();
+            console.log('✅ 연차 데이터:', annualLeaveData);
             setAnnualLeave({
               year: year,
               totalDays: annualLeaveData.balance.totalDays,
               usedDays: annualLeaveData.usedDays,
               remainingDays: annualLeaveData.balance.remainingDays
             });
+          } else {
+            const errorData = await annualLeaveRes.json();
+            console.error('❌ 연차 조회 실패:', errorData);
           }
         } catch (err) {
-          console.error('연차 현황 조회 실패:', err);
+          console.error('❌ 연차 현황 조회 예외:', err);
         }
+      } else {
+        console.warn('⚠️ employeeId가 없습니다. 연차 현황을 표시할 수 없습니다.');
       }
 
       // 휴가 유형 목록
