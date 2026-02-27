@@ -1,0 +1,406 @@
+import { Router } from "express";
+import { z } from "zod";
+import { prisma } from "../index.js";
+import { requireAuth } from "../middleware/auth.js";
+import { calculateYearlyData, calculateMonthlyData, } from "../services/employment-calculator-v2.js";
+const router = Router();
+// 헬퍼 함수: 사용자의 회사 정보 조회
+async function getUserCompany(userId, userRole) {
+    if (userRole === "SUPER_ADMIN") {
+        return await prisma.company.findFirst({
+            where: {
+                type: "BUYER",
+                buyerProfile: { isNot: null }
+            },
+            include: { buyerProfile: true },
+        });
+    }
+    else {
+        // 일반 사용자 또는 팀원: companyId로 조회
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            include: {
+                company: {
+                    include: { buyerProfile: true }
+                }
+            }
+        });
+        return user?.company;
+    }
+}
+// 직원 목록 조회
+router.get("/", requireAuth, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const userRole = req.user.role;
+        // BUYER, SUPPLIER, SUPER_ADMIN 모두 접근 가능
+        if (userRole !== "BUYER" && userRole !== "SUPPLIER" && userRole !== "SUPER_ADMIN") {
+            return res.status(403).json({ error: "부담금기업 또는 표준사업장만 접근 가능합니다." });
+        }
+        const company = await getUserCompany(userId, userRole);
+        if (!company || !company.buyerProfile) {
+            return res.status(404).json({ error: "기업 정보가 없습니다." });
+        }
+        const employees = await prisma.disabledEmployee.findMany({
+            where: { buyerId: company.buyerProfile.id },
+            orderBy: [{ resignDate: "asc" }, { hireDate: "asc" }],
+        });
+        return res.json({ employees });
+    }
+    catch (error) {
+        console.error("직원 목록 조회 실패:", error);
+        return res.status(500).json({ error: error.message });
+    }
+});
+// 직원 추가
+router.post("/", requireAuth, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const userRole = req.user.role;
+        // BUYER, SUPPLIER, SUPER_ADMIN 모두 접근 가능
+        if (userRole !== "BUYER" && userRole !== "SUPPLIER" && userRole !== "SUPER_ADMIN") {
+            return res.status(403).json({ error: "부담금기업 또는 표준사업장만 접근 가능합니다." });
+        }
+        const schema = z.object({
+            name: z.string().min(1),
+            phone: z.string().nullable().optional(),
+            registrationNumber: z.string().nullable().optional(),
+            disabilityType: z.string().min(1),
+            disabilityGrade: z.string().nullable().optional(),
+            severity: z.enum(["MILD", "SEVERE"]),
+            gender: z.enum(["M", "F"]),
+            birthDate: z.string().nullable().optional(),
+            hireDate: z.string(), // ISO date
+            resignDate: z.string().nullable().optional(),
+            monthlySalary: z.number().int().positive(),
+            hasEmploymentInsurance: z.boolean(),
+            meetsMinimumWage: z.boolean(),
+            monthlyWorkHours: z.number().int().nullable().optional(),
+            workType: z.enum(["OFFICE", "REMOTE", "HYBRID"]).optional(),
+            memo: z.string().nullable().optional(),
+        });
+        const body = schema.parse(req.body);
+        const company = await getUserCompany(userId, userRole);
+        if (!company || !company.buyerProfile) {
+            return res.status(404).json({ error: "기업 정보가 없습니다." });
+        }
+        const employee = await prisma.disabledEmployee.create({
+            data: {
+                buyerId: company.buyerProfile.id,
+                name: body.name,
+                phone: body.phone,
+                registrationNumber: body.registrationNumber,
+                disabilityType: body.disabilityType,
+                disabilityGrade: body.disabilityGrade,
+                severity: body.severity,
+                gender: body.gender,
+                birthDate: body.birthDate ? new Date(body.birthDate) : null,
+                hireDate: new Date(body.hireDate),
+                resignDate: body.resignDate ? new Date(body.resignDate) : null,
+                monthlySalary: body.monthlySalary,
+                hasEmploymentInsurance: body.hasEmploymentInsurance,
+                meetsMinimumWage: body.meetsMinimumWage,
+                monthlyWorkHours: body.monthlyWorkHours,
+                workHoursPerWeek: body.monthlyWorkHours ? Math.round(body.monthlyWorkHours / 4.33) : null,
+                workType: body.workType || "OFFICE",
+                memo: body.memo,
+            },
+        });
+        return res.json({ employee });
+    }
+    catch (error) {
+        console.error("직원 추가 실패:", error);
+        return res.status(500).json({ error: error.message });
+    }
+});
+// ============================================
+// 월별 데이터 API (/:id 보다 먼저 등록해야 함)
+// ============================================
+/**
+ * GET /employees/monthly
+ * 월별 고용 데이터 조회
+ */
+router.get("/monthly", requireAuth, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const userRole = req.user.role;
+        const year = parseInt(req.query.year) || new Date().getFullYear();
+        // BUYER, SUPPLIER, SUPER_ADMIN 모두 접근 가능
+        if (userRole !== "BUYER" && userRole !== "SUPPLIER" && userRole !== "SUPER_ADMIN") {
+            return res.status(403).json({ error: "부담금기업 또는 표준사업장만 접근 가능합니다." });
+        }
+        const company = await getUserCompany(userId, userRole);
+        if (!company || !company.buyerProfile) {
+            return res.status(404).json({ error: "기업 정보가 없습니다." });
+        }
+        // 장애인 직원 목록 조회
+        const dbEmployees = await prisma.disabledEmployee.findMany({
+            where: { buyerId: company.buyerProfile.id },
+            orderBy: { hireDate: "asc" },
+        });
+        console.log(`📊 [월별 데이터] 연도: ${year}, 전체 직원 수: ${dbEmployees.length}`);
+        dbEmployees.forEach((emp, idx) => {
+            console.log(`  ${idx + 1}. ${emp.name} - 입사: ${emp.hireDate.toISOString().slice(0, 10)}, 퇴사: ${emp.resignDate ? emp.resignDate.toISOString().slice(0, 10) : '재직중'}, 월${emp.monthlyWorkHours}h/주${emp.workHoursPerWeek}h`);
+        });
+        // 타입 변환
+        const employees = dbEmployees.map((emp) => ({
+            id: emp.id,
+            name: emp.name,
+            severity: emp.severity,
+            gender: emp.gender,
+            birthDate: emp.birthDate || undefined,
+            hireDate: emp.hireDate,
+            resignDate: emp.resignDate || undefined,
+            // 월간 근로시간 사용 (workHoursPerWeek 완전 차단)
+            monthlyWorkHours: emp.monthlyWorkHours || 60, // 기본값: 월 60시간
+            monthlySalary: emp.monthlySalary,
+            meetsMinimumWage: emp.meetsMinimumWage,
+            hasEmploymentInsurance: emp.hasEmploymentInsurance,
+        }));
+        // 기존 월별 데이터 조회
+        const existingData = await prisma.monthlyEmployeeData.findMany({
+            where: { buyerId: company.buyerProfile.id, year },
+            orderBy: { month: "asc" },
+        });
+        // 월별 상시근로자 수 맵 생성
+        const monthlyEmployeeCounts = {};
+        for (let month = 1; month <= 12; month++) {
+            const found = existingData.find((d) => d.month === month);
+            monthlyEmployeeCounts[month] = found?.totalEmployeeCount || 0;
+        }
+        // 자동 계산 (buyerType 전달)
+        const calculatedResults = calculateYearlyData(employees, monthlyEmployeeCounts, year, company.buyerType || "PRIVATE_COMPANY" // 기본값: 민간기업
+        );
+        // 기존 데이터와 병합
+        const monthlyData = calculatedResults.map((result) => {
+            const existing = existingData.find((d) => d.month === result.month);
+            return {
+                id: existing?.id,
+                year: result.year,
+                month: result.month,
+                totalEmployeeCount: result.totalEmployeeCount,
+                disabledCount: result.disabledCount,
+                recognizedCount: result.recognizedCount,
+                obligatedCount: result.obligatedCount,
+                incentiveBaselineCount: result.incentiveBaselineCount,
+                incentiveExcludedCount: result.incentiveExcludedCount,
+                incentiveEligibleCount: result.incentiveEligibleCount,
+                shortfallCount: result.shortfallCount,
+                levy: result.levy,
+                incentive: result.incentive,
+                netAmount: result.netAmount,
+                details: result.details,
+            };
+        });
+        return res.json({
+            year,
+            companyName: company.name,
+            companyType: company.type,
+            monthlyData,
+        });
+    }
+    catch (error) {
+        console.error("월별 데이터 조회 실패:", error);
+        return res.status(500).json({ error: error.message });
+    }
+});
+/**
+ * PUT /employees/monthly
+ * 월별 상시근로자 수 업데이트 (일괄)
+ */
+router.put("/monthly", requireAuth, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const userRole = req.user.role;
+        const { year, monthlyEmployeeCounts } = req.body;
+        console.log("PUT /employees/monthly - userId:", userId, "role:", userRole);
+        console.log("year:", year, "monthlyEmployeeCounts:", monthlyEmployeeCounts);
+        // BUYER, SUPPLIER, SUPER_ADMIN 모두 접근 가능
+        if (userRole !== "BUYER" && userRole !== "SUPPLIER" && userRole !== "SUPER_ADMIN") {
+            return res.status(403).json({ error: "부담금기업 또는 표준사업장만 접근 가능합니다." });
+        }
+        const company = await getUserCompany(userId, userRole);
+        console.log("회사:", company?.name, "buyerProfileId:", company?.buyerProfile?.id);
+        if (!company || !company.buyerProfile) {
+            return res.status(404).json({ error: "기업 정보가 없습니다." });
+        }
+        // 장애인 직원 목록 조회
+        const dbEmployees = await prisma.disabledEmployee.findMany({
+            where: { buyerId: company.buyerProfile.id },
+        });
+        console.log("직원 수:", dbEmployees.length);
+        const employees = dbEmployees.map((emp) => ({
+            id: emp.id,
+            name: emp.name,
+            severity: emp.severity,
+            gender: emp.gender,
+            birthDate: emp.birthDate || undefined,
+            hireDate: emp.hireDate,
+            resignDate: emp.resignDate || undefined,
+            monthlyWorkHours: emp.monthlyWorkHours || 60, // 기본값: 월 60시간
+            monthlySalary: emp.monthlySalary,
+            meetsMinimumWage: emp.meetsMinimumWage,
+            hasEmploymentInsurance: emp.hasEmploymentInsurance,
+        }));
+        // 월별 계산 및 저장
+        const savedData = [];
+        for (let month = 1; month <= 12; month++) {
+            const totalEmployeeCount = monthlyEmployeeCounts[month] || 0;
+            // 계산 (buyerType 전달)
+            const result = calculateMonthlyData(employees, totalEmployeeCount, year, month, company.buyerType || "PRIVATE_COMPANY" // 기본값: 민간기업
+            );
+            // DB 저장 (upsert)
+            const saved = await prisma.monthlyEmployeeData.upsert({
+                where: {
+                    buyerId_year_month: {
+                        buyerId: company.buyerProfile.id,
+                        year,
+                        month,
+                    },
+                },
+                update: {
+                    totalEmployeeCount: result.totalEmployeeCount,
+                    disabledCount: result.disabledCount,
+                    recognizedCount: result.recognizedCount,
+                    obligatedCount: result.obligatedCount,
+                    shortfallCount: result.shortfallCount,
+                    levy: result.levy,
+                    incentive: result.incentive,
+                    netAmount: result.netAmount,
+                    detailJson: JSON.stringify(result.details),
+                },
+                create: {
+                    buyerId: company.buyerProfile.id,
+                    year,
+                    month,
+                    totalEmployeeCount: result.totalEmployeeCount,
+                    disabledCount: result.disabledCount,
+                    recognizedCount: result.recognizedCount,
+                    obligatedCount: result.obligatedCount,
+                    shortfallCount: result.shortfallCount,
+                    levy: result.levy,
+                    incentive: result.incentive,
+                    netAmount: result.netAmount,
+                    detailJson: JSON.stringify(result.details),
+                },
+            });
+            savedData.push(saved);
+        }
+        console.log("저장 완료:", savedData.length, "건");
+        return res.json({
+            message: "월별 데이터가 저장되었습니다.",
+            savedCount: savedData.length,
+        });
+    }
+    catch (error) {
+        console.error("월별 데이터 저장 실패:", error);
+        return res.status(500).json({ error: error.message });
+    }
+});
+// ============================================
+// 직원 개별 관리 API
+// ============================================
+// 직원 수정
+router.put("/:id", requireAuth, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const userRole = req.user.role;
+        const employeeId = req.params.id;
+        // BUYER, SUPPLIER, SUPER_ADMIN 모두 접근 가능
+        if (userRole !== "BUYER" && userRole !== "SUPPLIER" && userRole !== "SUPER_ADMIN") {
+            return res.status(403).json({ error: "부담금기업 또는 표준사업장만 접근 가능합니다." });
+        }
+        const schema = z.object({
+            name: z.string().min(1).optional(),
+            phone: z.string().nullable().optional(),
+            registrationNumber: z.string().nullable().optional(),
+            disabilityType: z.string().min(1).optional(),
+            disabilityGrade: z.string().nullable().optional(),
+            severity: z.enum(["MILD", "SEVERE"]).optional(),
+            gender: z.enum(["M", "F"]).optional(),
+            birthDate: z.string().nullable().optional(),
+            hireDate: z.string().optional(),
+            resignDate: z.string().nullable().optional(),
+            monthlySalary: z.number().int().positive().optional(),
+            hasEmploymentInsurance: z.boolean().optional(),
+            meetsMinimumWage: z.boolean().optional(),
+            monthlyWorkHours: z.number().int().nullable().optional(),
+            workType: z.enum(["OFFICE", "REMOTE", "HYBRID"]).optional(),
+            memo: z.string().nullable().optional(),
+        });
+        const body = schema.parse(req.body);
+        const company = await getUserCompany(userId, userRole);
+        if (!company || !company.buyerProfile) {
+            return res.status(404).json({ error: "기업 정보가 없습니다." });
+        }
+        // 직원 소유 확인
+        const existing = await prisma.disabledEmployee.findUnique({
+            where: { id: employeeId },
+        });
+        if (!existing || existing.buyerId !== company.buyerProfile.id) {
+            return res.status(404).json({ error: "직원을 찾을 수 없습니다." });
+        }
+        const employee = await prisma.disabledEmployee.update({
+            where: { id: employeeId },
+            data: {
+                name: body.name,
+                phone: body.phone,
+                registrationNumber: body.registrationNumber,
+                disabilityType: body.disabilityType,
+                disabilityGrade: body.disabilityGrade,
+                severity: body.severity,
+                gender: body.gender,
+                birthDate: body.birthDate === null ? null : (body.birthDate ? new Date(body.birthDate) : undefined),
+                hireDate: body.hireDate ? new Date(body.hireDate) : undefined,
+                resignDate: body.resignDate === null ? null : (body.resignDate ? new Date(body.resignDate) : undefined),
+                monthlySalary: body.monthlySalary,
+                hasEmploymentInsurance: body.hasEmploymentInsurance,
+                meetsMinimumWage: body.meetsMinimumWage,
+                monthlyWorkHours: body.monthlyWorkHours === null ? null : body.monthlyWorkHours,
+                workHoursPerWeek: body.monthlyWorkHours ? Math.round(body.monthlyWorkHours / 4.33) : undefined,
+                workType: body.workType,
+                memo: body.memo === null ? null : body.memo,
+            },
+        });
+        return res.json({ employee });
+    }
+    catch (error) {
+        console.error("직원 수정 실패:", error);
+        return res.status(500).json({ error: error.message });
+    }
+});
+// 직원 삭제
+router.delete("/:id", requireAuth, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const userRole = req.user.role;
+        const employeeId = req.params.id;
+        // BUYER, SUPPLIER, SUPER_ADMIN 모두 접근 가능
+        if (userRole !== "BUYER" && userRole !== "SUPPLIER" && userRole !== "SUPER_ADMIN") {
+            return res.status(403).json({ error: "부담금기업 또는 표준사업장만 접근 가능합니다." });
+        }
+        const company = await getUserCompany(userId, userRole);
+        if (!company || !company.buyerProfile) {
+            return res.status(404).json({ error: "기업 정보가 없습니다." });
+        }
+        // 직원 소유 확인
+        const existing = await prisma.disabledEmployee.findUnique({
+            where: { id: employeeId },
+        });
+        if (!existing || existing.buyerId !== company.buyerProfile.id) {
+            return res.status(404).json({ error: "직원을 찾을 수 없습니다." });
+        }
+        await prisma.disabledEmployee.delete({
+            where: { id: employeeId },
+        });
+        return res.json({ success: true });
+    }
+    catch (error) {
+        console.error("직원 삭제 실패:", error);
+        return res.status(500).json({ error: error.message });
+    }
+});
+// ============================================
+// 월별 데이터 관리 API
+// ============================================
+export default router;
