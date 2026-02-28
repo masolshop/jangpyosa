@@ -6,23 +6,11 @@ import Link from 'next/link';
 
 export default function AdminDashboard() {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState('');
 
   useEffect(() => {
-    checkAuth();
-  }, []);
-
-  const checkAuth = () => {
-    const token = localStorage.getItem('accessToken');
-    const role = localStorage.getItem('role');
+    // 사용자 정보 로드 (인증은 layout에서 처리)
     const user = localStorage.getItem('user');
-
-    if (!token || role !== 'SUPER_ADMIN') {
-      router.push('/admin/login');
-      return;
-    }
-
     if (user) {
       try {
         const userData = JSON.parse(user);
@@ -30,23 +18,15 @@ export default function AdminDashboard() {
       } catch (e) {
         setUserName('슈퍼관리자');
       }
+    } else {
+      setUserName('슈퍼관리자');
     }
-    
-    setLoading(false);
-  };
+  }, []);
 
   const handleLogout = () => {
     localStorage.clear();
     router.push('/admin/login');
   };
-
-  if (loading) {
-    return (
-      <div style={{ padding: 40, textAlign: 'center' }}>
-        <p>로딩 중...</p>
-      </div>
-    );
-  }
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
