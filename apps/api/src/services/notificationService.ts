@@ -78,26 +78,14 @@ export async function createNotification(input: CreateNotificationInput) {
 }
 
 /**
- * 여러 사용자에게 알림 생성 (최적화: createMany 사용)
+ * 여러 사용자에게 알림 생성
  */
 export async function createBulkNotifications(userIds: string[], input: Omit<CreateNotificationInput, 'userId'>) {
-  const { type, title, message, link, data, priority, category } = input;
+  const notifications = await Promise.all(
+    userIds.map(userId => createNotification({ ...input, userId }))
+  );
   
-  // createMany로 배치 insert (훨씬 빠름)
-  const result = await prisma.notification.createMany({
-    data: userIds.map(userId => ({
-      userId,
-      type,
-      title,
-      message,
-      link: link || null,
-      data: data ? JSON.stringify(data) : null,
-      priority: priority || NotificationPriority.NORMAL,
-      category: category || NotificationCategory.GENERAL,
-    })),
-  });
-  
-  return result;
+  return notifications;
 }
 
 /**
