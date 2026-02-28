@@ -182,4 +182,178 @@ router.put("/my", requireAuth, async (req, res) => {
   }
 });
 
+// 🆕 슈퍼어드민: 모든 기업 목록 조회
+router.get("/admin/all", requireAuth, async (req, res) => {
+  try {
+    const userRole = req.user!.role;
+
+    if (userRole !== "SUPER_ADMIN") {
+      return res.status(403).json({ error: "슈퍼어드민만 접근 가능합니다." });
+    }
+
+    const companies = await prisma.company.findMany({
+      include: {
+        buyerProfile: {
+          select: {
+            employeeCount: true,
+            disabledCount: true,
+          },
+        },
+        supplierProfile: {
+          select: {
+            region: true,
+            industry: true,
+          },
+        },
+        members: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+            isCompanyOwner: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    return res.json({
+      success: true,
+      companies: companies.map((company) => ({
+        id: company.id,
+        name: company.name,
+        bizNo: company.bizNo,
+        representative: company.representative,
+        type: company.type,
+        buyerType: company.buyerType,
+        isVerified: company.isVerified,
+        hasApickData: !!company.apickData,
+        memberCount: company.members.length,
+        buyerProfile: company.buyerProfile,
+        supplierProfile: company.supplierProfile,
+        createdAt: company.createdAt,
+        updatedAt: company.updatedAt,
+      })),
+    });
+  } catch (error: any) {
+    console.error("기업 목록 조회 실패:", error);
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+// 🆕 슈퍼어드민: 특정 기업 상세 정보 조회 (APICK 데이터 포함)
+router.get("/admin/:companyId", requireAuth, async (req, res) => {
+  try {
+    const userRole = req.user!.role;
+    const { companyId } = req.params;
+
+    if (userRole !== "SUPER_ADMIN") {
+      return res.status(403).json({ error: "슈퍼어드민만 접근 가능합니다." });
+    }
+
+    const company = await prisma.company.findUnique({
+      where: { id: companyId },
+      include: {
+        buyerProfile: true,
+        supplierProfile: true,
+        members: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+            email: true,
+            managerName: true,
+            managerTitle: true,
+            managerEmail: true,
+            managerPhone: true,
+            isCompanyOwner: true,
+            createdAt: true,
+          },
+        },
+      },
+    });
+
+    if (!company) {
+      return res.status(404).json({ error: "기업을 찾을 수 없습니다." });
+    }
+
+    // APICK 데이터 파싱
+    let apickData = null;
+    if (company.apickData) {
+      try {
+        apickData = JSON.parse(company.apickData);
+      } catch (e) {
+        console.error("APICK 데이터 파싱 실패:", e);
+      }
+    }
+
+    return res.json({
+      success: true,
+      company: {
+        ...company,
+        apickData,
+      },
+    });
+  } catch (error: any) {
+    console.error("기업 상세 조회 실패:", error);
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+// 🆕 슈퍼어드민: 기업 APICK 데이터 재인증 및 저장
+router.post("/admin/:companyId/refresh-apick", requireAuth, async (req, res) => {
+  try {
+    const userRole = req.user!.role;
+    const { companyId } = req.params;
+
+    if (userRole !== "SUPER_ADMIN") {
+      return res.status(403).json({ error: "슈퍼어드민만 접근 가능합니다." });
+    }
+
+    const company = await prisma.company.findUnique({
+      where: { id: companyId },
+    });
+
+    if (!company) {
+      return res.status(404).json({ error: "기업을 찾을 수 없습니다." });
+    }
+
+    // APICK API 호출
+    const { verifyBizNo } = await import("../services/apick.js");
+    const result = await verifyBizNo(company.bizNo);
+
+    if (!result.ok) {
+      return res.status(400).json({
+        error: "APICK_VERIFICATION_FAILED",
+        message: result.error || "사업자번호 인증 실패",
+      });
+    }
+
+    // APICK 데이터 저장
+    const updatedCompany = await prisma.company.update({
+      where: { id: companyId },
+      data: {
+        apickData: JSON.stringify(result.data),
+        name: result.name || company.name,
+        representative: result.representative || company.representative,
+        isVerified: true,
+      },
+    });
+
+    return res.json({
+      success: true,
+      message: "APICK 데이터가 업데이트되었습니다",
+      company: {
+        ...updatedCompany,
+        apickData: result.data,
+      },
+    });
+  } catch (error: any) {
+    console.error("APICK 재인증 실패:", error);
+    return res.status(500).json({ error: error.message });
+  }
+});
+
 export default router;
