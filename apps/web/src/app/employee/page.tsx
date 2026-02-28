@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
-  title: "장애인직원관리솔루션 - 장표사닷컴 | 무료 장애인고용관리",
-  description: "국내유일 무료 장애인직원고용관리솔루션! 장애인직원용 재택근무 근태관리, 업무관리, 휴가관리. 장애인 직원 출퇴근 체크, 업무지시, 휴가신청을 간편하게! 장애인표준사업장과 기업을 위한 완벽한 장애인고용관리 시스템.",
+  title: "장애인직원관리솔루션 - 장표사닷컴 | 무료 장애인고용관리 시스템",
+  description: "국내유일 무료 장애인직원고용관리솔루션! 장애인직원용 재택근무 근태관리, 업무관리, 휴가관리. 장애인 직원 출퇴근 체크, 업무지시, 휴가신청을 간편하게! 장애인표준사업장과 기업을 위한 완벽한 장애인고용관리 시스템. 무료 체험 가능!",
   keywords: [
     "장애인직원관리솔루션",
     "장애인고용관리",
@@ -19,7 +19,12 @@ export const metadata: Metadata = {
     "장애인고용솔루션",
     "장표사닷컴",
     "장애인직원출퇴근",
-    "장애인직원근무관리"
+    "장애인직원근무관리",
+    "장애인고용관리시스템",
+    "장애인직원관리시스템",
+    "장애인근무관리",
+    "장애인직원근태",
+    "재택근무장애인"
   ],
   authors: [{ name: "장표사닷컴" }],
   creator: "장표사닷컴",
@@ -36,8 +41,8 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    title: "장애인직원관리솔루션 - 장표사닷컴",
-    description: "국내유일 무료 장애인직원고용관리솔루션! 재택근무 근태관리, 업무관리, 휴가관리를 간편하게!",
+    title: "장애인직원관리솔루션 - 장표사닷컴 | 무료 장애인고용관리",
+    description: "국내유일 무료 장애인직원고용관리솔루션! 재택근무 근태관리, 업무관리, 휴가관리를 간편하게! 장애인 직원과 관리자를 위한 완벽한 솔루션.",
     url: "https://jangpyosa.com/employee",
     siteName: "장표사닷컴",
     locale: "ko_KR",
@@ -47,7 +52,7 @@ export const metadata: Metadata = {
         url: "https://jangpyosa.com/images/employee-thumbnail.jpg",
         width: 800,
         height: 400,
-        alt: "장표사닷컴 장애인직원관리솔루션",
+        alt: "장표사닷컴 장애인직원관리솔루션 - 무료 장애인고용관리 시스템",
       },
     ],
   },
