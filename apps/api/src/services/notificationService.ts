@@ -171,6 +171,25 @@ export async function markAllAsRead(userId: string) {
 }
 
 /**
+ * 특정 타입의 알림 읽음 처리
+ */
+export async function markTypeAsRead(userId: string, types: string[]) {
+  const result = await prisma.notification.updateMany({
+    where: {
+      userId,
+      type: { in: types },
+      read: false,
+    },
+    data: {
+      read: true,
+      readAt: new Date(),
+    },
+  });
+  
+  return result;
+}
+
+/**
  * 알림 삭제
  */
 export async function deleteNotification(notificationId: string, userId: string) {

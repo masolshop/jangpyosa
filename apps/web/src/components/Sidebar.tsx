@@ -119,6 +119,32 @@ export default function Sidebar() {
     }
   };
 
+  // 특정 타입의 알림 모두 읽음 처리
+  const markNotificationsByTypeAsRead = async (types: string[]) => {
+    try {
+      const token = getToken();
+      if (!token) return;
+
+      // 타입별 읽음 처리 API 호출
+      const response = await fetch(`${API_BASE}/notifications/mark-type-read`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ types }),
+      });
+
+      if (response.ok) {
+        console.log(`[Sidebar] 알림 읽음 처리 완료 (타입: ${types.join(', ')})`);
+        // 알림 개수 새로고침
+        await fetchUnreadCount();
+      }
+    } catch (error) {
+      console.error('알림 읽음 처리 실패:', error);
+    }
+  };
+
   useEffect(() => {
     // 로그인한 사용자 정보 가져오기
     if (typeof window !== "undefined") {
@@ -289,10 +315,10 @@ export default function Sidebar() {
               </div>
               <MenuItem href="/dashboard/employees" label="장애인직원등록관리" icon="👥" active={isActive("/dashboard/employees")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} />
               <MenuItem href="/dashboard/monthly" label="고용장려금부담금관리" icon="📅" active={isActive("/dashboard/monthly")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} />
-              <MenuItem href="/dashboard/attendance" label="장애인직원근태관리" active={isActive("/dashboard/attendance")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} notificationCount={notificationCounts.attendance} />
-              <MenuItem href="/dashboard/work-orders" label="장애인직원업무관리" active={isActive("/dashboard/work-orders")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} notificationCount={notificationCounts.workOrder} />
-              <MenuItem href="/dashboard/announcements" label="장애인직원공지관리" active={isActive("/dashboard/announcements")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} notificationCount={notificationCounts.announcement} />
-              <MenuItem href="/dashboard/leave" label="장애인직원휴가관리" active={isActive("/dashboard/leave")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} notificationCount={notificationCounts.leave} />
+              <MenuItem href="/dashboard/attendance" label="장애인직원근태관리" active={isActive("/dashboard/attendance")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} notificationCount={notificationCounts.attendance} onNotificationClear={() => markNotificationsByTypeAsRead(['ATTENDANCE_REMINDER', 'ATTENDANCE_ISSUE'])} />
+              <MenuItem href="/dashboard/work-orders" label="장애인직원업무관리" active={isActive("/dashboard/work-orders")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} notificationCount={notificationCounts.workOrder} onNotificationClear={() => markNotificationsByTypeAsRead(['WORK_ORDER'])} />
+              <MenuItem href="/dashboard/announcements" label="장애인직원공지관리" active={isActive("/dashboard/announcements")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} notificationCount={notificationCounts.announcement} onNotificationClear={() => markNotificationsByTypeAsRead(['ANNOUNCEMENT'])} />
+              <MenuItem href="/dashboard/leave" label="장애인직원휴가관리" active={isActive("/dashboard/leave")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} notificationCount={notificationCounts.leave} onNotificationClear={() => markNotificationsByTypeAsRead(['LEAVE_REQUEST', 'LEAVE_APPROVED', 'LEAVE_REJECTED'])} />
               <MenuItem href="/dashboard/company" label="기업대시보드" icon="🏢" active={isActive("/dashboard/company")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} />
             </div>
           )}
@@ -308,18 +334,21 @@ export default function Sidebar() {
                 label="출퇴근 관리"
                 active={isActive("/employee/attendance")}
                 notificationCount={notificationCounts.attendance}
+                onNotificationClear={() => markNotificationsByTypeAsRead(['ATTENDANCE_REMINDER', 'ATTENDANCE_ISSUE'])}
               />
               <MenuItem
                 href="/employee/work-orders"
                 label="업무 관리"
                 active={isActive("/employee/work-orders")}
                 notificationCount={notificationCounts.workOrder}
+                onNotificationClear={() => markNotificationsByTypeAsRead(['WORK_ORDER'])}
               />
               <MenuItem
                 href="/employee/leave"
                 label="휴가 신청"
                 active={isActive("/employee/leave")}
                 notificationCount={notificationCounts.leave}
+                onNotificationClear={() => markNotificationsByTypeAsRead(['LEAVE_REQUEST', 'LEAVE_APPROVED', 'LEAVE_REJECTED'])}
               />
             </div>
           )}
@@ -405,13 +434,14 @@ interface MenuItemProps {
   icon?: string;
   active?: boolean;
   onClick?: () => void;
+  onNotificationClear?: () => void; // 알림 읽음 처리 콜백
   subItems?: { href: string; label: string }[];
   requiresRole?: string[];
   currentRole?: string | null;
   notificationCount?: number; // 알림 개수 (종으로 표시)
 }
 
-function MenuItem({ href, label, icon, active = false, onClick, subItems, requiresRole, currentRole, notificationCount }: MenuItemProps) {
+function MenuItem({ href, label, icon, active = false, onClick, onNotificationClear, subItems, requiresRole, currentRole, notificationCount }: MenuItemProps) {
   const pathname = usePathname();
   const [showSubItems, setShowSubItems] = useState(false);
   const hasAccess = !requiresRole || (currentRole && requiresRole.includes(currentRole));
@@ -432,6 +462,11 @@ function MenuItem({ href, label, icon, active = false, onClick, subItems, requir
             if (requiresRole.includes("SUPER_ADMIN")) roleLabels.push("관리자");
             alert(`이 메뉴는 로그인이 필요합니다.\n\n필요한 권한: ${roleLabels.join(", ") || "특정 권한"}`);
             return;
+          }
+
+          // 알림이 있으면 읽음 처리
+          if (hasNotifications && onNotificationClear) {
+            onNotificationClear();
           }
 
           if (onClick) {

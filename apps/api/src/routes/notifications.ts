@@ -4,6 +4,7 @@ import {
   getUserNotifications,
   markAsRead,
   markAllAsRead,
+  markTypeAsRead,
   deleteNotification,
   getUnreadCount,
 } from '../services/notificationService.js';
@@ -113,6 +114,29 @@ router.put('/mark-all-read', requireAuth, async (req, res) => {
     res.json({ success: true, count: result.count });
   } catch (error: any) {
     console.error('모든 알림 읽음 처리 실패:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * PUT /notifications/mark-type-read
+ * 특정 타입의 알림 읽음 처리
+ * Body: { types: ['LEAVE_REQUEST', 'LEAVE_APPROVED', ...] }
+ */
+router.put('/mark-type-read', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user!.id;
+    const { types } = req.body;
+    
+    if (!Array.isArray(types) || types.length === 0) {
+      return res.status(400).json({ error: 'types 배열이 필요합니다' });
+    }
+    
+    const result = await markTypeAsRead(userId, types);
+    
+    res.json({ success: true, count: result.count });
+  } catch (error: any) {
+    console.error('타입별 알림 읽음 처리 실패:', error);
     res.status(500).json({ error: error.message });
   }
 });
