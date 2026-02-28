@@ -2,128 +2,42 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-
-interface User {
-  id: string;
-  phone: string;
-  name: string;
-  role: string;
-  email?: string;
-  createdAt: string;
-}
-
-interface QuoteInquiry {
-  id: string;
-  companyName: string;
-  contactName: string;
-  contactPhone: string;
-  category: string;
-  productName: string;
-  status: string;
-  createdAt: string;
-}
-
-interface Stats {
-  totalUsers: number;
-  buyers: number;
-  suppliers: number;
-  employees: number;
-  pendingQuotes: number;
-}
+import Link from 'next/link';
 
 export default function AdminDashboard() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'quotes'>('overview');
-  const [stats, setStats] = useState<Stats | null>(null);
-  const [users, setUsers] = useState<User[]>([]);
-  const [quotes, setQuotes] = useState<QuoteInquiry[]>([]);
-  const [error, setError] = useState('');
+  const [userName, setUserName] = useState('');
 
   useEffect(() => {
     checkAuth();
-    fetchDashboardData();
   }, []);
 
   const checkAuth = () => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('accessToken');
     const role = localStorage.getItem('role');
+    const user = localStorage.getItem('user');
 
     if (!token || role !== 'SUPER_ADMIN') {
       router.push('/admin/login');
       return;
     }
-  };
 
-  const fetchDashboardData = async () => {
-    try {
-      const token = localStorage.getItem('token');
-
-      // 통계 데이터 가져오기
-      const [usersRes, quotesRes] = await Promise.all([
-        fetch('http://localhost:4000/admin/users', {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-        fetch('http://localhost:4000/quotes', {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-      ]);
-
-      if (!usersRes.ok || !quotesRes.ok) {
-        throw new Error('데이터 로드 실패');
+    if (user) {
+      try {
+        const userData = JSON.parse(user);
+        setUserName(userData.name || '슈퍼관리자');
+      } catch (e) {
+        setUserName('슈퍼관리자');
       }
-
-      const usersData = await usersRes.json();
-      const quotesData = await quotesRes.json();
-
-      setUsers(usersData.users || []);
-      setQuotes(quotesData.inquiries || []);
-
-      // 통계 계산
-      const buyers = usersData.users.filter((u: User) => u.role === 'BUYER').length;
-      const suppliers = usersData.users.filter((u: User) => u.role === 'SUPPLIER').length;
-      const employees = usersData.users.filter((u: User) => u.role === 'EMPLOYEE').length;
-      const pendingQuotes = quotesData.inquiries.filter((q: QuoteInquiry) => q.status === 'PENDING').length;
-
-      setStats({
-        totalUsers: usersData.users.length,
-        buyers,
-        suppliers,
-        employees,
-        pendingQuotes,
-      });
-    } catch (err) {
-      console.error('데이터 로드 오류:', err);
-      setError('데이터를 불러올 수 없습니다');
-    } finally {
-      setLoading(false);
     }
+    
+    setLoading(false);
   };
 
   const handleLogout = () => {
     localStorage.clear();
     router.push('/admin/login');
-  };
-
-  const handleUpdateQuote = async (id: string, status: string) => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:4000/quotes/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ status }),
-      });
-
-      if (!response.ok) throw new Error('업데이트 실패');
-
-      alert('견적문의 상태가 업데이트되었습니다');
-      fetchDashboardData();
-    } catch (err) {
-      alert('업데이트 중 오류가 발생했습니다');
-    }
   };
 
   if (loading) {
@@ -145,272 +59,217 @@ export default function AdminDashboard() {
         justifyContent: 'space-between',
         alignItems: 'center',
       }}>
-        <h1 style={{ margin: 0, fontSize: 24 }}>🛡️ 슈퍼어드민 대시보드</h1>
-        <button
-          onClick={handleLogout}
-          style={{
-            padding: '10px 20px',
-            backgroundColor: '#d32f2f',
-            color: 'white',
-            border: 'none',
-            borderRadius: 4,
-            cursor: 'pointer',
-          }}
-        >
-          로그아웃
-        </button>
-      </div>
-
-      {/* 탭 메뉴 */}
-      <div style={{
-        backgroundColor: 'white',
-        borderBottom: '1px solid #e0e0e0',
-        padding: '0 40px',
-      }}>
-        <div style={{ display: 'flex', gap: 20 }}>
-          {(['overview', 'users', 'quotes'] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              style={{
-                padding: '15px 20px',
-                border: 'none',
-                backgroundColor: 'transparent',
-                borderBottom: activeTab === tab ? '3px solid #1a237e' : 'none',
-                color: activeTab === tab ? '#1a237e' : '#666',
-                fontWeight: activeTab === tab ? 'bold' : 'normal',
-                cursor: 'pointer',
-              }}
-            >
-              {tab === 'overview' ? '📊 대시보드' : tab === 'users' ? '👥 회원 관리' : '💬 견적 문의'}
-            </button>
-          ))}
+        <h1 style={{ margin: 0, fontSize: 24 }}>🛡️ 슈퍼어드민 통합 대시보드</h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+          <span>{userName}</span>
+          <button
+            onClick={handleLogout}
+            style={{
+              padding: '10px 20px',
+              backgroundColor: '#d32f2f',
+              color: 'white',
+              border: 'none',
+              borderRadius: 4,
+              cursor: 'pointer',
+            }}
+          >
+            로그아웃
+          </button>
         </div>
       </div>
 
-      {/* 컨텐츠 */}
+      {/* 메인 컨텐츠 */}
       <div style={{ padding: 40 }}>
-        {error && (
+        <h2 style={{ marginBottom: 30, color: '#333' }}>📋 관리 메뉴</h2>
+
+        {/* 메뉴 그리드 */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+          gap: 24,
+          maxWidth: 1200,
+        }}>
+          
+          {/* 1. 매니저 전용 대시보드 (추후 작업) */}
+          <MenuCard
+            title="👔 매니저 전용 대시보드"
+            description="본사/본부/지사/매니저 관리"
+            badge="추후 작업"
+            badgeColor="#999"
+            items={[
+              { label: '지사 관리', href: '/admin/branches' },
+              { label: '매니저 관리', href: '/admin/agents' },
+              { label: '실적 관리', href: '/admin/performance' },
+            ]}
+            disabled={false}
+          />
+
+          {/* 2. 기업회원 대시보드 */}
+          <MenuCard
+            title="🏢 기업회원 대시보드"
+            description="고용의무기업 및 표준사업장 관리"
+            badge="운영중"
+            badgeColor="#2e7d32"
+            items={[
+              { label: '전체 기업 목록', href: '/admin/companies' },
+              { label: '고용의무기업 - 민간', href: '/admin/companies?type=BUYER&subtype=PRIVATE_COMPANY' },
+              { label: '고용의무기업 - 공공', href: '/admin/companies?type=BUYER&subtype=PUBLIC_INSTITUTION' },
+              { label: '고용의무기업 - 국가/지자체', href: '/admin/companies?type=BUYER&subtype=GOVERNMENT' },
+              { label: '표준사업장', href: '/admin/companies?type=SUPPLIER' },
+            ]}
+          />
+
+          {/* 3. 고객관리자(바이어회원) 대시보드 */}
+          <MenuCard
+            title="🛍️ 고객관리자 대시보드"
+            description="바이어 회원 전용 관리"
+            badge="개발예정"
+            badgeColor="#f57c00"
+            items={[
+              { label: '바이어 고용의무기업 - 민간', href: '#' },
+              { label: '바이어 고용의무기업 - 공공', href: '#' },
+              { label: '바이어 고용의무기업 - 국가', href: '#' },
+              { label: '바이어 표준사업장', href: '#' },
+            ]}
+            disabled={true}
+          />
+
+          {/* 4. 장애인회원 대시보드 */}
+          <MenuCard
+            title="♿ 장애인회원 대시보드"
+            description="장애인 직원 관리"
+            badge="개발예정"
+            badgeColor="#f57c00"
+            items={[
+              { label: '고용의무기업 소속 직원', href: '#' },
+              { label: '표준사업장 소속 직원', href: '#' },
+              { label: '근태 관리', href: '#' },
+              { label: '휴가 관리', href: '#' },
+            ]}
+            disabled={true}
+          />
+
+        </div>
+
+        {/* 빠른 통계 */}
+        <div style={{ marginTop: 60 }}>
+          <h2 style={{ marginBottom: 20, color: '#333' }}>📊 빠른 통계</h2>
           <div style={{
-            padding: 15,
-            backgroundColor: '#ffebee',
-            color: '#c62828',
-            borderRadius: 4,
-            marginBottom: 20,
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+            gap: 20,
+            maxWidth: 1200,
           }}>
-            {error}
+            <QuickStat title="전체 기업" value="?" color="#1976d2" />
+            <QuickStat title="고용의무기업" value="?" color="#388e3c" />
+            <QuickStat title="표준사업장" value="?" color="#f57c00" />
+            <QuickStat title="매니저" value="?" color="#7b1fa2" />
+            <QuickStat title="장애인 직원" value="?" color="#d32f2f" />
           </div>
-        )}
-
-        {/* 대시보드 탭 */}
-        {activeTab === 'overview' && stats && (
-          <div>
-            <h2 style={{ marginBottom: 30 }}>📊 시스템 현황</h2>
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-              gap: 20,
-              marginBottom: 40,
-            }}>
-              <StatCard title="전체 회원" value={stats.totalUsers} color="#1976d2" />
-              <StatCard title="구매기업" value={stats.buyers} color="#388e3c" />
-              <StatCard title="표준사업장" value={stats.suppliers} color="#f57c00" />
-              <StatCard title="직원" value={stats.employees} color="#7b1fa2" />
-              <StatCard title="대기 중 견적" value={stats.pendingQuotes} color="#d32f2f" />
-            </div>
-          </div>
-        )}
-
-        {/* 회원 관리 탭 */}
-        {activeTab === 'users' && (
-          <div>
-            <h2 style={{ marginBottom: 20 }}>👥 회원 목록</h2>
-            <div style={{ backgroundColor: 'white', borderRadius: 8, overflow: 'hidden' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead style={{ backgroundColor: '#f5f5f5' }}>
-                  <tr>
-                    <th style={tableHeaderStyle}>이름</th>
-                    <th style={tableHeaderStyle}>전화번호</th>
-                    <th style={tableHeaderStyle}>이메일</th>
-                    <th style={tableHeaderStyle}>역할</th>
-                    <th style={tableHeaderStyle}>가입일</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {users.map((user) => (
-                    <tr key={user.id} style={{ borderBottom: '1px solid #e0e0e0' }}>
-                      <td style={tableCellStyle}>{user.name}</td>
-                      <td style={tableCellStyle}>{user.phone}</td>
-                      <td style={tableCellStyle}>{user.email || '-'}</td>
-                      <td style={tableCellStyle}>
-                        <span style={getRoleBadgeStyle(user.role)}>
-                          {getRoleLabel(user.role)}
-                        </span>
-                      </td>
-                      <td style={tableCellStyle}>
-                        {new Date(user.createdAt).toLocaleDateString('ko-KR')}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* 견적 문의 탭 */}
-        {activeTab === 'quotes' && (
-          <div>
-            <h2 style={{ marginBottom: 20 }}>💬 견적 문의 목록</h2>
-            <div style={{ backgroundColor: 'white', borderRadius: 8, overflow: 'hidden' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead style={{ backgroundColor: '#f5f5f5' }}>
-                  <tr>
-                    <th style={tableHeaderStyle}>회사명</th>
-                    <th style={tableHeaderStyle}>담당자</th>
-                    <th style={tableHeaderStyle}>연락처</th>
-                    <th style={tableHeaderStyle}>카테고리</th>
-                    <th style={tableHeaderStyle}>상품명</th>
-                    <th style={tableHeaderStyle}>상태</th>
-                    <th style={tableHeaderStyle}>문의일</th>
-                    <th style={tableHeaderStyle}>작업</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {quotes.map((quote) => (
-                    <tr key={quote.id} style={{ borderBottom: '1px solid #e0e0e0' }}>
-                      <td style={tableCellStyle}>{quote.companyName}</td>
-                      <td style={tableCellStyle}>{quote.contactName}</td>
-                      <td style={tableCellStyle}>{quote.contactPhone}</td>
-                      <td style={tableCellStyle}>{quote.category}</td>
-                      <td style={tableCellStyle}>{quote.productName}</td>
-                      <td style={tableCellStyle}>
-                        <span style={getStatusBadgeStyle(quote.status)}>
-                          {getStatusLabel(quote.status)}
-                        </span>
-                      </td>
-                      <td style={tableCellStyle}>
-                        {new Date(quote.createdAt).toLocaleDateString('ko-KR')}
-                      </td>
-                      <td style={tableCellStyle}>
-                        <select
-                          value={quote.status}
-                          onChange={(e) => handleUpdateQuote(quote.id, e.target.value)}
-                          style={{
-                            padding: '5px 10px',
-                            border: '1px solid #ddd',
-                            borderRadius: 4,
-                            fontSize: 14,
-                          }}
-                        >
-                          <option value="PENDING">대기중</option>
-                          <option value="IN_PROGRESS">처리중</option>
-                          <option value="QUOTED">견적완료</option>
-                          <option value="COMPLETED">완료</option>
-                          <option value="CANCELLED">취소</option>
-                        </select>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
+        </div>
       </div>
     </div>
   );
 }
 
-// 통계 카드 컴포넌트
-function StatCard({ title, value, color }: { title: string; value: number; color: string }) {
+// 메뉴 카드 컴포넌트
+function MenuCard({ 
+  title, 
+  description, 
+  badge, 
+  badgeColor, 
+  items, 
+  disabled = false 
+}: { 
+  title: string; 
+  description: string; 
+  badge: string; 
+  badgeColor: string; 
+  items: { label: string; href: string }[]; 
+  disabled?: boolean;
+}) {
   return (
     <div style={{
       backgroundColor: 'white',
-      padding: 30,
+      borderRadius: 12,
+      padding: 24,
+      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+      opacity: disabled ? 0.6 : 1,
+      border: disabled ? '2px dashed #ddd' : 'none',
+    }}>
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+          <h3 style={{ margin: 0, fontSize: 18, color: '#333' }}>{title}</h3>
+          <span style={{
+            padding: '4px 12px',
+            backgroundColor: badgeColor,
+            color: 'white',
+            borderRadius: 12,
+            fontSize: 12,
+            fontWeight: 'bold',
+          }}>
+            {badge}
+          </span>
+        </div>
+        <p style={{ margin: 0, fontSize: 14, color: '#666' }}>{description}</p>
+      </div>
+      
+      <div style={{ borderTop: '1px solid #e0e0e0', paddingTop: 16 }}>
+        {items.map((item, index) => (
+          disabled ? (
+            <div
+              key={index}
+              style={{
+                padding: '10px 0',
+                fontSize: 14,
+                color: '#999',
+                cursor: 'not-allowed',
+              }}
+            >
+              • {item.label}
+            </div>
+          ) : (
+            <Link
+              key={index}
+              href={item.href}
+              style={{
+                display: 'block',
+                padding: '10px 0',
+                color: '#1976d2',
+                textDecoration: 'none',
+                fontSize: 14,
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.paddingLeft = '8px';
+                e.currentTarget.style.color = '#0d47a1';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.paddingLeft = '0';
+                e.currentTarget.style.color = '#1976d2';
+              }}
+            >
+              • {item.label}
+            </Link>
+          )
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// 빠른 통계 카드
+function QuickStat({ title, value, color }: { title: string; value: string; color: string }) {
+  return (
+    <div style={{
+      backgroundColor: 'white',
+      padding: 20,
       borderRadius: 8,
       boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
       borderLeft: `4px solid ${color}`,
     }}>
-      <div style={{ fontSize: 14, color: '#666', marginBottom: 10 }}>{title}</div>
-      <div style={{ fontSize: 36, fontWeight: 'bold', color }}>{value}</div>
+      <div style={{ fontSize: 13, color: '#666', marginBottom: 8 }}>{title}</div>
+      <div style={{ fontSize: 28, fontWeight: 'bold', color }}>{value}</div>
     </div>
   );
-}
-
-// 스타일
-const tableHeaderStyle = {
-  padding: '15px',
-  textAlign: 'left' as const,
-  fontWeight: 'bold',
-  color: '#666',
-};
-
-const tableCellStyle = {
-  padding: '15px',
-};
-
-// 역할 라벨
-function getRoleLabel(role: string) {
-  const labels: Record<string, string> = {
-    BUYER: '구매기업',
-    SUPPLIER: '표준사업장',
-    EMPLOYEE: '직원',
-    AGENT: '지점',
-    SUPER_ADMIN: '슈퍼어드민',
-  };
-  return labels[role] || role;
-}
-
-// 역할 배지 스타일
-function getRoleBadgeStyle(role: string) {
-  const colors: Record<string, { bg: string; text: string }> = {
-    BUYER: { bg: '#e8f5e9', text: '#2e7d32' },
-    SUPPLIER: { bg: '#fff3e0', text: '#e65100' },
-    EMPLOYEE: { bg: '#f3e5f5', text: '#6a1b9a' },
-    SUPER_ADMIN: { bg: '#e3f2fd', text: '#0d47a1' },
-  };
-  const color = colors[role] || { bg: '#f5f5f5', text: '#666' };
-
-  return {
-    padding: '4px 12px',
-    backgroundColor: color.bg,
-    color: color.text,
-    borderRadius: 12,
-    fontSize: 13,
-    fontWeight: 'bold' as const,
-  };
-}
-
-// 상태 라벨
-function getStatusLabel(status: string) {
-  const labels: Record<string, string> = {
-    PENDING: '대기중',
-    IN_PROGRESS: '처리중',
-    QUOTED: '견적완료',
-    COMPLETED: '완료',
-    CANCELLED: '취소',
-  };
-  return labels[status] || status;
-}
-
-// 상태 배지 스타일
-function getStatusBadgeStyle(status: string) {
-  const colors: Record<string, { bg: string; text: string }> = {
-    PENDING: { bg: '#fff3e0', text: '#e65100' },
-    IN_PROGRESS: { bg: '#e3f2fd', text: '#0d47a1' },
-    QUOTED: { bg: '#f3e5f5', text: '#6a1b9a' },
-    COMPLETED: { bg: '#e8f5e9', text: '#2e7d32' },
-    CANCELLED: { bg: '#ffebee', text: '#c62828' },
-  };
-  const color = colors[status] || { bg: '#f5f5f5', text: '#666' };
-
-  return {
-    padding: '4px 12px',
-    backgroundColor: color.bg,
-    color: color.text,
-    borderRadius: 12,
-    fontSize: 13,
-    fontWeight: 'bold' as const,
-  };
 }
