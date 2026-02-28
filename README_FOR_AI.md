@@ -69,7 +69,10 @@ https://jangpyosa.com
 
 ### 🗄️ **데이터베이스 관리 (중요!)**
 - **현재 DB**: `/home/ubuntu/jangpyosa/apps/api/prisma/dev.db` (SQLite, ~1MB)
-- **자동 백업**: 매일 03:00 KST → `/home/ubuntu/backups/jangpyosa/dev.db.backup-YYYYMMDD-HHMMSS.gz`
+- **자동 백업**: 
+  - 📦 **시간별 스냅샷**: 매시간 정각 (24시간 보관)
+  - 💾 **로컬 백업**: 매일 **19:00 KST (저녁 7시)** → `/home/ubuntu/backups/jangpyosa/dev.db.backup-YYYYMMDD-HHMMSS.gz`
+  - ☁️ **S3 클라우드 백업**: 매일 **20:00 KST (저녁 8시)**
 - **⚠️ 주의**: `prisma db push` 실행 시 기존 데이터가 **삭제**됨
 - **안전한 스키마 변경**: `prisma migrate dev` 사용 (데이터 보존)
 - **복원 방법**:
@@ -965,14 +968,20 @@ SELECT name, phone FROM User WHERE phone LIKE '01030010%' ORDER BY phone;
 
 ### 1️⃣ **자동 백업 (설정 완료 ✅)**
 ```bash
-# 매일 03:00 자동 백업
-0 3 * * * /home/ubuntu/scripts/backup-db.sh
+# 매시간 스냅샷 백업 (24시간 보관)
+0 * * * * /home/ubuntu/scripts/hourly-db-snapshot.sh
 
-# 매일 04:00 S3 백업
-0 4 * * * /home/ubuntu/scripts/backup-to-s3-fixed.sh
+# 매일 19:00 KST (저녁 7시) 로컬 백업 ⭐ 런칭 후 최적 시간
+0 19 * * * /home/ubuntu/scripts/backup-db.sh
+
+# 매일 20:00 KST (저녁 8시) S3 클라우드 백업
+0 20 * * * /home/ubuntu/scripts/backup-to-s3-fixed.sh
 ```
 
-**백업 위치**: `/home/ubuntu/backups/jangpyosa/dev.db.backup-YYYYMMDD-HHMMSS.gz`
+**백업 전략**: 
+- ⏰ **시간별**: `/home/ubuntu/backups/hourly/dev.db.snapshot-YYYYMMDD-HHMMSS` (최근 24시간)
+- 📦 **일일**: `/home/ubuntu/backups/jangpyosa/dev.db.backup-YYYYMMDD-190001.gz` (장기 보관)
+- ☁️ **S3**: AWS S3 버킷 (재해 복구용)
 
 ### 2️⃣ **DB 복원 절차 (긴급 시)**
 ```bash
