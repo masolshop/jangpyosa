@@ -497,6 +497,73 @@ ssh -i ~/.ssh/jangpyosa.pem ubuntu@43.201.0.129 '
 3. ❌ SSH 키 권한 변경 금지 (600 유지)
 4. ❌ Prisma schema 수정 후 `npx prisma generate` 없이 배포 금지
 5. ❌ 프로덕션 DB에 직접 SQL 실행 금지 (Prisma 사용)
+6. ❌ **전화번호/사업자번호에 하이픈 포함 금지** (AI 혼동 방지, 항상 정규화 필수)
+
+---
+
+## 📱 **전화번호/사업자번호 하이픈 정책** ⚠️ **중요!**
+
+### 🎯 **정책: 하이픈 없음 (숫자만 저장)**
+
+**문제**: AI가 `010-1234-5678`과 `01012345678`을 **다른 사람**으로 인식 → 데이터 매칭 실패!
+
+**해결책**: **DB에는 항상 숫자만 저장** (하이픈, 공백, 점 모두 제거)
+
+```typescript
+// ✅ 올바른 저장 형식
+phone: "01012345678"      // 숫자만
+bizNo: "1234567890"       // 숫자만
+
+// ❌ 잘못된 저장 형식
+phone: "010-1234-5678"    // 하이픈 포함 (매칭 실패!)
+bizNo: "123-45-67890"     // 하이픈 포함 (매칭 실패!)
+```
+
+### 🛠️ **유틸리티 함수 사용**
+
+#### **API (백엔드)**
+```typescript
+import { normalizePhone, normalizeBizNo } from "@/utils/normalize";
+
+// DB 저장 전 항상 정규화
+const phone = normalizePhone("010-1234-5678");      // "01012345678"
+const bizNo = normalizeBizNo("123-45-67890");       // "1234567890"
+
+// DB 조회 시에도 정규화
+const user = await prisma.user.findUnique({
+  where: { phone: normalizePhone(inputPhone) }
+});
+```
+
+#### **프론트엔드 (Web)**
+```typescript
+import { normalizePhone, normalizeBizNo, formatPhone } from "@/lib/normalize";
+
+// API 전송 전 정규화
+const response = await fetch("/api/users", {
+  body: JSON.stringify({
+    phone: normalizePhone(phoneInput),     // "01012345678"
+    bizNo: normalizeBizNo(bizNoInput),     // "1234567890"
+  })
+});
+
+// 화면 표시용 포맷팅
+<div>{formatPhone("01012345678")}</div>   // "010-1234-5678"
+```
+
+### 📋 **체크리스트**
+- [ ] API 엔드포인트에서 `normalizePhone()`, `normalizeBizNo()` 사용
+- [ ] 프론트엔드 폼에서 API 전송 전 정규화
+- [ ] DB 조회 시 `WHERE phone =` 조건에도 정규화 적용
+- [ ] 엑셀 업로드 시 정규화 적용
+- [ ] 외부 API (아픽) 연동 시 정규화 적용
+
+### 🚨 **DB 현황 (2026-03-01 08:10)**
+```
+✅ User.phone: 47개 (하이픈 0개, 숫자만 47개)
+✅ DisabledEmployee.phone: 42개 (하이픈 0개, 숫자만 42개)
+✅ Company.bizNo: 4개 (하이픈 0개, 숫자만 4개)
+```
 
 ---
 
