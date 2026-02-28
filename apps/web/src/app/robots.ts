@@ -32,9 +32,6 @@ export default function robots(): MetadataRoute.Robots {
         crawlDelay: 0,
       },
     ],
-    sitemap: [
-      'https://jangpyosa.com/sitemap.xml',
-      'https://jangpyosa.com/rss',
-    ],
+    sitemap: 'https://jangpyosa.com/sitemap.xml',
   }
 }
