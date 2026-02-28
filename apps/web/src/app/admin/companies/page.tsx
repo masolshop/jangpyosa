@@ -172,12 +172,6 @@ export default function AdminCompaniesPage() {
           padding: 24,
           boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
         }}>
-              fontWeight: 600,
-            }}
-          >
-            {msg}
-          </div>
-        )}
 
         {/* 통계 요약 */}
         <div
