@@ -497,7 +497,7 @@ export default function EmployeesPage() {
       // 결과 메시지
       if (successCount > 0) {
         setMessage(`✅ ${successCount}명 등록 성공${failCount > 0 ? `, ${failCount}명 실패` : ""}`);
-        fetchEmployees(); // 목록 새로고침
+        await fetchEmployees(); // 목록 새로고침 (await 추가)
       } else {
         setError(`모든 등록 실패: ${failCount}명`);
       }
