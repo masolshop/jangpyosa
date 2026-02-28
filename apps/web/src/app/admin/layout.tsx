@@ -167,26 +167,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </p>
         </div>
 
-        {/* 메뉴 영역 */}
+        {/* 메뉴 영역 - 비어있음 */}
         <nav style={{ flex: 1, padding: '20px 0' }}>
-          <NavItem 
-            href="/admin/dashboard" 
-            icon="📊" 
-            label="대시보드" 
-            active={pathname === '/admin/dashboard'}
-          />
-          <NavItem 
-            href="/admin/branches" 
-            icon="🏢" 
-            label="본부관리" 
-            active={pathname === '/admin/branches'}
-          />
-          <NavItem 
-            href="/admin/companies" 
-            icon="🏭" 
-            label="기업관리" 
-            active={pathname === '/admin/companies'}
-          />
+          {/* 메뉴 항목이 여기에 추가될 예정 */}
         </nav>
 
         {/* 로그아웃 버튼 */}
