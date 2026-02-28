@@ -201,7 +201,6 @@ router.get("/monthly", requireAuth, async (req, res) => {
       name: emp.name,
       severity: emp.severity as "SEVERE" | "MILD",
       gender: emp.gender as "M" | "F",
-      birthDate: emp.birthDate || undefined,
       hireDate: emp.hireDate,
       resignDate: emp.resignDate || undefined,
       // 월간 근로시간 사용 (workHoursPerWeek 완전 차단)
@@ -304,7 +303,6 @@ router.put("/monthly", requireAuth, async (req, res) => {
       name: emp.name,
       severity: emp.severity as "SEVERE" | "MILD",
       gender: emp.gender as "M" | "F",
-      birthDate: emp.birthDate || undefined,
       hireDate: emp.hireDate,
       resignDate: emp.resignDate || undefined,
       monthlyWorkHours: emp.monthlyWorkHours || 60,  // 기본값: 월 60시간
@@ -402,7 +400,6 @@ router.put("/:id", requireAuth, async (req, res) => {
       disabilityGrade: z.string().nullable().optional(),
       severity: z.enum(["MILD", "SEVERE"]).optional(),
       gender: z.enum(["M", "F"]).optional(),
-      birthDate: z.string().nullable().optional(),
       hireDate: z.string().optional(),
       resignDate: z.string().nullable().optional(),
       monthlySalary: z.number().int().positive().optional(),
@@ -440,7 +437,6 @@ router.put("/:id", requireAuth, async (req, res) => {
         disabilityGrade: body.disabilityGrade,
         severity: body.severity,
         gender: body.gender,
-        birthDate: body.birthDate === null ? null : (body.birthDate ? new Date(body.birthDate) : undefined),
         hireDate: body.hireDate ? new Date(body.hireDate) : undefined,
         resignDate: body.resignDate === null ? null : (body.resignDate ? new Date(body.resignDate) : undefined),
         monthlySalary: body.monthlySalary,
