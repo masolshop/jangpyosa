@@ -84,11 +84,19 @@
     font-size: 12px;
     padding: 8px;
     min-width: 60px;
+    background: none;
+    border: none;
   }
   
   .mobile-nav-item.active {
     color: #2196F3;
     font-weight: bold;
+  }
+  
+  .mobile-nav-item button {
+    background: none;
+    border: none;
+    padding: 0;
   }
   
   .mobile-nav-icon {
