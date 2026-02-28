@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import Link from 'next/link';
 
 // 전역 인증 상태 캐시 (layout이 재마운트되어도 유지)
 let globalAuthState: { isAuthenticated: boolean; lastCheck: number } | null = null;
@@ -12,7 +11,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname();
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [userName, setUserName] = useState('슈퍼관리자');
 
   useEffect(() => {
     // 컴포넌트 마운트 시 인증 체크
@@ -35,8 +33,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       setLoading(false);
       if (!globalAuthState.isAuthenticated) {
         router.push('/admin/login');
-      } else {
-        loadUserInfo();
       }
       return;
     }
@@ -45,7 +41,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     setTimeout(() => {
       // 토큰과 역할 확인
       const token = localStorage.getItem('accessToken');
-      const role = localStorage.getItem('userRole'); // 'role'이 아니라 'userRole'로 수정
+      const role = localStorage.getItem('userRole');
 
       console.log('[Admin Layout] Auth check:', { 
         pathname, 
@@ -68,26 +64,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       globalAuthState = { isAuthenticated: true, lastCheck: now };
       setIsAuthenticated(true);
       setLoading(false);
-      loadUserInfo();
     }, 50); // 50ms 지연으로 localStorage 안정화
-  };
-
-  const loadUserInfo = () => {
-    const user = localStorage.getItem('user');
-    if (user) {
-      try {
-        const userData = JSON.parse(user);
-        setUserName(userData.name || '슈퍼관리자');
-      } catch (e) {
-        setUserName('슈퍼관리자');
-      }
-    }
-  };
-
-  const handleLogout = () => {
-    localStorage.clear();
-    globalAuthState = null;
-    router.push('/admin/login');
   };
 
   // 로그인 페이지가 아닌 경우 로딩 표시
@@ -131,149 +108,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     return <>{children}</>;
   }
 
-  // 인증된 페이지는 사이드바와 함께 표시
-  return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
-      {/* 사이드바 */}
-      <aside style={{
-        width: 280,
-        backgroundColor: '#1a237e',
-        color: 'white',
-        display: 'flex',
-        flexDirection: 'column',
-        position: 'fixed',
-        height: '100vh',
-        overflowY: 'auto',
-      }}>
-        {/* 로고 영역 */}
-        <div style={{
-          padding: '24px 20px',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-        }}>
-          <h1 style={{ 
-            margin: 0, 
-            fontSize: 20, 
-            fontWeight: 700,
-            color: 'white',
-          }}>
-            🛡️ 슈퍼어드민
-          </h1>
-          <p style={{ 
-            margin: '8px 0 0 0', 
-            fontSize: 13, 
-            color: 'rgba(255, 255, 255, 0.7)',
-          }}>
-            {userName}
-          </p>
-        </div>
-
-        {/* 메뉴 영역 */}
-        <nav style={{ flex: 1, padding: '20px 0' }}>
-          <NavItem 
-            href="/admin/sales" 
-            icon="📊" 
-            label="영업관리 대시보드" 
-            active={pathname === '/admin/sales'}
-          />
-          <NavItem 
-            href="/admin/company" 
-            icon="🏢" 
-            label="기업관리 대시보드" 
-            active={pathname === '/admin/company'}
-          />
-          <NavItem 
-            href="/admin/standard-workplace" 
-            icon="🏭" 
-            label="표준사업장 대시보드" 
-            active={pathname === '/admin/standard-workplace'}
-          />
-        </nav>
-
-        {/* 로그아웃 버튼 */}
-        <div style={{
-          padding: '20px',
-          borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-        }}>
-          <button
-            onClick={handleLogout}
-            style={{
-              width: '100%',
-              padding: '12px',
-              backgroundColor: '#d32f2f',
-              color: 'white',
-              border: 'none',
-              borderRadius: 6,
-              fontSize: 14,
-              fontWeight: 600,
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#b71c1c';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = '#d32f2f';
-            }}
-          >
-            🚪 로그아웃
-          </button>
-        </div>
-      </aside>
-
-      {/* 메인 컨텐츠 영역 */}
-      <main style={{
-        marginLeft: 280,
-        flex: 1,
-        backgroundColor: '#f5f5f5',
-        minHeight: '100vh',
-      }}>
-        {children}
-      </main>
-    </div>
-  );
-}
-
-// 네비게이션 아이템 컴포넌트
-function NavItem({ 
-  href, 
-  icon, 
-  label, 
-  active 
-}: { 
-  href: string; 
-  icon: string; 
-  label: string; 
-  active: boolean;
-}) {
-  return (
-    <Link
-      href={href}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        padding: '14px 20px',
-        margin: '4px 12px',
-        color: 'white',
-        textDecoration: 'none',
-        borderRadius: 8,
-        fontSize: 15,
-        fontWeight: active ? 600 : 400,
-        backgroundColor: active ? 'rgba(255, 255, 255, 0.15)' : 'transparent',
-        transition: 'all 0.2s',
-      }}
-      onMouseEnter={(e) => {
-        if (!active) {
-          e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.08)';
-        }
-      }}
-      onMouseLeave={(e) => {
-        if (!active) {
-          e.currentTarget.style.backgroundColor = 'transparent';
-        }
-      }}
-    >
-      <span style={{ fontSize: 20, marginRight: 12 }}>{icon}</span>
-      <span>{label}</span>
-    </Link>
-  );
+  // 인증된 페이지는 메인 레이아웃의 사이드바를 사용하므로 children만 반환
+  return <>{children}</>;
 }
