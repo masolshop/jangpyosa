@@ -69,6 +69,14 @@ export const metadata: Metadata = {
   },
   verification: {
     google: 'r2LODMYtWCLqf4eRa7C5z244fwwPMwOw8g6_tFR9YxQ',
+    other: {
+      'naver-site-verification': 'naver_verification_placeholder',
+    },
+  },
+  other: {
+    'mobile-web-app-capable': 'yes',
+    'apple-mobile-web-app-capable': 'yes',
+    'apple-mobile-web-app-status-bar-style': 'black-translucent',
   },
 }
 
@@ -84,6 +92,11 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/logo.png" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
         <meta name="theme-color" content="#3b82f6" />
+        {/* 네이버 SEO 최적화 */}
+        <meta name="NaverBot" content="All" />
+        <meta name="NaverBot" content="index,follow" />
+        <meta name="Yeti" content="All" />
+        <meta name="Yeti" content="index,follow" />
       </head>
       <body>
         <LayoutContent>{children}</LayoutContent>

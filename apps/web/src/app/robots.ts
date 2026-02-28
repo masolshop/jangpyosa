@@ -19,6 +19,18 @@ export default function robots(): MetadataRoute.Robots {
         allow: '/',
         disallow: ['/api/', '/dashboard/'],
       },
+      {
+        userAgent: 'Yeti',
+        allow: '/',
+        disallow: ['/api/', '/dashboard/'],
+        crawlDelay: 0,
+      },
+      {
+        userAgent: 'NaverBot',
+        allow: '/',
+        disallow: ['/api/', '/dashboard/'],
+        crawlDelay: 0,
+      },
     ],
     sitemap: 'https://jangpyosa.com/sitemap.xml',
   }
