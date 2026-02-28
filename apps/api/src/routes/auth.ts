@@ -221,7 +221,7 @@ const signupSupplierSchema = z.object({
   username: z.string().min(4).max(20).regex(/^[a-zA-Z0-9]+$/, "영문+숫자만 사용 가능합니다"), // 🆕 로그인 ID
   password: z.string().min(8),
   bizNo: z.string().min(10, "사업자등록번호 10자리를 입력하세요"),
-  referrerPhone: z.string().min(10, "추천인 매니저 핸드폰 번호는 필수입니다"),
+  referrerPhone: z.string().optional(), // 선택사항
   
   // 🆕 담당자 정보
   managerName: z.string().min(1, "담당자 성함은 필수입니다"),
@@ -260,18 +260,18 @@ r.post("/signup/supplier", async (req, res) => {
       });
     }
 
-    // 추천인 매니저 확인 (핸드폰 번호로 매칭) - 필수
-    const cleanReferrerPhone = normalizePhone(body.referrerPhone);
-    const referredBy = await prisma.user.findFirst({
-      where: { phone: cleanReferrerPhone, role: "AGENT" },
-      include: { branch: true },
-    });
-
-    if (!referredBy) {
-      return res.status(400).json({
-        error: "REFERRER_NOT_FOUND",
-        message: "해당 핸드폰 번호의 매니저를 찾을 수 없습니다",
+    // 추천인 매니저 확인 (핸드폰 번호로 매칭) - 선택사항
+    let referredBy = null;
+    if (body.referrerPhone) {
+      const cleanReferrerPhone = normalizePhone(body.referrerPhone);
+      referredBy = await prisma.user.findFirst({
+        where: { phone: cleanReferrerPhone, role: "AGENT" },
+        include: { branch: true },
       });
+      // 입력했지만 매니저를 찾을 수 없어도 가입 허용 (경고만 로깅)
+      if (!referredBy) {
+        console.warn(`⚠️ Referrer not found for phone: ${cleanReferrerPhone}`);
+      }
     }
 
     const passwordHash = await bcrypt.hash(body.password, 10);
@@ -306,7 +306,7 @@ r.post("/signup/supplier", async (req, res) => {
         role: "SUPPLIER",
         companyId: company.id,
         isCompanyOwner: true, // 🆕 회사 최초 생성자
-        referredById: referredBy.id,
+        referredById: referredBy?.id,
         
         // 🆕 담당자 정보
         managerName: body.managerName,
@@ -383,7 +383,7 @@ const signupBuyerSchema = z.object({
   username: z.string().min(4).max(20).regex(/^[a-zA-Z0-9]+$/, "영문+숫자만 사용 가능합니다"), // 🆕 로그인 ID
   password: z.string().min(8),
   bizNo: z.string().min(10, "사업자등록번호 10자리를 입력하세요"),
-  referrerPhone: z.string().min(10, "추천인 매니저 핸드폰 번호는 필수입니다"),
+  referrerPhone: z.string().optional(), // 선택사항
   buyerType: z.enum(["PRIVATE_COMPANY", "PUBLIC_INSTITUTION", "GOVERNMENT"]).default("PRIVATE_COMPANY"), // 기업 유형
   companyType: z.enum(["PRIVATE", "GOVERNMENT"]).optional(), // 호환성 유지
   
@@ -424,18 +424,18 @@ r.post("/signup/buyer", async (req, res) => {
       });
     }
 
-    // 추천인 매니저 확인 (핸드폰 번호로 매칭) - 필수
-    const cleanReferrerPhone = normalizePhone(body.referrerPhone);
-    const referredBy = await prisma.user.findFirst({
-      where: { phone: cleanReferrerPhone, role: "AGENT" },
-      include: { branch: true },
-    });
-
-    if (!referredBy) {
-      return res.status(400).json({
-        error: "REFERRER_NOT_FOUND",
-        message: "해당 핸드폰 번호의 매니저를 찾을 수 없습니다",
+    // 추천인 매니저 확인 (핸드폰 번호로 매칭) - 선택사항
+    let referredBy = null;
+    if (body.referrerPhone) {
+      const cleanReferrerPhone = normalizePhone(body.referrerPhone);
+      referredBy = await prisma.user.findFirst({
+        where: { phone: cleanReferrerPhone, role: "AGENT" },
+        include: { branch: true },
       });
+      // 입력했지만 매니저를 찾을 수 없어도 가입 허용 (경고만 로깅)
+      if (!referredBy) {
+        console.warn(`⚠️ Referrer not found for phone: ${cleanReferrerPhone}`);
+      }
     }
 
     const passwordHash = await bcrypt.hash(body.password, 10);
