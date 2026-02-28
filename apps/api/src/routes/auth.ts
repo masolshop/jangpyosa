@@ -53,14 +53,14 @@ r.post("/login", async (req, res) => {
     
     let user;
     if (isPhone) {
-      // 핸드폰 번호로 로그인 (매니저용)
+      // 핸드폰 번호로 로그인 (여러 형식 지원: 1063529091, 01063529091, 010-6352-9091)
       const cleanPhone = normalizePhone(body.identifier);
       user = await prisma.user.findUnique({
         where: { phone: cleanPhone },
         include: { company: true, branch: true },
       });
     } else {
-      // username으로 로그인 (기업용)
+      // username으로 로그인 (기업용 & 슈퍼어드민)
       user = await prisma.user.findUnique({
         where: { username: body.identifier },
         include: { company: true, branch: true },
