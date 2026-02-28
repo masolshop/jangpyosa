@@ -63,14 +63,10 @@ export default function EmployeeWorkOrdersPage() {
       });
       if (companyRes.ok) {
         const companyData = await companyRes.json();
-        console.log('🏢 회사 데이터:', companyData);
-        console.log('📧 첨부 이메일:', companyData.company?.attachmentEmail);
         setCompany(companyData.company);
-      } else {
-        console.error('❌ 회사 정보 로드 실패:', companyRes.status);
       }
     } catch (e) {
-      console.error("❌ 회사 정보 로드 예외:", e);
+      console.error("회사 정보 로드 실패:", e);
     }
   }
 

@@ -78,11 +78,9 @@ export default function EmployeeLeavePage() {
       let employeeId = null;
       if (userRes.ok) {
         const userData = await userRes.json();
-        console.log('👤 사용자 데이터:', userData);
         
         // User.employeeId 사용 (DisabledEmployee ID)
         employeeId = userData.user.employeeId;
-        console.log('🆔 직원 ID:', employeeId);
         
         if (userData.user.companyId) {
           const companyRes = await fetch('/api/companies/my', {
@@ -90,11 +88,7 @@ export default function EmployeeLeavePage() {
           });
           if (companyRes.ok) {
             const companyData = await companyRes.json();
-            console.log('🏢 회사 데이터:', companyData);
-            console.log('📧 첨부 이메일:', companyData.company?.attachmentEmail);
             setCompany(companyData.company);
-          } else {
-            console.error('❌ 회사 정보 로드 실패:', companyRes.status);
           }
         } else {
           console.warn('⚠️ companyId가 없습니다. 회사 정보를 로드할 수 없습니다.');
