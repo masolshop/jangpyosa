@@ -98,7 +98,6 @@ router.put("/my", requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
     const userRole = req.user!.role;
-    const userName = req.user!.name;
 
     if (userRole !== "BUYER" && userRole !== "SUPPLIER") {
       return res.status(403).json({ error: "기업 회원만 접근 가능합니다." });
@@ -118,12 +117,14 @@ router.put("/my", requireAuth, async (req, res) => {
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { companyId: true }
+      select: { companyId: true, name: true }
     });
 
     if (!user?.companyId) {
       return res.status(404).json({ error: "소속 기업이 없습니다." });
     }
+
+    const userName = user.name || "Unknown";
 
     const company = await prisma.company.findUnique({
       where: { id: user.companyId },
