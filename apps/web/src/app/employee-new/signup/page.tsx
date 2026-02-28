@@ -53,7 +53,8 @@ export default function EmployeeSignupPage() {
       setVerifiedCompany(data.company);
       setStep(2);
     } catch (err: any) {
-      setError("서버 오류가 발생했습니다");
+      console.error("기업 확인 에러:", err);
+      setError(`서버 오류: ${err.message || "알 수 없는 오류"}`);
     } finally {
       setLoading(false);
     }
@@ -89,7 +90,8 @@ export default function EmployeeSignupPage() {
       setVerifiedEmployee(data.employee);
       setStep(3);
     } catch (err: any) {
-      setError("서버 오류가 발생했습니다");
+      console.error("Error:", err);
+      setError(`서버 오류: ${err.message || "알 수 없는 오류"}`);
     } finally {
       setLoading(false);
     }
@@ -153,7 +155,8 @@ export default function EmployeeSignupPage() {
       alert("✅ 회원가입이 완료되었습니다!");
       router.push("/employee/login");
     } catch (err: any) {
-      setError("서버 오류가 발생했습니다");
+      console.error("Error:", err);
+      setError(`서버 오류: ${err.message || "알 수 없는 오류"}`);
     } finally {
       setLoading(false);
     }
