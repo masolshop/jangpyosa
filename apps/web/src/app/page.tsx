@@ -156,10 +156,10 @@ export default function HomePage() {
               boxShadow: "0 8px 16px rgba(59, 130, 246, 0.15)",
               marginBottom: "30px"
             }}>
-              <h2 style={{ margin: 0, fontSize: "36px", fontWeight: "bold", color: "#1e40af" }}>
+              <h2 style={{ margin: 0, fontSize: "29px", fontWeight: "bold", color: "#1e40af" }}>
                 ♿ 파트1: 장애인직원관리솔루션
               </h2>
-              <p style={{ marginTop: 16, fontSize: "21px", lineHeight: 1.7, color: "#1e3a8a" }}>
+              <p style={{ marginTop: 16, fontSize: "17px", lineHeight: 1.7, color: "#1e3a8a" }}>
                 장애인 직원 근태·업무·휴가를 한 곳에서! <strong style={{ color: "#059669" }}>100% 무료</strong>
               </p>
             </div>
@@ -186,7 +186,7 @@ export default function HomePage() {
             </div>
 
             <div style={{ marginTop: 30, padding: 26, background: "#d1ecf1", borderRadius: 12, border: "1px solid #bee5eb" }}>
-              <h3 style={{ margin: 0, fontSize: "23px", color: "#0c5460" }}>✨ 장애인직원관리솔루션 특징</h3>
+              <h3 style={{ margin: 0, fontSize: "18px", color: "#0c5460" }}>✨ 장애인직원관리솔루션 특징</h3>
               <div style={{ marginTop: 16, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
                 <div style={{ padding: 10, background: "rgba(255,255,255,0.6)", borderRadius: 6 }}>
                   <p style={{ margin: 0, fontSize: 14, fontWeight: "bold", color: "#0c5460" }}>✓ 100% 무료</p>
@@ -218,10 +218,10 @@ export default function HomePage() {
               boxShadow: "0 8px 16px rgba(59, 130, 246, 0.15)",
               marginBottom: "30px"
             }}>
-              <h2 style={{ margin: 0, fontSize: "36px", fontWeight: "bold", color: "#1e40af" }}>
+              <h2 style={{ margin: 0, fontSize: "29px", fontWeight: "bold", color: "#1e40af" }}>
                 💰 파트2: 의무고용 고용부담금 연계고용감면
               </h2>
-              <p style={{ marginTop: 16, fontSize: "21px", lineHeight: 1.7, color: "#1e3a8a" }}>
+              <p style={{ marginTop: 16, fontSize: "17px", lineHeight: 1.7, color: "#1e3a8a" }}>
                 장애인표준사업장 연계고용으로 <strong style={{ color: "#dc2626" }}>고용부담금 50~90% 감면</strong>
               </p>
             </div>
@@ -254,16 +254,16 @@ export default function HomePage() {
             </div>
 
             <div style={{ marginTop: 30, padding: 26, background: "#fff3cd", borderRadius: 12, border: "1px solid #ffc107" }}>
-              <h3 style={{ margin: 0, fontSize: "23px", color: "#856404" }}>📢 연계고용 부담금 감면제도</h3>
-              <p style={{ marginTop: 16, lineHeight: 1.7, fontSize: "20px", color: "#856404" }}>
+              <h3 style={{ margin: 0, fontSize: "18px", color: "#856404" }}>📢 연계고용 부담금 감면제도</h3>
+              <p style={{ marginTop: 16, lineHeight: 1.7, fontSize: "16px", color: "#856404" }}>
                 장애인표준사업장 등과 <strong>도급계약을 체결</strong>해 납품받는 경우,
                 해당 사업장에서 종사한 장애인을 <strong>고용한 것으로 간주</strong>해 부담금을 감면하는 제도입니다.
               </p>
               <div style={{ marginTop: 16, padding: 14, background: "rgba(255,255,255,0.5)", borderRadius: 8 }}>
-                <p style={{ margin: 0, fontSize: "18px", fontWeight: "bold", color: "#856404" }}>
+                <p style={{ margin: 0, fontSize: "14px", fontWeight: "bold", color: "#856404" }}>
                   ✓ 감면 총액: 부담금의 <span style={{ color: "#dc3545" }}>90% 이내</span>
                 </p>
-                <p style={{ margin: "8px 0 0 0", fontSize: "18px", fontWeight: "bold", color: "#856404" }}>
+                <p style={{ margin: "8px 0 0 0", fontSize: "14px", fontWeight: "bold", color: "#856404" }}>
                   ✓ 상한: 해당 연도 도급액의 <span style={{ color: "#dc3545" }}>50%</span>를 초과할 수 없음
                 </p>
               </div>
@@ -272,8 +272,8 @@ export default function HomePage() {
 
           {/* CTA 섹션 */}
           <div style={{ marginTop: 50, textAlign: "center", padding: 40, background: "#f8f9fa", borderRadius: 16 }}>
-            <h3 style={{ margin: 0, fontSize: "31px", fontWeight: "bold" }}>🚀 지금 바로 시작하세요</h3>
-            <p style={{ marginTop: 16, color: "#666", fontSize: "21px" }}>
+            <h3 style={{ margin: 0, fontSize: "25px", fontWeight: "bold" }}>🚀 지금 바로 시작하세요</h3>
+            <p style={{ marginTop: 16, color: "#666", fontSize: "17px" }}>
               왼쪽 사이드바에서 원하는 메뉴를 선택하거나 아래 버튼을 클릭하세요
             </p>
             <div style={{ marginTop: 20, display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
@@ -327,46 +327,46 @@ export default function HomePage() {
 
           {/* SEO 컨텐츠 섹션 */}
           <div style={{ marginTop: 50, padding: 40, background: "white", borderRadius: 16, border: "1px solid #e0e0e0" }}>
-            <h3 style={{ margin: 0, fontSize: "26px", fontWeight: "bold", color: "#333" }}>
+            <h3 style={{ margin: 0, fontSize: "21px", fontWeight: "bold", color: "#333" }}>
               💡 자주 묻는 질문
             </h3>
             
             <div style={{ marginTop: 26 }}>
               <div style={{ marginBottom: 26 }}>
-                <h4 style={{ margin: 0, fontSize: "21px", fontWeight: "bold", color: "#667eea" }}>
+                <h4 style={{ margin: 0, fontSize: "17px", fontWeight: "bold", color: "#667eea" }}>
                   Q. 연계고용 부담금 감면은 어떻게 받나요?
                 </h4>
-                <p style={{ marginTop: 10, fontSize: "18px", lineHeight: 1.7, color: "#666" }}>
+                <p style={{ marginTop: 10, fontSize: "14px", lineHeight: 1.7, color: "#666" }}>
                   장애인표준사업장과 도급계약을 체결하고, 해당 계약 내역을 관할 고용노동부에 신고하면 고용부담금을 최대 90%까지 감면받을 수 있습니다.
                   장표사닷컴의 계산기로 미리 감면액을 확인하세요.
                 </p>
               </div>
 
               <div style={{ marginBottom: 26 }}>
-                <h4 style={{ margin: 0, fontSize: "21px", fontWeight: "bold", color: "#667eea" }}>
+                <h4 style={{ margin: 0, fontSize: "17px", fontWeight: "bold", color: "#667eea" }}>
                   Q. 고용부담금은 얼마나 내야 하나요?
                 </h4>
-                <p style={{ marginTop: 10, fontSize: "18px", lineHeight: 1.7, color: "#666" }}>
+                <p style={{ marginTop: 10, fontSize: "14px", lineHeight: 1.7, color: "#666" }}>
                   상시근로자 50인 이상 기업은 장애인 의무고용률(3.1%)을 충족해야 합니다. 미달 시 월 평균임금 × 미달인원만큼 고용부담금을 납부해야 합니다.
                   장표사닷컴의 고용부담금계산기로 정확한 금액을 확인하세요.
                 </p>
               </div>
 
               <div style={{ marginBottom: 26 }}>
-                <h4 style={{ margin: 0, fontSize: "21px", fontWeight: "bold", color: "#11998e" }}>
+                <h4 style={{ margin: 0, fontSize: "17px", fontWeight: "bold", color: "#11998e" }}>
                   Q. 장애인직원관리솔루션은 정말 무료인가요?
                 </h4>
-                <p style={{ marginTop: 10, fontSize: "18px", lineHeight: 1.7, color: "#666" }}>
+                <p style={{ marginTop: 10, fontSize: "14px", lineHeight: 1.7, color: "#666" }}>
                   네, 100% 무료입니다. 장애인표준사업장, 장애인 의무고용 기업, 모든 사회적기업에 완전 무료로 제공됩니다.
                   근태관리, 업무관리, 휴가관리 모든 기능을 무료로 사용하실 수 있습니다.
                 </p>
               </div>
 
               <div>
-                <h4 style={{ margin: 0, fontSize: "21px", fontWeight: "bold", color: "#11998e" }}>
+                <h4 style={{ margin: 0, fontSize: "17px", fontWeight: "bold", color: "#11998e" }}>
                   Q. 재택근무 장애인직원도 관리할 수 있나요?
                 </h4>
-                <p style={{ marginTop: 10, fontSize: "18px", lineHeight: 1.7, color: "#666" }}>
+                <p style={{ marginTop: 10, fontSize: "14px", lineHeight: 1.7, color: "#666" }}>
                   네, 재택근무 장애인직원의 출퇴근 체크, 업무 배정, 진행상황 확인이 모두 가능합니다.
                   스마트폰으로 간편하게 근태를 체크하고, 관리자는 실시간으로 현황을 확인할 수 있습니다.
                 </p>
@@ -401,8 +401,8 @@ function ServiceCard({ icon, title, description, href }: { icon: string; title: 
         }}
       >
         <div style={{ fontSize: 32, marginBottom: 12 }}>{icon}</div>
-        <h3 style={{ margin: 0, fontSize: "23px", color: "#333" }}>{title}</h3>
-        <p style={{ marginTop: 10, fontSize: "18px", color: "#666", lineHeight: 1.6 }}>
+        <h3 style={{ margin: 0, fontSize: "18px", color: "#333" }}>{title}</h3>
+        <p style={{ marginTop: 10, fontSize: "14px", color: "#666", lineHeight: 1.6 }}>
           {description}
         </p>
       </div>
