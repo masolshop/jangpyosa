@@ -17,8 +17,14 @@ interface WorkOrder {
   note: string | null;
 }
 
+interface Company {
+  name: string;
+  attachmentEmail: string | null;
+}
+
 export default function EmployeeWorkOrdersPage() {
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
+  const [company, setCompany] = useState<Company | null>(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -38,6 +44,7 @@ export default function EmployeeWorkOrdersPage() {
 
   useEffect(() => {
     loadWorkOrders();
+    loadCompanyInfo();
     
     // localStorage에서 자동 음성 읽기 설정 로드
     const savedAutoRead = localStorage.getItem('autoReadWorkOrders');
@@ -45,6 +52,23 @@ export default function EmployeeWorkOrdersPage() {
       setAutoReadEnabled(true);
     }
   }, []);
+
+  async function loadCompanyInfo() {
+    try {
+      const token = getToken();
+      if (!token) return;
+
+      const companyRes = await fetch('/api/companies/my', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (companyRes.ok) {
+        const companyData = await companyRes.json();
+        setCompany(companyData.company);
+      }
+    } catch (e) {
+      console.error("회사 정보 로드 실패:", e);
+    }
+  }
 
   async function loadWorkOrders() {
     try {
@@ -520,6 +544,40 @@ export default function EmployeeWorkOrdersPage() {
               <label style={{ display: "block", marginBottom: 8, fontWeight: "600", fontSize: 16 }}>
                 {selectedWorkOrder.isConfirmed ? "완료 보고서" : "완료 보고서 작성"}
               </label>
+              
+              {/* 이메일 첨부 안내 */}
+              {!selectedWorkOrder.isConfirmed && company?.attachmentEmail && (
+                <div style={{
+                  padding: 15,
+                  marginBottom: 16,
+                  background: '#e3f2fd',
+                  border: '1px solid #2196F3',
+                  borderRadius: 8
+                }}>
+                  <p style={{ fontWeight: 'bold', marginBottom: 8, color: '#1976d2', fontSize: 14 }}>
+                    📧 첨부파일이 있는 경우
+                  </p>
+                  <p style={{ fontSize: 13, lineHeight: '1.6', marginBottom: 8 }}>
+                    완료 보고서 작성 후 첨부파일이 필요하신 경우<br />
+                    아래 이메일로 증빙 자료를 전송해주세요:
+                  </p>
+                  <p style={{
+                    marginTop: 8,
+                    padding: 10,
+                    background: 'white',
+                    borderRadius: 4,
+                    fontWeight: 'bold',
+                    fontSize: 15,
+                    color: '#1976d2'
+                  }}>
+                    📨 {company.attachmentEmail}
+                  </p>
+                  <p style={{ fontSize: 12, marginTop: 8, color: '#666' }}>
+                    💡 이메일 제목: [업무완료] 성함 - {selectedWorkOrder.title}
+                  </p>
+                </div>
+              )}
+              
               <textarea
                 value={completionReport}
                 onChange={(e) => setCompletionReport(e.target.value)}
