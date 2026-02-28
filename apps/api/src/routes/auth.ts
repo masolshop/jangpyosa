@@ -276,36 +276,14 @@ r.post("/signup/supplier", async (req, res) => {
 
     const passwordHash = await bcrypt.hash(body.password, 10);
 
-    // Company 먼저 생성 (표준사업장도 장애인 직원 관리를 위해 buyerProfile 생성)
-    const company = await prisma.company.create({
-      data: {
-        name: apickResult.name!,
-        bizNo: cleanBizNo,
-        representative: apickResult.representative,
-        type: "SUPPLIER",
-        buyerType: "STANDARD_WORKPLACE", // 표준사업장 타입
-        isVerified: true,
-        apickData: apickResult.data ? JSON.stringify(apickResult.data) : null,
-        supplierProfile: {
-          create: {},
-        },
-        buyerProfile: {
-          create: {}, // 장애인 직원 관리를 위한 buyerProfile 추가
-        },
-      },
-      include: { supplierProfile: true, buyerProfile: true }
-    });
-
-    // User 생성 (Company에 연결)
+    // 1. User 먼저 생성 (companyId 없이)
     const user = await prisma.user.create({
       data: {
-        phone: cleanManagerPhone, // 담당자 핸드폰 (알림톡용, unique 제약 때문에 여기 저장)
+        phone: cleanManagerPhone,
         username: body.username,
         passwordHash,
         name: apickResult.representative || "대표자",
         role: "SUPPLIER",
-        companyId: company.id,
-        isCompanyOwner: true, // 🆕 회사 최초 생성자
         referredById: referredBy?.id,
         
         // 🆕 담당자 정보
@@ -318,6 +296,41 @@ r.post("/signup/supplier", async (req, res) => {
         privacyAgreed: body.privacyAgreed,
         privacyAgreedAt: getKSTNow(),
       },
+    });
+
+    // 2. Company 생성 (ownerUserId 설정)
+    const company = await prisma.company.create({
+      data: {
+        name: apickResult.name!,
+        bizNo: cleanBizNo,
+        representative: apickResult.representative,
+        type: "SUPPLIER",
+        buyerType: "STANDARD_WORKPLACE",
+        isVerified: true,
+        apickData: apickResult.data ? JSON.stringify(apickResult.data) : null,
+        ownerUserId: user.id,
+        supplierProfile: {
+          create: {},
+        },
+        buyerProfile: {
+          create: {},
+        },
+      },
+      include: { supplierProfile: true, buyerProfile: true }
+    });
+
+    // 3. User 업데이트 (companyId 설정)
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        companyId: company.id,
+        isCompanyOwner: true,
+      },
+    });
+
+    // User 정보 다시 조회 (company 포함)
+    const updatedUser = await prisma.user.findUnique({
+      where: { id: user.id },
       include: {
         company: {
           include: { supplierProfile: true },
@@ -348,19 +361,19 @@ r.post("/signup/supplier", async (req, res) => {
     return res.json({
       message: "표준사업장 기업 가입 완료",
       user: {
-        id: user.id,
-        phone: user.phone,
-        name: user.name,
-        role: user.role,
+        id: updatedUser!.id,
+        phone: updatedUser!.phone,
+        name: updatedUser!.name,
+        role: updatedUser!.role,
         company: {
-          name: user.company?.name,
-          bizNo: user.company?.bizNo,
-          representative: user.company?.representative,
+          name: updatedUser!.company?.name,
+          bizNo: updatedUser!.company?.bizNo,
+          representative: updatedUser!.company?.representative,
         },
         referredBy: referredBy
           ? {
-              name: user.referredBy?.name,
-              branch: user.referredBy?.branch?.name,
+              name: updatedUser!.referredBy?.name,
+              branch: updatedUser!.referredBy?.branch?.name,
             }
           : null,
         registryMatched: !!registry,
@@ -443,35 +456,16 @@ r.post("/signup/buyer", async (req, res) => {
     // buyerType 결정 (신규 필드 우선, 없으면 companyType에서 변환)
     const buyerType = body.buyerType || (body.companyType === "GOVERNMENT" ? "GOVERNMENT" : "PRIVATE_COMPANY");
 
-    // Company 먼저 생성
-    const company = await prisma.company.create({
-      data: {
-        name: apickResult.name!,
-        bizNo: cleanBizNo,
-        representative: apickResult.representative,
-        type: "BUYER",
-        buyerType, // 🆕 Company 테이블에 buyerType 저장
-        isVerified: true,
-        apickData: apickResult.data ? JSON.stringify(apickResult.data) : null,
-        buyerProfile: {
-          create: {},
-        },
-      },
-      include: { buyerProfile: true }
-    });
-
-    // User 생성 (Company에 연결)
+    // 1. User 먼저 생성 (companyId 없이)
     const user = await prisma.user.create({
       data: {
-        phone: cleanManagerPhone, // 담당자 핸드폰 (알림톡용, unique 제약 때문에 여기 저장)
+        phone: cleanManagerPhone,
         username: body.username,
         passwordHash,
         name: apickResult.representative || "대표자",
         role: "BUYER",
-        companyId: company.id,
-        isCompanyOwner: true, // 🆕 회사 최초 생성자
-        companyType: body.companyType || (buyerType === "GOVERNMENT" ? "GOVERNMENT" : "PRIVATE"), // User 테이블에도 저장 (호환성)
-        referredById: referredBy.id,
+        companyType: body.companyType || (buyerType === "GOVERNMENT" ? "GOVERNMENT" : "PRIVATE"),
+        referredById: referredBy?.id,
         
         // 🆕 담당자 정보
         managerName: body.managerName,
@@ -483,6 +477,38 @@ r.post("/signup/buyer", async (req, res) => {
         privacyAgreed: body.privacyAgreed,
         privacyAgreedAt: getKSTNow(),
       },
+    });
+
+    // 2. Company 생성 (ownerUserId 설정)
+    const company = await prisma.company.create({
+      data: {
+        name: apickResult.name!,
+        bizNo: cleanBizNo,
+        representative: apickResult.representative,
+        type: "BUYER",
+        buyerType,
+        isVerified: true,
+        apickData: apickResult.data ? JSON.stringify(apickResult.data) : null,
+        ownerUserId: user.id,
+        buyerProfile: {
+          create: {},
+        },
+      },
+      include: { buyerProfile: true }
+    });
+
+    // 3. User 업데이트 (companyId 설정)
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        companyId: company.id,
+        isCompanyOwner: true,
+      },
+    });
+
+    // User 정보 다시 조회 (company 포함)
+    const updatedUser = await prisma.user.findUnique({
+      where: { id: user.id },
       include: {
         company: {
           include: { buyerProfile: true },
@@ -496,19 +522,19 @@ r.post("/signup/buyer", async (req, res) => {
     return res.json({
       message: "고용부담금 기업 가입 완료",
       user: {
-        id: user.id,
-        phone: user.phone,
-        name: user.name,
-        role: user.role,
+        id: updatedUser!.id,
+        phone: updatedUser!.phone,
+        name: updatedUser!.name,
+        role: updatedUser!.role,
         company: {
-          name: user.company?.name,
-          bizNo: user.company?.bizNo,
-          representative: user.company?.representative,
+          name: updatedUser!.company?.name,
+          bizNo: updatedUser!.company?.bizNo,
+          representative: updatedUser!.company?.representative,
         },
         referredBy: referredBy
           ? {
-              name: user.referredBy?.name,
-              branch: user.referredBy?.branch?.name,
+              name: updatedUser!.referredBy?.name,
+              branch: updatedUser!.referredBy?.branch?.name,
             }
           : null,
       },
