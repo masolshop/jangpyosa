@@ -4,6 +4,32 @@
 
 ---
 
+## 🚨 **절대 금지 사항 (CRITICAL)**
+
+### ❌ **프로덕션 DB 직접 조작 금지**
+```bash
+# 절대 실행 금지!
+prisma db push                    # ❌ 데이터 전체 삭제됨
+DELETE FROM DisabledEmployee      # ❌ 직원 데이터 삭제
+DROP TABLE                        # ❌ 테이블 삭제
+TRUNCATE                          # ❌ 데이터 초기화
+UPDATE DisabledEmployee SET ...   # ❌ 대량 수정 위험
+```
+
+### ✅ **안전한 DB 작업 방법**
+1. **조회만 허용**: `SELECT` 쿼리만 사용
+2. **백업 필수**: DB 수정 전 반드시 백업 확인
+3. **마이그레이션 사용**: 스키마 변경 시 `prisma migrate dev` 사용
+4. **사용자 확인**: 실제 회원 데이터인지 목업 데이터인지 확인
+
+### 🔒 **AI 작업 제한 규칙**
+- **읽기 전용 작업**: DB 조회, 로그 확인, 상태 점검
+- **코드 수정만**: 소스 코드 수정 후 사용자 승인 필요
+- **배포 금지**: DB 마이그레이션, 스키마 변경은 사용자 명시적 승인 후에만
+- **데이터 복원**: 백업에서 복원 시 사용자에게 반드시 확인 요청
+
+---
+
 ## ⚡ 빠른 시작 (5초 요약)
 
 ```bash
@@ -931,6 +957,67 @@ SELECT name, phone FROM User WHERE phone LIKE '01030010%' ORDER BY phone;
 4. **식별 방법**:
    - 기업: 사업자번호 `1234567890`, `2345678901`, `3456789012`
    - 직원: 전화번호 패턴 `01010010xxx`, `01020010xxx`, `01030010xxx`
+
+---
+
+
+## 🛡️ **프로덕션 DB 보호 조치**
+
+### 1️⃣ **자동 백업 (설정 완료 ✅)**
+```bash
+# 매일 03:00 자동 백업
+0 3 * * * /home/ubuntu/scripts/backup-db.sh
+
+# 매일 04:00 S3 백업
+0 4 * * * /home/ubuntu/scripts/backup-to-s3-fixed.sh
+```
+
+**백업 위치**: `/home/ubuntu/backups/jangpyosa/dev.db.backup-YYYYMMDD-HHMMSS.gz`
+
+### 2️⃣ **DB 복원 절차 (긴급 시)**
+```bash
+# 1. 최신 백업 확인
+ls -lht /home/ubuntu/backups/jangpyosa/*.gz | head -1
+
+# 2. 백업 압축 해제
+gunzip -c /home/ubuntu/backups/jangpyosa/dev.db.backup-YYYYMMDD-HHMMSS.gz > /tmp/restore.db
+
+# 3. 현재 DB 백업 (안전장치)
+cp /home/ubuntu/jangpyosa/apps/api/prisma/dev.db /home/ubuntu/jangpyosa/apps/api/prisma/dev.db.before-restore-$(date +%Y%m%d-%H%M%S)
+
+# 4. DB 복원
+cp /tmp/restore.db /home/ubuntu/jangpyosa/apps/api/prisma/dev.db
+
+# 5. API 재시작
+pm2 restart jangpyosa-api
+```
+
+### 3️⃣ **안전한 스키마 변경**
+```bash
+# ❌ 절대 사용 금지
+prisma db push
+
+# ✅ 안전한 방법
+cd /home/ubuntu/jangpyosa/apps/api
+npx prisma migrate dev --name describe_change  # 개발 환경
+npx prisma migrate deploy                       # 프로덕션 배포
+```
+
+### 4️⃣ **DB 작업 전 체크리스트**
+- [ ] 최신 백업 존재 확인 (`ls -lht /home/ubuntu/backups/jangpyosa/*.gz | head -1`)
+- [ ] 실제 회원 데이터인지 확인 (사업자번호 2668101215 = 주식회사 페마연)
+- [ ] 목업 데이터인지 확인 (사업자번호 1234567890, 2345678901, 3456789012)
+- [ ] 작업 전 사용자에게 승인 요청
+- [ ] 작업 후 데이터 무결성 검증
+
+### 5️⃣ **실시간 모니터링**
+```bash
+# DB 파일 크기 모니터링
+watch -n 60 'ls -lh /home/ubuntu/jangpyosa/apps/api/prisma/dev.db'
+
+# 백업 상태 확인
+tail -f /var/log/jangpyosa-backup.log
+```
 
 ---
 
