@@ -372,7 +372,7 @@ export default function CompanyDashboardPage() {
       <div 
         className="card"
         style={{
-          boxShadow: "0 10px 20px -2px rgba(59, 130, 246, 0.3), 0 6px 12px -2px rgba(59, 130, 246, 0.2)"
+          boxShadow: "0 10px 20px -2px rgba(59, 130, 246, 0.03), 0 6px 12px -2px rgba(59, 130, 246, 0.02)"
         }}
       >
         <h1 style={{ fontSize: 28, marginBottom: 8 }}>🏢 기업 대시보드</h1>
@@ -389,7 +389,7 @@ export default function CompanyDashboardPage() {
               borderRadius: 8,
               color: message.includes("실패") ? "#991b1b" : "#065f46",
               fontWeight: 600,
-              boxShadow: "0 4px 8px -1px rgba(59, 130, 246, 0.3), 0 2px 4px -1px rgba(59, 130, 246, 0.2)"
+              boxShadow: "0 4px 8px -1px rgba(59, 130, 246, 0.03), 0 2px 4px -1px rgba(59, 130, 246, 0.02)"
             }}
           >
             {message}
@@ -403,7 +403,7 @@ export default function CompanyDashboardPage() {
             background: "rgba(219, 234, 254, 0.2)",
             borderRadius: 12,
             marginBottom: 32,
-            boxShadow: "0 8px 16px -2px rgba(59, 130, 246, 0.3), 0 4px 8px -2px rgba(59, 130, 246, 0.2)"
+            boxShadow: "0 8px 16px -2px rgba(59, 130, 246, 0.03), 0 4px 8px -2px rgba(59, 130, 246, 0.02)"
           }}
         >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
@@ -637,7 +637,7 @@ export default function CompanyDashboardPage() {
             background: "rgba(219, 234, 254, 0.2)",
             borderRadius: 12,
             marginBottom: 32,
-            boxShadow: "0 8px 16px -2px rgba(59, 130, 246, 0.3), 0 4px 8px -2px rgba(59, 130, 246, 0.2)"
+            boxShadow: "0 8px 16px -2px rgba(59, 130, 246, 0.03), 0 4px 8px -2px rgba(59, 130, 246, 0.02)"
           }}
         >
           <h2 style={{ margin: 0, fontSize: 20, marginBottom: 16 }}>✉️ 새 팀원 초대하기</h2>
@@ -700,7 +700,7 @@ export default function CompanyDashboardPage() {
                 borderRadius: 8,
                 marginTop: 16,
                 border: "2px solid #3b82f6",
-                boxShadow: "0 6px 12px -1px rgba(59, 130, 246, 0.3), 0 3px 6px -1px rgba(59, 130, 246, 0.2)"
+                boxShadow: "0 6px 12px -1px rgba(59, 130, 246, 0.03), 0 3px 6px -1px rgba(59, 130, 246, 0.02)"
               }}
             >
               <p style={{ margin: 0, fontWeight: "bold", fontSize: 14, color: "#1e40af" }}>
@@ -830,7 +830,7 @@ export default function CompanyDashboardPage() {
             background: "rgba(219, 234, 254, 0.2)",
             borderRadius: 12,
             marginBottom: 32,
-            boxShadow: "0 8px 16px -2px rgba(59, 130, 246, 0.3), 0 4px 8px -2px rgba(59, 130, 246, 0.2)"
+            boxShadow: "0 8px 16px -2px rgba(59, 130, 246, 0.03), 0 4px 8px -2px rgba(59, 130, 246, 0.02)"
           }}
         >
           <h2 style={{ margin: 0, fontSize: 20, marginBottom: 16 }}>👥 팀원 목록 ({members.length}명)</h2>
@@ -848,7 +848,7 @@ export default function CompanyDashboardPage() {
                     background: member.isCompanyOwner ? "rgba(239, 246, 255, 0.4)" : "rgba(249, 250, 251, 0.3)",
                     border: `2px solid ${member.isCompanyOwner ? "#3b82f6" : "#e5e7eb"}`,
                     borderRadius: 8,
-                    boxShadow: "0 4px 8px -1px rgba(59, 130, 246, 0.3), 0 2px 4px -1px rgba(59, 130, 246, 0.2)"
+                    boxShadow: "0 4px 8px -1px rgba(59, 130, 246, 0.03), 0 2px 4px -1px rgba(59, 130, 246, 0.02)"
                   }}
                 >
                   {editingMemberId === member.id ? (
@@ -1006,7 +1006,7 @@ export default function CompanyDashboardPage() {
             padding: 24,
             background: "rgba(219, 234, 254, 0.2)",
             borderRadius: 12,
-            boxShadow: "0 8px 16px -2px rgba(59, 130, 246, 0.3), 0 4px 8px -2px rgba(59, 130, 246, 0.2)"
+            boxShadow: "0 8px 16px -2px rgba(59, 130, 246, 0.03), 0 4px 8px -2px rgba(59, 130, 246, 0.02)"
           }}
         >
           <h2 style={{ margin: 0, fontSize: 20, marginBottom: 16 }}>📜 활동 로그 (최근 20개)</h2>
