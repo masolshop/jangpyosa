@@ -650,7 +650,7 @@ export default function EmployeeLeavePage() {
                               marginBottom: '5px'
                             }}
                           >
-                            📨 전송완료 표시
+                            📧 증빙서류 이메일 전송
                           </button>
                           <p style={{ fontSize: '11px', color: '#666', margin: 0 }}>
                             {company.attachmentEmail}
