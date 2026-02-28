@@ -324,7 +324,7 @@ export default function EmployeesPage() {
       ["[주민번호 앞자리]"],
       ["- 주민등록번호 앞 6자리를 입력합니다 (예: 850315)"],
       ["- 직원 회원가입 시 본인 인증에 사용됩니다"],
-      ["- 장려금 계산 시 생년월일로 사용됩니다"],
+      ["- 장려금 계산 시 생년월일로 자동 변환됩니다 (별도 생년월일 입력 불필요)"],
       [],
       ["[중증여부]"],
       ["- 중증: 장애 1~3급 또는 중증 판정을 받은 경우"],
@@ -402,16 +402,14 @@ export default function EmployeesPage() {
       const data = await file.arrayBuffer();
       const workbook = XLSX.read(data);
       const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-      const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
+      
+      // ✅ 컬럼명 기반 매핑으로 변경 (생년월일 컬럼 유무와 관계없이 동작)
+      const jsonData = XLSX.utils.sheet_to_json(worksheet) as any[];
 
-      if (jsonData.length < 2) {
+      if (jsonData.length === 0) {
         setError("엑셀 파일에 데이터가 없습니다.");
         return;
       }
-
-      // 헤더 확인 (첫 번째 행)
-      const headers = jsonData[0];
-      const dataRows = jsonData.slice(1);
 
       let successCount = 0;
       let failCount = 0;
@@ -424,36 +422,36 @@ export default function EmployeesPage() {
       }
 
       // 각 행을 직원으로 등록
-      for (let i = 0; i < dataRows.length; i++) {
-        const row = dataRows[i];
-        if (!row || row.length === 0 || !row[0]) continue; // 빈 행 스킵
+      for (let i = 0; i < jsonData.length; i++) {
+        const row = jsonData[i];
+        if (!row || !row["성명*"]) continue; // 빈 행 스킵
 
         try {
-          // 데이터 매핑
-          const monthlyWorkHours = Number(row[11]) || 60;  // 월근로시간 (인덱스 11)
+          // ✅ 컬럼명으로 데이터 매핑 (인덱스 방식 제거)
+          const monthlyWorkHours = Number(row["월근로시간*"]) || 60;
           
-          const workTypeStr = row[12]?.toString().trim() || "";  // 근무형태 (인덱스 12)
+          const workTypeStr = row["근무형태"]?.toString().trim() || "";
           let workType: "OFFICE" | "REMOTE" | "HYBRID" = "OFFICE";
           if (workTypeStr === "재택") workType = "REMOTE";
           else if (workTypeStr === "혼합") workType = "HYBRID";
-          else workType = "OFFICE"; // 기본값 또는 "사무실"
+          else workType = "OFFICE";
           
           const employeeData = {
-            name: row[0]?.toString().trim() || "",
-            phone: row[1]?.toString().trim() || "",                  // 핸드폰번호
-            registrationNumber: String(row[2] ?? "").trim(),          // 주민번호 앞자리 (숫자 가능)
-            disabilityType: row[3]?.toString().trim() || "",
-            disabilityGrade: String(row[4] ?? "").trim(),             // 장애 등급 (숫자 가능)
-            severity: (row[5]?.toString().trim() === "중증" ? "SEVERE" : "MILD") as "SEVERE" | "MILD",
-            gender: (row[6]?.toString().trim() === "여" ? "F" : "M") as "M" | "F",
-            hireDate: row[7] ? formatExcelDate(row[7]) : "",
-            resignDate: row[8] ? formatExcelDate(row[8]) : "",
+            name: row["성명*"]?.toString().trim() || "",
+            phone: row["핸드폰번호*"]?.toString().trim() || "",
+            registrationNumber: String(row["주민번호앞자리*"] ?? "").trim(),
+            disabilityType: row["장애유형*"]?.toString().trim() || "",
+            disabilityGrade: String(row["장애등급"] ?? "").trim(),
+            severity: (row["중증여부*"]?.toString().trim() === "중증" ? "SEVERE" : "MILD") as "SEVERE" | "MILD",
+            gender: (row["성별*"]?.toString().trim() === "여" ? "F" : "M") as "M" | "F",
+            hireDate: row["입사일*"] ? formatExcelDate(row["입사일*"]) : "",
+            resignDate: row["퇴사일"] ? formatExcelDate(row["퇴사일"]) : "",
             monthlySalary: calculateMonthlySalary(monthlyWorkHours),
-            hasEmploymentInsurance: row[9]?.toString().trim() === "가입",
-            meetsMinimumWage: row[10]?.toString().trim() === "이상",
+            hasEmploymentInsurance: row["고용보험*"]?.toString().trim() === "가입",
+            meetsMinimumWage: row["최저임금*"]?.toString().trim() === "이상",
             monthlyWorkHours: monthlyWorkHours,
             workType: workType,
-            memo: row[13]?.toString().trim() || "",  // 메모 (인덱스 13)
+            memo: row["메모"]?.toString().trim() || "",
           };
 
           // 디버깅: 전송 데이터 확인
