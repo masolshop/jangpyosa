@@ -245,7 +245,7 @@ export default function WorkOrdersPage() {
       const token = getToken();
       if (!token) return;
 
-      const res = await fetch(`${API_BASE}/work-orders`, {
+      const res = await fetch(`${API_BASE}/work-orders/create`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -254,10 +254,10 @@ export default function WorkOrdersPage() {
         body: JSON.stringify({
           title,
           content: description,  // backend expects 'content', not 'description'
+          targetType: recipientType,  // API expects 'targetType' not 'recipientType'
+          targetEmployees: recipientType === "INDIVIDUAL" ? recipientIds : undefined,
           priority,
           dueDate: dueDate || null,
-          recipientType,
-          recipientIds: recipientType === "INDIVIDUAL" ? recipientIds : undefined,
         }),
       });
 
@@ -811,6 +811,7 @@ export default function WorkOrdersPage() {
                 type="date"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
+                min={new Date().toISOString().split('T')[0]}
                 style={{
                   width: "100%",
                   padding: 12,
@@ -1159,6 +1160,7 @@ export default function WorkOrdersPage() {
                 type="date"
                 value={editDueDate}
                 onChange={(e) => setEditDueDate(e.target.value)}
+                min={new Date().toISOString().split('T')[0]}
                 style={{
                   width: "100%",
                   padding: 12,
