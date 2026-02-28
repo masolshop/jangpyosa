@@ -245,10 +245,16 @@ r.post("/signup/supplier", async (req, res) => {
       return res.status(400).json({ error: "USERNAME_ALREADY_EXISTS", message: "이미 사용 중인 ID입니다" });
     }
 
+    // 담당자 핸드폰 번호 중복 체크
+    const existingPhone = await prisma.user.findUnique({ where: { phone: cleanManagerPhone } });
+    if (existingPhone) {
+      return res.status(400).json({ error: "PHONE_ALREADY_EXISTS", message: "이미 사용 중인 핸드폰 번호입니다. 다른 번호를 사용해주세요." });
+    }
+
     // 사업자번호 중복 체크 (1기업 1계정)
     const existingCompany = await prisma.company.findUnique({ where: { bizNo: cleanBizNo } });
     if (existingCompany) {
-      return res.status(400).json({ error: "BIZNO_ALREADY_REGISTERED" });
+      return res.status(400).json({ error: "BIZNO_ALREADY_REGISTERED", message: "이미 가입된 사업자등록번호입니다" });
     }
 
     // APICK 유료 API로 사업자번호 인증
@@ -422,10 +428,16 @@ r.post("/signup/buyer", async (req, res) => {
       return res.status(400).json({ error: "USERNAME_ALREADY_EXISTS", message: "이미 사용 중인 ID입니다" });
     }
 
+    // 담당자 핸드폰 번호 중복 체크
+    const existingPhone = await prisma.user.findUnique({ where: { phone: cleanManagerPhone } });
+    if (existingPhone) {
+      return res.status(400).json({ error: "PHONE_ALREADY_EXISTS", message: "이미 사용 중인 핸드폰 번호입니다. 다른 번호를 사용해주세요." });
+    }
+
     // 사업자번호 중복 체크 (1기업 1계정)
     const existingCompany = await prisma.company.findUnique({ where: { bizNo: cleanBizNo } });
     if (existingCompany) {
-      return res.status(400).json({ error: "BIZNO_ALREADY_REGISTERED" });
+      return res.status(400).json({ error: "BIZNO_ALREADY_REGISTERED", message: "이미 가입된 사업자등록번호입니다" });
     }
 
     // APICK 유료 API로 사업자번호 인증
