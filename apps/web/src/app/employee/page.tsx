@@ -1,10 +1,24 @@
-"use client";
-
 import type { Metadata } from "next";
 import Link from "next/link";
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { getToken } from "@/lib/auth";
+import { employeeMetadata } from "./metadata";
+
+export const metadata: Metadata = {
+  ...employeeMetadata,
+  alternates: {
+    canonical: "https://jangpyosa.com/employee",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+};
 
 // JSON-LD 구조화된 데이터
 const jsonLd = {
@@ -31,16 +45,6 @@ const jsonLd = {
 };
 
 export default function EmployeePortalPage() {
-  const router = useRouter();
-
-  useEffect(() => {
-    // 로그인된 사용자는 자동으로 근태관리로 이동
-    const token = getToken();
-    if (token) {
-      router.push("/employee/attendance");
-    }
-  }, [router]);
-
   return (
     <>
       {/* JSON-LD 구조화된 데이터 */}
