@@ -14,7 +14,11 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   async function onLogin() {
-    if (!userType) {
+    // 슈퍼어드민(username: superadmin)은 userType 없이 로그인 가능
+    // identifier가 숫자가 아니면 username으로 간주 (슈퍼어드민 등)
+    const isUsername = !/^\d/.test(identifier.replace(/[-\s]/g, ""));
+    
+    if (!isUsername && !userType) {
       setMsg("❌ 회원 유형을 선택해주세요");
       return;
     }
@@ -35,7 +39,7 @@ export default function LoginPage() {
         body: JSON.stringify({ 
           identifier: cleanIdentifier, // phone 또는 username
           password,
-          userType // 선택한 유저 타입 전송
+          userType: userType || undefined // 선택한 유저 타입 전송 (username 로그인 시 undefined)
         }),
       });
 
@@ -208,7 +212,7 @@ export default function LoginPage() {
 
           <button
             onClick={onLogin}
-            disabled={loading || !identifier || !password || !userType}
+            disabled={loading || !identifier || !password}
             style={{ width: "100%", marginTop: 16 }}
           >
             {loading ? "로그인 중..." : "로그인"}
@@ -302,8 +306,8 @@ export default function LoginPage() {
               fontSize: 12
             }}>
               <strong>슈퍼어드민:</strong>
-              <span>010-1234-5678</span>
-              <span>admin1234</span>
+              <span>superadmin 또는 01063529091</span>
+              <span>01063529091</span>
               
               <strong>매니저:</strong>
               <span>010-9876-5432</span>
