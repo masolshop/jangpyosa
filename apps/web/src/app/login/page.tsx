@@ -130,20 +130,20 @@ export default function LoginPage() {
           }}>
             <button
               type="button"
-              onClick={() => setUserType("AGENT")}
+              onClick={() => setUserType("BUYER")}
               style={{
                 padding: "12px 16px",
-                border: `2px solid ${userType === "AGENT" ? "#0070f3" : "#ddd"}`,
-                background: userType === "AGENT" ? "#e7f3ff" : "white",
-                color: userType === "AGENT" ? "#0070f3" : "#666",
+                border: `2px solid ${userType === "BUYER" ? "#0070f3" : "#ddd"}`,
+                background: userType === "BUYER" ? "#e7f3ff" : "white",
+                color: userType === "BUYER" ? "#0070f3" : "#666",
                 borderRadius: 8,
                 cursor: "pointer",
                 fontSize: 14,
-                fontWeight: userType === "AGENT" ? 600 : 400,
+                fontWeight: userType === "BUYER" ? 600 : 400,
                 transition: "all 0.2s"
               }}
             >
-              👔 매니저
+              🏢 고용의무기업
             </button>
             <button
               type="button"
@@ -164,26 +164,25 @@ export default function LoginPage() {
             </button>
             <button
               type="button"
-              onClick={() => setUserType("BUYER")}
+              onClick={() => setUserType("AGENT")}
               style={{
                 padding: "12px 16px",
-                border: `2px solid ${userType === "BUYER" ? "#0070f3" : "#ddd"}`,
-                background: userType === "BUYER" ? "#e7f3ff" : "white",
-                color: userType === "BUYER" ? "#0070f3" : "#666",
+                border: `2px solid ${userType === "AGENT" ? "#0070f3" : "#ddd"}`,
+                background: userType === "AGENT" ? "#e7f3ff" : "white",
+                color: userType === "AGENT" ? "#0070f3" : "#666",
                 borderRadius: 8,
                 cursor: "pointer",
                 fontSize: 14,
-                fontWeight: userType === "BUYER" ? 600 : 400,
+                fontWeight: userType === "AGENT" ? 600 : 400,
                 transition: "all 0.2s"
               }}
             >
-              🏢 고용의무기업
+              👔 매니저
             </button>
           </div>
 
           <label>
-            {userType === "AGENT" ? "핸드폰 번호 (로그인 ID)" : "아이디"}
-            {!userType && "아이디 또는 핸드폰 번호"}
+            아이디
           </label>
           <input
             type="text"
