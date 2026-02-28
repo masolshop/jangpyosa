@@ -429,14 +429,14 @@ export default function EmployeesPage() {
         if (!row || row.length === 0 || !row[0]) continue; // 빈 행 스킵
 
         try {
-          // 데이터 매핑 (핸드폰번호 추가)
-          const workTypeStr = row[13]?.toString().trim() || "";
+          // 데이터 매핑
+          const monthlyWorkHours = Number(row[11]) || 60;  // 월근로시간 (인덱스 11)
+          
+          const workTypeStr = row[12]?.toString().trim() || "";  // 근무형태 (인덱스 12)
           let workType: "OFFICE" | "REMOTE" | "HYBRID" = "OFFICE";
           if (workTypeStr === "재택") workType = "REMOTE";
           else if (workTypeStr === "혼합") workType = "HYBRID";
           else workType = "OFFICE"; // 기본값 또는 "사무실"
-
-          const monthlyWorkHours = Number(row[12]) || 60;
           
           const employeeData = {
             name: row[0]?.toString().trim() || "",
@@ -453,7 +453,7 @@ export default function EmployeesPage() {
             meetsMinimumWage: row[10]?.toString().trim() === "이상",
             monthlyWorkHours: monthlyWorkHours,
             workType: workType,
-            memo: row[13]?.toString().trim() || "",
+            memo: row[13]?.toString().trim() || "",  // 메모 (인덱스 13)
           };
 
           // 디버깅: 전송 데이터 확인
