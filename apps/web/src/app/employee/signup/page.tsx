@@ -146,7 +146,12 @@ export default function EmployeeSignupPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.message || "회원가입에 실패했습니다");
+        // 핸드폰 번호 중복 에러 처리
+        if (data.error === "PHONE_ALREADY_EXISTS") {
+          setError("⚠️ 이미 가입된 핸드폰 번호입니다. 다른 번호를 사용하거나 로그인해주세요.");
+        } else {
+          setError(data.message || "회원가입에 실패했습니다");
+        }
         return;
       }
 
@@ -438,6 +443,9 @@ export default function EmployeeSignupPage() {
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
               />
+              <p className="text-xs text-red-500 mt-1 font-medium">
+                ⚠️ 이미 가입된 핸드폰 번호는 사용할 수 없습니다
+              </p>
             </div>
 
             <div>

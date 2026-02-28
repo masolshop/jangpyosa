@@ -902,6 +902,14 @@ function SignupContent() {
                 onChange={handlePhoneChange}
                 maxLength={13}
               />
+              <p style={{ 
+                margin: "4px 0 0 0", 
+                fontSize: 12, 
+                color: "#ef4444",
+                fontWeight: 500
+              }}>
+                ⚠️ 이미 가입된 핸드폰 번호는 사용할 수 없습니다
+              </p>
 
               {/* 공통: 비밀번호 */}
               <label>비밀번호 *</label>
