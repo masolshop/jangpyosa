@@ -11,23 +11,31 @@ router.get("/my", requireAuth, async (req, res) => {
     const userId = req.user!.id;
     const userRole = req.user!.role;
 
-    if (userRole !== "BUYER" && userRole !== "SUPPLIER") {
-      return res.status(403).json({ error: "기업 회원만 접근 가능합니다." });
+    // EMPLOYEE 역할도 허용 (장애인 직원)
+    if (userRole !== "BUYER" && userRole !== "SUPPLIER" && userRole !== "EMPLOYEE") {
+      return res.status(403).json({ error: "접근 권한이 없습니다." });
     }
 
     // User의 companyId로 Company 조회
+    // EMPLOYEE 역할인 경우 User의 companyId 사용 (장애인 직원도 User.companyId를 가짐)
+    let companyId: string | null = null;
+    let isOwner = false;
+
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: { companyId: true, isCompanyOwner: true }
     });
 
-    if (!user?.companyId) {
+    companyId = user?.companyId || null;
+    isOwner = user?.isCompanyOwner || false;
+
+    if (!companyId) {
       return res.status(404).json({ error: "소속 기업이 없습니다." });
     }
 
     // Company 조회
     const company = await prisma.company.findUnique({
-      where: { id: user.companyId },
+      where: { id: companyId },
       include: {
         buyerProfile: true,
         supplierProfile: true,
@@ -85,7 +93,7 @@ router.get("/my", requireAuth, async (req, res) => {
         industry: company.supplierProfile.industry,
       } : null,
       members: company.members,
-      isOwner: user.isCompanyOwner
+      isOwner: isOwner
     });
   } catch (error: any) {
     console.error("기업 정보 조회 실패:", error);
