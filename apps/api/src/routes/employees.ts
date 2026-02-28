@@ -76,21 +76,21 @@ router.post("/", requireAuth, async (req, res) => {
 
     const schema = z.object({
       name: z.string().min(1),
-      phone: z.string().nullable().optional(),
-      registrationNumber: z.string().nullable().optional(),
+      phone: z.string().transform(val => val.trim() || null).nullable().optional(),
+      registrationNumber: z.string().transform(val => val.trim() || null).nullable().optional(),
       disabilityType: z.string().min(1),
-      disabilityGrade: z.string().nullable().optional(),
+      disabilityGrade: z.string().transform(val => val.trim() || null).nullable().optional(),
       severity: z.enum(["MILD", "SEVERE"]),
       gender: z.enum(["M", "F"]),
-      birthDate: z.string().nullable().optional(),
+      birthDate: z.string().transform(val => val.trim() || null).nullable().optional(),
       hireDate: z.string(), // ISO date
-      resignDate: z.string().nullable().optional(),
+      resignDate: z.string().transform(val => val.trim() || null).nullable().optional(),
       monthlySalary: z.number().int().positive(),
       hasEmploymentInsurance: z.boolean(),
       meetsMinimumWage: z.boolean(),
       monthlyWorkHours: z.number().int().nullable().optional(),
       workType: z.enum(["OFFICE", "REMOTE", "HYBRID"]).optional(),
-      memo: z.string().nullable().optional(),
+      memo: z.string().transform(val => val?.trim() || null).nullable().optional(),
     });
 
     const body = schema.parse(req.body);
