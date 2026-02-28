@@ -12,6 +12,8 @@ export default function EmployeeSignupPage() {
   // 폼 상태
   const [step, setStep] = useState<1 | 2 | 3>(1); // 단계: 1=기업확인, 2=직원확인, 3=비밀번호+동의
   const [bizNo, setBizNo] = useState("");
+  const [name, setName] = useState("");
+  const [employeePhone, setEmployeePhone] = useState("");
   const [registrationNumber, setRegistrationNumber] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
@@ -71,6 +73,8 @@ export default function EmployeeSignupPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           buyerProfileId: verifiedCompany.buyerProfileId,
+          name,
+          phone: employeePhone,
           registrationNumber,
         }),
       });
@@ -295,7 +299,7 @@ export default function EmployeeSignupPage() {
                 🔑 Step 2: 등록 직원 매칭
               </h2>
               <p className="text-gray-600 text-sm">
-                주민등록번호 앞자리 6자리를 입력하세요
+                이름, 핸드폰번호, 주민등록번호 앞자리를 입력하세요
               </p>
             </div>
 
@@ -310,6 +314,8 @@ export default function EmployeeSignupPage() {
                 onClick={() => {
                   setStep(1);
                   setVerifiedCompany(null);
+                  setName("");
+                  setEmployeePhone("");
                   setRegistrationNumber("");
                 }}
                 className="text-xs text-white bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded mt-2"
@@ -320,7 +326,41 @@ export default function EmployeeSignupPage() {
 
             <div>
               <label className="block text-gray-700 font-medium mb-2">
-                인증번호 (주민등록번호 앞자리) <span className="text-red-500">*</span>
+                이름 <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="홍길동"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                기업에 등록된 이름을 정확히 입력하세요
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-gray-700 font-medium mb-2">
+                핸드폰번호 <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="tel"
+                value={employeePhone}
+                onChange={(e) => setEmployeePhone(e.target.value)}
+                placeholder="010-1234-5678"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                기업에 등록된 핸드폰번호를 입력하세요
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-gray-700 font-medium mb-2">
+                주민등록번호 앞자리 <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
