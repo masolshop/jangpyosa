@@ -1,6 +1,15 @@
 'use client';
 
 import { useState } from 'react';
+import {
+  PageHeader,
+  TabButton,
+  SubTabButton,
+  ContentCard,
+  CategoryCard,
+  Placeholder,
+} from '@/components/admin/AdminComponents';
+import { COLORS, PAGE_STYLES } from '@/components/admin/adminStyles';
 
 type TabType = 'corporate' | 'buyer';
 type SubTabType = 'obligation' | 'standard';
@@ -10,28 +19,15 @@ export default function CompanyDashboard() {
   const [activeSubTab, setActiveSubTab] = useState<SubTabType>('obligation');
 
   return (
-    <div style={{ padding: 40 }}>
-      <div style={{ marginBottom: 30 }}>
-        <h1 style={{
-          fontSize: 32,
-          fontWeight: 700,
-          color: '#1a237e',
-          marginBottom: 8,
-        }}>
-          🏢 기업관리 대시보드
-        </h1>
-        <p style={{ fontSize: 16, color: '#666' }}>
-          기업회원 및 바이어 회원 통합 관리
-        </p>
-      </div>
+    <div style={PAGE_STYLES.container}>
+      <PageHeader
+        icon="🏢"
+        title="기업관리 대시보드"
+        description="기업회원 및 바이어 회원 통합 관리"
+      />
 
       {/* 메인 탭 */}
-      <div style={{
-        display: 'flex',
-        gap: 16,
-        marginBottom: 30,
-        borderBottom: '2px solid #e0e0e0',
-      }}>
+      <div style={PAGE_STYLES.tabContainer}>
         <TabButton
           label="기업회원 대시보드"
           active={activeTab === 'corporate'}
@@ -45,11 +41,7 @@ export default function CompanyDashboard() {
       </div>
 
       {/* 서브 탭 */}
-      <div style={{
-        display: 'flex',
-        gap: 12,
-        marginBottom: 30,
-      }}>
+      <div style={PAGE_STYLES.subTabContainer}>
         <SubTabButton
           label="고용의무기업"
           active={activeSubTab === 'obligation'}
@@ -63,12 +55,7 @@ export default function CompanyDashboard() {
       </div>
 
       {/* 컨텐츠 영역 */}
-      <div style={{
-        backgroundColor: 'white',
-        borderRadius: 8,
-        padding: 30,
-        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-      }}>
+      <ContentCard>
         {activeTab === 'corporate' && activeSubTab === 'obligation' && (
           <ObligationCompanyContent />
         )}
@@ -81,189 +68,75 @@ export default function CompanyDashboard() {
         {activeTab === 'buyer' && activeSubTab === 'standard' && (
           <BuyerStandardContent />
         )}
-      </div>
+      </ContentCard>
     </div>
-  );
-}
-
-function TabButton({ label, active, onClick }: {
-  label: string;
-  active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      style={{
-        padding: '12px 24px',
-        fontSize: 16,
-        fontWeight: active ? 600 : 400,
-        color: active ? '#1a237e' : '#666',
-        backgroundColor: 'transparent',
-        border: 'none',
-        borderBottom: active ? '3px solid #1a237e' : '3px solid transparent',
-        cursor: 'pointer',
-        transition: 'all 0.2s',
-      }}
-    >
-      {label}
-    </button>
-  );
-}
-
-function SubTabButton({ label, active, onClick }: {
-  label: string;
-  active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      style={{
-        padding: '10px 20px',
-        fontSize: 14,
-        fontWeight: 500,
-        color: active ? 'white' : '#666',
-        backgroundColor: active ? '#1a237e' : '#f5f5f5',
-        border: 'none',
-        borderRadius: 6,
-        cursor: 'pointer',
-        transition: 'all 0.2s',
-      }}
-    >
-      {label}
-    </button>
   );
 }
 
 function ObligationCompanyContent() {
   return (
-    <div>
-      <h2 style={{ fontSize: 20, fontWeight: 600, marginBottom: 20, color: '#333' }}>
+    <>
+      <h2 style={{ fontSize: 20, fontWeight: 600, marginBottom: 20, color: COLORS.gray[900] }}>
         고용의무기업 관리
       </h2>
 
       <div style={{ marginBottom: 30 }}>
-        <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#555' }}>
+        <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: COLORS.gray[600] }}>
           📋 기업 분류
         </h3>
         <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-          <CategoryCard title="민간기업" count={0} color="#1976d2" />
-          <CategoryCard title="공공기관" count={0} color="#388e3c" />
-          <CategoryCard title="국가지자체교육청" count={0} color="#f57c00" />
+          <CategoryCard title="민간기업" count={0} color={COLORS.secondary} />
+          <CategoryCard title="공공기관" count={0} color={COLORS.success} />
+          <CategoryCard title="국가지자체교육청" count={0} color={COLORS.warning} />
         </div>
       </div>
 
-      <div style={{
-        padding: 20,
-        backgroundColor: '#f5f5f5',
-        borderRadius: 6,
-      }}>
-        <p style={{ color: '#666', margin: 0 }}>
-          고용의무기업 관리 기능이 여기에 추가될 예정입니다.
-        </p>
-      </div>
-    </div>
+      <Placeholder message="고용의무기업 관리 기능이 여기에 추가될 예정입니다." />
+    </>
   );
 }
 
 function StandardWorkplaceContent() {
   return (
-    <div>
-      <h2 style={{ fontSize: 20, fontWeight: 600, marginBottom: 20, color: '#333' }}>
+    <>
+      <h2 style={{ fontSize: 20, fontWeight: 600, marginBottom: 20, color: COLORS.gray[900] }}>
         표준사업장 관리
       </h2>
-      <div style={{
-        padding: 20,
-        backgroundColor: '#f5f5f5',
-        borderRadius: 6,
-      }}>
-        <p style={{ color: '#666', margin: 0 }}>
-          표준사업장 관리 기능이 여기에 추가될 예정입니다.
-        </p>
-      </div>
-    </div>
+      <Placeholder message="표준사업장 관리 기능이 여기에 추가될 예정입니다." />
+    </>
   );
 }
 
 function BuyerObligationContent() {
   return (
-    <div>
-      <h2 style={{ fontSize: 20, fontWeight: 600, marginBottom: 20, color: '#333' }}>
+    <>
+      <h2 style={{ fontSize: 20, fontWeight: 600, marginBottom: 20, color: COLORS.gray[900] }}>
         바이어 - 고용의무기업 관리
       </h2>
 
       <div style={{ marginBottom: 30 }}>
-        <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#555' }}>
+        <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: COLORS.gray[600] }}>
           📋 기업 분류
         </h3>
         <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-          <CategoryCard title="민간기업" count={0} color="#1976d2" />
-          <CategoryCard title="공공기관" count={0} color="#388e3c" />
-          <CategoryCard title="국가지자체교육청" count={0} color="#f57c00" />
+          <CategoryCard title="민간기업" count={0} color={COLORS.secondary} />
+          <CategoryCard title="공공기관" count={0} color={COLORS.success} />
+          <CategoryCard title="국가지자체교육청" count={0} color={COLORS.warning} />
         </div>
       </div>
 
-      <div style={{
-        padding: 20,
-        backgroundColor: '#f5f5f5',
-        borderRadius: 6,
-      }}>
-        <p style={{ color: '#666', margin: 0 }}>
-          바이어 고용의무기업 관리 기능이 여기에 추가될 예정입니다.
-        </p>
-      </div>
-    </div>
+      <Placeholder message="바이어 고용의무기업 관리 기능이 여기에 추가될 예정입니다." />
+    </>
   );
 }
 
 function BuyerStandardContent() {
   return (
-    <div>
-      <h2 style={{ fontSize: 20, fontWeight: 600, marginBottom: 20, color: '#333' }}>
+    <>
+      <h2 style={{ fontSize: 20, fontWeight: 600, marginBottom: 20, color: COLORS.gray[900] }}>
         표준사업장-바이어 관리
       </h2>
-      <div style={{
-        padding: 20,
-        backgroundColor: '#f5f5f5',
-        borderRadius: 6,
-      }}>
-        <p style={{ color: '#666', margin: 0 }}>
-          표준사업장 바이어 관리 기능이 여기에 추가될 예정입니다.
-        </p>
-      </div>
-    </div>
-  );
-}
-
-function CategoryCard({ title, count, color }: {
-  title: string;
-  count: number;
-  color: string;
-}) {
-  return (
-    <div style={{
-      flex: '1 1 200px',
-      padding: 20,
-      backgroundColor: 'white',
-      border: `2px solid ${color}`,
-      borderRadius: 8,
-      textAlign: 'center',
-    }}>
-      <div style={{
-        fontSize: 14,
-        color: '#666',
-        marginBottom: 8,
-      }}>
-        {title}
-      </div>
-      <div style={{
-        fontSize: 28,
-        fontWeight: 700,
-        color: color,
-      }}>
-        {count}
-      </div>
-    </div>
+      <Placeholder message="표준사업장 바이어 관리 기능이 여기에 추가될 예정입니다." />
+    </>
   );
 }
