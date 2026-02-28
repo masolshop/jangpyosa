@@ -14,7 +14,7 @@ async function main() {
   await prisma.disabledEmployee.deleteMany({});
   await prisma.buyerProfile.deleteMany({});
   await prisma.supplierProfile.deleteMany({});
-  await prisma.company.deleteMany({ where: { bizNo: { in: ['123-45-67890', '234-56-78901', '345-67-89012'] } } });
+  await prisma.company.deleteMany({ where: { bizNo: { in: ['1234567890', '2345678901', '3456789012'] } } });
   await prisma.user.deleteMany({ where: { phone: { startsWith: '010-1000' } } });
   await prisma.user.deleteMany({ where: { phone: { startsWith: '010-2000' } } });
   await prisma.user.deleteMany({ where: { phone: { startsWith: '010-3000' } } });
@@ -84,7 +84,7 @@ async function main() {
   const pemaCompany = await prisma.company.create({
     data: {
       name: '페마연구소',
-      bizNo: '123-45-67890',
+      bizNo: '1234567890',
       representative: '김대표',
       type: 'BUYER',
       buyerType: 'PRIVATE_COMPANY',
@@ -97,7 +97,7 @@ async function main() {
   const publicCompany = await prisma.company.create({
     data: {
       name: '공공기관A',
-      bizNo: '234-56-78901',
+      bizNo: '2345678901',
       representative: '이기관',
       type: 'BUYER',
       buyerType: 'PUBLIC_INSTITUTION',
@@ -110,7 +110,7 @@ async function main() {
   const standardCompany = await prisma.company.create({
     data: {
       name: '행복한표준사업장',
-      bizNo: '345-67-89012',
+      bizNo: '3456789012',
       representative: '박표준',
       type: 'SUPPLIER',
       isVerified: true,
