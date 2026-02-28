@@ -45,10 +45,11 @@ export default function AdminLogin() {
       console.log('[Admin Login] 리다이렉션 시작...');
       setError('✅ 로그인 성공! 리다이렉션 중...');
       
-      // 약간의 딜레이 후 리다이렉션
+      // window.location으로 강제 리다이렉션
       setTimeout(() => {
-        router.push('/admin/dashboard');
-      }, 500);
+        console.log('[Admin Login] 리다이렉션 실행!');
+        window.location.href = '/admin/branches';
+      }, 1000);
     } catch (err: any) {
       console.error('[Admin Login] 에러:', err);
       setError(err.message || err.toString() || '로그인에 실패했습니다');
