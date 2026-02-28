@@ -37,10 +37,13 @@ export default function EmployeeSignupPage() {
     setLoading(true);
 
     try {
+      // 사업자등록번호 하이픈 제거 (123-45-67890 → 1234567890)
+      const cleanBizNo = bizNo.replace(/[-\s]/g, "");
+      
       const res = await fetch(`${API_BASE}/auth/verify-company`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bizNo }),
+        body: JSON.stringify({ bizNo: cleanBizNo }),
       });
 
       const data = await res.json();
@@ -262,12 +265,12 @@ export default function EmployeeSignupPage() {
                 type="text"
                 value={bizNo}
                 onChange={(e) => setBizNo(e.target.value)}
-                placeholder="123-45-67890"
+                placeholder="123-45-67890 또는 1234567890"
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
               />
               <p className="text-xs text-gray-500 mt-1">
-                기업에서 제공받은 사업자등록번호를 입력하세요
+                기업에서 제공받은 사업자등록번호를 입력하세요 (하이픈 자동 제거)
               </p>
             </div>
 
