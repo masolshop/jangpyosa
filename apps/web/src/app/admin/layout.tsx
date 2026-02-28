@@ -45,7 +45,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     setTimeout(() => {
       // 토큰과 역할 확인
       const token = localStorage.getItem('accessToken');
-      const role = localStorage.getItem('role');
+      const role = localStorage.getItem('userRole'); // 'role'이 아니라 'userRole'로 수정
 
       console.log('[Admin Layout] Auth check:', { 
         pathname, 
