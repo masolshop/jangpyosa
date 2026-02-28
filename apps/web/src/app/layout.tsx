@@ -65,7 +65,7 @@ export const metadata: Metadata = {
     },
   },
   verification: {
-    google: 'google-site-verification-code', // 구글 서치 콘솔에서 받은 코드로 교체
+    google: 'r2LODMYtWCLqf4eRa7C5z244fwwPMwOw8g6_tFR9YxQ',
   },
 }
 
