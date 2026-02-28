@@ -840,3 +840,97 @@ sqlite3 prisma/dev.db "SELECT name, phone, registrationNumber, disabilityType FR
 
 ---
 
+
+---
+
+## 🧪 **목업 데이터 (테스트용) - 정상 작동 중** ✅
+
+### 📍 **저장 위치**
+- **DB 파일**: `/home/ubuntu/jangpyosa/apps/api/prisma/dev.db` (SQLite, ~968KB)
+- **백업**: `/home/ubuntu/backups/jangpyosa/dev.db.backup-YYYYMMDD-HHMMSS.gz` (매일 03:00 자동)
+- **⚠️ 실제 데이터와 목업 데이터가 같은 DB에 저장됨**
+
+### 🏢 **기업 관리자 계정 (3개)**
+
+| 회사명 | 아이디 | 비밀번호 | 사업자번호 | 유형 | 관리자명 |
+|--------|--------|---------|-----------|------|---------|
+| 페마연구소 | `pema_admin` | `test1234` | 1234567890 | BUYER | 김관리자 |
+| 공공기관A | `public_admin` | `test1234` | 2345678901 | BUYER | 이관리자 |
+| 행복한표준사업장 | `standard_admin` | `test1234` | 3456789012 | SUPPLIER | 박관리자 |
+
+**로그인 방법**:
+- URL: https://jangpyosa.com/login
+- 유형 선택: "고용의무기업" 또는 "공급기업"
+- 아이디: `pema_admin` (예시)
+- 비밀번호: `test1234`
+
+### 👤 **장애인 직원 계정 (42명)**
+
+| 소속 회사 | 전화번호 범위 | 비밀번호 | 인원 | 전화번호 예시 |
+|----------|--------------|---------|------|-------------|
+| **페마연구소** | 01010010001 ~ 01010010015 | `test1234` | **15명** | 01010010001, 01010010002, ... |
+| **공공기관A** | 01020010001 ~ 01020010012 | `test1234` | **12명** | 01020010001, 01020010002, ... |
+| **행복한표준사업장** | 01030010001 ~ 01030010015 | `test1234` | **15명** | 01030010001, 01030010002, ... |
+
+**직원 이름 예시**:
+- **페마연구소**: 김철수, 이영희, 박민수, 정수진, 최동욱, 한미래, 강준호, 윤서연, 임하늘, 오지훈, 송민지, 안지원, 배성호, 홍서준, 양지수
+- **공공기관A**: 서준영, 구민아, 신동혁, 권나연, 유재석, 문소희, 탁현수, 석지혜, 진민재, 표은지, 반다솜, 함태양
+- **행복한표준사업장**: 차승환, 하유진, 추민호, 곽수연, 도재원, 소라, 노준서, 모정민, 조서윤, 용지안, 두시우, 마예린, 갈도윤, 여현우, 국채원
+
+**로그인 방법**:
+- URL: https://jangpyosa.com/login (유형 선택 **안 함**)
+- 전화번호: `01010010001` (예시)
+- 비밀번호: `test1234`
+
+### ✅ **로그인 테스트 결과**
+```bash
+# 기업 관리자 로그인 테스트
+curl -X POST http://localhost:4000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"identifier":"pema_admin","password":"test1234","userType":"BUYER"}'
+# → ✅ 토큰 발급 성공
+
+# 장애인 직원 로그인 테스트
+curl -X POST http://localhost:4000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"identifier":"01010010001","password":"test1234"}'
+# → ✅ 토큰 발급 성공 (userId: cmm4wy9q6000knap0h22puiqt, role: EMPLOYEE)
+```
+
+### 🔍 **목업 데이터 조회 SQL**
+
+```sql
+-- 목업 기업 관리자 계정 (3개)
+SELECT username, name, phone, role
+FROM User 
+WHERE username IN ('pema_admin', 'public_admin', 'standard_admin');
+
+-- 목업 장애인 직원 계정 (42명)
+SELECT COUNT(*) as total, 
+       SUBSTR(phone, 1, 8) as pattern
+FROM User 
+WHERE role = 'EMPLOYEE' 
+  AND (phone LIKE '01010010%' OR phone LIKE '01020010%' OR phone LIKE '01030010%')
+GROUP BY pattern;
+
+-- 페마연구소 직원 15명
+SELECT name, phone FROM User WHERE phone LIKE '01010010%' ORDER BY phone;
+
+-- 공공기관A 직원 12명
+SELECT name, phone FROM User WHERE phone LIKE '01020010%' ORDER BY phone;
+
+-- 행복한표준사업장 직원 15명
+SELECT name, phone FROM User WHERE phone LIKE '01030010%' ORDER BY phone;
+```
+
+### ⚠️ **목업 데이터 관리 주의사항**
+
+1. **삭제 금지**: 목업 데이터는 **테스트 및 데모용**으로 항상 유지해야 합니다.
+2. **백업 필수**: DB 작업 전 항상 백업 확인 (`ls -lht /home/ubuntu/backups/jangpyosa/*.gz | head -1`)
+3. **복원 가능**: 백업에서 복원 가능하므로 실수로 삭제해도 복구 가능
+4. **식별 방법**:
+   - 기업: 사업자번호 `1234567890`, `2345678901`, `3456789012`
+   - 직원: 전화번호 패턴 `01010010xxx`, `01020010xxx`, `01030010xxx`
+
+---
+
