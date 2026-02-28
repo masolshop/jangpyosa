@@ -451,9 +451,9 @@ export default function EmployeesPage() {
           const employeeData = {
             name: row[0]?.toString().trim() || "",
             phone: row[1]?.toString().trim() || "",                  // 핸드폰번호
-            registrationNumber: row[2]?.toString().trim() || "",      // 주민번호 앞자리
+            registrationNumber: String(row[2] ?? "").trim(),          // 주민번호 앞자리 (숫자 가능)
             disabilityType: row[3]?.toString().trim() || "",
-            disabilityGrade: row[4]?.toString().trim() || "",
+            disabilityGrade: String(row[4] ?? "").trim(),             // 장애 등급 (숫자 가능)
             severity: (row[5]?.toString().trim() === "중증" ? "SEVERE" : "MILD") as "SEVERE" | "MILD",
             gender: (row[6]?.toString().trim() === "여" ? "F" : "M") as "M" | "F",
             birthDate: row[7] ? formatExcelDate(row[7]) : "",

@@ -76,18 +76,21 @@ router.post("/", requireAuth, async (req, res) => {
 
     const schema = z.object({
       name: z.string().min(1),
-      phone: z.string().transform(val => {
-        const trimmed = val?.trim();
-        return trimmed && trimmed.length > 0 ? trimmed : null;
+      phone: z.union([z.string(), z.number()]).transform(val => {
+        if (val === null || val === undefined) return null;
+        const str = String(val).trim();
+        return str.length > 0 ? str : null;
       }).nullable().optional(),
-      registrationNumber: z.string().transform(val => {
-        const trimmed = val?.trim();
-        return trimmed && trimmed.length > 0 ? trimmed : null;
+      registrationNumber: z.union([z.string(), z.number()]).transform(val => {
+        if (val === null || val === undefined) return null;
+        const str = String(val).trim();
+        return str.length > 0 ? str : null;
       }).nullable().optional(),
       disabilityType: z.string().min(1),
-      disabilityGrade: z.string().transform(val => {
-        const trimmed = val?.trim();
-        return trimmed && trimmed.length > 0 ? trimmed : null;
+      disabilityGrade: z.union([z.string(), z.number()]).transform(val => {
+        if (val === null || val === undefined) return null;
+        const str = String(val).trim();
+        return str.length > 0 ? str : null;
       }).nullable().optional(),
       severity: z.enum(["MILD", "SEVERE"]),
       gender: z.enum(["M", "F"]),
