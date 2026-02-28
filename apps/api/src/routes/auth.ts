@@ -940,15 +940,22 @@ r.post("/verify-employee", async (req, res) => {
 
     // 핸드폰번호 정규화 (하이픈 제거)
     const cleanPhone = phone.replace(/[^0-9]/g, "");
+    // 하이픈 있는 형태도 생성 (010-1234-5678)
+    const phoneWithHyphen = cleanPhone.length === 11 
+      ? `${cleanPhone.slice(0, 3)}-${cleanPhone.slice(3, 7)}-${cleanPhone.slice(7)}`
+      : phone;
 
     // 장애인 직원 매칭 (이름 + 핸드폰번호 + 주민등록번호 앞자리)
+    // 하이픈 유무 관계없이 검색하기 위해 OR 조건 사용
     const employee = await prisma.disabledEmployee.findFirst({
       where: {
         buyerId: buyerProfileId,
         name: name,
-        phone: {
-          contains: cleanPhone, // 하이픈 유무 관계없이 매칭
-        },
+        OR: [
+          { phone: cleanPhone },           // 하이픈 없는 형태
+          { phone: phoneWithHyphen },      // 하이픈 있는 형태
+          { phone: phone },                // 입력받은 그대로
+        ],
         registrationNumber: registrationNumber,
         resignDate: null, // 재직 중인 직원만
       },
