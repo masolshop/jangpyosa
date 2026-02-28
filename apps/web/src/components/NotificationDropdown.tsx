@@ -137,12 +137,12 @@ export default function NotificationDropdown({ onUnreadCountChange }: Notificati
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // 초기 조회 및 주기적 업데이트
+  // 초기 조회 (폴링 제거 - Sidebar에서 처리)
   useEffect(() => {
-    fetchNotifications();
-    const interval = setInterval(fetchNotifications, 30000); // 30초마다
-    return () => clearInterval(interval);
-  }, []);
+    if (isOpen) {
+      fetchNotifications(); // 드롭다운이 열릴 때만 조회
+    }
+  }, [isOpen]);
 
   // 아이콘 매핑
   const getIconForType = (type: string) => {

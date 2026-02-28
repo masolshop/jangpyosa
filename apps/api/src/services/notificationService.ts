@@ -78,14 +78,27 @@ export async function createNotification(input: CreateNotificationInput) {
 }
 
 /**
- * 여러 사용자에게 알림 생성
+ * 여러 사용자에게 알림 생성 (최적화: createMany 사용)
  */
 export async function createBulkNotifications(userIds: string[], input: Omit<CreateNotificationInput, 'userId'>) {
-  const notifications = await Promise.all(
-    userIds.map(userId => createNotification({ ...input, userId }))
-  );
+  const { type, title, message, link, data, priority, category } = input;
   
-  return notifications;
+  // createMany로 배치 insert (훨씬 빠름)
+  const result = await prisma.notification.createMany({
+    data: userIds.map(userId => ({
+      userId,
+      type,
+      title,
+      message,
+      link: link || null,
+      data: data ? JSON.stringify(data) : null,
+      priority: priority || NotificationPriority.NORMAL,
+      category: category || NotificationCategory.GENERAL,
+    })),
+    skipDuplicates: true, // 중복 방지
+  });
+  
+  return result;
 }
 
 /**
@@ -228,7 +241,7 @@ export async function cleanupOldNotifications() {
 }
 
 /**
- * 읽지 않은 알림 개수 조회
+ * 읽지 않은 알림 개수 조회 (단일 타입)
  */
 export async function getUnreadCount(userId: string, type?: string) {
   const where: any = {
@@ -243,6 +256,46 @@ export async function getUnreadCount(userId: string, type?: string) {
   const count = await prisma.notification.count({ where });
   
   return count;
+}
+
+/**
+ * 읽지 않은 알림 개수 조회 (타입별 그룹화) - 최적화
+ * 8번의 쿼리 대신 1번의 groupBy 쿼리로 모든 타입별 개수 조회
+ */
+export async function getUnreadCountByTypes(userId: string) {
+  // 타입별 개수 집계
+  const notifications = await prisma.notification.groupBy({
+    by: ['type'],
+    where: {
+      userId,
+      read: false,
+    },
+    _count: {
+      id: true,
+    },
+  });
+  
+  // 총 개수 계산
+  const total = notifications.reduce((sum, item) => sum + item._count.id, 0);
+  
+  // 타입별 개수 객체로 변환
+  const byType: Record<string, number> = {};
+  notifications.forEach(item => {
+    byType[item.type] = item._count.id;
+  });
+  
+  return {
+    total,
+    byType: {
+      LEAVE_REQUEST: byType.LEAVE_REQUEST || 0,
+      LEAVE_APPROVED: byType.LEAVE_APPROVED || 0,
+      LEAVE_REJECTED: byType.LEAVE_REJECTED || 0,
+      WORK_ORDER: byType.WORK_ORDER || 0,
+      ANNOUNCEMENT: byType.ANNOUNCEMENT || 0,
+      ATTENDANCE_REMINDER: byType.ATTENDANCE_REMINDER || 0,
+      ATTENDANCE_ISSUE: byType.ATTENDANCE_ISSUE || 0,
+    },
+  };
 }
 
 // ============================================

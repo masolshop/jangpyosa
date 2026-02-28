@@ -7,6 +7,7 @@ import {
   markTypeAsRead,
   deleteNotification,
   getUnreadCount,
+  getUnreadCountByTypes,
 } from '../services/notificationService.js';
 
 const router = Router();
@@ -34,6 +35,7 @@ router.get('/', requireAuth, async (req, res) => {
 /**
  * GET /notifications/unread-count
  * 읽지 않은 알림 개수 (타입별)
+ * 최적화: 8번의 쿼리 대신 1번의 groupBy 쿼리 사용
  */
 router.get('/unread-count', requireAuth, async (req, res) => {
   try {
@@ -45,28 +47,9 @@ router.get('/unread-count', requireAuth, async (req, res) => {
       const count = await getUnreadCount(userId, type);
       res.json({ count, type });
     } else {
-      // 전체 개수 + 타입별 개수
-      const totalCount = await getUnreadCount(userId);
-      const leaveCount = await getUnreadCount(userId, 'LEAVE_REQUEST');
-      const leaveApprovalCount = await getUnreadCount(userId, 'LEAVE_APPROVED');
-      const leaveRejectionCount = await getUnreadCount(userId, 'LEAVE_REJECTED');
-      const workOrderCount = await getUnreadCount(userId, 'WORK_ORDER');
-      const announcementCount = await getUnreadCount(userId, 'ANNOUNCEMENT');
-      const attendanceReminderCount = await getUnreadCount(userId, 'ATTENDANCE_REMINDER');
-      const attendanceIssueCount = await getUnreadCount(userId, 'ATTENDANCE_ISSUE');
-      
-      res.json({
-        total: totalCount,
-        byType: {
-          LEAVE_REQUEST: leaveCount,
-          LEAVE_APPROVED: leaveApprovalCount,
-          LEAVE_REJECTED: leaveRejectionCount,
-          WORK_ORDER: workOrderCount,
-          ANNOUNCEMENT: announcementCount,
-          ATTENDANCE_REMINDER: attendanceReminderCount,
-          ATTENDANCE_ISSUE: attendanceIssueCount,
-        }
-      });
+      // 전체 개수 + 타입별 개수 (최적화: 1번의 쿼리)
+      const result = await getUnreadCountByTypes(userId);
+      res.json(result);
     }
   } catch (error: any) {
     console.error('읽지 않은 알림 개수 조회 실패:', error);

@@ -28,19 +28,16 @@ export default function Sidebar() {
   
   // 이전 알림 개수를 저장 (토스트 표시용)
   const prevCountRef = useRef<number>(0);
+  const lastToastRef = useRef<string>(''); // 마지막 토스트 메시지 (중복 방지)
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // 읽지 않은 알림 개수 조회 (타입별)
+  // 읽지 않은 알림 개수 조회 (타입별) - 최적화
   const fetchUnreadCount = async () => {
     try {
       const token = getToken();
-      console.log('[Sidebar] 알림 API 호출 시작, token:', token ? '있음' : '없음');
-      if (!token) {
-        console.log('[Sidebar] 토큰 없음 - 알림 조회 중단');
-        return;
-      }
+      if (!token) return;
 
       const url = `${API_BASE}/notifications/unread-count`;
-      console.log('[Sidebar] API URL:', url);
       
       const response = await fetch(url, {
         headers: {
@@ -48,11 +45,8 @@ export default function Sidebar() {
         },
       });
 
-      console.log('[Sidebar] API 응답 상태:', response.status);
-
       if (response.ok) {
         const data = await response.json();
-        console.log('[Sidebar] 알림 데이터:', data);
         const byType = data.byType || {};
         
         const counts = {
@@ -62,64 +56,61 @@ export default function Sidebar() {
           announcement: byType.ANNOUNCEMENT || 0,
           attendance: (byType.ATTENDANCE_REMINDER || 0) + (byType.ATTENDANCE_ISSUE || 0),
         };
-        console.log('[Sidebar] 설정될 알림 카운트:', counts);
         
-        // 🔔 새 알림이 있으면 토스트 표시
+        // 🔔 새 알림이 있으면 토스트 표시 (중복 방지)
         if (prevCountRef.current > 0 && counts.total > prevCountRef.current) {
-          const newCount = counts.total - prevCountRef.current;
+          let toastMessage = '';
           
-          // 알림 타입별 메시지
-          if (byType.LEAVE_REQUEST > 0 && !prevCountRef.current) {
-            toast('🏖️ 새로운 휴가 신청이 있습니다', {
-              duration: 4000,
-              position: 'top-right',
-              style: {
-                background: '#3b82f6',
-                color: '#fff',
-              },
-            });
+          // 알림 타입별 메시지 (우선순위 순)
+          if (byType.LEAVE_REQUEST > (prevCountRef.current === 0 ? 0 : byType.LEAVE_REQUEST)) {
+            toastMessage = '🏖️ 새로운 휴가 신청이 있습니다';
           } else if (byType.LEAVE_APPROVED > 0) {
-            toast.success('✅ 휴가 신청이 승인되었습니다', {
-              duration: 4000,
-              position: 'top-right',
-            });
+            toastMessage = '✅ 휴가 신청이 승인되었습니다';
           } else if (byType.WORK_ORDER > 0) {
-            toast('📋 새로운 업무 지시가 있습니다', {
-              duration: 4000,
-              position: 'top-right',
-              style: {
-                background: '#8b5cf6',
-                color: '#fff',
-              },
-            });
+            toastMessage = '📋 새로운 업무 지시가 있습니다';
           } else if (byType.ANNOUNCEMENT > 0) {
-            toast('📢 새로운 공지사항이 있습니다', {
+            toastMessage = '📢 새로운 공지사항이 있습니다';
+          } else {
+            const newCount = counts.total - prevCountRef.current;
+            toastMessage = `🔔 새 알림 ${newCount}개`;
+          }
+          
+          // 중복 토스트 방지
+          if (toastMessage && toastMessage !== lastToastRef.current) {
+            const toastStyle: any = {
               duration: 4000,
               position: 'top-right',
-              style: {
-                background: '#f59e0b',
-                color: '#fff',
-              },
-            });
-          } else {
-            toast(`🔔 새 알림 ${newCount}개`, {
-              duration: 3000,
-              position: 'top-right',
-            });
+            };
+            
+            if (toastMessage.includes('휴가 신청이 있습니다')) {
+              toastStyle.style = { background: '#3b82f6', color: '#fff' };
+              toast(toastMessage, toastStyle);
+            } else if (toastMessage.includes('승인되었습니다')) {
+              toast.success(toastMessage, toastStyle);
+            } else if (toastMessage.includes('업무 지시')) {
+              toastStyle.style = { background: '#8b5cf6', color: '#fff' };
+              toast(toastMessage, toastStyle);
+            } else if (toastMessage.includes('공지사항')) {
+              toastStyle.style = { background: '#f59e0b', color: '#fff' };
+              toast(toastMessage, toastStyle);
+            } else {
+              toast(toastMessage, toastStyle);
+            }
+            
+            lastToastRef.current = toastMessage;
           }
         }
         
         prevCountRef.current = counts.total;
         setNotificationCounts(counts);
-      } else {
-        console.error('[Sidebar] API 응답 실패:', response.status, await response.text());
       }
     } catch (error) {
-      console.error('[Sidebar] 알림 개수 조회 실패:', error);
+      // 에러는 조용히 처리 (네트워크 불안정 등)
+      console.warn('[Sidebar] 알림 조회 실패:', error);
     }
   };
 
-  // 특정 타입의 알림 모두 읽음 처리
+  // 특정 타입의 알림 모두 읽음 처리 (최적화: 단일 API 호출)
   const markNotificationsByTypeAsRead = async (types: string[]) => {
     try {
       const token = getToken();
@@ -136,12 +127,11 @@ export default function Sidebar() {
       });
 
       if (response.ok) {
-        console.log(`[Sidebar] 알림 읽음 처리 완료 (타입: ${types.join(', ')})`);
-        // 알림 개수 새로고침
+        // 알림 개수 새로고침 (읽음 처리 후 즉시 반영)
         await fetchUnreadCount();
       }
     } catch (error) {
-      console.error('알림 읽음 처리 실패:', error);
+      console.warn('[Sidebar] 알림 읽음 처리 실패:', error);
     }
   };
 
@@ -151,7 +141,6 @@ export default function Sidebar() {
       // userRole 설정
       const role = getUserRole();
       setUserRole(role);
-      console.log('[Sidebar] userRole 설정됨:', role);
 
       // 사용자 정보
       const userStr = localStorage.getItem("user");
@@ -169,9 +158,41 @@ export default function Sidebar() {
       // 알림 개수 조회
       fetchUnreadCount();
 
-      // 30초마다 알림 개수 업데이트 (폴링)
-      const interval = setInterval(fetchUnreadCount, 30000);
-      return () => clearInterval(interval);
+      // 폴링: 탭이 활성화되어 있을 때만 실행 (최적화)
+      const startPolling = () => {
+        if (pollingIntervalRef.current) {
+          clearInterval(pollingIntervalRef.current);
+        }
+        pollingIntervalRef.current = setInterval(fetchUnreadCount, 30000);
+      };
+
+      const stopPolling = () => {
+        if (pollingIntervalRef.current) {
+          clearInterval(pollingIntervalRef.current);
+          pollingIntervalRef.current = null;
+        }
+      };
+
+      // 탭 활성화 감지
+      const handleVisibilityChange = () => {
+        if (document.hidden) {
+          stopPolling(); // 탭이 비활성화되면 폴링 중단
+        } else {
+          fetchUnreadCount(); // 탭이 활성화되면 즉시 조회
+          startPolling(); // 폴링 재시작
+        }
+      };
+
+      // 초기 폴링 시작
+      startPolling();
+      
+      // 탭 활성화 감지 이벤트
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+
+      return () => {
+        stopPolling();
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+      };
     }
   }, []);
 
