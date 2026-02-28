@@ -107,6 +107,7 @@ router.put("/my", requireAuth, async (req, res) => {
     const schema = z.object({
       name: z.string().optional(),
       representative: z.string().optional(),
+      attachmentEmail: z.string().optional(),
       yearlyEmployees: z.record(
         z.string(),
         z.record(z.string(), z.number())
