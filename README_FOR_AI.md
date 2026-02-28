@@ -983,6 +983,32 @@ SELECT name, phone FROM User WHERE phone LIKE '01030010%' ORDER BY phone;
 - 📦 **일일**: `/home/ubuntu/backups/jangpyosa/dev.db.backup-YYYYMMDD-190001.gz` (장기 보관)
 - ☁️ **S3**: AWS S3 버킷 (재해 복구용)
 
+**백업 포함 내용 (100% 완전 백업)**: 
+```
+✅ 전체 30개 테이블 (SQLite .backup 명령 사용)
+
+핵심 데이터:
+• User (47명) - 모든 회원 (슈퍼관리자, 기업 관리자, 장애인 직원)
+• Company (4개) - 모든 기업 정보
+• BuyerProfile (4개) - 고용의무기업 상세 프로필
+• DisabledEmployee (42명) - 장애인 직원 상세 정보
+
+업무 관리:
+• CompanyAnnouncement - 회사 공지사항
+• WorkOrder, WorkOrderRecipient, WorkOrderConfirmation - 업무지시 + 수신자 + 확인
+• LeaveRequest, LeaveType, AnnualLeaveBalance - 휴가 신청 + 유형 + 연차 잔여
+• AttendanceRecord - 출퇴근 기록
+
+기타:
+• Notification (389개) - 알림
+• ActivityLog - 활동 로그
+• AnnouncementReadLog - 공지 읽음 로그
+• Cart, CartItem, Product, PaymentHistory - 쇼핑몰 기능
+• Contract, ContractRequest, QuoteInquiry - 계약/견적
+• MonthlyEmployeeData, MonthlyPerformance - 월별 통계
+• Branch, TeamInvitation, YearSetting, Page 등 - 기타 설정
+```
+
 ### 2️⃣ **DB 복원 절차 (긴급 시)**
 ```bash
 # 1. 최신 백업 확인
