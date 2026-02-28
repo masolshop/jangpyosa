@@ -59,7 +59,7 @@ export default function LeaveManagementPage() {
   const [annualLeaveBalances, setAnnualLeaveBalances] = useState<AnnualLeaveBalance[]>([]);
   const [company, setCompany] = useState<Company | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'types' | 'requests' | 'balances'>('types');
+  const [activeTab, setActiveTab] = useState<'types' | 'requests' | 'balances'>('requests');
   
   // 휴가 유형 등록 폼
   const [showTypeForm, setShowTypeForm] = useState(false);
@@ -336,51 +336,60 @@ export default function LeaveManagementPage() {
         </div>
       )}
 
-      <div style={{ marginBottom: '20px', borderBottom: '2px solid #e0e0e0' }}>
-        <button
-          onClick={() => setActiveTab('types')}
-          style={{
-            padding: '12px 24px',
-            fontSize: '16px',
-            fontWeight: 'bold',
-            border: 'none',
-            borderBottom: activeTab === 'types' ? '3px solid #4CAF50' : 'none',
-            background: 'none',
-            cursor: 'pointer',
-            color: activeTab === 'types' ? '#4CAF50' : '#666'
-          }}
-        >
-          휴가 유형 관리
-        </button>
+      <div style={{ marginBottom: '20px', display: 'flex', gap: '12px' }}>
         <button
           onClick={() => setActiveTab('requests')}
           style={{
-            padding: '12px 24px',
+            padding: '14px 28px',
             fontSize: '16px',
             fontWeight: 'bold',
-            border: 'none',
-            borderBottom: activeTab === 'requests' ? '3px solid #4CAF50' : 'none',
-            background: 'none',
+            border: '2px solid',
+            borderColor: activeTab === 'requests' ? '#2563eb' : '#e5e7eb',
+            borderRadius: '8px',
+            background: activeTab === 'requests' ? '#2563eb' : 'white',
             cursor: 'pointer',
-            color: activeTab === 'requests' ? '#4CAF50' : '#666'
+            color: activeTab === 'requests' ? 'white' : '#666',
+            transition: 'all 0.2s',
+            boxShadow: activeTab === 'requests' ? '0 4px 6px rgba(37, 99, 235, 0.25)' : 'none'
           }}
         >
-          휴가 신청 목록
+          📋 휴가 신청 목록
         </button>
         <button
           onClick={() => setActiveTab('balances')}
           style={{
-            padding: '12px 24px',
+            padding: '14px 28px',
             fontSize: '16px',
             fontWeight: 'bold',
-            border: 'none',
-            borderBottom: activeTab === 'balances' ? '3px solid #4CAF50' : 'none',
-            background: 'none',
+            border: '2px solid',
+            borderColor: activeTab === 'balances' ? '#10b981' : '#e5e7eb',
+            borderRadius: '8px',
+            background: activeTab === 'balances' ? '#10b981' : 'white',
             cursor: 'pointer',
-            color: activeTab === 'balances' ? '#4CAF50' : '#666'
+            color: activeTab === 'balances' ? 'white' : '#666',
+            transition: 'all 0.2s',
+            boxShadow: activeTab === 'balances' ? '0 4px 6px rgba(16, 185, 129, 0.25)' : 'none'
           }}
         >
-          연차 현황
+          📊 연차 현황
+        </button>
+        <button
+          onClick={() => setActiveTab('types')}
+          style={{
+            padding: '14px 28px',
+            fontSize: '16px',
+            fontWeight: 'bold',
+            border: '2px solid',
+            borderColor: activeTab === 'types' ? '#f59e0b' : '#e5e7eb',
+            borderRadius: '8px',
+            background: activeTab === 'types' ? '#f59e0b' : 'white',
+            cursor: 'pointer',
+            color: activeTab === 'types' ? 'white' : '#666',
+            transition: 'all 0.2s',
+            boxShadow: activeTab === 'types' ? '0 4px 6px rgba(245, 158, 11, 0.25)' : 'none'
+          }}
+        >
+          ⚙️ 휴가 유형 관리
         </button>
       </div>
 
