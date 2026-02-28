@@ -1,0 +1,563 @@
+# 🤖 AI Assistant를 위한 프로젝트 가이드
+
+> **목적**: 새로운 AI 세션이 시작될 때 빠르게 프로젝트를 이해하고 작업을 계속할 수 있도록
+
+---
+
+## ⚡ 빠른 시작 (5초 요약)
+
+```bash
+# 프로젝트 위치
+cd /home/user/webapp
+
+# SSH 키 위치
+~/.ssh/jangpyosa.pem
+
+# 서버 접속
+ssh -i ~/.ssh/jangpyosa.pem ubuntu@43.201.0.129
+
+# 서버 상태 확인
+ssh -i ~/.ssh/jangpyosa.pem ubuntu@43.201.0.129 'pm2 status'
+
+# 웹사이트
+https://jangpyosa.com
+```
+
+---
+
+## 📋 프로젝트 개요
+
+### 기본 정보
+- **프로젝트명**: 장표사닷컴 (jangpyosa.com)
+- **설명**: 장애인 고용부담금 감면 및 표준사업장 연계고용 플랫폼
+- **스택**: Next.js 14, Node.js, PostgreSQL, Prisma, Nginx
+- **모노레포**: Turborepo (apps/api, apps/web)
+
+### 서버 정보
+- **IP**: 43.201.0.129
+- **User**: ubuntu
+- **SSH 키**: `~/.ssh/jangpyosa.pem` (권한: 600)
+- **프로젝트 경로**: `/home/ubuntu/jangpyosa`
+- **프로세스 관리**: PM2
+- **웹서버**: Nginx
+
+### 서비스 구조
+```
+┌─────────────────────────────────────────┐
+│          Nginx (Port 443, SSL)          │
+│      https://jangpyosa.com              │
+└──────────────┬──────────────────────────┘
+               │
+               ├─→ Next.js Web (Port 3003)
+               │   • apps/web/
+               │   • 프론트엔드
+               │
+               └─→ API Server (Port 4000)
+                   • apps/api/
+                   • Express + Prisma
+                   • PostgreSQL
+```
+
+---
+
+## 🔑 중요 파일 위치
+
+### 로컬 (샌드박스)
+```
+/home/user/webapp/                    # 프로젝트 루트
+├── apps/
+│   ├── api/                          # API 서버
+│   │   ├── src/
+│   │   │   ├── index.ts             # 서버 진입점
+│   │   │   └── routes/
+│   │   │       └── auth.ts          # 인증 라우트 ⭐
+│   │   └── prisma/
+│   │       └── schema.prisma        # DB 스키마 ⭐
+│   └── web/                          # Next.js 웹
+│       └── src/
+│           └── app/
+│               ├── signup/page.tsx           # 기업 회원가입 ⭐
+│               ├── employee/signup/page.tsx  # 직원 회원가입
+│               └── employee-new/signup/page.tsx  # 직원 간편가입 ⭐
+├── ~/.ssh/jangpyosa.pem              # SSH 키 (중요!)
+├── CLAUDE_SESSION_INFO.md            # 상세 가이드
+└── README_FOR_AI.md                  # 이 파일
+```
+
+### 서버
+```
+/home/ubuntu/jangpyosa/               # 프로젝트 루트
+├── ecosystem.config.js               # PM2 설정 ⭐
+├── nginx-jangpyosa.conf              # Nginx 설정 백업
+/etc/nginx/sites-enabled/jangpyosa   # Nginx 실제 설정 ⭐
+/home/ubuntu/.pm2/logs/               # PM2 로그
+```
+
+---
+
+## 🚨 최근 해결한 중요 문제 (꼭 기억!)
+
+### 1. ⚠️ Nginx 502 Bad Gateway (2026-02-28 해결)
+**증상**: 모든 HTML 페이지에서 502 에러, 정적 파일(favicon, logo)은 정상
+
+**원인**: 
+```
+Nginx: proxy_http_version 1.1 + Keep-Alive 
+  ↓
+Next.js: Keep-Alive timeout=5초
+  ↓
+연결이 중간에 끊김!
+```
+
+**해결책**: `/etc/nginx/sites-enabled/jangpyosa`
+```nginx
+location / {
+    proxy_pass http://localhost:3003;
+    proxy_http_version 1.0;        # ← 이게 핵심!
+    proxy_set_header Connection ""; # ← Keep-Alive 비활성화
+    ...
+}
+```
+
+**커밋**: b6339ed
+
+### 2. 장애인 직원 인증 실패 (2026-02-28 해결)
+**증상**: `/api/auth/verify-employee` 호출 시 404 에러
+
+**원인**: 
+- API가 `name`, `phone`, `registrationNumber` 필요
+- 프론트엔드가 `registrationNumber`만 전송
+
+**해결책**: 
+1. API: 핸드폰 번호 하이픈 유무 무관하게 검색 (8e5f2d2)
+2. 프론트: 이름, 핸드폰 입력 필드 추가 (d73826d)
+
+**파일**:
+- `apps/api/src/routes/auth.ts` (line 932~)
+- `apps/web/src/app/employee-new/signup/page.tsx`
+
+### 3. Mock 기업 buyerProfile 누락 (2026-02-28 해결)
+**증상**: 목업 기업으로 직원 회원가입 불가
+
+**해결**: Mock 기업 3개에 buyerProfile 생성
+- 1234567890 (페마연구소)
+- 2345678901 (공공기관A)
+- 3456789012 (행복한표준사업장)
+
+---
+
+## 🧪 테스트 데이터 (중요!)
+
+### 실제 등록된 기업
+```javascript
+사업자번호: 2668101215
+기업명: 주식회사 페마연
+대표자: 이종근
+buyerProfileId: cmm6dw5cm000519n5n7yz4yf4
+```
+
+### 테스트 장애인 직원 (10명)
+```javascript
+// apps/api에서 생성됨 (2026-02-28)
+[
+  { name: "김철수", phone: "010-1111-1111", registrationNumber: "850315", disabilityType: "지체장애" },
+  { name: "이영희", phone: "010-2222-2222", registrationNumber: "920528", disabilityType: "시각장애" },
+  { name: "박민수", phone: "010-3333-3333", registrationNumber: "880710", disabilityType: "청각장애" },
+  { name: "최수진", phone: "010-4444-4444", registrationNumber: "950412", disabilityType: "지체장애" },
+  { name: "정대호", phone: "010-5555-5555", registrationNumber: "820925", disabilityType: "내부장애" },
+  // ... 총 10명
+]
+```
+
+**사용법**: 
+1. https://jangpyosa.com/employee-new/signup 접속
+2. Step 1: 사업자번호 `2668101215` 입력
+3. Step 2: 위 직원 정보 중 하나 입력
+4. Step 3: 로그인용 핸드폰/비밀번호 설정
+
+---
+
+## 🛠️ 자주 사용하는 작업
+
+### 코드 수정 후 배포
+```bash
+# 1. 로컬에서 수정
+cd /home/user/webapp
+# ... 코드 수정 ...
+
+# 2. 커밋
+git add .
+git commit -m "메시지"
+
+# 3. 서버에 배포
+ssh -i ~/.ssh/jangpyosa.pem ubuntu@43.201.0.129 '
+  cd /home/ubuntu/jangpyosa &&
+  git stash &&
+  git pull origin main &&
+  cd apps/web && npm run build &&
+  cd ../.. &&
+  pm2 restart jangpyosa-web
+'
+```
+
+### API 수정 후 배포
+```bash
+ssh -i ~/.ssh/jangpyosa.pem ubuntu@43.201.0.129 '
+  cd /home/ubuntu/jangpyosa &&
+  git pull origin main &&
+  cd apps/api && npm run build &&
+  cd ../.. &&
+  pm2 restart jangpyosa-api
+'
+```
+
+### PM2 상태 확인
+```bash
+ssh -i ~/.ssh/jangpyosa.pem ubuntu@43.201.0.129 'pm2 status'
+```
+
+### Nginx 재시작
+```bash
+ssh -i ~/.ssh/jangpyosa.pem ubuntu@43.201.0.129 '
+  sudo nginx -t &&
+  sudo systemctl reload nginx
+'
+```
+
+### 로그 확인
+```bash
+# PM2 로그
+ssh -i ~/.ssh/jangpyosa.pem ubuntu@43.201.0.129 'pm2 logs --lines 50'
+
+# Nginx 에러 로그
+ssh -i ~/.ssh/jangpyosa.pem ubuntu@43.201.0.129 'sudo tail -50 /var/log/nginx/error.log'
+```
+
+---
+
+## 🐛 트러블슈팅 체크리스트
+
+### "SSH 접속 안 돼요"
+```bash
+# 1. 키 권한 확인
+chmod 600 ~/.ssh/jangpyosa.pem
+
+# 2. 키 파일 존재 확인
+ls -la ~/.ssh/jangpyosa.pem
+
+# 3. verbose 모드로 상세 확인
+ssh -v -i ~/.ssh/jangpyosa.pem ubuntu@43.201.0.129
+```
+
+### "502 Bad Gateway 에러"
+```bash
+# 1. PM2 상태 확인
+ssh -i ~/.ssh/jangpyosa.pem ubuntu@43.201.0.129 'pm2 status'
+
+# 2. Nginx 설정 확인 (HTTP/1.0인지 확인!)
+ssh -i ~/.ssh/jangpyosa.pem ubuntu@43.201.0.129 'grep "proxy_http_version" /etc/nginx/sites-enabled/jangpyosa'
+# 출력: proxy_http_version 1.0; ← 이게 맞음!
+
+# 3. Next.js 직접 접속 테스트
+ssh -i ~/.ssh/jangpyosa.pem ubuntu@43.201.0.129 'curl -I http://localhost:3003/'
+
+# 4. Nginx 에러 로그
+ssh -i ~/.ssh/jangpyosa.pem ubuntu@43.201.0.129 'sudo tail -20 /var/log/nginx/error.log'
+```
+
+### "직원 회원가입 안 돼요"
+```bash
+# 1. buyerProfile 있는지 확인
+ssh -i ~/.ssh/jangpyosa.pem ubuntu@43.201.0.129 '
+  cd /home/ubuntu/jangpyosa/apps/api &&
+  npx tsx -e "
+    import { PrismaClient } from '\''@prisma/client'\'';
+    const p = new PrismaClient();
+    p.company.findUnique({
+      where: { bizNo: '\''2668101215'\'' },
+      include: { buyerProfile: true }
+    }).then(r => console.log(JSON.stringify(r, null, 2)));
+  "
+'
+
+# 2. 장애인 직원 데이터 있는지 확인
+ssh -i ~/.ssh/jangpyosa.pem ubuntu@43.201.0.129 '
+  cd /home/ubuntu/jangpyosa/apps/api &&
+  npx tsx -e "
+    import { PrismaClient } from '\''@prisma/client'\'';
+    const p = new PrismaClient();
+    p.disabledEmployee.count().then(r => console.log('\''직원 수:'\'', r));
+  "
+'
+```
+
+---
+
+## 📚 추가 문서
+
+- **상세 가이드**: `CLAUDE_SESSION_INFO.md`
+- **백업 정보**: `/tmp/BACKUP_INFO_20260228_151744.md`
+- **Git 히스토리**: `git log --oneline -10`
+
+---
+
+## 🎯 작업 우선순위 (사용자가 자주 요청하는 것)
+
+1. **회원가입 관련** 버그 수정 (중요!)
+2. **502 에러** 발생 시 즉시 대응
+3. **장애인 직원 관리** 기능 개선
+4. **고용부담금/장려금 계산** 로직 검증
+5. **데이터 백업** 및 안전성
+
+---
+
+## ⚠️ 절대 하지 말아야 할 것
+
+1. ❌ `/etc/nginx/sites-enabled/jangpyosa`에서 `proxy_http_version 1.0` 변경 금지!
+2. ❌ PM2 ecosystem.config.js에서 포트 변경 금지 (3003, 4000 고정)
+3. ❌ SSH 키 권한 변경 금지 (600 유지)
+4. ❌ Prisma schema 수정 후 `npx prisma generate` 없이 배포 금지
+5. ❌ 프로덕션 DB에 직접 SQL 실행 금지 (Prisma 사용)
+
+---
+
+## 💡 이 파일을 읽는 새로운 AI에게
+
+**안녕하세요!** 👋
+
+당신은 장표사닷컴 프로젝트를 담당하게 되었습니다.
+
+**가장 먼저 할 일**:
+1. `cd /home/user/webapp` 이동
+2. `ls -la ~/.ssh/jangpyosa.pem` SSH 키 확인
+3. `ssh -i ~/.ssh/jangpyosa.pem ubuntu@43.201.0.129 'pm2 status'` 서버 상태 확인
+4. `git log -5 --oneline` 최근 변경사항 확인
+5. https://jangpyosa.com 웹사이트 접속 테스트
+
+**가장 중요한 것**:
+- Nginx 502 에러는 `proxy_http_version 1.0` 설정으로 해결됨
+- SSH 키는 `~/.ssh/jangpyosa.pem`에 영구 저장되어 있음
+- 테스트 기업: 2668101215, 테스트 직원: 김철수 010-1111-1111 850315
+
+**막히면**:
+- `cat CLAUDE_SESSION_INFO.md` 읽기
+- `git log --all --grep="502"` 관련 커밋 찾기
+- 사용자에게 구체적으로 질문하기
+
+**행운을 빕니다!** 🚀
+
+---
+
+---
+
+## 🔥 채팅 망각 방지 전략
+
+### 문제점
+- 채팅이 길어지면 AI가 이전 내용을 압축하면서 **중요한 맥락을 잃어버림**
+- 새로운 AI가 중간에 투입되면 **처음부터 다시 설명해야 함**
+
+### 해결책
+이 파일(`README_FOR_AI.md`)과 `CLAUDE_SESSION_INFO.md`를 항상 최신 상태로 유지하세요.
+
+#### 사용자가 해야 할 일
+1. **채팅이 너무 길어지면** (100+ 메시지)
+   ```
+   "현재까지의 모든 정보를 README_FOR_AI.md에 업데이트해줘"
+   ```
+
+2. **새로운 AI 세션 시작할 때**
+   ```
+   "/home/user/webapp/README_FOR_AI.md 읽어줘"
+   ```
+
+3. **중요한 문제 해결 후**
+   ```
+   "방금 해결한 문제를 README_FOR_AI.md에 추가해줘"
+   ```
+
+#### AI가 해야 할 일
+- 중요한 문제 해결 후 자동으로 이 파일 업데이트 제안
+- 사용자가 혼란스러워하면 이 파일 확인 권장
+- **모든 중요한 정보를 코드가 아닌 문서에 기록**
+
+---
+
+## 📦 전체 백업 가이드
+
+### 샌드박스 → 로컬 PC 백업
+```bash
+# 1. 현재 프로젝트 전체 압축
+cd /home/user/webapp
+tar -czf /tmp/jangpyosa_local_backup_$(date +%Y%m%d_%H%M%S).tar.gz \
+  --exclude='.git' \
+  --exclude='node_modules' \
+  --exclude='.next' \
+  .
+
+# 2. 백업 파일 확인
+ls -lh /tmp/jangpyosa_local_backup_*.tar.gz
+
+# 백업 파일은 /tmp에 저장되며, 사용자가 다운로드 가능
+```
+
+### AWS 서버 → 샌드박스 백업
+```bash
+# 1. 서버 코드 백업
+ssh -i ~/.ssh/jangpyosa.pem ubuntu@43.201.0.129 '
+  cd /home/ubuntu/jangpyosa &&
+  tar -czf /tmp/jangpyosa_server_$(date +%Y%m%d_%H%M%S).tar.gz \
+    --exclude=".git" \
+    --exclude="node_modules" \
+    --exclude=".next" \
+    --exclude="apps/api/dist" \
+    .
+'
+
+# 2. 샌드박스로 다운로드
+scp -i ~/.ssh/jangpyosa.pem \
+  ubuntu@43.201.0.129:/tmp/jangpyosa_server_*.tar.gz \
+  /tmp/
+
+# 3. 설정 파일 백업
+ssh -i ~/.ssh/jangpyosa.pem ubuntu@43.201.0.129 '
+  sudo cat /etc/nginx/sites-enabled/jangpyosa > /tmp/nginx_backup.conf &&
+  cat /home/ubuntu/jangpyosa/ecosystem.config.js > /tmp/pm2_backup.js
+'
+
+scp -i ~/.ssh/jangpyosa.pem \
+  ubuntu@43.201.0.129:/tmp/nginx_backup.conf \
+  ubuntu@43.201.0.129:/tmp/pm2_backup.js \
+  /tmp/
+```
+
+### 데이터베이스 백업
+```bash
+# PostgreSQL 백업
+ssh -i ~/.ssh/jangpyosa.pem ubuntu@43.201.0.129 '
+  cd /home/ubuntu/jangpyosa/apps/api &&
+  npx prisma db pull &&
+  pg_dump $(grep DATABASE_URL .env | cut -d= -f2) > /tmp/db_backup_$(date +%Y%m%d_%H%M%S).sql
+'
+
+scp -i ~/.ssh/jangpyosa.pem \
+  ubuntu@43.201.0.129:/tmp/db_backup_*.sql \
+  /tmp/
+```
+
+### 복원 가이드
+```bash
+# 1. 샌드박스에서 압축 해제
+cd /home/user/webapp
+tar -xzf /tmp/jangpyosa_local_backup_YYYYMMDD_HHMMSS.tar.gz
+
+# 2. 의존성 설치
+npm install
+cd apps/api && npm install
+cd ../web && npm install
+
+# 3. 빌드
+cd /home/user/webapp
+npm run build
+
+# 4. 서버로 재배포
+git add . && git commit -m "복원: 백업에서 복원"
+git push origin main
+
+ssh -i ~/.ssh/jangpyosa.pem ubuntu@43.201.0.129 '
+  cd /home/ubuntu/jangpyosa &&
+  git pull origin main &&
+  npm install &&
+  cd apps/web && npm run build && cd ../.. &&
+  pm2 restart all
+'
+```
+
+---
+
+## 🚨 긴급 복구 체크리스트
+
+### 1단계: 서버 상태 확인
+```bash
+# PM2 상태
+ssh -i ~/.ssh/jangpyosa.pem ubuntu@43.201.0.129 'pm2 status'
+
+# 포트 확인
+ssh -i ~/.ssh/jangpyosa.pem ubuntu@43.201.0.129 'netstat -tlnp | grep -E "3003|4000"'
+
+# Nginx 상태
+ssh -i ~/.ssh/jangpyosa.pem ubuntu@43.201.0.129 'sudo systemctl status nginx'
+```
+
+### 2단계: 로그 확인
+```bash
+# PM2 에러 로그
+ssh -i ~/.ssh/jangpyosa.pem ubuntu@43.201.0.129 'pm2 logs --err --lines 50'
+
+# Nginx 에러 로그
+ssh -i ~/.ssh/jangpyosa.pem ubuntu@43.201.0.129 'sudo tail -50 /var/log/nginx/error.log'
+```
+
+### 3단계: 재시작
+```bash
+# PM2 재시작
+ssh -i ~/.ssh/jangpyosa.pem ubuntu@43.201.0.129 'pm2 restart all'
+
+# Nginx 재시작
+ssh -i ~/.ssh/jangpyosa.pem ubuntu@43.201.0.129 'sudo systemctl restart nginx'
+```
+
+### 4단계: 백업 확인
+```bash
+# 최근 백업 목록
+ls -lht /tmp/jangpyosa_*_backup_*.tar.gz | head -5
+
+# 백업 파일 압축 해제 테스트
+tar -tzf /tmp/jangpyosa_LATEST_backup.tar.gz | head -20
+```
+
+---
+
+## 💡 중요한 명령어 Quick Reference
+
+### Git 작업
+```bash
+# 서버 최신 커밋 확인
+ssh -i ~/.ssh/jangpyosa.pem ubuntu@43.201.0.129 'cd /home/ubuntu/jangpyosa && git log -1 --oneline'
+
+# 서버 상태 확인
+ssh -i ~/.ssh/jangpyosa.pem ubuntu@43.201.0.129 'cd /home/ubuntu/jangpyosa && git status'
+
+# 서버에 강제 동기화 (주의!)
+ssh -i ~/.ssh/jangpyosa.pem ubuntu@43.201.0.129 'cd /home/ubuntu/jangpyosa && git fetch origin main && git reset --hard origin/main'
+```
+
+### 빠른 배포
+```bash
+# 프론트엔드만
+ssh -i ~/.ssh/jangpyosa.pem ubuntu@43.201.0.129 'cd /home/ubuntu/jangpyosa && git pull && cd apps/web && npm run build && pm2 restart jangpyosa-web'
+
+# API만
+ssh -i ~/.ssh/jangpyosa.pem ubuntu@43.201.0.129 'cd /home/ubuntu/jangpyosa && git pull && cd apps/api && npm run build && pm2 restart jangpyosa-api'
+
+# 전체
+ssh -i ~/.ssh/jangpyosa.pem ubuntu@43.201.0.129 'cd /home/ubuntu/jangpyosa && git pull && npm run build && pm2 restart all'
+```
+
+### 디버깅
+```bash
+# Next.js 직접 테스트
+ssh -i ~/.ssh/jangpyosa.pem ubuntu@43.201.0.129 'curl -I http://localhost:3003/'
+
+# API 직접 테스트
+ssh -i ~/.ssh/jangpyosa.pem ubuntu@43.201.0.129 'curl -I http://localhost:4000/'
+
+# Nginx → Next.js 연결 테스트
+ssh -i ~/.ssh/jangpyosa.pem ubuntu@43.201.0.129 'curl -I https://jangpyosa.com/'
+```
+
+---
+
+**최종 업데이트**: 2026-02-28 15:30 KST  
+**작성자**: Claude AI Assistant  
+**Git Commit**: 1cbd035 (최신)  
+**백업 위치**: `/tmp/jangpyosa_*_backup_*.tar.gz`
