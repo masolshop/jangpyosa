@@ -1,10 +1,20 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 
-// 전역 인증 상태 캐시 (layout이 재마운트되어도 유지)
-let globalAuthState: { isAuthenticated: boolean; lastCheck: number } | null = null;
+// 상수
+const AUTH_CACHE_DURATION = 5000; // 5초
+const LOGIN_PATH = '/admin/login';
+const SUPER_ADMIN_ROLE = 'SUPER_ADMIN';
+
+// 전역 인증 상태 캐시
+interface AuthState {
+  isAuthenticated: boolean;
+  lastCheck: number;
+}
+
+let globalAuthState: AuthState | null = null;
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -12,102 +22,106 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  useEffect(() => {
-    // 컴포넌트 마운트 시 인증 체크
-    checkAuth();
-  }, [pathname]); // pathname이 변경될 때마다 체크 (하지만 캐시 사용)
-
-  const checkAuth = () => {
-    // /admin/login 페이지는 인증 체크 스킵
-    if (pathname === '/admin/login') {
+  const checkAuth = useCallback(() => {
+    // 로그인 페이지는 인증 체크 스킵
+    if (pathname === LOGIN_PATH) {
       setLoading(false);
       setIsAuthenticated(true);
       return;
     }
 
-    // 전역 캐시 확인 (최근 5초 이내에 체크했다면 재사용)
     const now = Date.now();
-    if (globalAuthState && (now - globalAuthState.lastCheck) < 5000) {
-      console.log('[Admin Layout] Using cached auth state');
+
+    // 캐시된 인증 상태 확인 (최근 5초 이내)
+    if (globalAuthState && (now - globalAuthState.lastCheck) < AUTH_CACHE_DURATION) {
       setIsAuthenticated(globalAuthState.isAuthenticated);
       setLoading(false);
       if (!globalAuthState.isAuthenticated) {
-        router.push('/admin/login');
+        router.push(LOGIN_PATH);
       }
       return;
     }
 
-    // localStorage가 준비될 때까지 짧은 지연
-    setTimeout(() => {
-      // 토큰과 역할 확인
+    // 브라우저 환경에서만 localStorage 접근
+    if (typeof window === 'undefined') {
+      setLoading(false);
+      return;
+    }
+
+    try {
       const token = localStorage.getItem('accessToken');
       const role = localStorage.getItem('userRole');
 
-      console.log('[Admin Layout] Auth check:', { 
-        pathname, 
-        hasToken: !!token, 
-        role,
-        timestamp: new Date().toISOString()
-      });
+      const isValid = Boolean(token && role === SUPER_ADMIN_ROLE);
 
-      // 인증되지 않았거나 슈퍼어드민이 아닌 경우
-      if (!token || role !== 'SUPER_ADMIN') {
-        console.log('[Admin Layout] Redirecting to login');
-        globalAuthState = { isAuthenticated: false, lastCheck: now };
-        setIsAuthenticated(false);
-        setLoading(false);
-        router.push('/admin/login');
-        return;
-      }
-
-      console.log('[Admin Layout] Authentication successful');
-      globalAuthState = { isAuthenticated: true, lastCheck: now };
-      setIsAuthenticated(true);
+      // 전역 상태 업데이트
+      globalAuthState = { isAuthenticated: isValid, lastCheck: now };
+      setIsAuthenticated(isValid);
       setLoading(false);
-    }, 50); // 50ms 지연으로 localStorage 안정화
-  };
 
-  // 로그인 페이지가 아닌 경우 로딩 표시
-  if (loading && pathname !== '/admin/login') {
-    return (
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        minHeight: '100vh',
-        backgroundColor: '#f5f5f5',
-      }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{
-            width: 48,
-            height: 48,
-            border: '4px solid #1a237e',
-            borderTopColor: 'transparent',
-            borderRadius: '50%',
-            margin: '0 auto 16px',
-            animation: 'spin 1s linear infinite',
-          }}></div>
-          <p style={{ color: '#666', fontSize: 14 }}>인증 확인 중...</p>
-        </div>
-        <style jsx>{`
-          @keyframes spin {
-            to { transform: rotate(360deg); }
-          }
-        `}</style>
-      </div>
-    );
-  }
+      // 인증 실패 시 로그인 페이지로 리다이렉트
+      if (!isValid) {
+        router.push(LOGIN_PATH);
+      }
+    } catch (error) {
+      console.error('[Admin Layout] Auth check error:', error);
+      globalAuthState = { isAuthenticated: false, lastCheck: now };
+      setIsAuthenticated(false);
+      setLoading(false);
+      router.push(LOGIN_PATH);
+    }
+  }, [pathname, router]);
 
-  // 인증되지 않은 경우 null 반환 (리다이렉트 중)
-  if (!isAuthenticated && pathname !== '/admin/login') {
-    return null;
-  }
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
 
   // 로그인 페이지는 사이드바 없이 표시
-  if (pathname === '/admin/login') {
+  if (pathname === LOGIN_PATH) {
     return <>{children}</>;
   }
 
-  // 인증된 페이지는 메인 레이아웃의 사이드바를 사용하므로 children만 반환
+  // 로딩 중
+  if (loading) {
+    return <LoadingSpinner />;
+  }
+
+  // 인증되지 않은 경우 (리다이렉트 중)
+  if (!isAuthenticated) {
+    return null;
+  }
+
+  // 인증된 페이지는 메인 레이아웃의 사이드바를 사용
   return <>{children}</>;
+}
+
+// 로딩 스피너 컴포넌트
+function LoadingSpinner() {
+  return (
+    <div style={{
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      minHeight: '100vh',
+      backgroundColor: '#f5f5f5',
+    }}>
+      <div style={{ textAlign: 'center' }}>
+        <div style={{
+          width: 48,
+          height: 48,
+          border: '4px solid #1a237e',
+          borderTopColor: 'transparent',
+          borderRadius: '50%',
+          margin: '0 auto 16px',
+          animation: 'spin 1s linear infinite',
+        }} />
+        <p style={{ color: '#666', fontSize: 14 }}>인증 확인 중...</p>
+      </div>
+      <style jsx>{`
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
+    </div>
+  );
 }

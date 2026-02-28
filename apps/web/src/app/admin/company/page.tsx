@@ -56,41 +56,60 @@ export default function CompanyDashboard() {
 
       {/* 컨텐츠 영역 */}
       <ContentCard>
-        {activeTab === 'corporate' && activeSubTab === 'obligation' && (
-          <ObligationCompanyContent />
-        )}
-        {activeTab === 'corporate' && activeSubTab === 'standard' && (
-          <StandardWorkplaceContent />
-        )}
-        {activeTab === 'buyer' && activeSubTab === 'obligation' && (
-          <BuyerObligationContent />
-        )}
-        {activeTab === 'buyer' && activeSubTab === 'standard' && (
-          <BuyerStandardContent />
-        )}
+        <CompanyContent activeTab={activeTab} activeSubTab={activeSubTab} />
       </ContentCard>
     </div>
   );
 }
 
+// 컨텐츠 렌더링 컴포넌트
+function CompanyContent({ activeTab, activeSubTab }: { activeTab: TabType; activeSubTab: SubTabType }) {
+  if (activeTab === 'corporate' && activeSubTab === 'obligation') {
+    return <ObligationCompanyContent />;
+  }
+  if (activeTab === 'corporate' && activeSubTab === 'standard') {
+    return <StandardWorkplaceContent />;
+  }
+  if (activeTab === 'buyer' && activeSubTab === 'obligation') {
+    return <BuyerObligationContent />;
+  }
+  if (activeTab === 'buyer' && activeSubTab === 'standard') {
+    return <BuyerStandardContent />;
+  }
+  return null;
+}
+
+// 카테고리 데이터
+const COMPANY_CATEGORIES = [
+  { title: '민간기업', color: COLORS.secondary },
+  { title: '공공기관', color: COLORS.success },
+  { title: '국가지자체교육청', color: COLORS.warning },
+];
+
+// 카테고리 그리드 컴포넌트
+function CategoryGrid() {
+  return (
+    <div style={{ marginBottom: 30 }}>
+      <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: COLORS.gray[600] }}>
+        📋 기업 분류
+      </h3>
+      <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+        {COMPANY_CATEGORIES.map(({ title, color }) => (
+          <CategoryCard key={title} title={title} count={0} color={color} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// 각 탭의 컨텐츠 컴포넌트들
 function ObligationCompanyContent() {
   return (
     <>
       <h2 style={{ fontSize: 20, fontWeight: 600, marginBottom: 20, color: COLORS.gray[900] }}>
         고용의무기업 관리
       </h2>
-
-      <div style={{ marginBottom: 30 }}>
-        <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: COLORS.gray[600] }}>
-          📋 기업 분류
-        </h3>
-        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-          <CategoryCard title="민간기업" count={0} color={COLORS.secondary} />
-          <CategoryCard title="공공기관" count={0} color={COLORS.success} />
-          <CategoryCard title="국가지자체교육청" count={0} color={COLORS.warning} />
-        </div>
-      </div>
-
+      <CategoryGrid />
       <Placeholder message="고용의무기업 관리 기능이 여기에 추가될 예정입니다." />
     </>
   );
@@ -113,18 +132,7 @@ function BuyerObligationContent() {
       <h2 style={{ fontSize: 20, fontWeight: 600, marginBottom: 20, color: COLORS.gray[900] }}>
         바이어 - 고용의무기업 관리
       </h2>
-
-      <div style={{ marginBottom: 30 }}>
-        <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: COLORS.gray[600] }}>
-          📋 기업 분류
-        </h3>
-        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-          <CategoryCard title="민간기업" count={0} color={COLORS.secondary} />
-          <CategoryCard title="공공기관" count={0} color={COLORS.success} />
-          <CategoryCard title="국가지자체교육청" count={0} color={COLORS.warning} />
-        </div>
-      </div>
-
+      <CategoryGrid />
       <Placeholder message="바이어 고용의무기업 관리 기능이 여기에 추가될 예정입니다." />
     </>
   );

@@ -1,4 +1,9 @@
-// 슈퍼어드민 공통 컴포넌트
+/**
+ * 슈퍼어드민 공통 컴포넌트
+ * 재사용 가능한 UI 컴포넌트 모음
+ */
+
+import React from 'react';
 
 export interface StatCardProps {
   title: string;
@@ -7,6 +12,9 @@ export interface StatCardProps {
   color: string;
 }
 
+/**
+ * 통계 카드 컴포넌트
+ */
 export function StatCard({ title, value, unit, color }: StatCardProps) {
   return (
     <div style={{
@@ -47,6 +55,9 @@ export interface InfoCardProps {
   description: string;
 }
 
+/**
+ * 정보 카드 컴포넌트
+ */
 export function InfoCard({ icon, title, description }: InfoCardProps) {
   return (
     <div style={{
@@ -86,6 +97,9 @@ export interface CategoryCardProps {
   color: string;
 }
 
+/**
+ * 카테고리 카드 컴포넌트
+ */
 export function CategoryCard({ title, count, color }: CategoryCardProps) {
   return (
     <div style={{
@@ -120,6 +134,9 @@ export interface TabButtonProps {
   onClick: () => void;
 }
 
+/**
+ * 메인 탭 버튼 컴포넌트
+ */
 export function TabButton({ label, active, onClick }: TabButtonProps) {
   return (
     <button
@@ -147,6 +164,9 @@ export interface SubTabButtonProps {
   onClick: () => void;
 }
 
+/**
+ * 서브 탭 버튼 컴포넌트
+ */
 export function SubTabButton({ label, active, onClick }: SubTabButtonProps) {
   return (
     <button
@@ -174,6 +194,9 @@ export interface PageHeaderProps {
   icon?: string;
 }
 
+/**
+ * 페이지 헤더 컴포넌트
+ */
 export function PageHeader({ title, description, icon }: PageHeaderProps) {
   return (
     <div style={{ marginBottom: 30 }}>
@@ -197,6 +220,9 @@ export interface ContentCardProps {
   children: React.ReactNode;
 }
 
+/**
+ * 콘텐츠 카드 컴포넌트
+ */
 export function ContentCard({ title, children }: ContentCardProps) {
   return (
     <div style={{
@@ -224,6 +250,9 @@ export interface PlaceholderProps {
   message: string;
 }
 
+/**
+ * 플레이스홀더 컴포넌트
+ */
 export function Placeholder({ message }: PlaceholderProps) {
   return (
     <div style={{
