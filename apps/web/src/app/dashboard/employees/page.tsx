@@ -14,12 +14,11 @@ type Employee = {
   id: string;
   name: string;
   phone?: string;                 // 핸드폰번호 (직원 인증용)
-  registrationNumber?: string;    // 주민번호 앞 6자리만 (예: 850315)
+  registrationNumber?: string;    // 주민번호 앞 6자리 (직원 인증용 + 장려금 계산용, 예: 850315)
   disabilityType: string;
   disabilityGrade?: string;
   severity: "MILD" | "SEVERE";
   gender: "M" | "F";
-  birthDate?: string | null;
   hireDate: string;
   resignDate?: string | null;
   monthlySalary: number;
@@ -55,12 +54,11 @@ export default function EmployeesPage() {
   const [form, setForm] = useState({
     name: "",
     phone: "",                      // 핸드폰번호
-    registrationNumber: "",        // 주민번호 앞 6자리만
+    registrationNumber: "",        // 주민번호 앞 6자리 (직원 인증용 + 장려금 계산용)
     disabilityType: "",
     disabilityGrade: "",
     severity: "MILD" as "MILD" | "SEVERE",
     gender: "M" as "M" | "F",
-    birthDate: "",
     hireDate: "",
     resignDate: "",
     monthlySalary: 2060740,
@@ -160,7 +158,6 @@ export default function EmployeesPage() {
         ...form,
         monthlySalary: calculateMonthlySalary(form.monthlyWorkHours || 0),
         monthlyWorkHours: form.monthlyWorkHours || null,
-        birthDate: form.birthDate || null,
       };
 
       if (editingId) {
@@ -203,7 +200,6 @@ export default function EmployeesPage() {
       disabilityGrade: emp.disabilityGrade || "",
       severity: emp.severity,
       gender: emp.gender,
-      birthDate: emp.birthDate || "",
       hireDate: emp.hireDate.split("T")[0],
       resignDate: emp.resignDate ? emp.resignDate.split("T")[0] : "",
       monthlySalary: emp.monthlySalary,
@@ -226,7 +222,6 @@ export default function EmployeesPage() {
       disabilityGrade: "",
       severity: "MILD",
       gender: "M",
-      birthDate: "",
       hireDate: "",
       resignDate: "",
       monthlySalary: 2060740,
@@ -255,7 +250,6 @@ export default function EmployeesPage() {
         "장애등급",
         "중증여부*",
         "성별*",
-        "생년월일",
         "입사일*",
         "퇴사일",
         "고용보험*",
@@ -272,7 +266,6 @@ export default function EmployeesPage() {
         "3급",
         "중증",
         "남",
-        "1985-03-15",
         "2020-01-01",
         "",
         "가입",
@@ -289,7 +282,6 @@ export default function EmployeesPage() {
         "2급",
         "중증",
         "여",
-        "1990-07-20",
         "2021-06-01",
         "",
         "가입",
@@ -306,7 +298,6 @@ export default function EmployeesPage() {
         "5급",
         "경증",
         "남",
-        "1988-11-30",
         "2022-03-15",
         "",
         "가입",
@@ -333,7 +324,7 @@ export default function EmployeesPage() {
       ["[주민번호 앞자리]"],
       ["- 주민등록번호 앞 6자리를 입력합니다 (예: 850315)"],
       ["- 직원 회원가입 시 본인 인증에 사용됩니다"],
-      ["- 생년월일과 일치해야 합니다"],
+      ["- 장려금 계산 시 생년월일로 사용됩니다"],
       [],
       ["[중증여부]"],
       ["- 중증: 장애 1~3급 또는 중증 판정을 받은 경우"],
@@ -344,7 +335,7 @@ export default function EmployeesPage() {
       [],
       ["[날짜 형식]"],
       ["- YYYY-MM-DD 형식으로 입력 (예: 2020-01-01)"],
-      ["- 생년월일, 퇴사일은 선택사항입니다"],
+      ["- 퇴사일은 선택사항입니다"],
       [],
       ["[고용보험]"],
       ["- 가입 또는 미가입으로 입력"],
@@ -378,7 +369,6 @@ export default function EmployeesPage() {
       { wch: 10 },  // 장애등급
       { wch: 10 },  // 중증여부
       { wch: 8 },   // 성별
-      { wch: 12 },  // 생년월일
       { wch: 12 },  // 입사일
       { wch: 12 },  // 퇴사일
       { wch: 10 },  // 고용보험
@@ -456,15 +446,14 @@ export default function EmployeesPage() {
             disabilityGrade: String(row[4] ?? "").trim(),             // 장애 등급 (숫자 가능)
             severity: (row[5]?.toString().trim() === "중증" ? "SEVERE" : "MILD") as "SEVERE" | "MILD",
             gender: (row[6]?.toString().trim() === "여" ? "F" : "M") as "M" | "F",
-            birthDate: row[7] ? formatExcelDate(row[7]) : "",
-            hireDate: row[8] ? formatExcelDate(row[8]) : "",
-            resignDate: row[9] ? formatExcelDate(row[9]) : "",
+            hireDate: row[7] ? formatExcelDate(row[7]) : "",
+            resignDate: row[8] ? formatExcelDate(row[8]) : "",
             monthlySalary: calculateMonthlySalary(monthlyWorkHours),
-            hasEmploymentInsurance: row[10]?.toString().trim() === "가입",
-            meetsMinimumWage: row[11]?.toString().trim() === "이상",
+            hasEmploymentInsurance: row[9]?.toString().trim() === "가입",
+            meetsMinimumWage: row[10]?.toString().trim() === "이상",
             monthlyWorkHours: monthlyWorkHours,
             workType: workType,
-            memo: row[14]?.toString().trim() || "",
+            memo: row[13]?.toString().trim() || "",
           };
 
           // 디버깅: 전송 데이터 확인
@@ -920,15 +909,6 @@ export default function EmployeesPage() {
                       <option value="M">남성</option>
                       <option value="F">여성</option>
                     </select>
-                  </div>
-
-                  <div>
-                    <label>생년월일 (장려금 계산용)</label>
-                    <input
-                      type="date"
-                      value={form.birthDate}
-                      onChange={(e) => setForm({ ...form, birthDate: e.target.value })}
-                    />
                   </div>
 
                   <div>

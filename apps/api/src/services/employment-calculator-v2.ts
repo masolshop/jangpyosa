@@ -18,7 +18,7 @@ export interface CalcEmployee {
   name: string;
   severity: "SEVERE" | "MILD";
   gender: "M" | "F";
-  birthDate?: Date;
+  registrationNumber?: string;  // 주민번호 앞 6자리 (예: 850315) - 장려금 계산용
   hireDate: Date;
   resignDate?: Date;
   monthlyWorkHours: number;  // 월간 근로시간 (주간 아님!)
@@ -147,9 +147,35 @@ const SUPPORT_PERIOD_MONTHS = {
 // ============================================
 
 /**
- * 나이 계산
+ * 주민번호 앞자리에서 생년월일 추출
+ * @param registrationNumber 주민번호 앞 6자리 (예: "850315", "020510")
+ * @returns Date | undefined
  */
-function calculateAge(birthDate: Date | undefined, targetDate: Date): number {
+function parseBirthDateFromRegistration(registrationNumber: string | undefined): Date | undefined {
+  if (!registrationNumber || registrationNumber.length !== 6) return undefined;
+  
+  try {
+    const year = parseInt(registrationNumber.substring(0, 2));
+    const month = parseInt(registrationNumber.substring(2, 4));
+    const day = parseInt(registrationNumber.substring(4, 6));
+    
+    // 2000년 이후 출생자 판단: 00~30은 2000년대, 31~99는 1900년대
+    const fullYear = year <= 30 ? 2000 + year : 1900 + year;
+    
+    // 유효성 검증
+    if (month < 1 || month > 12 || day < 1 || day > 31) return undefined;
+    
+    return new Date(fullYear, month - 1, day);
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * 나이 계산 (주민번호 기반)
+ */
+function calculateAge(registrationNumber: string | undefined, targetDate: Date): number {
+  const birthDate = parseBirthDateFromRegistration(registrationNumber);
   if (!birthDate) return 40; // 기본값: 40세 (35~55세 구간)
 
   const age = targetDate.getFullYear() - birthDate.getFullYear();
@@ -278,7 +304,7 @@ export function calculateMonthlyData(
   console.log(`📊 [${year}년 ${month}월] 직원별 인정수 계산 시작 (총 ${sortedEmployees.length}명)`);
   
   sortedEmployees.forEach((emp, index) => {
-    const age = calculateAge(emp.birthDate, targetDate);
+    const age = calculateAge(emp.registrationNumber, targetDate);
     const monthsWorked = calculateMonthsWorked(emp.hireDate, targetDate);
     const rank = index + 1;
     const isWithinBaseline = rank <= incentiveBaselineCount;

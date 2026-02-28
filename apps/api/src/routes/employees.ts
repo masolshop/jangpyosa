@@ -94,7 +94,6 @@ router.post("/", requireAuth, async (req, res) => {
       }).nullable().optional(),
       severity: z.enum(["MILD", "SEVERE"]),
       gender: z.enum(["M", "F"]),
-      birthDate: z.string().transform(val => val.trim() || null).nullable().optional(),
       hireDate: z.string(), // ISO date
       resignDate: z.string().transform(val => val.trim() || null).nullable().optional(),
       monthlySalary: z.number().int().positive(),
@@ -141,7 +140,6 @@ router.post("/", requireAuth, async (req, res) => {
         disabilityGrade: body.disabilityGrade,
         severity: body.severity,
         gender: body.gender,
-        birthDate: body.birthDate ? new Date(body.birthDate) : null,
         hireDate: new Date(body.hireDate),
         resignDate: body.resignDate ? new Date(body.resignDate) : null,
         monthlySalary: body.monthlySalary,

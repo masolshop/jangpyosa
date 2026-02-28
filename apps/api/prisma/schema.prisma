@@ -288,13 +288,12 @@ model DisabledEmployee {
   id                     String             @id @default(cuid())
   buyerId                String
   name                   String
-  phone                  String?            // 핸드폰번호 추가 (직원 인증용)
-  registrationNumber     String?            // 주민등록번호 앞 6자리만 (예: 850315)
+  phone                  String?            // 핸드폰번호 (직원 인증용)
+  registrationNumber     String?            // 주민등록번호 앞 6자리 (직원 인증용 + 장려금 계산용, 예: 850315)
   disabilityType         String
   disabilityGrade        String?
   severity               String
   gender                 String
-  birthDate              DateTime?          // 생년월일 추가 (연령별 장려금 계산용)
   hireDate               DateTime
   resignDate             DateTime?
   monthlySalary          Int
