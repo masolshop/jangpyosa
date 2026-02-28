@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { clearToken, getUserRole, getToken } from "@/lib/auth";
 import NotificationDropdown from "./NotificationDropdown";
+import toast, { Toaster } from 'react-hot-toast';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 
   (typeof window !== 'undefined' && window.location.hostname === 'jangpyosa.com' 
@@ -24,6 +25,9 @@ export default function Sidebar() {
     announcement: number;
     attendance: number;
   }>({ total: 0, leave: 0, workOrder: 0, announcement: 0, attendance: 0 });
+  
+  // 이전 알림 개수를 저장 (토스트 표시용)
+  const prevCountRef = useRef<number>(0);
 
   // 읽지 않은 알림 개수 조회 (타입별)
   const fetchUnreadCount = async () => {
@@ -59,6 +63,53 @@ export default function Sidebar() {
           attendance: (byType.ATTENDANCE_REMINDER || 0) + (byType.ATTENDANCE_ISSUE || 0),
         };
         console.log('[Sidebar] 설정될 알림 카운트:', counts);
+        
+        // 🔔 새 알림이 있으면 토스트 표시
+        if (prevCountRef.current > 0 && counts.total > prevCountRef.current) {
+          const newCount = counts.total - prevCountRef.current;
+          
+          // 알림 타입별 메시지
+          if (byType.LEAVE_REQUEST > 0 && !prevCountRef.current) {
+            toast('🏖️ 새로운 휴가 신청이 있습니다', {
+              duration: 4000,
+              position: 'top-right',
+              style: {
+                background: '#3b82f6',
+                color: '#fff',
+              },
+            });
+          } else if (byType.LEAVE_APPROVED > 0) {
+            toast.success('✅ 휴가 신청이 승인되었습니다', {
+              duration: 4000,
+              position: 'top-right',
+            });
+          } else if (byType.WORK_ORDER > 0) {
+            toast('📋 새로운 업무 지시가 있습니다', {
+              duration: 4000,
+              position: 'top-right',
+              style: {
+                background: '#8b5cf6',
+                color: '#fff',
+              },
+            });
+          } else if (byType.ANNOUNCEMENT > 0) {
+            toast('📢 새로운 공지사항이 있습니다', {
+              duration: 4000,
+              position: 'top-right',
+              style: {
+                background: '#f59e0b',
+                color: '#fff',
+              },
+            });
+          } else {
+            toast(`🔔 새 알림 ${newCount}개`, {
+              duration: 3000,
+              position: 'top-right',
+            });
+          }
+        }
+        
+        prevCountRef.current = counts.total;
         setNotificationCounts(counts);
       } else {
         console.error('[Sidebar] API 응답 실패:', response.status, await response.text());
@@ -121,6 +172,9 @@ export default function Sidebar() {
 
   return (
     <>
+      {/* 🔔 Toast 알림 컨테이너 */}
+      <Toaster />
+      
       <button
         onClick={() => setIsOpen(!isOpen)}
         style={{
