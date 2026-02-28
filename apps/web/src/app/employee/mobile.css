@@ -1,0 +1,121 @@
+/* 모바일 최적화 스타일 */
+@media (max-width: 768px) {
+  body {
+    font-size: 16px;
+    -webkit-text-size-adjust: 100%;
+  }
+  
+  /* 사이드바 숨기기 (모바일) */
+  aside {
+    display: none !important;
+  }
+  
+  /* 메인 컨텐츠 전체 너비 사용 */
+  main {
+    margin-left: 0 !important;
+    padding: 16px !important;
+    width: 100% !important;
+    padding-bottom: 80px !important;
+  }
+  
+  /* 버튼 터치 최적화 */
+  button {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 12px 20px !important;
+    font-size: 16px !important;
+  }
+  
+  /* 입력 필드 터치 최적화 */
+  input, select, textarea {
+    min-height: 44px;
+    font-size: 16px !important;
+    padding: 12px !important;
+  }
+  
+  /* 테이블 가로 스크롤 */
+  table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  
+  /* 카드 스타일 최적화 */
+  .card, [style*="border"] {
+    border-radius: 8px;
+    margin-bottom: 16px;
+  }
+  
+  /* 제목 크기 조정 */
+  h1 {
+    font-size: 24px !important;
+  }
+  
+  h2 {
+    font-size: 20px !important;
+  }
+  
+  h3 {
+    font-size: 18px !important;
+  }
+  
+  /* 모바일 네비게이션 바 */
+  .mobile-nav {
+    display: flex !important;
+    justify-content: space-around;
+    align-items: center;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    border-top: 1px solid #e0e0e0;
+    padding: 8px 0;
+    z-index: 1000;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  .mobile-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-decoration: none;
+    color: #666;
+    font-size: 12px;
+    padding: 8px;
+    min-width: 60px;
+  }
+  
+  .mobile-nav-item.active {
+    color: #2196F3;
+    font-weight: bold;
+  }
+  
+  .mobile-nav-icon {
+    font-size: 24px;
+    margin-bottom: 4px;
+  }
+}
+
+/* 태블릿 최적화 */
+@media (min-width: 769px) and (max-width: 1024px) {
+  aside {
+    width: 240px !important;
+  }
+  
+  main {
+    margin-left: 240px !important;
+    padding: 24px !important;
+  }
+  
+  .mobile-nav {
+    display: none !important;
+  }
+}
+
+/* 데스크톱 (기본) */
+@media (min-width: 1025px) {
+  .mobile-nav {
+    display: none !important;
+  }
+}
