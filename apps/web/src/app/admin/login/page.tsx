@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { apiFetch } from '@/lib/api';
+import { setToken, setUserRole } from '@/lib/auth';
 
 export default function AdminLogin() {
   const router = useRouter();
@@ -19,32 +21,26 @@ export default function AdminLogin() {
       // 전화번호/아이디에서 하이픈 제거
       const cleanIdentifier = identifier.replace(/[-\s]/g, '');
       
-      const response = await fetch('/api/proxy/auth/login', {
+      const data = await apiFetch('/auth/login', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ identifier: cleanIdentifier, password }),
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || '로그인에 실패했습니다');
-      }
 
       // 슈퍼어드민 권한 확인
       if (data.user.role !== 'SUPER_ADMIN') {
         throw new Error('슈퍼어드민 권한이 없습니다');
       }
 
-      // 로그인 정보 저장
-      localStorage.setItem('token', data.accessToken);
-      localStorage.setItem('role', data.user.role);
-      localStorage.setItem('name', data.user.name);
+      // 로그인 정보 저장 (apiFetch 내부에서 이미 처리되지만 확실하게)
+      setToken(data.accessToken);
+      setUserRole(data.user.role);
+      localStorage.setItem('user', JSON.stringify(data.user));
 
       // 대시보드로 이동
       router.push('/admin/dashboard');
     } catch (err: any) {
-      setError(err.message);
+      console.error('Admin login error:', err);
+      setError(err.message || '로그인에 실패했습니다');
     } finally {
       setLoading(false);
     }
