@@ -97,6 +97,84 @@ https://jangpyosa.com
 
 ## 🚨 최근 해결한 중요 문제 (꼭 기억!)
 
+### 1. 로그인 API_ERROR (404) 해결 ✅ (2026-02-28)
+**커밋**: `56c0722`
+
+**문제**: 
+- 브라우저 로그인 페이지에서 `API_ERROR` 발생
+- `https://jangpyosa.com/api/auth/login` → 404 Not Found
+
+**원인**:
+- Nginx에 `/api/` 라우팅 설정이 없어서 모든 요청이 Next.js(port 3003)로 이동
+- API 서버(port 4000)에 요청이 도달하지 못함
+
+**해결**:
+```nginx
+location /api/ {
+    proxy_pass http://localhost:4000/;
+    proxy_http_version 1.0;
+    proxy_set_header Connection "";
+    proxy_read_timeout 90s;
+}
+```
+
+**결과**: 로그인 정상 동작 ✅
+
+---
+
+### 2. 직원 엑셀 업로드 시 데이터 손실 문제 해결 ✅ (2026-03-01)
+**커밋**: `38b1617`, `a9902eb`
+
+**문제**:
+- 엑셀 업로드 후 다음 3개 필드가 빈 칸으로 저장됨
+  - 주민번호 앞자리 (예: 850315)
+  - 장애 유형 (예: 지체, 시각)
+  - 장애 등급 (예: 3급, 2급)
+
+**원인**:
+1. 엑셀에서 주민번호(`850315`)와 장애등급(`3급`)이 **숫자 타입**으로 읽힘
+2. API 검증 스키마가 `z.string()`만 허용 → 숫자는 변환 실패
+3. Zod `.transform()`에서 빈 문자열을 `null`로 변환
+
+**해결**:
+```typescript
+// ❌ 이전 (string만 허용)
+registrationNumber: z.string().transform(val => val.trim() || null).nullable().optional()
+
+// ✅ 수정 (숫자도 허용)
+registrationNumber: z.union([z.string(), z.number()]).transform(val => {
+  if (val === null || val === undefined) return null;
+  const str = String(val).trim();
+  return str.length > 0 ? str : null;
+}).nullable().optional()
+```
+
+**프론트엔드도 수정**:
+```typescript
+// ❌ 이전
+registrationNumber: row[2]?.toString().trim() || "",
+
+// ✅ 수정 (null-safe)
+registrationNumber: String(row[2] ?? "").trim(),
+```
+
+**적용 필드**:
+- `phone` (전화번호)
+- `registrationNumber` (주민번호 앞자리)
+- `disabilityGrade` (장애 등급)
+
+**테스트 방법**:
+1. 샘플 엑셀 다운로드
+2. 직원 3명 데이터 입력 (주민번호 850315, 장애등급 3급 등)
+3. 엑셀 업로드
+4. 직원 상세 정보에서 **주민번호, 장애유형, 장애등급** 정상 표시 확인
+
+**결과**: 모든 필드 정상 저장 ✅
+
+---
+
+### 3. Nginx 502 Bad Gateway 해결 ✅ (2026-02-26)
+
 ### 1. ⚠️ 직원 등록 엑셀 업로드 문제 (2026-02-28 해결) ⭐ 최신!
 **증상**: 
 - 엑셀 업로드 후 직원 상세정보(phone, registrationNumber)가 수정 화면에서 빈 값으로 표시됨
