@@ -4,25 +4,13 @@ import { useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { setToken, setUserRole } from "@/lib/auth";
 
-type UserType = "AGENT" | "SUPPLIER" | "BUYER" | "";
-
 export default function LoginPage() {
-  const [userType, setUserType] = useState<UserType>("");
   const [identifier, setIdentifier] = useState(""); // phone 또는 username
   const [password, setPw] = useState("");
   const [msg, setMsg] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function onLogin() {
-    // 슈퍼어드민(username: superadmin)은 userType 없이 로그인 가능
-    // identifier가 숫자가 아니면 username으로 간주 (슈퍼어드민 등)
-    const isUsername = !/^\d/.test(identifier.replace(/[-\s]/g, ""));
-    
-    if (!isUsername && !userType) {
-      setMsg("❌ 회원 유형을 선택해주세요");
-      return;
-    }
-
     if (!identifier || !password) {
       setMsg("❌ 아이디/핸드폰 번호와 비밀번호를 입력하세요");
       return;
@@ -37,9 +25,8 @@ export default function LoginPage() {
       const out = await apiFetch("/auth/login", {
         method: "POST",
         body: JSON.stringify({ 
-          identifier: cleanIdentifier, // phone 또는 username
-          password,
-          userType: userType || undefined // 선택한 유저 타입 전송 (username 로그인 시 undefined)
+          identifier: cleanIdentifier,
+          password
         }),
       });
 
@@ -51,16 +38,20 @@ export default function LoginPage() {
       
       setMsg("✅ 로그인 성공!");
       
-      // 역할별 리다이렉션
+      // 역할별 자동 리다이렉션
       setTimeout(() => {
         if (out.user.role === "SUPER_ADMIN") {
+          // 슈퍼어드민 → 지사 관리
           window.location.href = "/admin/branches";
         } else if (out.user.role === "AGENT") {
+          // 매니저 → 홈
           window.location.href = "/";
         } else if (out.user.role === "SUPPLIER") {
-          window.location.href = "/supplier/profile";
+          // 표준사업장 → 기업회원 대시보드
+          window.location.href = "/dashboard";
         } else if (out.user.role === "BUYER") {
-          window.location.href = "/catalog";
+          // 고용의무기업 → 기업회원 대시보드
+          window.location.href = "/dashboard";
         } else {
           window.location.href = "/";
         }
@@ -71,10 +62,8 @@ export default function LoginPage() {
       // 에러 메시지 개선
       let errorMsg = "로그인에 실패했습니다. 다시 시도해주세요.";
       
-      if (e.data?.error === "USER_TYPE_MISMATCH") {
-        errorMsg = e.data.message || "회원 유형이 일치하지 않습니다. 올바른 유형 버튼을 선택하세요.";
-      } else if (e.data?.error === "INVALID_CREDENTIALS") {
-        errorMsg = "핸드폰 번호 또는 비밀번호가 일치하지 않습니다. 다시 확인해주세요.";
+      if (e.data?.error === "INVALID_CREDENTIALS") {
+        errorMsg = "아이디 또는 비밀번호가 일치하지 않습니다. 다시 확인해주세요.";
       } else if (e.message) {
         errorMsg = e.message;
       }
@@ -91,15 +80,6 @@ export default function LoginPage() {
     }
   };
 
-  const getUserTypeLabel = (type: UserType) => {
-    switch (type) {
-      case "AGENT": return "매니저";
-      case "SUPPLIER": return "표준사업장";
-      case "BUYER": return "고용의무기업";
-      default: return "";
-    }
-  };
-
   return (
     <div className="container">
       <div className="card" style={{ maxWidth: 420, margin: "40px auto" }}>
@@ -108,92 +88,11 @@ export default function LoginPage() {
 
         <div style={{ marginTop: 24 }}>
           <form onSubmit={(e) => { e.preventDefault(); onLogin(); }}>
-          {/* 회원 유형 선택 */}
-          <label style={{ fontWeight: 600, marginBottom: 8 }}>
-            회원 유형
-            {userType && (
-              <span style={{ 
-                marginLeft: 8, 
-                fontSize: 14, 
-                color: "#0070f3",
-                fontWeight: 400 
-              }}>
-                (선택됨: {getUserTypeLabel(userType)})
-              </span>
-            )}
-          </label>
-          <div style={{ 
-            display: "grid", 
-            gridTemplateColumns: "repeat(3, 1fr)", 
-            gap: 8,
-            marginBottom: 16
-          }}>
-            <button
-              type="button"
-              onClick={() => setUserType("AGENT")}
-              style={{
-                padding: "12px 16px",
-                border: `2px solid ${userType === "AGENT" ? "#0070f3" : "#ddd"}`,
-                background: userType === "AGENT" ? "#e7f3ff" : "white",
-                color: userType === "AGENT" ? "#0070f3" : "#666",
-                borderRadius: 8,
-                cursor: "pointer",
-                fontSize: 14,
-                fontWeight: userType === "AGENT" ? 600 : 400,
-                transition: "all 0.2s"
-              }}
-            >
-              👔 매니저
-            </button>
-            <button
-              type="button"
-              onClick={() => setUserType("SUPPLIER")}
-              style={{
-                padding: "12px 16px",
-                border: `2px solid ${userType === "SUPPLIER" ? "#0070f3" : "#ddd"}`,
-                background: userType === "SUPPLIER" ? "#e7f3ff" : "white",
-                color: userType === "SUPPLIER" ? "#0070f3" : "#666",
-                borderRadius: 8,
-                cursor: "pointer",
-                fontSize: 14,
-                fontWeight: userType === "SUPPLIER" ? 600 : 400,
-                transition: "all 0.2s"
-              }}
-            >
-              🏭 표준사업장
-            </button>
-            <button
-              type="button"
-              onClick={() => setUserType("BUYER")}
-              style={{
-                padding: "12px 16px",
-                border: `2px solid ${userType === "BUYER" ? "#0070f3" : "#ddd"}`,
-                background: userType === "BUYER" ? "#e7f3ff" : "white",
-                color: userType === "BUYER" ? "#0070f3" : "#666",
-                borderRadius: 8,
-                cursor: "pointer",
-                fontSize: 14,
-                fontWeight: userType === "BUYER" ? 600 : 400,
-                transition: "all 0.2s"
-              }}
-            >
-              🏢 고용의무기업
-            </button>
-          </div>
 
-          <label>
-            {userType === "AGENT" ? "핸드폰 번호 (로그인 ID)" : "아이디"}
-            {!userType && "아이디 또는 핸드폰 번호"}
-          </label>
+          <label>아이디 또는 핸드폰 번호</label>
           <input
             type="text"
-            placeholder={
-              userType === "AGENT" 
-                ? "010-1234-5678" 
-                : userType === "SUPPLIER" || userType === "BUYER"
-                ? "영문+숫자 조합 ID"
-                : "핸드폰 번호 또는 ID"
-            }
+            placeholder="영문+숫자 ID 또는 010-1234-5678"
             value={identifier}
             onChange={(e) => setIdentifier(e.target.value)}
             onKeyPress={handleKeyPress}
@@ -262,26 +161,14 @@ export default function LoginPage() {
             color: "#666",
           }}
         >
-          <p style={{ marginBottom: 8, fontWeight: 600 }}>💡 회원 유형 안내</p>
+          <p style={{ marginBottom: 8, fontWeight: 600 }}>💡 회원 구분</p>
           <p style={{ marginBottom: 8 }}>
-            <strong>🏢 고용의무기업 (BUYER)</strong><br/>
-            • 장애인 고용부담금 납부 대상 기업<br/>
-            • 3가지 유형: 민간기업(3.1%), 공공기관(3.8%), 국가/지자체/교육청(3.8%)<br/>
-            • 장애인 직원 등록, 고용부담금/장려금 자동 계산, 연계고용 감면 관리
+            <strong>🏢 고용의무기업</strong>: 장애인 고용부담금 납부 대상 기업<br/>
+            <strong>🏭 표준사업장</strong>: 장애인표준사업장 인증 기업<br/>
+            <strong>👔 매니저</strong>: 지사 소속 영업 담당자
           </p>
-          <p style={{ marginBottom: 8 }}>
-            <strong>🏭 표준사업장 (SUPPLIER)</strong><br/>
-            • 장애인표준사업장 인증을 받은 기업<br/>
-            • 상품/서비스 등록, 도급계약 수주, 월별 이행 내역 관리
-          </p>
-          <p>
-            <strong>👔 매니저 (AGENT)</strong><br/>
-            • 지사 소속 영업 담당자<br/>
-            • 기업 추천 및 매칭, 추천코드 관리, 실적 관리
-          </p>
-          <p style={{ marginTop: 12, padding: 10, background: "#fff3cd", borderRadius: 6, color: "#856404" }}>
-            ⚠️ 가입 시 선택한 <strong>회원 유형</strong>과 동일한 버튼을 눌러 로그인하세요!<br/>
-            유형이 다르면 "회원 유형 불일치" 오류가 발생합니다.
+          <p style={{ padding: 10, background: "#e7f3ff", borderRadius: 6, color: "#0070f3", fontSize: 13 }}>
+            ℹ️ 로그인 시 회원 유형이 자동으로 인식됩니다.
           </p>
         </div>
 
