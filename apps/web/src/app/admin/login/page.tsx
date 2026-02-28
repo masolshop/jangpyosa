@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 
 export default function AdminLogin() {
   const router = useRouter();
-  const [phone, setPhone] = useState('');
+  const [identifier, setIdentifier] = useState(''); // username 또는 전화번호
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -16,13 +16,13 @@ export default function AdminLogin() {
     setLoading(true);
 
     try {
-      // 전화번호에서 하이픈 제거
-      const cleanPhone = phone.replace(/[-\s]/g, '');
+      // 전화번호/아이디에서 하이픈 제거
+      const cleanIdentifier = identifier.replace(/[-\s]/g, '');
       
       const response = await fetch('/api/proxy/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ identifier: cleanPhone, password }),
+        body: JSON.stringify({ identifier: cleanIdentifier, password }),
       });
 
       const data = await response.json();
@@ -96,13 +96,13 @@ export default function AdminLogin() {
               fontWeight: 'bold',
               color: '#333',
             }}>
-              전화번호
+              아이디 또는 전화번호
             </label>
             <input
               type="text"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="010-6352-9091 또는 01063529091"
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
+              placeholder="superadmin 또는 01063529091"
               required
               style={{
                 width: '100%',
@@ -114,7 +114,7 @@ export default function AdminLogin() {
               }}
             />
             <div style={{ fontSize: 12, color: '#999', marginTop: 4 }}>
-              하이픈(-) 있어도 됩니다
+              username (superadmin) 또는 전화번호 (01063529091, 1063529091, 010-6352-9091)
             </div>
           </div>
 
