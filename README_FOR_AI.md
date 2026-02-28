@@ -97,7 +97,37 @@ https://jangpyosa.com
 
 ## 🚨 최근 해결한 중요 문제 (꼭 기억!)
 
-### 1. ⚠️ Nginx 502 Bad Gateway (2026-02-28 해결)
+### 1. ⚠️ 로그인 API_ERROR (2026-02-28 해결) ⭐ 최신!
+**증상**: 로그인 페이지에서 API_ERROR 발생, 404 Not Found
+
+**원인**: 
+```
+Nginx에 /api/ 라우팅이 없음
+  ↓
+/api/auth/login 요청이 Next.js(port 3003)로 전달됨
+  ↓
+API 서버(port 4000)에 도달하지 못함
+```
+
+**해결책**: `/etc/nginx/sites-enabled/jangpyosa`
+```nginx
+# API 서버 라우팅 추가!
+location /api/ {
+    proxy_pass http://localhost:4000/;
+    proxy_http_version 1.0;        # ← 502 방지
+    proxy_read_timeout 90s;        # ← 타임아웃 설정
+    ...
+}
+
+location / {
+    proxy_pass http://localhost:3003;  # Next.js
+    ...
+}
+```
+
+**커밋**: 56c0722
+
+### 2. ⚠️ Nginx 502 Bad Gateway (2026-02-28 해결)
 **증상**: 모든 HTML 페이지에서 502 에러, 정적 파일(favicon, logo)은 정상
 
 **원인**: 
@@ -136,7 +166,7 @@ location / {
 - `apps/api/src/routes/auth.ts` (line 932~)
 - `apps/web/src/app/employee-new/signup/page.tsx`
 
-### 3. Mock 기업 buyerProfile 누락 (2026-02-28 해결)
+### 4. Mock 기업 buyerProfile 누락 (2026-02-28 해결)
 **증상**: 목업 기업으로 직원 회원가입 불가
 
 **해결**: Mock 기업 3개에 buyerProfile 생성
@@ -557,7 +587,7 @@ ssh -i ~/.ssh/jangpyosa.pem ubuntu@43.201.0.129 'curl -I https://jangpyosa.com/'
 
 ---
 
-**최종 업데이트**: 2026-02-28 15:30 KST  
+**최종 업데이트**: 2026-02-28 15:40 KST  
 **작성자**: Claude AI Assistant  
-**Git Commit**: 1cbd035 (최신)  
+**Git Commit**: 56c0722 (최신)  
 **백업 위치**: `/tmp/jangpyosa_*_backup_*.tar.gz`
