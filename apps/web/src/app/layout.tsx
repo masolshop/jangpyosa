@@ -53,6 +53,9 @@ export const metadata: Metadata = {
     description: '장애인표준사업장 연계고용으로 고용부담금 50~90% 감면!',
     images: ['/og-image.png'],
   },
+  alternates: {
+    canonical: "https://jangpyosa.com",
+  },
   robots: {
     index: true,
     follow: true,
