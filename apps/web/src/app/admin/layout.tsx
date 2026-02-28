@@ -3,6 +3,9 @@
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 
+// 전역 인증 상태 캐시 (layout이 재마운트되어도 유지)
+let globalAuthState: { isAuthenticated: boolean; lastCheck: number } | null = null;
+
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -10,15 +13,27 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    // 컴포넌트 마운트 시 한 번만 인증 체크
+    // 컴포넌트 마운트 시 인증 체크
     checkAuth();
-  }, []);
+  }, [pathname]); // pathname이 변경될 때마다 체크 (하지만 캐시 사용)
 
   const checkAuth = () => {
     // /admin/login 페이지는 인증 체크 스킵
     if (pathname === '/admin/login') {
       setLoading(false);
       setIsAuthenticated(true);
+      return;
+    }
+
+    // 전역 캐시 확인 (최근 5초 이내에 체크했다면 재사용)
+    const now = Date.now();
+    if (globalAuthState && (now - globalAuthState.lastCheck) < 5000) {
+      console.log('[Admin Layout] Using cached auth state');
+      setIsAuthenticated(globalAuthState.isAuthenticated);
+      setLoading(false);
+      if (!globalAuthState.isAuthenticated) {
+        router.push('/admin/login');
+      }
       return;
     }
 
@@ -38,6 +53,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       // 인증되지 않았거나 슈퍼어드민이 아닌 경우
       if (!token || role !== 'SUPER_ADMIN') {
         console.log('[Admin Layout] Redirecting to login');
+        globalAuthState = { isAuthenticated: false, lastCheck: now };
         setIsAuthenticated(false);
         setLoading(false);
         router.push('/admin/login');
@@ -45,6 +61,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       }
 
       console.log('[Admin Layout] Authentication successful');
+      globalAuthState = { isAuthenticated: true, lastCheck: now };
       setIsAuthenticated(true);
       setLoading(false);
     }, 50); // 50ms 지연으로 localStorage 안정화
