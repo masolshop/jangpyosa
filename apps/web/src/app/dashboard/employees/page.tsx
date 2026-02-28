@@ -838,7 +838,7 @@ export default function EmployeesPage() {
                   </div>
 
                   <div>
-                    <label>주민번호 앞자리 * (직원 인증용)</label>
+                    <label>주민번호 앞자리 * (직원 인증용 + 장려금 계산용)</label>
                     <input
                       type="text"
                       value={form.registrationNumber}
@@ -849,7 +849,7 @@ export default function EmployeesPage() {
                       required
                     />
                     <p style={{ fontSize: 12, color: "#666", marginTop: 4 }}>
-                      💡 주민등록번호 앞 6자리만 입력 (직원 인증용)
+                      💡 주민등록번호 앞 6자리 (직원 인증 + 장려금 계산 시 생년월일로 자동 변환)
                     </p>
                   </div>
 
