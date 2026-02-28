@@ -831,8 +831,8 @@ r.post("/verify-company", async (req, res) => {
 
     const cleanBizNo = bizNo.replace(/\D/g, "");
 
-    // 기업 확인
-    const company = await prisma.company.findUnique({
+    // 기업 확인 (하이픈 없는 형태와 있는 형태 모두 검색)
+    let company = await prisma.company.findUnique({
       where: { bizNo: cleanBizNo },
       select: {
         id: true,
@@ -844,6 +844,23 @@ r.post("/verify-company", async (req, res) => {
         }
       },
     });
+
+    // 하이픈 없는 형태로 못 찾으면 하이픈 있는 형태로 재검색 (123-45-67890)
+    if (!company && cleanBizNo.length === 10) {
+      const bizNoWithHyphen = `${cleanBizNo.slice(0, 3)}-${cleanBizNo.slice(3, 5)}-${cleanBizNo.slice(5)}`;
+      company = await prisma.company.findUnique({
+        where: { bizNo: bizNoWithHyphen },
+        select: {
+          id: true,
+          name: true,
+          bizNo: true,
+          representative: true,
+          buyerProfile: {
+            select: { id: true }
+          }
+        },
+      });
+    }
 
     if (!company || !company.buyerProfile) {
       return res.status(404).json({ 
