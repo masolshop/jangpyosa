@@ -12,6 +12,7 @@ type CompanyInfo = {
   type: string;
   buyerType: string | null;
   isVerified: boolean;
+  attachmentEmail: string | null;
 };
 
 type TeamMember = {
@@ -67,6 +68,11 @@ export default function CompanyDashboardPage() {
   const [editingCompany, setEditingCompany] = useState(false);
   const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
   const [companyForm, setCompanyForm] = useState({ name: "", representative: "" });
+  
+  // 이메일 설정
+  const [attachmentEmail, setAttachmentEmail] = useState("");
+  const [editingEmail, setEditingEmail] = useState(false);
+  const [savingEmail, setSavingEmail] = useState(false);
   const [memberForm, setMemberForm] = useState({
     name: "",
     email: "",
@@ -116,6 +122,7 @@ export default function CompanyDashboardPage() {
       name: data.company.name,
       representative: data.company.representative || ""
     });
+    setAttachmentEmail(data.company.attachmentEmail || "");
     // 회사 타입에 따라 초대 역할 자동 설정
     if (data.company.type === "BUYER") {
       setInviteRole("BUYER");
@@ -157,6 +164,39 @@ export default function CompanyDashboardPage() {
       await loadActivityLogs();
     } catch (error: any) {
       setMessage("수정 실패: " + (error.message || "알 수 없는 오류"));
+    }
+  }
+
+  async function handleSaveEmail() {
+    if (!attachmentEmail) {
+      setMessage("이메일을 입력해주세요");
+      setTimeout(() => setMessage(""), 3000);
+      return;
+    }
+
+    // 이메일 형식 검증
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(attachmentEmail)) {
+      setMessage("올바른 이메일 형식이 아닙니다");
+      setTimeout(() => setMessage(""), 3000);
+      return;
+    }
+
+    setSavingEmail(true);
+    try {
+      await apiFetch("/companies/my", {
+        method: "PUT",
+        body: JSON.stringify({ attachmentEmail })
+      });
+      setMessage("✅ 첨부파일 이메일이 저장되었습니다");
+      setEditingEmail(false);
+      await loadCompanyInfo();
+      setTimeout(() => setMessage(""), 3000);
+    } catch (error: any) {
+      setMessage("저장 실패: " + (error.message || "알 수 없는 오류"));
+      setTimeout(() => setMessage(""), 3000);
+    } finally {
+      setSavingEmail(false);
     }
   }
 
@@ -462,6 +502,128 @@ export default function CompanyDashboardPage() {
                 <p style={{ margin: 0, fontSize: 14, color: "#666" }}>기업 유형</p>
                 <p style={{ margin: "4px 0 0 0", fontSize: 18, fontWeight: "bold" }}>
                   {company.type === "BUYER" ? "고용부담금 기업" : "표준사업장"}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* 첨부파일 이메일 설정 */}
+        <div
+          style={{
+            padding: 24,
+            background: "rgba(254, 249, 195, 0.3)",
+            borderRadius: 12,
+            marginBottom: 32,
+            boxShadow: "0 8px 16px -2px rgba(251, 191, 36, 0.3), 0 4px 8px -2px rgba(251, 191, 36, 0.2)",
+            border: "2px solid rgba(251, 191, 36, 0.3)"
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+            <h2 style={{ margin: 0, fontSize: 20 }}>📧 첨부파일 이메일 설정</h2>
+            {!editingEmail && (
+              <button
+                onClick={() => setEditingEmail(true)}
+                style={{
+                  background: "#f59e0b",
+                  color: "white",
+                  border: "none",
+                  padding: "8px 16px",
+                  borderRadius: 6,
+                  fontSize: 14,
+                  cursor: "pointer",
+                  fontWeight: 600
+                }}
+              >
+                ✏️ 수정
+              </button>
+            )}
+          </div>
+
+          <p style={{ margin: "0 0 16px 0", fontSize: 14, color: "#78716c", lineHeight: 1.6 }}>
+            직원이 휴가 신청 시 증빙서류나 업무지시 결과물을 전송할 이메일 주소를 설정하세요.
+          </p>
+
+          {editingEmail ? (
+            <div style={{ marginTop: 16 }}>
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>이메일 주소 *</label>
+                <input
+                  type="email"
+                  value={attachmentEmail}
+                  onChange={(e) => setAttachmentEmail(e.target.value)}
+                  placeholder="예: files@company.com"
+                  style={{ 
+                    width: "100%", 
+                    padding: 12, 
+                    border: "2px solid #fbbf24", 
+                    borderRadius: 6,
+                    fontSize: 16
+                  }}
+                />
+                <p style={{ fontSize: 13, color: "#78716c", marginTop: 6 }}>
+                  💡 회사 대표 이메일 또는 담당자 이메일을 입력하세요
+                </p>
+              </div>
+              <div style={{ display: "flex", gap: 12 }}>
+                <button
+                  onClick={handleSaveEmail}
+                  disabled={savingEmail}
+                  style={{
+                    flex: 1,
+                    background: savingEmail ? "#9ca3af" : "#10b981",
+                    color: "white",
+                    border: "none",
+                    padding: "12px",
+                    borderRadius: 6,
+                    fontWeight: "bold",
+                    cursor: savingEmail ? "not-allowed" : "pointer"
+                  }}
+                >
+                  {savingEmail ? "저장 중..." : "💾 저장"}
+                </button>
+                <button
+                  onClick={() => {
+                    setEditingEmail(false);
+                    setAttachmentEmail(company?.attachmentEmail || "");
+                  }}
+                  style={{
+                    flex: 1,
+                    background: "#6b7280",
+                    color: "white",
+                    border: "none",
+                    padding: "12px",
+                    borderRadius: 6,
+                    fontWeight: "bold",
+                    cursor: "pointer"
+                  }}
+                >
+                  ❌ 취소
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <div style={{ 
+                background: "white", 
+                padding: 16, 
+                borderRadius: 8,
+                border: "1px solid #fbbf24"
+              }}>
+                <p style={{ margin: 0, fontSize: 14, color: "#666", marginBottom: 4 }}>현재 설정된 이메일</p>
+                <p style={{ margin: 0, fontSize: 18, fontWeight: "bold", color: company?.attachmentEmail ? "#000" : "#9ca3af" }}>
+                  {company?.attachmentEmail || "설정되지 않음"}
+                </p>
+              </div>
+              <div style={{ 
+                marginTop: 12, 
+                padding: 12, 
+                background: "#fef3c7", 
+                borderRadius: 6,
+                border: "1px solid #fbbf24"
+              }}>
+                <p style={{ margin: 0, fontSize: 13, color: "#92400e", lineHeight: 1.6 }}>
+                  <strong>📌 사용 예시:</strong> 병가 신청 시 진단서, 경조사 휴가 시 청첩장/부고장, 업무지시 결과물 제출 등
                 </p>
               </div>
             </div>

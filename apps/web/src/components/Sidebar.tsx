@@ -341,7 +341,6 @@ export default function Sidebar() {
               <MenuItem href="/dashboard/announcements" label="장애인직원공지관리" active={isActive("/dashboard/announcements")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} notificationCount={notificationCounts.announcement} onNotificationClear={() => markNotificationsByTypeAsRead(['ANNOUNCEMENT'])} />
               <MenuItem href="/dashboard/leave" label="장애인직원휴가관리" active={isActive("/dashboard/leave")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} notificationCount={notificationCounts.leave} onNotificationClear={() => markNotificationsByTypeAsRead(['LEAVE_REQUEST', 'LEAVE_APPROVED', 'LEAVE_REJECTED'])} />
               <MenuItem href="/dashboard/company" label="기업대시보드" icon="🏢" active={isActive("/dashboard/company")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} />
-              <MenuItem href="/dashboard/settings" label="회사 설정" icon="⚙️" active={isActive("/dashboard/settings")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} />
             </div>
           )}
 
