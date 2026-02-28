@@ -29,12 +29,15 @@ export type ApickBizDetail = {
 };
 
 export type ApickResponse = {
-  data: ApickBizDetail;
+  data?: ApickBizDetail;
+  result?: {
+    error?: string;
+  } & ApickBizDetail;
   api: {
     success: boolean;
-    cost: number;
-    ms: number;
-    pl_id: number;
+    cost?: number;
+    ms?: number;
+    pl_id?: number;
   };
 };
 
@@ -96,30 +99,47 @@ export async function verifyBizNo(
     }
 
     const result: ApickResponse = await response.json();
+    
+    // 디버깅: APICK API 응답 로깅
+    console.log("📋 APICK API Response:", JSON.stringify(result, null, 2));
 
     // API 성공 여부 확인
-    if (!result.api.success) {
+    if (!result.api || !result.api.success) {
       console.error("❌ APICK API returned success=false");
       return { ok: false, error: "APICK API 호출 실패" };
     }
 
+    // result.error 체크 (에러 응답)
+    if (result.result && result.result.error) {
+      console.error(`❌ APICK API error: ${result.result.error}`);
+      return { ok: false, error: result.result.error };
+    }
+
+    // 실제 데이터 추출 (data 또는 result에서)
+    const bizData = result.data || result.result;
+    
+    if (!bizData) {
+      console.error("❌ APICK API response has no data or result field");
+      return { ok: false, error: "APICK API 응답 구조 오류" };
+    }
+
     // 데이터 성공 여부 확인
-    if (result.data.success !== 1) {
-      console.error(`❌ APICK data validation failed: success=${result.data.success}`);
+    if (bizData.success !== undefined && bizData.success !== 1) {
+      console.error(`❌ APICK data validation failed: success=${bizData.success}`);
       return { ok: false, error: "사업자번호 검증 실패" };
     }
 
     // 폐업 여부 확인
-    if (result.data.사업자상태 === "폐업자") {
+    if (bizData.사업자상태 === "폐업자") {
       return { ok: false, error: "폐업된 사업자입니다" };
     }
 
     // 성공
     return {
       ok: true,
-      name: result.data.회사명,
-      representative: result.data.대표명,
-      data: result.data,
+      name: bizData.회사명,
+      representative: bizData.대표명,
+      data: bizData,
     };
   } catch (error: any) {
     console.error("❌ APICK API error:", error);
