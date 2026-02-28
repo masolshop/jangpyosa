@@ -48,7 +48,7 @@ export default function AdminLogin() {
       // window.location으로 강제 리다이렉션
       setTimeout(() => {
         console.log('[Admin Login] 리다이렉션 실행!');
-        window.location.href = '/admin/branches';
+        window.location.href = '/admin/sales';
       }, 1000);
     } catch (err: any) {
       console.error('[Admin Login] 에러:', err);
