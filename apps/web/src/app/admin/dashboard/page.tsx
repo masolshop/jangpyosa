@@ -1,172 +1,111 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 
 export default function AdminDashboard() {
-  const router = useRouter();
-  const [userName, setUserName] = useState('');
+  const [stats, setStats] = useState({
+    totalBranches: 0,
+    totalCompanies: 0,
+    totalManagers: 0,
+  });
 
   useEffect(() => {
-    // 사용자 정보 로드 (인증은 layout에서 처리)
-    const user = localStorage.getItem('user');
-    if (user) {
-      try {
-        const userData = JSON.parse(user);
-        setUserName(userData.name || '슈퍼관리자');
-      } catch (e) {
-        setUserName('슈퍼관리자');
-      }
-    } else {
-      setUserName('슈퍼관리자');
-    }
+    // TODO: API에서 통계 데이터 가져오기
+    // 임시 데이터
+    setStats({
+      totalBranches: 0,
+      totalCompanies: 0,
+      totalManagers: 0,
+    });
   }, []);
 
-  const handleLogout = () => {
-    localStorage.clear();
-    router.push('/admin/login');
-  };
-
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
+    <div style={{ padding: 40 }}>
       {/* 헤더 */}
-      <div style={{
-        backgroundColor: '#1a237e',
-        color: 'white',
-        padding: '20px 40px',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-      }}>
-        <h1 style={{ margin: 0, fontSize: 24 }}>🛡️ 슈퍼어드민 통합 대시보드</h1>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-          <span>{userName}</span>
-          <button
-            onClick={handleLogout}
-            style={{
-              padding: '10px 20px',
-              backgroundColor: '#d32f2f',
-              color: 'white',
-              border: 'none',
-              borderRadius: 4,
-              cursor: 'pointer',
-            }}
-          >
-            로그아웃
-          </button>
-        </div>
+      <div style={{ marginBottom: 40 }}>
+        <h1 style={{ 
+          margin: 0, 
+          fontSize: 32, 
+          fontWeight: 700,
+          color: '#1a237e',
+        }}>
+          📊 대시보드
+        </h1>
+        <p style={{ 
+          margin: '8px 0 0 0', 
+          fontSize: 16, 
+          color: '#666',
+        }}>
+          전체 현황을 한눈에 확인하세요
+        </p>
       </div>
 
-      {/* 메인 컨텐츠 */}
-      <div style={{ padding: 40 }}>
-        <h2 style={{ marginBottom: 30, color: '#333' }}>📋 관리 메뉴</h2>
+      {/* 통계 카드 */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+        gap: 24,
+        marginBottom: 40,
+      }}>
+        <StatCard
+          title="본부/지사"
+          value={stats.totalBranches}
+          icon="🏢"
+          color="#1976d2"
+        />
+        <StatCard
+          title="등록 기업"
+          value={stats.totalCompanies}
+          icon="🏭"
+          color="#388e3c"
+        />
+        <StatCard
+          title="매니저"
+          value={stats.totalManagers}
+          icon="👔"
+          color="#f57c00"
+        />
+      </div>
 
-        {/* 메뉴 그리드 */}
+      {/* 빠른 링크 */}
+      <div style={{
+        backgroundColor: 'white',
+        borderRadius: 12,
+        padding: 32,
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+      }}>
+        <h2 style={{ 
+          margin: '0 0 24px 0', 
+          fontSize: 20, 
+          fontWeight: 600,
+          color: '#333',
+        }}>
+          ⚡ 빠른 링크
+        </h2>
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-          gap: 24,
-          maxWidth: 1200,
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: 16,
         }}>
-          
-          {/* 1. 매니저 전용 대시보드 (추후 작업) */}
-          <MenuCard
-            title="👔 매니저 전용 대시보드"
-            description="본사/본부/지사/매니저 관리"
-            badge="추후 작업"
-            badgeColor="#999"
-            items={[
-              { label: '지사 관리', href: '/admin/branches' },
-              { label: '매니저 관리', href: '/admin/agents' },
-              { label: '실적 관리', href: '/admin/performance' },
-            ]}
-            disabled={false}
-          />
-
-          {/* 2. 기업회원 대시보드 */}
-          <MenuCard
-            title="🏢 기업회원 대시보드"
-            description="고용의무기업 및 표준사업장 관리"
-            badge="운영중"
-            badgeColor="#2e7d32"
-            items={[
-              { label: '전체 기업 목록', href: '/admin/companies' },
-              { label: '고용의무기업 - 민간', href: '/admin/companies?type=BUYER&subtype=PRIVATE_COMPANY' },
-              { label: '고용의무기업 - 공공', href: '/admin/companies?type=BUYER&subtype=PUBLIC_INSTITUTION' },
-              { label: '고용의무기업 - 국가/지자체', href: '/admin/companies?type=BUYER&subtype=GOVERNMENT' },
-              { label: '표준사업장', href: '/admin/companies?type=SUPPLIER' },
-            ]}
-          />
-
-          {/* 3. 고객관리자(바이어회원) 대시보드 */}
-          <MenuCard
-            title="🛍️ 고객관리자 대시보드"
-            description="바이어 회원 전용 관리"
-            badge="개발예정"
-            badgeColor="#f57c00"
-            items={[
-              { label: '바이어 고용의무기업 - 민간', href: '#' },
-              { label: '바이어 고용의무기업 - 공공', href: '#' },
-              { label: '바이어 고용의무기업 - 국가', href: '#' },
-              { label: '바이어 표준사업장', href: '#' },
-            ]}
-            disabled={true}
-          />
-
-          {/* 4. 장애인회원 대시보드 */}
-          <MenuCard
-            title="♿ 장애인회원 대시보드"
-            description="장애인 직원 관리"
-            badge="개발예정"
-            badgeColor="#f57c00"
-            items={[
-              { label: '고용의무기업 소속 직원', href: '#' },
-              { label: '표준사업장 소속 직원', href: '#' },
-              { label: '근태 관리', href: '#' },
-              { label: '휴가 관리', href: '#' },
-            ]}
-            disabled={true}
-          />
-
-        </div>
-
-        {/* 빠른 통계 */}
-        <div style={{ marginTop: 60 }}>
-          <h2 style={{ marginBottom: 20, color: '#333' }}>📊 빠른 통계</h2>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-            gap: 20,
-            maxWidth: 1200,
-          }}>
-            <QuickStat title="전체 기업" value="?" color="#1976d2" />
-            <QuickStat title="고용의무기업" value="?" color="#388e3c" />
-            <QuickStat title="표준사업장" value="?" color="#f57c00" />
-            <QuickStat title="매니저" value="?" color="#7b1fa2" />
-            <QuickStat title="장애인 직원" value="?" color="#d32f2f" />
-          </div>
+          <QuickLink href="/admin/branches" icon="🏢" label="본부 관리" />
+          <QuickLink href="/admin/companies" icon="🏭" label="기업 관리" />
         </div>
       </div>
     </div>
   );
 }
 
-// 메뉴 카드 컴포넌트
-function MenuCard({ 
+// 통계 카드 컴포넌트
+function StatCard({ 
   title, 
-  description, 
-  badge, 
-  badgeColor, 
-  items, 
-  disabled = false 
+  value, 
+  icon, 
+  color 
 }: { 
   title: string; 
-  description: string; 
-  badge: string; 
-  badgeColor: string; 
-  items: { label: string; href: string }[]; 
-  disabled?: boolean;
+  value: number; 
+  icon: string; 
+  color: string;
 }) {
   return (
     <div style={{
@@ -174,82 +113,75 @@ function MenuCard({
       borderRadius: 12,
       padding: 24,
       boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-      opacity: disabled ? 0.6 : 1,
-      border: disabled ? '2px dashed #ddd' : 'none',
+      borderLeft: `4px solid ${color}`,
     }}>
-      <div style={{ marginBottom: 16 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-          <h3 style={{ margin: 0, fontSize: 18, color: '#333' }}>{title}</h3>
-          <span style={{
-            padding: '4px 12px',
-            backgroundColor: badgeColor,
-            color: 'white',
-            borderRadius: 12,
-            fontSize: 12,
-            fontWeight: 'bold',
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+      }}>
+        <div>
+          <p style={{ 
+            margin: 0, 
+            fontSize: 14, 
+            color: '#666',
+            fontWeight: 500,
           }}>
-            {badge}
-          </span>
+            {title}
+          </p>
+          <p style={{ 
+            margin: '8px 0 0 0', 
+            fontSize: 36, 
+            fontWeight: 700,
+            color,
+          }}>
+            {value}
+          </p>
         </div>
-        <p style={{ margin: 0, fontSize: 14, color: '#666' }}>{description}</p>
-      </div>
-      
-      <div style={{ borderTop: '1px solid #e0e0e0', paddingTop: 16 }}>
-        {items.map((item, index) => (
-          disabled ? (
-            <div
-              key={index}
-              style={{
-                padding: '10px 0',
-                fontSize: 14,
-                color: '#999',
-                cursor: 'not-allowed',
-              }}
-            >
-              • {item.label}
-            </div>
-          ) : (
-            <Link
-              key={index}
-              href={item.href}
-              style={{
-                display: 'block',
-                padding: '10px 0',
-                color: '#1976d2',
-                textDecoration: 'none',
-                fontSize: 14,
-                transition: 'all 0.2s',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.paddingLeft = '8px';
-                e.currentTarget.style.color = '#0d47a1';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.paddingLeft = '0';
-                e.currentTarget.style.color = '#1976d2';
-              }}
-            >
-              • {item.label}
-            </Link>
-          )
-        ))}
+        <div style={{ fontSize: 48, opacity: 0.2 }}>
+          {icon}
+        </div>
       </div>
     </div>
   );
 }
 
-// 빠른 통계 카드
-function QuickStat({ title, value, color }: { title: string; value: string; color: string }) {
+// 빠른 링크 컴포넌트
+function QuickLink({ 
+  href, 
+  icon, 
+  label 
+}: { 
+  href: string; 
+  icon: string; 
+  label: string;
+}) {
   return (
-    <div style={{
-      backgroundColor: 'white',
-      padding: 20,
-      borderRadius: 8,
-      boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-      borderLeft: `4px solid ${color}`,
-    }}>
-      <div style={{ fontSize: 13, color: '#666', marginBottom: 8 }}>{title}</div>
-      <div style={{ fontSize: 28, fontWeight: 'bold', color }}>{value}</div>
-    </div>
+    <a
+      href={href}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        padding: '16px 20px',
+        backgroundColor: '#f5f5f5',
+        borderRadius: 8,
+        textDecoration: 'none',
+        color: '#333',
+        fontSize: 15,
+        fontWeight: 500,
+        transition: 'all 0.2s',
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.backgroundColor = '#e3f2fd';
+        e.currentTarget.style.transform = 'translateX(4px)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.backgroundColor = '#f5f5f5';
+        e.currentTarget.style.transform = 'translateX(0)';
+      }}
+    >
+      <span style={{ fontSize: 24, marginRight: 12 }}>{icon}</span>
+      <span>{label}</span>
+    </a>
   );
 }

@@ -110,33 +110,56 @@ export default function BranchManagementPage() {
   }
 
   return (
-    <div className="container">
-      <div className="card">
-        <h1>🏢 지사 관리</h1>
-        <p style={{ color: "#666", marginTop: 8 }}>
-          전국 지사 및 소속 매니저를 관리합니다
+    <div style={{ padding: 40 }}>
+      {/* 헤더 */}
+      <div style={{ marginBottom: 32 }}>
+        <h1 style={{ 
+          margin: 0, 
+          fontSize: 32, 
+          fontWeight: 700,
+          color: '#1a237e',
+        }}>
+          🏢 본부관리
+        </h1>
+        <p style={{ 
+          margin: '8px 0 0 0', 
+          fontSize: 16, 
+          color: '#666',
+        }}>
+          전국 본부/지사 및 소속 매니저를 관리합니다
         </p>
+      </div>
 
         <button
           onClick={() => setShowCreateModal(true)}
-          style={{ marginTop: 16 }}
+          style={{ 
+            marginTop: 0,
+            padding: '12px 24px',
+            backgroundColor: '#1a237e',
+            color: 'white',
+            border: 'none',
+            borderRadius: 8,
+            fontSize: 15,
+            fontWeight: 600,
+            cursor: 'pointer',
+          }}
         >
           ➕ 새 지사 생성
         </button>
 
         {msg && (
-          <p
+          <div
             style={{
-              marginTop: 12,
-              padding: 12,
-              borderRadius: 6,
+              marginTop: 16,
+              padding: 16,
+              borderRadius: 8,
               fontSize: 14,
               background: msg.includes("✅") ? "#e7f3ff" : "#ffe7e7",
               color: msg.includes("✅") ? "#0070f3" : "#d32f2f",
             }}
           >
             {msg}
-          </p>
+          </div>
         )}
 
         <div
@@ -145,11 +168,17 @@ export default function BranchManagementPage() {
             gridTemplateColumns: "1fr 2fr",
             gap: 24,
             marginTop: 24,
+            backgroundColor: 'white',
+            borderRadius: 12,
+            padding: 24,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
           }}
         >
           {/* 지사 목록 */}
           <div>
-            <h3>지사 목록 ({branches.length}개)</h3>
+            <h3 style={{ margin: '0 0 16px 0', fontSize: 18, fontWeight: 600 }}>
+              지사 목록 ({branches.length}개)
+            </h3>
             <div style={{ marginTop: 12 }}>
               {branches.map((branch) => (
                 <div

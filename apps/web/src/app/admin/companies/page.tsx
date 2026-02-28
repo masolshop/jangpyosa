@@ -123,21 +123,32 @@ export default function AdminCompaniesPage() {
 
   if (loading) {
     return (
-      <div className="container" style={{ padding: 40 }}>
-        <div className="card">
-          <p style={{ textAlign: "center", fontSize: 16 }}>로딩 중...</p>
-        </div>
+      <div style={{ padding: 40 }}>
+        <p style={{ textAlign: "center", fontSize: 16, color: '#666' }}>로딩 중...</p>
       </div>
     );
   }
 
   return (
-    <div className="container" style={{ padding: 40 }}>
-      <div className="card">
-        <h1 style={{ fontSize: 28, marginBottom: 8 }}>🏢 기업 관리 (슈퍼어드민)</h1>
-        <p style={{ color: "#666", fontSize: 14, marginBottom: 32 }}>
-          전체 기업 목록 · APICK 데이터 관리
+    <div style={{ padding: 40 }}>
+      {/* 헤더 */}
+      <div style={{ marginBottom: 32 }}>
+        <h1 style={{ 
+          margin: 0, 
+          fontSize: 32, 
+          fontWeight: 700,
+          color: '#1a237e',
+        }}>
+          🏭 기업관리
+        </h1>
+        <p style={{ 
+          margin: '8px 0 0 0', 
+          fontSize: 16, 
+          color: '#666',
+        }}>
+          전체 기업 목록 및 APICK 데이터 관리
         </p>
+      </div>
 
         {msg && (
           <div
@@ -147,6 +158,20 @@ export default function AdminCompaniesPage() {
               background: msg.includes("✅") ? "#d1fae5" : "#fee2e2",
               borderRadius: 8,
               color: msg.includes("✅") ? "#065f46" : "#991b1b",
+              fontSize: 14,
+            }}
+          >
+            {msg}
+          </div>
+        )}
+
+        {/* 기업 목록 테이블 */}
+        <div style={{
+          backgroundColor: 'white',
+          borderRadius: 12,
+          padding: 24,
+          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+        }}>
               fontWeight: 600,
             }}
           >
