@@ -55,3 +55,11 @@ apps/api/.env
 *.bak
 *.tar.gz
 *.zip
+
+# Environment variables
+.env
+.env.local
+.env.production
+
+# PM2 ecosystem config with real API keys (should be configured on server)
+# ecosystem.config.js
