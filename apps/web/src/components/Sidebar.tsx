@@ -89,16 +89,6 @@ export default function Sidebar() {
         }
       }
 
-      // 🔥 테스트: 강제로 알림 카운트 설정 (디버깅용)
-      console.log('[Sidebar] 테스트용 알림 카운트 설정');
-      setNotificationCounts({
-        total: 1,
-        leave: 1,
-        workOrder: 0,
-        announcement: 0,
-        attendance: 0,
-      });
-
       // 알림 개수 조회
       fetchUnreadCount();
 
