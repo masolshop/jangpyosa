@@ -95,7 +95,6 @@ export async function createBulkNotifications(userIds: string[], input: Omit<Cre
       priority: priority || NotificationPriority.NORMAL,
       category: category || NotificationCategory.GENERAL,
     })),
-    skipDuplicates: true, // 중복 방지
   });
   
   return result;
