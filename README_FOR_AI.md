@@ -30,7 +30,7 @@ https://jangpyosa.com
 ### 기본 정보
 - **프로젝트명**: 장표사닷컴 (jangpyosa.com)
 - **설명**: 장애인 고용부담금 감면 및 표준사업장 연계고용 플랫폼
-- **스택**: Next.js 14, Node.js, PostgreSQL, Prisma, Nginx
+- **스택**: Next.js 14, Node.js, **SQLite** (프로덕션), Prisma, Nginx
 - **모노레포**: Turborepo (apps/api, apps/web)
 
 ### 서버 정보
@@ -40,6 +40,18 @@ https://jangpyosa.com
 - **프로젝트 경로**: `/home/ubuntu/jangpyosa`
 - **프로세스 관리**: PM2
 - **웹서버**: Nginx
+
+### 🗄️ **데이터베이스 관리 (중요!)**
+- **현재 DB**: `/home/ubuntu/jangpyosa/apps/api/prisma/dev.db` (SQLite, ~1MB)
+- **자동 백업**: 매일 03:00 KST → `/home/ubuntu/backups/jangpyosa/dev.db.backup-YYYYMMDD-HHMMSS.gz`
+- **⚠️ 주의**: `prisma db push` 실행 시 기존 데이터가 **삭제**됨
+- **안전한 스키마 변경**: `prisma migrate dev` 사용 (데이터 보존)
+- **복원 방법**:
+  ```bash
+  gunzip -c /home/ubuntu/backups/jangpyosa/dev.db.backup-최신.gz > /tmp/restore.db
+  cp /tmp/restore.db /home/ubuntu/jangpyosa/apps/api/prisma/dev.db
+  pm2 restart jangpyosa-api
+  ```
 
 ### 서비스 구조
 ```
@@ -699,3 +711,96 @@ ssh -i ~/.ssh/jangpyosa.pem ubuntu@43.201.0.129 'curl -I https://jangpyosa.com/'
 **작성자**: Claude AI Assistant  
 **Git Commit**: 56c0722 (최신)  
 **백업 위치**: `/tmp/jangpyosa_*_backup_*.tar.gz`
+
+---
+
+## 👥 **회원 정보 저장소 구조**
+
+### 회원 유형별 테이블
+```sql
+-- 1️⃣ User 테이블 (모든 회원의 기본 정보)
+User {
+  id, name, username, phone, role, passwordHash, email, companyType, createdAt
+  role 유형: SUPER_ADMIN, BUYER, SUPPLIER, EMPLOYEE, AGENT
+}
+
+-- 2️⃣ Company 테이블 (기업 정보)
+Company {
+  id, name, bizNo, representative, type, buyerType, isVerified, ownerUserId
+}
+
+-- 3️⃣ BuyerProfile 테이블 (고용의무기업 프로필)
+BuyerProfile {
+  id, companyId, employeeCount, disabledCount, hasLevyExemption
+}
+
+-- 4️⃣ DisabledEmployee 테이블 (장애인 직원 정보)
+DisabledEmployee {
+  id, buyerId, name, phone, registrationNumber, disabilityType, disabilityGrade, severity
+}
+```
+
+### 회원 가입 플로우
+- **기업 회원가입** → `User` (BUYER) + `Company` + `BuyerProfile` 생성
+- **직원 간편가입** → `User` (EMPLOYEE) 생성
+
+### 현재 회원 현황 (2026-03-01 07:22 기준)
+| 유형 | 회원수 | 테이블 |
+|------|--------|--------|
+| 🔴 슈퍼관리자 | 1명 | User (SUPER_ADMIN) |
+| 🟢 고용의무기업 | 3명 | User (BUYER) + Company + BuyerProfile |
+| 🔵 공급기업 | 1명 | User (SUPPLIER) + Company |
+| 🟡 장애인직원 | 42명 | User (EMPLOYEE) |
+
+### 정식 회원 계정
+- **이종근** (`jangpyosa`)
+  - 전화번호: 01086199091
+  - 역할: BUYER (고용의무기업 오너 관리자)
+  - 회사: 주식회사 페마연 (사업자번호 2668101215)
+  - 로그인: https://jangpyosa.com/login → 고용의무기업 버튼 → `jangpyosa` 또는 `01086199091`
+
+---
+
+## 🚨 **DB 관리 주의사항**
+
+### ❌ 절대 금지
+```bash
+# 이 명령어는 데이터를 삭제합니다!
+prisma db push
+```
+
+### ✅ 안전한 스키마 변경
+```bash
+# 1. 마이그레이션 파일 생성 (데이터 보존)
+npx prisma migrate dev --name describe_change
+
+# 2. 프로덕션 적용
+npx prisma migrate deploy
+```
+
+### 🔄 **DB 복원 절차**
+```bash
+# 1. 최신 백업 확인
+ls -lht /home/ubuntu/backups/jangpyosa/*.gz | head -1
+
+# 2. 백업 복원
+gunzip -c /home/ubuntu/backups/jangpyosa/dev.db.backup-20260301-030001.gz > /home/ubuntu/jangpyosa/apps/api/prisma/dev.db
+
+# 3. API 재시작 (DB 커넥션 갱신)
+pm2 restart jangpyosa-api
+```
+
+### 📊 **회원 정보 조회**
+```bash
+# 전체 회원 현황
+sqlite3 prisma/dev.db "SELECT role, COUNT(*) FROM User GROUP BY role;"
+
+# 고용의무기업 리스트
+sqlite3 prisma/dev.db "SELECT U.name, U.username, U.phone, C.name as company FROM User U LEFT JOIN Company C ON U.id = C.ownerUserId WHERE U.role = 'BUYER';"
+
+# 장애인 직원 리스트
+sqlite3 prisma/dev.db "SELECT name, phone, registrationNumber, disabilityType FROM DisabledEmployee;"
+```
+
+---
+
