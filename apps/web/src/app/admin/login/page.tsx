@@ -17,30 +17,41 @@ export default function AdminLogin() {
     setError('');
     setLoading(true);
 
+    console.log('[Admin Login] 시작:', { identifier, passwordLength: password.length });
+
     try {
       // 전화번호/아이디에서 하이픈 제거
       const cleanIdentifier = identifier.replace(/[-\s]/g, '');
+      console.log('[Admin Login] Clean identifier:', cleanIdentifier);
       
       const data = await apiFetch('/auth/login', {
         method: 'POST',
         body: JSON.stringify({ identifier: cleanIdentifier, password }),
       });
 
+      console.log('[Admin Login] 응답 받음:', { role: data.user?.role, name: data.user?.name });
+
       // 슈퍼어드민 권한 확인
       if (data.user.role !== 'SUPER_ADMIN') {
         throw new Error('슈퍼어드민 권한이 없습니다');
       }
 
-      // 로그인 정보 저장 (apiFetch 내부에서 이미 처리되지만 확실하게)
+      // 로그인 정보 저장
+      console.log('[Admin Login] 토큰 저장 중...');
       setToken(data.accessToken);
       setUserRole(data.user.role);
       localStorage.setItem('user', JSON.stringify(data.user));
 
-      // 대시보드로 이동
-      router.push('/admin/dashboard');
+      console.log('[Admin Login] 리다이렉션 시작...');
+      setError('✅ 로그인 성공! 리다이렉션 중...');
+      
+      // 약간의 딜레이 후 리다이렉션
+      setTimeout(() => {
+        router.push('/admin/dashboard');
+      }, 500);
     } catch (err: any) {
-      console.error('Admin login error:', err);
-      setError(err.message || '로그인에 실패했습니다');
+      console.error('[Admin Login] 에러:', err);
+      setError(err.message || err.toString() || '로그인에 실패했습니다');
     } finally {
       setLoading(false);
     }
