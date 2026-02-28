@@ -76,10 +76,19 @@ router.post("/", requireAuth, async (req, res) => {
 
     const schema = z.object({
       name: z.string().min(1),
-      phone: z.string().transform(val => val.trim() || null).nullable().optional(),
-      registrationNumber: z.string().transform(val => val.trim() || null).nullable().optional(),
+      phone: z.string().transform(val => {
+        const trimmed = val?.trim();
+        return trimmed && trimmed.length > 0 ? trimmed : null;
+      }).nullable().optional(),
+      registrationNumber: z.string().transform(val => {
+        const trimmed = val?.trim();
+        return trimmed && trimmed.length > 0 ? trimmed : null;
+      }).nullable().optional(),
       disabilityType: z.string().min(1),
-      disabilityGrade: z.string().transform(val => val.trim() || null).nullable().optional(),
+      disabilityGrade: z.string().transform(val => {
+        const trimmed = val?.trim();
+        return trimmed && trimmed.length > 0 ? trimmed : null;
+      }).nullable().optional(),
       severity: z.enum(["MILD", "SEVERE"]),
       gender: z.enum(["M", "F"]),
       birthDate: z.string().transform(val => val.trim() || null).nullable().optional(),
@@ -93,7 +102,25 @@ router.post("/", requireAuth, async (req, res) => {
       memo: z.string().transform(val => val?.trim() || null).nullable().optional(),
     });
 
+    // 디버깅: 요청 바디 확인
+    console.log("[직원 추가 API] 요청 바디:", JSON.stringify({
+      name: req.body.name,
+      phone: req.body.phone,
+      registrationNumber: req.body.registrationNumber,
+      disabilityType: req.body.disabilityType,
+      disabilityGrade: req.body.disabilityGrade,
+    }, null, 2));
+
     const body = schema.parse(req.body);
+
+    // 디버깅: Zod 변환 후 확인
+    console.log("[직원 추가 API] Zod 변환 후:", JSON.stringify({
+      name: body.name,
+      phone: body.phone,
+      registrationNumber: body.registrationNumber,
+      disabilityType: body.disabilityType,
+      disabilityGrade: body.disabilityGrade,
+    }, null, 2));
 
     const company = await getUserCompany(userId, userRole);
 

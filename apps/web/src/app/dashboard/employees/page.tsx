@@ -467,6 +467,14 @@ export default function EmployeesPage() {
             memo: row[14]?.toString().trim() || "",
           };
 
+          // 디버깅: 전송 데이터 확인
+          console.log(`[엑셀 업로드] ${i + 2}행 (${employeeData.name}) 데이터:`, {
+            phone: employeeData.phone,
+            registrationNumber: employeeData.registrationNumber,
+            disabilityType: employeeData.disabilityType,
+            disabilityGrade: employeeData.disabilityGrade,
+          });
+
           // 필수 항목 검증
           if (!employeeData.name || !employeeData.phone || !employeeData.registrationNumber || !employeeData.disabilityType || !employeeData.hireDate) {
             errors.push(`${i + 2}행: 필수 항목 누락 (성명, 핸드폰번호, 주민번호앞자리, 장애유형, 입사일)`);
