@@ -5,7 +5,10 @@ import { usePathname } from "next/navigation";
 import { clearToken, getUserRole, getToken } from "@/lib/auth";
 import NotificationDropdown from "./NotificationDropdown";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 
+  (typeof window !== 'undefined' && window.location.hostname === 'jangpyosa.com' 
+    ? 'https://jangpyosa.com/api' 
+    : 'http://localhost:4000');
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -26,28 +29,42 @@ export default function Sidebar() {
   const fetchUnreadCount = async () => {
     try {
       const token = getToken();
-      if (!token) return;
+      console.log('[Sidebar] 알림 API 호출 시작, token:', token ? '있음' : '없음');
+      if (!token) {
+        console.log('[Sidebar] 토큰 없음 - 알림 조회 중단');
+        return;
+      }
 
-      const response = await fetch(`${API_BASE}/notifications/unread-count`, {
+      const url = `${API_BASE}/notifications/unread-count`;
+      console.log('[Sidebar] API URL:', url);
+      
+      const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
       });
 
+      console.log('[Sidebar] API 응답 상태:', response.status);
+
       if (response.ok) {
         const data = await response.json();
+        console.log('[Sidebar] 알림 데이터:', data);
         const byType = data.byType || {};
         
-        setNotificationCounts({
+        const counts = {
           total: data.total || 0,
           leave: (byType.LEAVE_REQUEST || 0) + (byType.LEAVE_APPROVED || 0) + (byType.LEAVE_REJECTED || 0),
           workOrder: byType.WORK_ORDER || 0,
           announcement: byType.ANNOUNCEMENT || 0,
           attendance: (byType.ATTENDANCE_REMINDER || 0) + (byType.ATTENDANCE_ISSUE || 0),
-        });
+        };
+        console.log('[Sidebar] 설정될 알림 카운트:', counts);
+        setNotificationCounts(counts);
+      } else {
+        console.error('[Sidebar] API 응답 실패:', response.status, await response.text());
       }
     } catch (error) {
-      console.error('알림 개수 조회 실패:', error);
+      console.error('[Sidebar] 알림 개수 조회 실패:', error);
     }
   };
 
@@ -71,6 +88,16 @@ export default function Sidebar() {
           console.error("사용자 정보 파싱 실패:", e);
         }
       }
+
+      // 🔥 테스트: 강제로 알림 카운트 설정 (디버깅용)
+      console.log('[Sidebar] 테스트용 알림 카운트 설정');
+      setNotificationCounts({
+        total: 1,
+        leave: 1,
+        workOrder: 0,
+        announcement: 0,
+        attendance: 0,
+      });
 
       // 알림 개수 조회
       fetchUnreadCount();
