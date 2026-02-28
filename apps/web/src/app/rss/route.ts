@@ -86,19 +86,18 @@ export async function GET() {
     <description>장애인표준사업장 연계고용으로 고용부담금 50~90% 감면! 무료 장애인직원관리솔루션, 고용부담금계산기, 고용장려금계산기 제공</description>
     <language>ko</language>
     <lastBuildDate>${currentDate}</lastBuildDate>
-    <atom:link href="${baseUrl}/rss.xml" rel="self" type="application/rss+xml"/>
-    ${items
-      .map(
-        (item) => `
-    <item>
+    <atom:link href="${baseUrl}/rss" rel="self" type="application/rss+xml"/>
+${items
+  .map(
+    (item) => `    <item>
       <title>${item.title}</title>
       <link>${item.link}</link>
       <description><![CDATA[${item.description}]]></description>
       <pubDate>${item.pubDate}</pubDate>
       <guid isPermaLink="true">${item.guid}</guid>
     </item>`
-      )
-      .join('')}
+  )
+  .join('\n')}
   </channel>
 </rss>`;
 
