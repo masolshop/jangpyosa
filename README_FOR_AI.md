@@ -97,7 +97,37 @@ https://jangpyosa.com
 
 ## 🚨 최근 해결한 중요 문제 (꼭 기억!)
 
-### 1. ⚠️ 로그인 API_ERROR (2026-02-28 해결) ⭐ 최신!
+### 1. ⚠️ 직원 등록 엑셀 업로드 문제 (2026-02-28 해결) ⭐ 최신!
+**증상**: 
+- 엑셀 업로드 후 직원 상세정보(phone, registrationNumber)가 수정 화면에서 빈 값으로 표시됨
+- 요약 데이터에서 시급이 제각각으로 출력됨 (예: 10,319원, 10,321원 등)
+
+**원인 1 (상세정보 누락)**: 
+```typescript
+// API validation schema가 빈 문자열을 그대로 저장
+phone: z.string().nullable().optional()  // ""가 그대로 저장됨
+```
+
+**해결 1**: 빈 문자열을 `null`로 변환
+```typescript
+phone: z.string().transform(val => val.trim() || null).nullable().optional()
+registrationNumber: z.string().transform(val => val.trim() || null).nullable().optional()
+```
+
+**원인 2 (시급 제각각)**: 
+```typescript
+// 동적 계산으로 인한 부정확한 시급 표시
+Math.round(monthlySalary / monthlyWorkHours)  // 619,200 / 60 = 10,320원? 실제로는 반올림 오차 발생
+```
+
+**해결 2**: 고정 최저시급 표시
+```typescript
+시급 10,320원  // 2026년 최저시급 고정값
+```
+
+**커밋**: 0f5888f
+
+### 2. ⚠️ 로그인 API_ERROR (2026-02-28 해결)
 **증상**: 로그인 페이지에서 API_ERROR 발생, 404 Not Found
 
 **원인**: 
@@ -127,7 +157,7 @@ location / {
 
 **커밋**: 56c0722
 
-### 2. ⚠️ Nginx 502 Bad Gateway (2026-02-28 해결)
+### 3. ⚠️ Nginx 502 Bad Gateway (2026-02-28 해결)
 **증상**: 모든 HTML 페이지에서 502 에러, 정적 파일(favicon, logo)은 정상
 
 **원인**: 
