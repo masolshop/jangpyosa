@@ -25,7 +25,7 @@ export default function SettingsPage() {
 
   const fetchCompanyInfo = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('accessToken');
       if (!token) {
         router.push('/login');
         return;
@@ -69,7 +69,7 @@ export default function SettingsPage() {
     setMessage('');
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('accessToken');
       const res = await fetch('/api/companies/my', {
         method: 'PUT',
         headers: {
