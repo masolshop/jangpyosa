@@ -37,7 +37,7 @@ export default function Sidebar() {
       const token = getToken();
       if (!token) return;
 
-      const url = `${API_BASE}/notifications/unread-count`;
+      const url = `${API_BASE}/notifications/unread-count?byType=true`;
       
       const response = await fetch(url, {
         headers: {
@@ -52,8 +52,8 @@ export default function Sidebar() {
         const counts = {
           total: data.total || 0,
           leave: (byType.LEAVE_REQUEST || 0) + (byType.LEAVE_APPROVED || 0) + (byType.LEAVE_REJECTED || 0),
-          workOrder: byType.WORK_ORDER || 0,
-          announcement: byType.ANNOUNCEMENT || 0,
+          workOrder: (byType.WORK_ORDER || 0) + (byType.WORK_ORDER_COMPLETED || 0),
+          announcement: (byType.ANNOUNCEMENT || 0) + (byType.ANNOUNCEMENT_READ || 0),
           attendance: (byType.ATTENDANCE_REMINDER || 0) + (byType.ATTENDANCE_ISSUE || 0),
         };
         
@@ -337,8 +337,8 @@ export default function Sidebar() {
               <MenuItem href="/dashboard/employees" label="장애인직원등록관리" icon="👥" active={isActive("/dashboard/employees")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} />
               <MenuItem href="/dashboard/monthly" label="고용장려금부담금관리" icon="📅" active={isActive("/dashboard/monthly")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} />
               <MenuItem href="/dashboard/attendance" label="장애인직원근태관리" active={isActive("/dashboard/attendance")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} notificationCount={notificationCounts.attendance} onNotificationClear={() => markNotificationsByTypeAsRead(['ATTENDANCE_REMINDER', 'ATTENDANCE_ISSUE'])} />
-              <MenuItem href="/dashboard/work-orders" label="장애인직원업무관리" active={isActive("/dashboard/work-orders")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} notificationCount={notificationCounts.workOrder} onNotificationClear={() => markNotificationsByTypeAsRead(['WORK_ORDER'])} />
-              <MenuItem href="/dashboard/announcements" label="장애인직원공지관리" active={isActive("/dashboard/announcements")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} notificationCount={notificationCounts.announcement} onNotificationClear={() => markNotificationsByTypeAsRead(['ANNOUNCEMENT'])} />
+              <MenuItem href="/dashboard/work-orders" label="장애인직원업무관리" active={isActive("/dashboard/work-orders")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} notificationCount={notificationCounts.workOrder} onNotificationClear={() => markNotificationsByTypeAsRead(['WORK_ORDER', 'WORK_ORDER_COMPLETED'])} />
+              <MenuItem href="/dashboard/announcements" label="장애인직원공지관리" active={isActive("/dashboard/announcements")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} notificationCount={notificationCounts.announcement} onNotificationClear={() => markNotificationsByTypeAsRead(['ANNOUNCEMENT', 'ANNOUNCEMENT_READ'])} />
               <MenuItem href="/dashboard/leave" label="장애인직원휴가관리" active={isActive("/dashboard/leave")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} notificationCount={notificationCounts.leave} onNotificationClear={() => markNotificationsByTypeAsRead(['LEAVE_REQUEST', 'LEAVE_APPROVED', 'LEAVE_REJECTED'])} />
               <MenuItem href="/dashboard/company" label="기업대시보드" icon="🏢" active={isActive("/dashboard/company")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} />
             </div>
