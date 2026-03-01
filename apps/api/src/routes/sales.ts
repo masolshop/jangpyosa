@@ -2,9 +2,45 @@ import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 import bcryptjs from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import { config } from '../config.js';
 
 const router = Router();
 const prisma = new PrismaClient();
+
+const JWT_SECRET = config.jwtSecret || 'your-secret-key';
+
+// 영업 사원 전용 인증 미들웨어
+const requireSalesAuth = async (req: any, res: any, next: any) => {
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    if (!token) {
+      return res.status(401).json({ error: '인증 토큰이 없습니다' });
+    }
+
+    const decoded: any = jwt.verify(token, JWT_SECRET);
+    
+    const salesPerson = await prisma.salesPerson.findUnique({
+      where: { id: decoded.salesPersonId },
+    });
+
+    if (!salesPerson) {
+      return res.status(404).json({ error: '영업 사원 정보를 찾을 수 없습니다' });
+    }
+
+    req.salesPerson = salesPerson;
+    next();
+  } catch (error: any) {
+    console.error('[requireSalesAuth] Error:', error);
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({ error: '유효하지 않은 토큰입니다' });
+    }
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ error: '토큰이 만료되었습니다' });
+    }
+    return res.status(500).json({ error: error.message });
+  }
+};
 
 // 영업 사원 역할 타입
 export enum SalesRole {
@@ -889,17 +925,11 @@ router.get('/organizations', async (req, res) => {
  * 지사: 소속 매니저들이 추천한 기업 통계 합계
  * 본부: 소속 지사+매니저들이 추천한 기업 통계 합계
  */
-router.get('/dashboard/stats', requireAuth, async (req, res) => {
+router.get('/dashboard/stats', requireSalesAuth, async (req: any, res) => {
   try {
-    const { user } = req;
-    
-    if (!user) {
-      return res.status(401).json({ error: '인증이 필요합니다' });
-    }
-    
-    // 현재 로그인한 영업사원 정보 조회
+    // requireSalesAuth 미들웨어에서 이미 salesPerson을 설정함
     const salesPerson = await prisma.salesPerson.findUnique({
-      where: { userId: user.id },
+      where: { id: req.salesPerson.id },
       include: {
         subordinates: {
           where: { isActive: true },
@@ -1006,23 +1036,11 @@ router.get('/dashboard/stats', requireAuth, async (req, res) => {
  * GET /sales/dashboard/companies
  * 매니저 추천 기업 리스트
  */
-router.get('/dashboard/companies', requireAuth, async (req, res) => {
+router.get('/dashboard/companies', requireSalesAuth, async (req: any, res) => {
   try {
-    const { user } = req;
+    // requireSalesAuth 미들웨어에서 이미 salesPerson을 설정함
+    const salesPerson = req.salesPerson;
     const { buyerType } = req.query; // PRIVATE_COMPANY, PUBLIC_INSTITUTION, GOVERNMENT
-    
-    if (!user) {
-      return res.status(401).json({ error: '인증이 필요합니다' });
-    }
-    
-    // 현재 로그인한 영업사원 정보 조회
-    const salesPerson = await prisma.salesPerson.findUnique({
-      where: { userId: user.id },
-    });
-    
-    if (!salesPerson) {
-      return res.status(404).json({ error: '영업 사원 정보를 찾을 수 없습니다' });
-    }
     
     // 매니저만 자신의 추천 기업 리스트를 볼 수 있음
     if (salesPerson.role !== 'MANAGER') {
@@ -1078,17 +1096,11 @@ router.get('/dashboard/companies', requireAuth, async (req, res) => {
  * GET /sales/dashboard/managers
  * 지사/본부 소속 매니저 리스트 (각 매니저의 추천 기업 통계 포함)
  */
-router.get('/dashboard/managers', requireAuth, async (req, res) => {
+router.get('/dashboard/managers', requireSalesAuth, async (req: any, res) => {
   try {
-    const { user } = req;
-    
-    if (!user) {
-      return res.status(401).json({ error: '인증이 필요합니다' });
-    }
-    
-    // 현재 로그인한 영업사원 정보 조회
+    // requireSalesAuth 미들웨어에서 이미 salesPerson을 설정함
     const salesPerson = await prisma.salesPerson.findUnique({
-      where: { userId: user.id },
+      where: { id: req.salesPerson.id },
       include: {
         subordinates: {
           where: { isActive: true },
@@ -1171,17 +1183,11 @@ router.get('/dashboard/managers', requireAuth, async (req, res) => {
  * GET /sales/dashboard/branches
  * 본부 소속 지사 리스트 (각 지사의 추천 기업 통계 포함)
  */
-router.get('/dashboard/branches', requireAuth, async (req, res) => {
+router.get('/dashboard/branches', requireSalesAuth, async (req: any, res) => {
   try {
-    const { user } = req;
-    
-    if (!user) {
-      return res.status(401).json({ error: '인증이 필요합니다' });
-    }
-    
-    // 현재 로그인한 영업사원 정보 조회
+    // requireSalesAuth 미들웨어에서 이미 salesPerson을 설정함
     const salesPerson = await prisma.salesPerson.findUnique({
-      where: { userId: user.id },
+      where: { id: req.salesPerson.id },
       include: {
         subordinates: {
           where: { 
