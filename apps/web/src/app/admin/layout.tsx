@@ -6,6 +6,7 @@ import { useRouter, usePathname } from 'next/navigation';
 // 상수
 const AUTH_CACHE_DURATION = 5000; // 5초
 const LOGIN_PATH = '/admin/login';
+const SALES_PATH = '/admin/sales'; // 매니저 전용 페이지 (인증 불필요)
 const SUPER_ADMIN_ROLE = 'SUPER_ADMIN';
 
 // 전역 인증 상태 캐시
@@ -23,8 +24,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const checkAuth = useCallback(() => {
-    // 로그인 페이지는 인증 체크 스킵
-    if (pathname === LOGIN_PATH) {
+    // 로그인 페이지와 매니저 페이지는 인증 체크 스킵
+    if (pathname === LOGIN_PATH || pathname === SALES_PATH) {
       setLoading(false);
       setIsAuthenticated(true);
       return;
@@ -76,8 +77,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     checkAuth();
   }, [checkAuth]);
 
-  // 로그인 페이지는 사이드바 없이 표시
-  if (pathname === LOGIN_PATH) {
+  // 로그인 페이지와 매니저 페이지는 사이드바 없이 표시
+  if (pathname === LOGIN_PATH || pathname === SALES_PATH) {
     return <>{children}</>;
   }
 
