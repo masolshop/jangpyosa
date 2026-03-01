@@ -135,6 +135,19 @@ export default function EmployeesPage() {
         return;
       }
       const data = await getCompanyEmployees(companyData.companyId);
+      
+      // 🔍 디버깅: API 응답 데이터 확인
+      console.log("🔍 [fetchEmployees] 직원 수:", data.length);
+      if (data.length > 0) {
+        console.log("🔍 [fetchEmployees] 첫 번째 직원:", JSON.stringify({
+          name: data[0].name,
+          phone: data[0].phone,
+          registrationNumber: data[0].registrationNumber,
+          disabilityType: data[0].disabilityType,
+          disabilityGrade: data[0].disabilityGrade,
+        }, null, 2));
+      }
+      
       setEmployees(data as any || []);
     } catch (e: any) {
       if (e.message.includes("로그인")) {
@@ -203,6 +216,15 @@ export default function EmployeesPage() {
   }
 
   function startEdit(emp: Employee) {
+    // 🔍 디버깅: 직원 데이터 확인
+    console.log("🔍 [수정 모드] 직원 데이터:", JSON.stringify({
+      name: emp.name,
+      phone: emp.phone,
+      registrationNumber: emp.registrationNumber,
+      disabilityType: emp.disabilityType,
+      disabilityGrade: emp.disabilityGrade,
+    }, null, 2));
+
     setForm({
       name: emp.name,
       phone: emp.phone || "",
