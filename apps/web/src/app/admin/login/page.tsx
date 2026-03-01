@@ -76,10 +76,10 @@ export default function AdminLogin() {
       }}>
         <div style={{ textAlign: 'center', marginBottom: 30 }}>
           <h1 style={{ fontSize: 28, color: '#1a237e', marginBottom: 8 }}>
-            🛡️ 슈퍼어드민 로그인
+            🛡️ 로그인
           </h1>
           <p style={{ color: '#666', fontSize: 14 }}>
-            장표사닷컴 관리자 시스템
+            장표사닷컴 관리 시스템
           </p>
         </div>
 
@@ -104,13 +104,13 @@ export default function AdminLogin() {
               fontWeight: 'bold',
               color: '#333',
             }}>
-              아이디 또는 전화번호
+              아이디
             </label>
             <input
               type="text"
               value={identifier}
               onChange={(e) => setIdentifier(e.target.value)}
-              placeholder="superadmin 또는 01063529091"
+              placeholder="아이디 입력"
               required
               style={{
                 width: '100%',
@@ -121,9 +121,6 @@ export default function AdminLogin() {
                 boxSizing: 'border-box',
               }}
             />
-            <div style={{ fontSize: 12, color: '#999', marginTop: 4 }}>
-              username (superadmin) 또는 전화번호 (01063529091, 1063529091, 010-6352-9091)
-            </div>
           </div>
 
           <div style={{ marginBottom: 30 }}>
@@ -177,8 +174,11 @@ export default function AdminLogin() {
           borderTop: '1px solid #e0e0e0',
           textAlign: 'center',
         }}>
-          <p style={{ fontSize: 14, color: '#666' }}>
-            슈퍼어드민 계정으로만 접속 가능합니다
+          <p style={{ fontSize: 14, color: '#666', marginBottom: 12 }}>
+            매니저 계정이 필요하신가요?{' '}
+            <a href="/admin/sales" style={{ color: '#1a237e', fontWeight: 600, textDecoration: 'underline' }}>
+              매니저 가입하기
+            </a>
           </p>
         </div>
       </div>

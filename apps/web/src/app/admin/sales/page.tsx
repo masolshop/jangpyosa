@@ -252,7 +252,7 @@ export default function SalesLoginPage() {
           <form onSubmit={handleLogin}>
             <div style={{ marginBottom: 16 }}>
               <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, fontSize: 14 }}>
-                핸드폰번호
+                아이디 (핸드폰번호)
               </label>
               <input
                 type="tel"
@@ -313,27 +313,7 @@ export default function SalesLoginPage() {
           <form onSubmit={handleSignup}>
             <div style={{ marginBottom: 16 }}>
               <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, fontSize: 14 }}>
-                이름 *
-              </label>
-              <input
-                type="text"
-                value={signupForm.name}
-                onChange={(e) => setSignupForm({ ...signupForm, name: e.target.value })}
-                placeholder="홍길동"
-                required
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  border: '1px solid #d1d5db',
-                  borderRadius: 8,
-                  fontSize: 14,
-                }}
-              />
-            </div>
-
-            <div style={{ marginBottom: 16 }}>
-              <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, fontSize: 14 }}>
-                핸드폰번호 *
+                아이디 (핸드폰번호) *
               </label>
               <input
                 type="tel"
@@ -352,6 +332,26 @@ export default function SalesLoginPage() {
               <div style={{ fontSize: 12, color: '#6b7280', marginTop: 4 }}>
                 추천인 링크: https://jangpyosa.com/{signupForm.phone || '핸드폰번호'}
               </div>
+            </div>
+
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, fontSize: 14 }}>
+                이름 *
+              </label>
+              <input
+                type="text"
+                value={signupForm.name}
+                onChange={(e) => setSignupForm({ ...signupForm, name: e.target.value })}
+                placeholder="홍길동"
+                required
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: 8,
+                  fontSize: 14,
+                }}
+              />
             </div>
 
             <div style={{ marginBottom: 16 }}>
@@ -430,7 +430,32 @@ export default function SalesLoginPage() {
             >
               {loading ? '가입 중...' : '회원가입'}
             </button>
+
+            {/* 지사/본부 배정 안내 */}
+            <div style={{
+              marginTop: 16,
+              padding: 12,
+              background: '#fef3c7',
+              borderRadius: 8,
+              fontSize: 12,
+              color: '#92400e',
+            }}>
+              ℹ️ 가입 후 지사/본부는 슈퍼어드민이 배정합니다
+            </div>
           </form>
+        )}
+
+        {/* 아이디/비밀번호 찾기 */}
+        {isLogin && (
+          <div style={{
+            marginTop: 16,
+            textAlign: 'center',
+            fontSize: 14,
+          }}>
+            <a href="/forgot-password" style={{ color: '#6b7280', textDecoration: 'underline' }}>
+              아이디/비밀번호 찾기
+            </a>
+          </div>
         )}
 
         {/* 안내 메시지 */}
