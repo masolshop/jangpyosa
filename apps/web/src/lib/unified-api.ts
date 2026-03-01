@@ -156,15 +156,16 @@ export async function getCompaniesList() {
  * 회사의 직원 목록 조회 (캐싱)
  */
 export async function getCompanyEmployees(companyId: string) {
-  const cacheKey = `company-employees-${companyId}`;
-  const cached = cache.get<DisabledEmployee[]>(cacheKey);
-  if (cached) return cached;
+  // ⚠️ 캐시 비활성화 (디버깅용)
+  // const cacheKey = `company-employees-${companyId}`;
+  // const cached = cache.get<DisabledEmployee[]>(cacheKey);
+  // if (cached) return cached;
 
   const response = await get<{
     employees: DisabledEmployee[];
   }>(`/calculators/company/${companyId}/employees`);
 
-  cache.set(cacheKey, response.employees);
+  // cache.set(cacheKey, response.employees);
   return response.employees;
 }
 
