@@ -40,6 +40,7 @@ import annualLeaveRoutes from "./routes/annual-leave.js";
 import salesRoutes from "./routes/sales.js";
 import referralRoutes from "./routes/referral.js";
 import salesAuthRoutes from "./routes/sales-auth.js";
+import superAdminRoutes from "./routes/super-admin.js";
 
 // Prisma Client with monitoring
 export const prisma = createPrismaWithMonitoring();
@@ -70,6 +71,7 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 app.get("/health", (_req, res) => res.json({ ok: true, service: "jangpyosa-api" }));
 
 app.use("/public", publicRoutes);
+app.use("/api", superAdminRoutes); // 슈퍼어드민 생성 엔드포인트
 app.use("/auth", authRoutes);
 app.use("/admin", adminRoutes);
 app.use("/catalog", catalogRoutes);
