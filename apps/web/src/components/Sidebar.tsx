@@ -343,8 +343,9 @@ export default function Sidebar() {
             </div>
           )}
 
-          {/* 관리자용 메뉴 (BUYER, SUPPLIER, SUPER_ADMIN 역할인 경우) */}
-          {userRole && ["BUYER", "SUPPLIER", "SUPER_ADMIN"].includes(userRole) && (
+          {/* 관리자용 메뉴 (BUYER, SUPPLIER, SUPER_ADMIN, 영업 사원 역할인 경우) */}
+          {(userRole && ["BUYER", "SUPPLIER", "SUPER_ADMIN"].includes(userRole)) || 
+           (salesRole && ['MANAGER', 'BRANCH_MANAGER', 'HEAD_MANAGER'].includes(salesRole)) ? (
             <div style={{ marginBottom: 24 }}>
               <div style={{ fontSize: 21.424, color: "#fff", marginBottom: 12, fontWeight: "bold", textAlign: "center" }}>
                 장애인직원관리솔루션
@@ -357,7 +358,7 @@ export default function Sidebar() {
               <MenuItem href="/dashboard/leave" label="장애인직원휴가관리" active={isActive("/dashboard/leave")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} notificationCount={notificationCounts.leave} onNotificationClear={() => markNotificationsByTypeAsRead(['LEAVE_REQUEST', 'LEAVE_APPROVED', 'LEAVE_REJECTED'])} />
               <MenuItem href="/dashboard/company" label="기업대시보드" icon="🏢" active={isActive("/dashboard/company")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} />
             </div>
-          )}
+          ) : null}
 
           {/* 직원용 메뉴 (EMPLOYEE 역할인 경우) */}
           {userRole === "EMPLOYEE" && (
@@ -445,8 +446,8 @@ export default function Sidebar() {
             )}
           </div>
 
-          {/* 매니저/지사/본부 대시보드 */}
-          {salesRole && ['MANAGER', 'BRANCH_MANAGER', 'HEAD_MANAGER'].includes(salesRole) && (
+          {/* 매니저/지사/본부 대시보드 (영업 사원 또는 SUPER_ADMIN) */}
+          {(salesRole && ['MANAGER', 'BRANCH_MANAGER', 'HEAD_MANAGER'].includes(salesRole)) || userRole === "SUPER_ADMIN" ? (
             <div style={{ marginBottom: 24 }}>
               <div style={{ fontSize: 21.424, color: "#fff", marginBottom: 12, fontWeight: "bold", textAlign: "center" }}>
                 영업 대시보드
@@ -456,13 +457,14 @@ export default function Sidebar() {
                 label={
                   salesRole === 'MANAGER' ? '매니저 대시보드' :
                   salesRole === 'BRANCH_MANAGER' ? '지사 대시보드' :
-                  '본부 대시보드'
+                  salesRole === 'HEAD_MANAGER' ? '본부 대시보드' :
+                  '영업 대시보드'
                 }
                 icon="📊" 
                 active={isActive("/admin/sales/dashboard")} 
               />
             </div>
-          )}
+          ) : null}
 
           {userRole === "SUPER_ADMIN" && (
             <div style={{ marginBottom: 24 }}>
