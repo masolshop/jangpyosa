@@ -418,7 +418,6 @@ export default function AdminRootPage() {
                   <div style={{
                     fontSize: 16,
                     fontWeight: 'bold',
-                    color: '#333',
                     display: 'inline-block',
                     background: '#4CAF50',
                     color: 'white',
