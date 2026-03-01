@@ -127,14 +127,25 @@ export default function EmployeesPage() {
     setError("");
     
     try {
-      // ✅ 통합 API 사용: Company → BuyerProfile → DisabledEmployee
-      const { getCurrentUserCompany, getCompanyEmployees } = await import("@/lib/unified-api");
-      const companyData = await getCurrentUserCompany();
-      if (!companyData) {
+      // ✅ 직접 /employees API 사용 (모든 필드 반환)
+      const token = localStorage.getItem("token");
+      if (!token) {
         router.push("/login");
         return;
       }
-      const data = await getCompanyEmployees(companyData.companyId);
+
+      const response = await fetch(`${API_BASE}/employees`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("직원 목록을 불러올 수 없습니다.");
+      }
+
+      const result = await response.json();
+      const data = result.employees || [];
       
       // 🔍 디버깅: API 응답 데이터 확인
       console.log("🔍 [fetchEmployees] 직원 수:", data.length);
