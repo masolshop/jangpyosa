@@ -444,6 +444,7 @@ export default function Sidebar() {
                   <MenuItem href="/employee/login" label="장애인직원로그인" icon="👷" active={isActive("/employee/login")} />
                   <MenuItem href="/employee/signup" label="장애인직원회원가입" icon="📝" active={isActive("/employee/signup")} />
                   <MenuItem href="/admin/sales" label="매니저/지사/본부 로그인" icon="👔" active={isActive("/admin/sales")} />
+                  <MenuItem href="/admin/login" label="슈퍼어드민 로그인" icon="🛡️" active={isActive("/admin/login")} />
                 </div>
               </>
             )}
