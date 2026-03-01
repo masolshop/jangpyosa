@@ -662,46 +662,6 @@ router.post('/people/:id/transfer', requireAuth, requireRole('SUPER_ADMIN'), asy
   }
 });
 
-/**
- * DELETE /sales/people/:id
- * 영업 사원 삭제
- */
-router.delete('/people/:id', requireAuth, requireRole('SUPER_ADMIN'), async (req, res) => {
-  try {
-    const { id } = req.params;
-    
-    // 하위 직원이 있는지 확인
-    const subordinates = await prisma.salesPerson.count({
-      where: { managerId: id },
-    });
-    
-    if (subordinates > 0) {
-      return res.status(400).json({ 
-        error: '하위 직원이 있는 사원은 삭제할 수 없습니다. 먼저 하위 직원들을 이동시켜주세요.' 
-      });
-    }
-    
-    await prisma.salesPerson.delete({
-      where: { id },
-    });
-    
-    // 활동 로그 기록
-    await prisma.salesActivityLog.create({
-      data: {
-        adminUserId: req.user!.id,
-        action: 'STATUS_CHANGE',
-        targetId: id,
-        toValue: 'DELETED',
-        notes: `영업 사원 삭제: ${id}`,
-      },
-    });
-    
-    res.json({ success: true });
-  } catch (error: any) {
-    console.error('[DELETE /sales/people/:id] Error:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
 
 /**
  * GET /sales/organization
