@@ -94,9 +94,24 @@ export default function EmployeesPage() {
   // ============================================
 
   useEffect(() => {
+    console.log("🔍 [useEffect] 페이지 로드 시작");
+    
+    const token = getToken();
     const role = getUserRole();
+    
+    console.log("🔍 [useEffect] 토큰:", token ? "존재" : "없음");
+    console.log("🔍 [useEffect] 역할:", role);
+    
+    // 토큰이 없으면 로그인 페이지로 리다이렉트
+    if (!token) {
+      console.warn("⚠️ [useEffect] 토큰이 없습니다. 로그인 페이지로 이동합니다.");
+      router.push("/login");
+      return;
+    }
+    
     // BUYER, SUPPLIER, SUPER_ADMIN 모두 접근 가능
     if (role !== "BUYER" && role !== "SUPPLIER" && role !== "SUPER_ADMIN") {
+      console.warn("⚠️ [useEffect] 권한이 없습니다. 역할:", role);
       router.push("/");
       return;
     }
@@ -109,6 +124,7 @@ export default function EmployeesPage() {
           const user = JSON.parse(userStr);
           setCompanyName(user.company?.name || "");
           setUserName(user.name || "");
+          console.log("🔍 [useEffect] 사용자 정보:", user.name, user.company?.name);
         } catch (e) {
           console.error("사용자 정보 파싱 실패:", e);
         }
