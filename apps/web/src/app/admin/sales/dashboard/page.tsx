@@ -652,75 +652,183 @@ export default function SalesDashboard() {
   };
 
   const loadManagerDashboard = async (token: string) => {
-    // 통계
-    const statsResponse = await fetch(`${API_BASE}/sales/dashboard/stats`, {
-      headers: { 'Authorization': `Bearer ${token}` },
-    });
-    if (statsResponse.ok) {
-      const stats = await statsResponse.json();
-      setManagerStats(stats);
-    }
+    try {
+      // 통계
+      console.log('[Dashboard] Fetching manager stats...');
+      const statsResponse = await fetch(`${API_BASE}/sales/dashboard/stats`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      console.log('[Dashboard] Stats response status:', statsResponse.status);
+      
+      if (statsResponse.ok) {
+        const stats = await statsResponse.json();
+        console.log('[Dashboard] Stats data:', stats);
+        setManagerStats(stats);
+      } else {
+        const errorText = await statsResponse.text();
+        console.error('[Dashboard] Stats error:', errorText);
+        // 기본값 설정
+        setManagerStats({
+          totalCompanies: 0,
+          privateCompanies: 0,
+          publicCompanies: 0,
+          governmentCompanies: 0,
+        });
+      }
 
-    // 추천 기업 리스트
-    const companiesResponse = await fetch(`${API_BASE}/sales/dashboard/companies`, {
-      headers: { 'Authorization': `Bearer ${token}` },
-    });
-    if (companiesResponse.ok) {
-      const companies = await companiesResponse.json();
-      setManagerCompanies(companies);
+      // 추천 기업 리스트
+      console.log('[Dashboard] Fetching companies...');
+      const companiesResponse = await fetch(`${API_BASE}/sales/dashboard/companies`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      console.log('[Dashboard] Companies response status:', companiesResponse.status);
+      
+      if (companiesResponse.ok) {
+        const companies = await companiesResponse.json();
+        console.log('[Dashboard] Companies count:', companies.length);
+        setManagerCompanies(companies);
+      } else {
+        const errorText = await companiesResponse.text();
+        console.error('[Dashboard] Companies error:', errorText);
+        setManagerCompanies([]);
+      }
+    } catch (error) {
+      console.error('[Dashboard] Manager dashboard load error:', error);
+      // 기본값 설정
+      setManagerStats({
+        totalCompanies: 0,
+        privateCompanies: 0,
+        publicCompanies: 0,
+        governmentCompanies: 0,
+      });
+      setManagerCompanies([]);
     }
   };
 
   const loadBranchDashboard = async (token: string) => {
-    // 통계
-    const statsResponse = await fetch(`${API_BASE}/sales/dashboard/stats`, {
-      headers: { 'Authorization': `Bearer ${token}` },
-    });
-    if (statsResponse.ok) {
-      const stats = await statsResponse.json();
-      setBranchStats({
-        totalManagers: stats.managers || 0,
-        totalCompanies: stats.totalCompanies,
-        privateCompanies: stats.privateCompanies,
-        publicCompanies: stats.publicCompanies,
-        governmentCompanies: stats.governmentCompanies,
+    try {
+      // 통계
+      console.log('[Dashboard] Fetching branch stats...');
+      const statsResponse = await fetch(`${API_BASE}/sales/dashboard/stats`, {
+        headers: { 'Authorization': `Bearer ${token}` },
       });
-    }
+      console.log('[Dashboard] Branch stats response status:', statsResponse.status);
+      
+      if (statsResponse.ok) {
+        const stats = await statsResponse.json();
+        console.log('[Dashboard] Branch stats data:', stats);
+        setBranchStats({
+          totalManagers: stats.managers || 0,
+          totalCompanies: stats.totalCompanies,
+          privateCompanies: stats.privateCompanies,
+          publicCompanies: stats.publicCompanies,
+          governmentCompanies: stats.governmentCompanies,
+        });
+      } else {
+        const errorText = await statsResponse.text();
+        console.error('[Dashboard] Branch stats error:', errorText);
+        // 기본값 설정
+        setBranchStats({
+          totalManagers: 0,
+          totalCompanies: 0,
+          privateCompanies: 0,
+          publicCompanies: 0,
+          governmentCompanies: 0,
+        });
+      }
 
-    // 매니저 리스트
-    const managersResponse = await fetch(`${API_BASE}/sales/dashboard/managers`, {
-      headers: { 'Authorization': `Bearer ${token}` },
-    });
-    if (managersResponse.ok) {
-      const managers = await managersResponse.json();
-      setBranchManagers(managers);
+      // 매니저 리스트
+      console.log('[Dashboard] Fetching managers...');
+      const managersResponse = await fetch(`${API_BASE}/sales/dashboard/managers`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      console.log('[Dashboard] Managers response status:', managersResponse.status);
+      
+      if (managersResponse.ok) {
+        const managers = await managersResponse.json();
+        console.log('[Dashboard] Managers count:', managers.length);
+        setBranchManagers(managers);
+      } else {
+        const errorText = await managersResponse.text();
+        console.error('[Dashboard] Managers error:', errorText);
+        setBranchManagers([]);
+      }
+    } catch (error) {
+      console.error('[Dashboard] Branch dashboard load error:', error);
+      // 기본값 설정
+      setBranchStats({
+        totalManagers: 0,
+        totalCompanies: 0,
+        privateCompanies: 0,
+        publicCompanies: 0,
+        governmentCompanies: 0,
+      });
+      setBranchManagers([]);
     }
   };
 
   const loadHeadquartersDashboard = async (token: string) => {
-    // 통계
-    const statsResponse = await fetch(`${API_BASE}/sales/dashboard/stats`, {
-      headers: { 'Authorization': `Bearer ${token}` },
-    });
-    if (statsResponse.ok) {
-      const stats = await statsResponse.json();
-      setHeadquartersStats({
-        totalBranches: stats.branches || 0,
-        totalManagers: stats.managers || 0,
-        totalCompanies: stats.totalCompanies,
-        privateCompanies: stats.privateCompanies,
-        publicCompanies: stats.publicCompanies,
-        governmentCompanies: stats.governmentCompanies,
+    try {
+      // 통계
+      console.log('[Dashboard] Fetching headquarters stats...');
+      const statsResponse = await fetch(`${API_BASE}/sales/dashboard/stats`, {
+        headers: { 'Authorization': `Bearer ${token}` },
       });
-    }
+      console.log('[Dashboard] HQ stats response status:', statsResponse.status);
+      
+      if (statsResponse.ok) {
+        const stats = await statsResponse.json();
+        console.log('[Dashboard] HQ stats data:', stats);
+        setHeadquartersStats({
+          totalBranches: stats.branches || 0,
+          totalManagers: stats.managers || 0,
+          totalCompanies: stats.totalCompanies,
+          privateCompanies: stats.privateCompanies,
+          publicCompanies: stats.publicCompanies,
+          governmentCompanies: stats.governmentCompanies,
+        });
+      } else {
+        const errorText = await statsResponse.text();
+        console.error('[Dashboard] HQ stats error:', errorText);
+        // 기본값 설정
+        setHeadquartersStats({
+          totalBranches: 0,
+          totalManagers: 0,
+          totalCompanies: 0,
+          privateCompanies: 0,
+          publicCompanies: 0,
+          governmentCompanies: 0,
+        });
+      }
 
-    // 지사 리스트
-    const branchesResponse = await fetch(`${API_BASE}/sales/dashboard/branches`, {
-      headers: { 'Authorization': `Bearer ${token}` },
-    });
-    if (branchesResponse.ok) {
-      const branches = await branchesResponse.json();
-      setHeadquartersBranches(branches);
+      // 지사 리스트
+      console.log('[Dashboard] Fetching branches...');
+      const branchesResponse = await fetch(`${API_BASE}/sales/dashboard/branches`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      console.log('[Dashboard] Branches response status:', branchesResponse.status);
+      
+      if (branchesResponse.ok) {
+        const branches = await branchesResponse.json();
+        console.log('[Dashboard] Branches count:', branches.length);
+        setHeadquartersBranches(branches);
+      } else {
+        const errorText = await branchesResponse.text();
+        console.error('[Dashboard] Branches error:', errorText);
+        setHeadquartersBranches([]);
+      }
+    } catch (error) {
+      console.error('[Dashboard] Headquarters dashboard load error:', error);
+      // 기본값 설정
+      setHeadquartersStats({
+        totalBranches: 0,
+        totalManagers: 0,
+        totalCompanies: 0,
+        privateCompanies: 0,
+        publicCompanies: 0,
+        governmentCompanies: 0,
+      });
+      setHeadquartersBranches([]);
     }
   };
 
@@ -782,28 +890,55 @@ export default function SalesDashboard() {
 
       {/* 메인 컨텐츠 */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {accountInfo?.role === 'MANAGER' && managerStats && (
-          <ManagerDashboard
-            accountInfo={accountInfo}
-            stats={managerStats}
-            companies={managerCompanies}
-          />
+        {accountInfo?.role === 'MANAGER' && (
+          <>
+            {!managerStats ? (
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <p className="text-gray-600">데이터를 불러오는 중...</p>
+              </div>
+            ) : (
+              <ManagerDashboard
+                accountInfo={accountInfo}
+                stats={managerStats}
+                companies={managerCompanies}
+              />
+            )}
+          </>
         )}
         
-        {accountInfo?.role === 'BRANCH_MANAGER' && branchStats && (
-          <BranchDashboard
-            accountInfo={accountInfo}
-            stats={branchStats}
-            managers={branchManagers}
-          />
+        {accountInfo?.role === 'BRANCH_MANAGER' && (
+          <>
+            {!branchStats ? (
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <p className="text-gray-600">데이터를 불러오는 중...</p>
+              </div>
+            ) : (
+              <BranchDashboard
+                accountInfo={accountInfo}
+                stats={branchStats}
+                managers={branchManagers}
+              />
+            )}
+          </>
         )}
         
-        {accountInfo?.role === 'HEAD_MANAGER' && headquartersStats && (
-          <HeadquartersDashboard
-            accountInfo={accountInfo}
-            stats={headquartersStats}
-            branches={headquartersBranches}
-          />
+        {accountInfo?.role === 'HEAD_MANAGER' && (
+          <>
+            {!headquartersStats ? (
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <p className="text-gray-600">데이터를 불러오는 중...</p>
+              </div>
+            ) : (
+              <HeadquartersDashboard
+                accountInfo={accountInfo}
+                stats={headquartersStats}
+                branches={headquartersBranches}
+              />
+            )}
+          </>
         )}
       </div>
     </div>
