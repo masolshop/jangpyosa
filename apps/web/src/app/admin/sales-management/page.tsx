@@ -1080,11 +1080,13 @@ export default function SalesManagementPage() {
                   }}
                   style={{
                     padding: '10px 20px',
-                    backgroundColor: '#f5f5f5',
-                    border: '1px solid #ddd',
+                    backgroundColor: '#2196F3',
+                    color: 'white',
+                    border: 'none',
                     borderRadius: 4,
                     cursor: 'pointer',
                     fontSize: 14,
+                    fontWeight: 500,
                   }}
                 >
                   취소
@@ -1244,11 +1246,13 @@ export default function SalesManagementPage() {
                   }}
                   style={{
                     padding: '10px 20px',
-                    backgroundColor: '#f5f5f5',
-                    border: '1px solid #ddd',
+                    backgroundColor: '#2196F3',
+                    color: 'white',
+                    border: 'none',
                     borderRadius: 4,
                     cursor: 'pointer',
                     fontSize: 14,
+                    fontWeight: 500,
                   }}
                 >
                   취소
@@ -1457,11 +1461,13 @@ export default function SalesManagementPage() {
                   }}
                   style={{
                     padding: '10px 20px',
-                    backgroundColor: '#f5f5f5',
-                    border: '1px solid #ddd',
+                    backgroundColor: '#2196F3',
+                    color: 'white',
+                    border: 'none',
                     borderRadius: 4,
                     cursor: 'pointer',
                     fontSize: 14,
+                    fontWeight: 500,
                   }}
                 >
                   취소
@@ -1531,11 +1537,13 @@ export default function SalesManagementPage() {
                   }}
                   style={{
                     padding: '10px 20px',
-                    backgroundColor: '#f5f5f5',
-                    border: '1px solid #ddd',
+                    backgroundColor: '#2196F3',
+                    color: 'white',
+                    border: 'none',
                     borderRadius: 4,
                     cursor: 'pointer',
                     fontSize: 14,
+                    fontWeight: 500,
                   }}
                 >
                   취소
