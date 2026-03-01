@@ -868,7 +868,9 @@ export default function SalesManagementPage() {
                               📞 {branch.phone} | ✉️ {branch.email || '-'}
                             </div>
                             <div style={{ fontSize: 13, color: '#666', marginTop: 4 }}>
-                              추천: {branch.totalReferrals}명 | 매출: ₩{branch.totalRevenue.toLocaleString()} | 커미션: ₩{branch.commission.toLocaleString()}
+                              <span style={{ fontWeight: 600, color: '#f57c00' }}>
+                                소속매니저 {branch.subordinates?.length || 0}명
+                              </span>
                             </div>
                           </div>
                           <div style={{ display: 'flex', gap: 8 }}>
