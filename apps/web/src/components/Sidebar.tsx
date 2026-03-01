@@ -418,7 +418,7 @@ export default function Sidebar() {
               )}
               <MenuItem href="/dashboard/contracts" label="도급계약 이행·결제 관리" icon="📋" active={pathname?.startsWith("/dashboard/contracts")} requiresRole={["BUYER", "SUPER_ADMIN", "SUPPLIER"]} currentRole={userRole} />
               <MenuItem href="/dashboard/performances" label="월별 도급계약감면관리" icon="📊" active={pathname?.startsWith("/dashboard/performances")} requiresRole={["BUYER", "SUPER_ADMIN", "SUPPLIER"]} currentRole={userRole} />
-              <MenuItem href="/purchase-cases" label="장애인표준사업장생산품 구매 사례" icon="📦" active={isActive("/purchase-cases")} />
+              <MenuItem href="/purchase-cases" label="연계고용감면사례" icon="📦" active={isActive("/purchase-cases")} />
               <MenuItem href="/contract-sample" label="표준도급계약서 샘플" icon="📄" active={isActive("/contract-sample")} />
             </div>
           )}
