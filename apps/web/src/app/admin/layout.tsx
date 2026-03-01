@@ -24,8 +24,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const checkAuth = useCallback(() => {
-    // 로그인 페이지와 매니저 페이지는 인증 체크 스킵
-    if (pathname === LOGIN_PATH || pathname === SALES_PATH) {
+    // 로그인 페이지와 매니저 페이지(/admin/sales로 시작하는 모든 경로)는 인증 체크 스킵
+    if (pathname === LOGIN_PATH || pathname?.startsWith(SALES_PATH)) {
       setLoading(false);
       setIsAuthenticated(true);
       return;
@@ -77,8 +77,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     checkAuth();
   }, [checkAuth]);
 
-  // 로그인 페이지와 매니저 페이지는 사이드바 없이 표시
-  if (pathname === LOGIN_PATH || pathname === SALES_PATH) {
+  // 로그인 페이지와 매니저 페이지(/admin/sales로 시작)는 사이드바 없이 표시
+  if (pathname === LOGIN_PATH || pathname?.startsWith(SALES_PATH)) {
     return <>{children}</>;
   }
 
