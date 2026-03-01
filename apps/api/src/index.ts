@@ -103,6 +103,14 @@ app.listen(config.port, '127.0.0.1', async () => {
   console.log(`📊 Database: ${process.env.DATABASE_URL?.split("@")[1] || "local"}`);
   console.log(`🔐 APICK Provider: ${config.apickProvider}`);
   
+  // 근태 스케줄러 시작
+  try {
+    const { startAttendanceSchedulers } = await import('./schedulers/attendanceScheduler.js');
+    startAttendanceSchedulers();
+  } catch (error) {
+    console.error('⚠️  근태 스케줄러 시작 실패:', error);
+  }
+  
   // 서버 시작 시 만료된 초대 코드 자동 정리 (한국 시간 기준)
   try {
     const kstNow = getKSTNow();

@@ -521,3 +521,88 @@ export async function notifyAttendanceReminder(params: {
     category: NotificationCategory.GENERAL,
   });
 }
+
+/**
+ * 지각 알림 (편의 함수)
+ */
+export async function notifyAttendanceLate(
+  buyerId: string,
+  employeeName: string,
+  employeeId: string,
+  currentTime: string
+) {
+  // 관리자 찾기
+  const managers = await prisma.user.findMany({
+    where: {
+      role: 'BUYER',
+      company: { buyerProfile: { id: buyerId } }
+    },
+    select: { id: true }
+  });
+  
+  if (managers.length === 0) return;
+  
+  return notifyAttendanceIssue({
+    managerIds: managers.map(m => m.id),
+    employeeName,
+    issueType: 'LATE',
+    date: new Date().toISOString().split('T')[0],
+    details: `${currentTime} 기준`
+  });
+}
+
+/**
+ * 조퇴 알림 (편의 함수)
+ */
+export async function notifyAttendanceEarlyLeave(
+  buyerId: string,
+  employeeName: string,
+  employeeId: string,
+  leaveTime: string
+) {
+  const managers = await prisma.user.findMany({
+    where: {
+      role: 'BUYER',
+      company: { buyerProfile: { id: buyerId } }
+    },
+    select: { id: true }
+  });
+  
+  if (managers.length === 0) return;
+  
+  return notifyAttendanceIssue({
+    managerIds: managers.map(m => m.id),
+    employeeName,
+    issueType: 'EARLY_LEAVE',
+    date: new Date().toISOString().split('T')[0],
+    details: `${leaveTime} 퇴근`
+  });
+}
+
+/**
+ * 무단결근 알림 (편의 함수)
+ */
+export async function notifyAttendanceAbsent(
+  buyerId: string,
+  employeeName: string,
+  employeeId: string,
+  date: string
+) {
+  const managers = await prisma.user.findMany({
+    where: {
+      role: 'BUYER',
+      company: { buyerProfile: { id: buyerId } }
+    },
+    select: { id: true }
+  });
+  
+  if (managers.length === 0) return;
+  
+  return notifyAttendanceIssue({
+    managerIds: managers.map(m => m.id),
+    employeeName,
+    issueType: 'ABSENT',
+    date,
+    details: undefined
+  });
+}

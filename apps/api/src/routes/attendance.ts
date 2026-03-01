@@ -177,6 +177,27 @@ router.post("/clock-out", requireAuth, async (req, res) => {
 
     const workHours = Math.round((workMinutes / 60) * 100) / 100; // 소수점 2자리
 
+    // 조퇴 체크 (17:00 이전)
+    const hour = now.getHours();
+    if (hour < 17) {
+      // 직원 정보 조회
+      const employee = await prisma.disabledEmployee.findUnique({
+        where: { id: user.employeeId },
+        select: { name: true, buyerId: true }
+      });
+      
+      if (employee) {
+        // 동적 import로 notificationService 로드
+        const { notifyAttendanceEarlyLeave } = await import('../services/notificationService.js');
+        await notifyAttendanceEarlyLeave(
+          employee.buyerId,
+          employee.name,
+          user.employeeId,
+          clockOutTime
+        );
+      }
+    }
+
     // 퇴근 기록 업데이트
     const updated = await prisma.attendanceRecord.update({
       where: { id: record.id },
@@ -541,6 +562,74 @@ router.delete("/:id", requireAuth, async (req, res) => {
     return res.json({ success: true, message: "출퇴근 기록이 삭제되었습니다." });
   } catch (error: any) {
     console.error("출퇴근 기록 삭제 실패:", error);
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================
+// 테스트 엔드포인트 (개발/검증용)
+// ============================================
+
+/**
+ * POST /attendance/test/check-late
+ * 지각 체크 수동 실행 (테스트용)
+ */
+router.post("/test/check-late", requireAuth, async (req, res) => {
+  try {
+    const userRole = req.user!.role;
+    
+    // 관리자만 실행 가능
+    if (!['BUYER', 'SUPER_ADMIN'].includes(userRole)) {
+      return res.status(403).json({ error: "관리자만 실행할 수 있습니다." });
+    }
+    
+    const { runAttendanceLateCheck } = await import('../schedulers/attendanceScheduler.js');
+    const result = await runAttendanceLateCheck();
+    
+    return res.json({
+      success: true,
+      message: "지각 체크 완료",
+      count: result.count,
+      employees: result.employees.map(e => ({
+        id: e.id,
+        name: e.name,
+        buyerId: e.buyerId
+      }))
+    });
+  } catch (error: any) {
+    console.error("지각 체크 실행 실패:", error);
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * POST /attendance/test/check-absent
+ * 무단결근 체크 수동 실행 (테스트용)
+ */
+router.post("/test/check-absent", requireAuth, async (req, res) => {
+  try {
+    const userRole = req.user!.role;
+    
+    // 관리자만 실행 가능
+    if (!['BUYER', 'SUPER_ADMIN'].includes(userRole)) {
+      return res.status(403).json({ error: "관리자만 실행할 수 있습니다." });
+    }
+    
+    const { runAttendanceAbsentCheck } = await import('../schedulers/attendanceScheduler.js');
+    const result = await runAttendanceAbsentCheck();
+    
+    return res.json({
+      success: true,
+      message: "무단결근 체크 완료",
+      count: result.count,
+      employees: result.employees.map(e => ({
+        id: e.id,
+        name: e.name,
+        buyerId: e.buyerId
+      }))
+    });
+  } catch (error: any) {
+    console.error("무단결근 체크 실행 실패:", error);
     return res.status(500).json({ error: error.message });
   }
 });
