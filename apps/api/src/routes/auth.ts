@@ -1075,6 +1075,7 @@ r.post("/signup/employee", async (req, res) => {
         name: employee.name,
         role: "EMPLOYEE",
         employeeId: employee.id,
+        companyId: employee.buyer.company.id, // ✅ companyId 설정 추가
         companyBizNo: cleanBizNo,
         privacyAgreed: body.privacyAgreed,
         privacyAgreedAt: getKSTNow(),

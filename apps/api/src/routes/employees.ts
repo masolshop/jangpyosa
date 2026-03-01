@@ -163,6 +163,21 @@ router.post("/", requireAuth, async (req, res) => {
       },
     });
 
+    // ✅ 연관된 User 계정의 companyId 업데이트
+    if (employee.phone) {
+      const cleanPhone = employee.phone.replace(/\D/g, "");
+      await prisma.user.updateMany({
+        where: {
+          phone: cleanPhone,
+          employeeId: employee.id,
+          role: "EMPLOYEE",
+        },
+        data: {
+          companyId: company.id,
+        },
+      });
+    }
+
     return res.json({ employee });
   } catch (error: any) {
     console.error("직원 추가 실패:", error);
