@@ -43,6 +43,7 @@ export default function SalesLoginPage() {
   const router = useRouter();
   const [isLogin, setIsLogin] = useState(true); // true: 로그인, false: 회원가입
   const [loading, setLoading] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true); // 인증 체크 중
   const [error, setError] = useState('');
 
   // 로그인 폼
@@ -82,12 +83,38 @@ export default function SalesLoginPage() {
 
   // 이미 로그인되어 있는지 확인
   useEffect(() => {
-    const token = getManagerToken();
-    const info = getManagerInfo();
-    if (token && info) {
-      // 이미 로그인되어 있으면 대시보드로 리다이렉트
-      router.push('/admin/sales/dashboard');
-    }
+    const checkAuth = async () => {
+      const token = getManagerToken();
+      if (!token) {
+        console.log('[Login] No token found');
+        setCheckingAuth(false);
+        return;
+      }
+
+      try {
+        console.log('[Login] Verifying token...');
+        const response = await fetch(`${API_BASE}/sales/auth/me`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          console.log('[Login] Token valid, redirecting to dashboard');
+          router.push('/admin/sales/dashboard');
+        } else {
+          console.log('[Login] Token invalid, clearing auth');
+          clearManagerAuth();
+          setCheckingAuth(false);
+        }
+      } catch (error) {
+        console.error('[Login] Auth check error:', error);
+        clearManagerAuth();
+        setCheckingAuth(false);
+      }
+    };
+
+    checkAuth();
   }, [router]);
 
   // 본부/지사 목록 로드
@@ -279,6 +306,38 @@ export default function SalesLoginPage() {
       setLoading(false);
     }
   };
+
+  // 인증 체크 중일 때 로딩 표시
+  if (checkingAuth) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}>
+        <div style={{ textAlign: 'center', color: 'white' }}>
+          <div style={{
+            border: '4px solid rgba(255,255,255,0.3)',
+            borderTop: '4px solid white',
+            borderRadius: '50%',
+            width: 50,
+            height: 50,
+            animation: 'spin 1s linear infinite',
+            margin: '0 auto 20px',
+          }} />
+          <p style={{ fontSize: 18 }}>인증 확인 중...</p>
+          <style jsx>{`
+            @keyframes spin {
+              0% { transform: rotate(0deg); }
+              100% { transform: rotate(360deg); }
+            }
+          `}</style>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{
