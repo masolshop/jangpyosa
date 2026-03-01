@@ -160,6 +160,16 @@ export default function EmployeesPage() {
         monthlyWorkHours: form.monthlyWorkHours || null,
       };
 
+      // 🔍 디버깅: 전송할 데이터 확인
+      console.log("🔍 [직원 등록] 전송할 데이터:", JSON.stringify({
+        name: employeeData.name,
+        phone: employeeData.phone,
+        registrationNumber: employeeData.registrationNumber,
+        disabilityType: employeeData.disabilityType,
+        disabilityGrade: employeeData.disabilityGrade,
+        severity: employeeData.severity,
+      }, null, 2));
+
       if (editingId) {
         await updateEmployee(editingId, employeeData as any);
       } else {
@@ -172,6 +182,7 @@ export default function EmployeesPage() {
       setMessage(editingId ? "✅ 직원 정보가 수정되었습니다." : "✅ 직원이 등록되었습니다.");
       setTimeout(() => setMessage(""), 3000);
     } catch (e: any) {
+      console.error("❌ [직원 등록] 에러:", e);
       setError(e.message);
     }
   }
