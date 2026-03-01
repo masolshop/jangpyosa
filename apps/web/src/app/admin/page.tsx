@@ -20,6 +20,8 @@ export default function AdminRootPage() {
   const [pendingPeople, setPendingPeople] = useState<PendingSalesPerson[]>([]);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [showApprovalModal, setShowApprovalModal] = useState(false);
+  const [selectedPerson, setSelectedPerson] = useState<PendingSalesPerson | null>(null);
 
   useEffect(() => {
     checkAuthAndRedirect();
@@ -57,10 +59,6 @@ export default function AdminRootPage() {
   };
 
   const handleApprove = async (personId: string) => {
-    if (!confirm('이 매니저를 승인하시겠습니까?')) {
-      return;
-    }
-
     try {
       await apiFetch(`/sales/people/${personId}/toggle-active`, {
         method: 'POST',
@@ -71,11 +69,18 @@ export default function AdminRootPage() {
 
       setSuccessMessage('승인이 완료되었습니다.');
       setTimeout(() => setSuccessMessage(''), 3000);
+      setShowApprovalModal(false);
+      setSelectedPerson(null);
       loadPendingPeople();
     } catch (err: any) {
       setError(err.message || '승인 실패');
       setTimeout(() => setError(''), 3000);
     }
+  };
+
+  const handleShowApprovalModal = (person: PendingSalesPerson) => {
+    setSelectedPerson(person);
+    setShowApprovalModal(true);
   };
 
   const handleReject = async (personId: string) => {
@@ -284,7 +289,7 @@ export default function AdminRootPage() {
                   </div>
                   <div style={{ display: 'flex', gap: 8 }}>
                     <button
-                      onClick={() => handleApprove(person.id)}
+                      onClick={() => handleShowApprovalModal(person)}
                       style={{
                         padding: '10px 20px',
                         background: '#4CAF50',
@@ -369,6 +374,173 @@ export default function AdminRootPage() {
             <p style={{ fontSize: 18, color: '#666', margin: 0 }}>
               승인 대기 중인 매니저가 없습니다.
             </p>
+          </div>
+        )}
+
+        {/* 승인 확인 모달 */}
+        {showApprovalModal && selectedPerson && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 1000,
+          }}>
+            <div style={{
+              background: 'white',
+              borderRadius: 12,
+              padding: 32,
+              maxWidth: 600,
+              width: '90%',
+              maxHeight: '80vh',
+              overflow: 'auto',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
+            }}>
+              <h2 style={{ fontSize: 24, fontWeight: 'bold', marginBottom: 24, color: '#333' }}>
+                📋 가입 정보 확인
+              </h2>
+
+              <div style={{
+                background: '#f9f9f9',
+                borderRadius: 8,
+                padding: 24,
+                marginBottom: 24,
+              }}>
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ fontSize: 14, color: '#666', display: 'block', marginBottom: 4 }}>
+                    역할
+                  </label>
+                  <div style={{
+                    fontSize: 16,
+                    fontWeight: 'bold',
+                    color: '#333',
+                    display: 'inline-block',
+                    background: '#4CAF50',
+                    color: 'white',
+                    padding: '6px 12px',
+                    borderRadius: 6,
+                  }}>
+                    {getRoleName(selectedPerson.role)}
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ fontSize: 14, color: '#666', display: 'block', marginBottom: 4 }}>
+                    이름
+                  </label>
+                  <div style={{ fontSize: 18, fontWeight: 'bold', color: '#333' }}>
+                    {selectedPerson.name}
+                  </div>
+                </div>
+
+                {selectedPerson.organizationName && (
+                  <div style={{ marginBottom: 16 }}>
+                    <label style={{ fontSize: 14, color: '#666', display: 'block', marginBottom: 4 }}>
+                      조직명
+                    </label>
+                    <div style={{ fontSize: 16, color: '#333' }}>
+                      {selectedPerson.organizationName}
+                    </div>
+                  </div>
+                )}
+
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ fontSize: 14, color: '#666', display: 'block', marginBottom: 4 }}>
+                    전화번호
+                  </label>
+                  <div style={{ fontSize: 16, color: '#333' }}>
+                    📱 {selectedPerson.phone}
+                  </div>
+                </div>
+
+                {selectedPerson.email && (
+                  <div style={{ marginBottom: 16 }}>
+                    <label style={{ fontSize: 14, color: '#666', display: 'block', marginBottom: 4 }}>
+                      이메일
+                    </label>
+                    <div style={{ fontSize: 16, color: '#333' }}>
+                      📧 {selectedPerson.email}
+                    </div>
+                  </div>
+                )}
+
+                <div style={{ marginBottom: 0 }}>
+                  <label style={{ fontSize: 14, color: '#666', display: 'block', marginBottom: 4 }}>
+                    가입일
+                  </label>
+                  <div style={{ fontSize: 16, color: '#333' }}>
+                    🗓️ {new Date(selectedPerson.createdAt).toLocaleString('ko-KR')}
+                  </div>
+                </div>
+              </div>
+
+              <div style={{
+                background: '#fff3cd',
+                border: '1px solid #ffc107',
+                borderRadius: 8,
+                padding: 16,
+                marginBottom: 24,
+              }}>
+                <p style={{ margin: 0, color: '#856404', fontSize: 14 }}>
+                  ⚠️ 승인하시겠습니까? 승인 후 해당 매니저는 로그인하여 시스템을 사용할 수 있습니다.
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+                <button
+                  onClick={() => {
+                    setShowApprovalModal(false);
+                    setSelectedPerson(null);
+                  }}
+                  style={{
+                    padding: '12px 24px',
+                    background: '#666',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: 8,
+                    fontSize: 16,
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = '#555';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = '#666';
+                  }}
+                >
+                  취소
+                </button>
+                <button
+                  onClick={() => handleApprove(selectedPerson.id)}
+                  style={{
+                    padding: '12px 24px',
+                    background: '#4CAF50',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: 8,
+                    fontSize: 16,
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = '#45a049';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = '#4CAF50';
+                  }}
+                >
+                  ✓ 승인하기
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>
