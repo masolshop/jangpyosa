@@ -435,7 +435,7 @@ export default function Sidebar() {
               <div style={{ fontSize: 21.424, color: "#fff", marginBottom: 12, fontWeight: "bold", textAlign: "center" }}>
                 슈퍼어드민
               </div>
-              <MenuItem href="/admin/sales" label="영업관리 대시보드" icon="📊" active={isActive("/admin/sales")} />
+              <MenuItem href="/admin/" label="영업관리 대시보드" icon="📊" active={isActive("/admin/")} />
               <MenuItem href="/admin/company" label="기업관리 대시보드" icon="🏢" active={isActive("/admin/company")} />
               <MenuItem href="/admin/standard-workplace" label="표준사업장 대시보드" icon="🏭" active={isActive("/admin/standard-workplace")} />
             </div>
