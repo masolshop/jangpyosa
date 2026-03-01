@@ -173,12 +173,6 @@ router.post('/signup', async (req, res) => {
         totalRevenue: 0,
         commission: 0,
         isActive: true,
-        // 실명인증 정보 저장 (선택적)
-        metadata: {
-          rrn1, // 주민번호 앞자리 (생년월일)
-          rrnVerified: true, // 실명인증 완료
-          verifiedAt: new Date().toISOString(),
-        } as any,
       },
     });
 
