@@ -218,8 +218,15 @@ export default function OrganizationsManagementPage() {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
       });
+      
+      // 응답 타입 확인
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('서버에서 잘못된 응답을 반환했습니다');
+      }
       
       const data = await response.json();
       
@@ -229,9 +236,9 @@ export default function OrganizationsManagementPage() {
       } else {
         showMessage('error', data.error || '초기화에 실패했습니다');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('전체 초기화 에러:', error);
-      showMessage('error', '서버 연결에 실패했습니다');
+      showMessage('error', error.message || '서버 연결에 실패했습니다');
     }
   };
 
