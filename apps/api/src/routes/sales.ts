@@ -475,6 +475,145 @@ router.post('/people/:id/toggle-active', requireAuth, requireRole('SUPER_ADMIN')
 });
 
 /**
+ * PUT /sales/people/:id
+ * 영업 사원 정보 수정
+ */
+router.put('/people/:id', requireAuth, requireRole('SUPER_ADMIN'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, phone, email } = req.body;
+    
+    const salesPerson = await prisma.salesPerson.findUnique({
+      where: { id },
+    });
+    
+    if (!salesPerson) {
+      return res.status(404).json({ error: '영업 사원을 찾을 수 없습니다' });
+    }
+    
+    // 전화번호 중복 체크 (자신 제외)
+    if (phone) {
+      const cleanPhone = phone.replace(/[-\s]/g, '');
+      const existingPerson = await prisma.salesPerson.findFirst({
+        where: {
+          phone: cleanPhone,
+          id: { not: id },
+        },
+      });
+      
+      if (existingPerson) {
+        return res.status(400).json({ error: '이미 사용 중인 전화번호입니다' });
+      }
+      
+      const existingUser = await prisma.user.findFirst({
+        where: {
+          phone: cleanPhone,
+          id: { not: salesPerson.userId },
+        },
+      });
+      
+      if (existingUser) {
+        return res.status(400).json({ error: '이미 사용 중인 전화번호입니다' });
+      }
+    }
+    
+    // SalesPerson 업데이트
+    const updated = await prisma.salesPerson.update({
+      where: { id },
+      data: {
+        name: name || salesPerson.name,
+        phone: phone ? phone.replace(/[-\s]/g, '') : salesPerson.phone,
+        email: email || salesPerson.email,
+      },
+      include: {
+        manager: true,
+        subordinates: true,
+      },
+    });
+    
+    // User 테이블도 업데이트
+    await prisma.user.update({
+      where: { id: salesPerson.userId },
+      data: {
+        name: name || salesPerson.name,
+        phone: phone ? phone.replace(/[-\s]/g, '') : salesPerson.phone,
+        email: email || salesPerson.email,
+      },
+    });
+    
+    res.json({ 
+      success: true,
+      message: '정보가 수정되었습니다',
+      salesPerson: updated 
+    });
+  } catch (error: any) {
+    console.error('[PUT /sales/people/:id] Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * DELETE /sales/people/:id
+ * 영업 사원 삭제 (소프트 삭제 - 비활성화)
+ */
+router.delete('/people/:id', requireAuth, requireRole('SUPER_ADMIN'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const salesPerson = await prisma.salesPerson.findUnique({
+      where: { id },
+      include: {
+        subordinates: true,
+      },
+    });
+    
+    if (!salesPerson) {
+      return res.status(404).json({ error: '영업 사원을 찾을 수 없습니다' });
+    }
+    
+    // 하위 조직이 있는 경우 삭제 불가
+    if (salesPerson.subordinates && salesPerson.subordinates.length > 0) {
+      return res.status(400).json({ 
+        error: '하위 조직이 있어 삭제할 수 없습니다. 먼저 하위 조직을 재배치하거나 삭제해주세요.',
+        subordinatesCount: salesPerson.subordinates.length
+      });
+    }
+    
+    // 소프트 삭제 (비활성화)
+    await prisma.salesPerson.update({
+      where: { id },
+      data: {
+        isActive: false,
+        inactiveReason: '슈퍼어드민에 의해 삭제됨',
+      },
+    });
+    
+    // User 테이블에는 isActive가 없으므로 생략
+    
+    // 활동 로그 기록
+    await prisma.salesActivityLog.create({
+      data: {
+        salesPersonId: id,
+        adminUserId: req.user!.id,
+        action: SalesAction.STATUS_CHANGE,
+        fromValue: 'ACTIVE',
+        toValue: 'DELETED',
+        reason: '슈퍼어드민에 의해 삭제됨',
+        notes: `영업 사원 삭제: ${salesPerson.name}`,
+      },
+    });
+    
+    res.json({ 
+      success: true,
+      message: '삭제되었습니다' 
+    });
+  } catch (error: any) {
+    console.error('[DELETE /sales/people/:id] Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
  * POST /sales/people/:id/transfer
  * 영업 사원 조직 이동
  */

@@ -53,6 +53,15 @@ export default function SalesManagementPage() {
     email: '',
     password: '',
   });
+  
+  // 수정 모달 상태
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingPerson, setEditingPerson] = useState<SalesPerson | null>(null);
+  const [editData, setEditData] = useState({
+    name: '',
+    phone: '',
+    email: '',
+  });
 
   // 영업 인원 목록 로드
   useEffect(() => {
@@ -184,6 +193,64 @@ export default function SalesManagementPage() {
       setSelectedHeadManagerId(headManagerId);
     }
     setShowCreateModal(true);
+  };
+
+  const openEditModal = (person: SalesPerson) => {
+    setEditingPerson(person);
+    setEditData({
+      name: person.name,
+      phone: person.phone,
+      email: person.email || '',
+    });
+    setShowEditModal(true);
+  };
+
+  const handleEdit = async () => {
+    if (!editingPerson) return;
+    
+    if (!editData.name || !editData.phone) {
+      setError('이름과 전화번호는 필수입니다.');
+      setTimeout(() => setError(''), 3000);
+      return;
+    }
+
+    try {
+      await apiFetch(`/sales/people/${editingPerson.id}`, {
+        method: 'PUT',
+        body: JSON.stringify(editData),
+      });
+
+      setSuccessMessage('정보가 수정되었습니다.');
+      setTimeout(() => setSuccessMessage(''), 3000);
+      
+      setShowEditModal(false);
+      setEditingPerson(null);
+      setEditData({ name: '', phone: '', email: '' });
+      
+      loadSalesPeople();
+    } catch (err: any) {
+      setError(err.message || '수정 실패');
+      setTimeout(() => setError(''), 3000);
+    }
+  };
+
+  const handleDelete = async (person: SalesPerson) => {
+    if (!confirm(`정말 ${person.name}을(를) 삭제하시겠습니까?\n\n주의: 이 작업은 되돌릴 수 없습니다.`)) {
+      return;
+    }
+
+    try {
+      await apiFetch(`/sales/people/${person.id}`, {
+        method: 'DELETE',
+      });
+
+      setSuccessMessage('삭제되었습니다.');
+      setTimeout(() => setSuccessMessage(''), 3000);
+      loadSalesPeople();
+    } catch (err: any) {
+      setError(err.message || '삭제 실패');
+      setTimeout(() => setError(''), 3000);
+    }
   };
 
   const getRoleName = (role: string) => {
@@ -594,24 +661,56 @@ export default function SalesManagementPage() {
                         📞 {headManager.phone} | ✉️ {headManager.email || '-'}
                       </div>
                       <div style={{ fontSize: 14, color: '#666', marginTop: 4 }}>
-                        추천: {headManager.totalReferrals}명 | 매출: ₩{headManager.totalRevenue.toLocaleString()}
+                        지사 {headManager.subordinates?.filter(s => s.role === 'BRANCH_MANAGER').length || 0}개 | 소속매니저 {headManager.subordinates?.filter(s => s.role === 'MANAGER').length || 0}명
                       </div>
                     </div>
-                    <button
-                      onClick={() => openCreateModal('BRANCH_MANAGER', headManager.id)}
-                      style={{
-                        padding: '8px 16px',
-                        backgroundColor: '#f57c00',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: 4,
-                        cursor: 'pointer',
-                        fontSize: 14,
-                        fontWeight: 600,
-                      }}
-                    >
-                      + 지사 생성
-                    </button>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button
+                        onClick={() => openEditModal(headManager)}
+                        style={{
+                          padding: '8px 16px',
+                          backgroundColor: '#1976d2',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: 4,
+                          cursor: 'pointer',
+                          fontSize: 14,
+                          fontWeight: 600,
+                        }}
+                      >
+                        ✏️ 수정
+                      </button>
+                      <button
+                        onClick={() => openCreateModal('BRANCH_MANAGER', headManager.id)}
+                        style={{
+                          padding: '8px 16px',
+                          backgroundColor: '#f57c00',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: 4,
+                          cursor: 'pointer',
+                          fontSize: 14,
+                          fontWeight: 600,
+                        }}
+                      >
+                        + 지사 생성
+                      </button>
+                      <button
+                        onClick={() => handleDelete(headManager)}
+                        style={{
+                          padding: '8px 16px',
+                          backgroundColor: '#d32f2f',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: 4,
+                          cursor: 'pointer',
+                          fontSize: 14,
+                          fontWeight: 600,
+                        }}
+                      >
+                        🗑️ 삭제
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -640,6 +739,21 @@ export default function SalesManagementPage() {
                           </div>
                           <div style={{ display: 'flex', gap: 8 }}>
                             <button
+                              onClick={() => openEditModal(branch)}
+                              style={{
+                                padding: '6px 12px',
+                                backgroundColor: '#1976d2',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: 4,
+                                cursor: 'pointer',
+                                fontSize: 12,
+                                fontWeight: 600,
+                              }}
+                            >
+                              ✏️ 수정
+                            </button>
+                            <button
                               onClick={() => handleToggleActive(branch.id, branch.isActive)}
                               style={{
                                 padding: '6px 12px',
@@ -652,6 +766,21 @@ export default function SalesManagementPage() {
                               }}
                             >
                               {branch.isActive ? '비활성화' : '활성화'}
+                            </button>
+                            <button
+                              onClick={() => handleDelete(branch)}
+                              style={{
+                                padding: '6px 12px',
+                                backgroundColor: '#d32f2f',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: 4,
+                                cursor: 'pointer',
+                                fontSize: 12,
+                                fontWeight: 600,
+                              }}
+                            >
+                              🗑️ 삭제
                             </button>
                           </div>
                         </div>
@@ -682,6 +811,170 @@ export default function SalesManagementPage() {
                 아직 본부가 없습니다. "+ 본부 생성" 버튼을 눌러 본부를 추가하세요.
               </div>
             )}
+          </div>
+        )}
+
+        {/* 수정 모달 */}
+        {showEditModal && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+          }}>
+            <div style={{
+              backgroundColor: 'white',
+              borderRadius: 8,
+              padding: 32,
+              width: '100%',
+              maxWidth: 500,
+              boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+              position: 'relative',
+            }}>
+              {/* X 닫기 버튼 */}
+              <button
+                onClick={() => {
+                  setShowEditModal(false);
+                  setEditingPerson(null);
+                  setEditData({ name: '', phone: '', email: '' });
+                }}
+                style={{
+                  position: 'absolute',
+                  top: 16,
+                  right: 16,
+                  width: 32,
+                  height: 32,
+                  border: 'none',
+                  backgroundColor: 'transparent',
+                  fontSize: 24,
+                  color: '#999',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: 4,
+                  transition: 'all 0.2s',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#f5f5f5';
+                  e.currentTarget.style.color = '#333';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.color = '#999';
+                }}
+              >
+                ✕
+              </button>
+
+              <h2 style={{ fontSize: 24, fontWeight: 'bold', marginBottom: 8 }}>
+                ✏️ 정보 수정
+              </h2>
+              <p style={{ fontSize: 14, color: '#666', marginBottom: 24 }}>
+                {editingPerson?.name}의 정보를 수정합니다.
+              </p>
+
+              <div style={{ marginBottom: 20 }}>
+                <label style={{ display: 'block', marginBottom: 8, fontWeight: 600, fontSize: 14 }}>
+                  이름 *
+                </label>
+                <input
+                  type="text"
+                  value={editData.name}
+                  onChange={(e) => setEditData({ ...editData, name: e.target.value })}
+                  placeholder="예: 홍길동"
+                  style={{
+                    width: '100%',
+                    padding: 12,
+                    border: '1px solid #ddd',
+                    borderRadius: 4,
+                    fontSize: 14,
+                    boxSizing: 'border-box',
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: 20 }}>
+                <label style={{ display: 'block', marginBottom: 8, fontWeight: 600, fontSize: 14 }}>
+                  전화번호 *
+                </label>
+                <input
+                  type="tel"
+                  value={editData.phone}
+                  onChange={(e) => setEditData({ ...editData, phone: e.target.value })}
+                  placeholder="예: 01012345678 또는 010-1234-5678"
+                  style={{
+                    width: '100%',
+                    padding: 12,
+                    border: '1px solid #ddd',
+                    borderRadius: 4,
+                    fontSize: 14,
+                    boxSizing: 'border-box',
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: 24 }}>
+                <label style={{ display: 'block', marginBottom: 8, fontWeight: 600, fontSize: 14 }}>
+                  이메일
+                </label>
+                <input
+                  type="email"
+                  value={editData.email}
+                  onChange={(e) => setEditData({ ...editData, email: e.target.value })}
+                  placeholder="예: hong@example.com"
+                  style={{
+                    width: '100%',
+                    padding: 12,
+                    border: '1px solid #ddd',
+                    borderRadius: 4,
+                    fontSize: 14,
+                    boxSizing: 'border-box',
+                  }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+                <button
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setEditingPerson(null);
+                    setEditData({ name: '', phone: '', email: '' });
+                  }}
+                  style={{
+                    padding: '10px 20px',
+                    backgroundColor: '#f5f5f5',
+                    border: '1px solid #ddd',
+                    borderRadius: 4,
+                    cursor: 'pointer',
+                    fontSize: 14,
+                  }}
+                >
+                  취소
+                </button>
+                <button
+                  onClick={handleEdit}
+                  style={{
+                    padding: '10px 20px',
+                    backgroundColor: '#1976d2',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: 4,
+                    cursor: 'pointer',
+                    fontSize: 14,
+                    fontWeight: 600,
+                  }}
+                >
+                  수정
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
