@@ -49,10 +49,10 @@ export default function AdminLogin() {
       console.log('[Admin Login] 리다이렉션 시작...');
       setError('✅ 로그인 성공! 리다이렉션 중...');
       
-      // window.location으로 강제 리다이렉션
+      // 슈퍼어드민 페이지로 리다이렉션
       setTimeout(() => {
-        console.log('[Admin Login] 리다이렉션 실행!');
-        window.location.href = '/admin/sales';
+        console.log('[Admin Login] 슈퍼어드민 페이지로 리다이렉션!');
+        window.location.href = '/admin';
       }, 1000);
     } catch (err: any) {
       console.error('[Admin Login] 에러:', err);
