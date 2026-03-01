@@ -152,7 +152,8 @@ router.get('/people/:id', requireAuth, async (req, res) => {
 router.post('/people/create', requireAuth, requireRole('SUPER_ADMIN'), async (req, res) => {
   try {
     const {
-      name,
+      organizationName, // 본부명 또는 지사명
+      name, // 본부장명 또는 지사장명
       phone,
       email,
       password,
@@ -163,6 +164,11 @@ router.post('/people/create', requireAuth, requireRole('SUPER_ADMIN'), async (re
     // 필수 필드 확인
     if (!name || !phone || !password) {
       return res.status(400).json({ error: '이름, 전화번호, 비밀번호는 필수입니다' });
+    }
+
+    // organizationName은 본부/지사 생성 시 필수
+    if ((role === 'HEAD_MANAGER' || role === 'BRANCH_MANAGER') && !organizationName) {
+      return res.status(400).json({ error: '조직명은 필수입니다' });
     }
 
     // 비밀번호 길이 확인
@@ -228,6 +234,7 @@ router.post('/people/create', requireAuth, requireRole('SUPER_ADMIN'), async (re
       data: {
         userId: user.id,
         name,
+        organizationName: organizationName || null, // 본부명 또는 지사명
         phone: normalizedPhone,
         email: email || undefined,
         role,

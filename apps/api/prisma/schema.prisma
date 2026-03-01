@@ -750,7 +750,8 @@ model AnnualLeaveBalance {
 model SalesPerson {
   id                String    @id @default(cuid())
   userId            String    @unique // User ID (로그인 계정)
-  name              String    // 이름
+  name              String    // 이름 (대표자명)
+  organizationName  String?   // 조직명 (본부명 또는 지사명)
   phone             String    @unique // 핸드폰번호 (추천인 링크 생성용)
   email             String?   // 이메일
   

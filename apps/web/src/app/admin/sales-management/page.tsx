@@ -8,6 +8,7 @@ interface SalesPerson {
   id: string;
   userId: string;
   name: string;
+  organizationName?: string;
   phone: string;
   email?: string;
   role: 'MANAGER' | 'BRANCH_MANAGER' | 'HEAD_MANAGER';
@@ -48,10 +49,12 @@ export default function SalesManagementPage() {
   const [createType, setCreateType] = useState<'HEAD_MANAGER' | 'BRANCH_MANAGER'>('HEAD_MANAGER');
   const [selectedHeadManagerId, setSelectedHeadManagerId] = useState<string>('');
   const [newPersonData, setNewPersonData] = useState({
-    name: '',
+    organizationName: '', // 본부명 또는 지사명
+    managerName: '', // 본부장명 또는 지사장명
     phone: '',
     email: '',
     password: '',
+    passwordConfirm: '',
   });
   
   // 수정 모달 상태
@@ -156,8 +159,25 @@ export default function SalesManagementPage() {
   };
 
   const handleCreatePerson = async () => {
-    if (!newPersonData.name || !newPersonData.phone || !newPersonData.password) {
-      setError('이름, 전화번호, 비밀번호는 필수입니다.');
+    const { organizationName, managerName, phone, password, passwordConfirm, email } = newPersonData;
+
+    // 필수 항목 검증
+    if (!organizationName || !managerName || !phone || !password) {
+      setError('조직명, 대표자명, 전화번호, 비밀번호는 필수입니다.');
+      setTimeout(() => setError(''), 3000);
+      return;
+    }
+
+    // 비밀번호 확인
+    if (password !== passwordConfirm) {
+      setError('비밀번호가 일치하지 않습니다.');
+      setTimeout(() => setError(''), 3000);
+      return;
+    }
+
+    // 비밀번호 길이 검증
+    if (password.length < 6) {
+      setError('비밀번호는 최소 6자 이상이어야 합니다.');
       setTimeout(() => setError(''), 3000);
       return;
     }
@@ -172,10 +192,11 @@ export default function SalesManagementPage() {
       await apiFetch('/sales/people/create', {
         method: 'POST',
         body: JSON.stringify({
-          name: newPersonData.name,
-          phone: newPersonData.phone.replace(/[-\s]/g, ''),
-          email: newPersonData.email || undefined,
-          password: newPersonData.password,
+          organizationName, // 본부명 또는 지사명
+          name: managerName, // 본부장명 또는 지사장명
+          phone: phone.replace(/[-\s]/g, ''),
+          email: email || undefined,
+          password,
           role: createType,
           managerId: createType === 'BRANCH_MANAGER' ? selectedHeadManagerId : undefined,
         }),
@@ -186,7 +207,14 @@ export default function SalesManagementPage() {
       
       // 모달 닫고 초기화
       setShowCreateModal(false);
-      setNewPersonData({ name: '', phone: '', email: '', password: '' });
+      setNewPersonData({ 
+        organizationName: '', 
+        managerName: '', 
+        phone: '', 
+        email: '', 
+        password: '', 
+        passwordConfirm: '' 
+      });
       setSelectedHeadManagerId('');
       
       loadSalesPeople();
@@ -862,7 +890,7 @@ export default function SalesManagementPage() {
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <div>
                             <div style={{ fontSize: 16, fontWeight: 'bold', color: '#f57c00', marginBottom: 4 }}>
-                              🏪 {branch.name} 지사
+                              🏪 {branch.organizationName || branch.name} (지사장: {branch.name})
                             </div>
                             <div style={{ fontSize: 13, color: '#666' }}>
                               📞 {branch.phone} | ✉️ {branch.email || '-'}
@@ -1044,7 +1072,7 @@ export default function SalesManagementPage() {
                           .filter(p => p.role === 'HEAD_MANAGER' && p.id !== transferPerson.id)
                           .map(head => (
                             <option key={head.id} value={head.id}>
-                              {head.name} 본부
+                              {head.organizationName || head.name} (대표: {head.name})
                             </option>
                           ))}
                       </optgroup>
@@ -1053,7 +1081,7 @@ export default function SalesManagementPage() {
                           .filter(p => p.role === 'BRANCH_MANAGER' && p.id !== transferPerson.id)
                           .map(branch => (
                             <option key={branch.id} value={branch.id}>
-                              {branch.name} 지사
+                              {branch.organizationName || branch.name} (대표: {branch.name})
                             </option>
                           ))}
                       </optgroup>
@@ -1306,7 +1334,14 @@ export default function SalesManagementPage() {
               <button
                 onClick={() => {
                   setShowCreateModal(false);
-                  setNewPersonData({ name: '', phone: '', email: '', password: '' });
+                  setNewPersonData({ 
+                    organizationName: '', 
+                    managerName: '', 
+                    phone: '', 
+                    email: '', 
+                    password: '', 
+                    passwordConfirm: '' 
+                  });
                   setSelectedHeadManagerId('');
                 }}
                 style={{
@@ -1376,12 +1411,32 @@ export default function SalesManagementPage() {
 
               <div style={{ marginBottom: 20 }}>
                 <label style={{ display: 'block', marginBottom: 8, fontWeight: 600, fontSize: 14 }}>
-                  이름 *
+                  {createType === 'HEAD_MANAGER' ? '본부명' : '지사명'} *
                 </label>
                 <input
                   type="text"
-                  value={newPersonData.name}
-                  onChange={(e) => setNewPersonData({ ...newPersonData, name: e.target.value })}
+                  value={newPersonData.organizationName}
+                  onChange={(e) => setNewPersonData({ ...newPersonData, organizationName: e.target.value })}
+                  placeholder={createType === 'HEAD_MANAGER' ? '예: 서울본부' : '예: 강남지사'}
+                  style={{
+                    width: '100%',
+                    padding: 12,
+                    border: '1px solid #ddd',
+                    borderRadius: 4,
+                    fontSize: 14,
+                    boxSizing: 'border-box',
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: 20 }}>
+                <label style={{ display: 'block', marginBottom: 8, fontWeight: 600, fontSize: 14 }}>
+                  {createType === 'HEAD_MANAGER' ? '본부장명' : '지사장명'} *
+                </label>
+                <input
+                  type="text"
+                  value={newPersonData.managerName}
+                  onChange={(e) => setNewPersonData({ ...newPersonData, managerName: e.target.value })}
                   placeholder="예: 홍길동"
                   style={{
                     width: '100%',
@@ -1396,7 +1451,7 @@ export default function SalesManagementPage() {
 
               <div style={{ marginBottom: 20 }}>
                 <label style={{ display: 'block', marginBottom: 8, fontWeight: 600, fontSize: 14 }}>
-                  전화번호 *
+                  전화번호 (ID) *
                 </label>
                 <input
                   type="tel"
@@ -1416,26 +1471,6 @@ export default function SalesManagementPage() {
 
               <div style={{ marginBottom: 20 }}>
                 <label style={{ display: 'block', marginBottom: 8, fontWeight: 600, fontSize: 14 }}>
-                  이메일
-                </label>
-                <input
-                  type="email"
-                  value={newPersonData.email}
-                  onChange={(e) => setNewPersonData({ ...newPersonData, email: e.target.value })}
-                  placeholder="예: hong@example.com"
-                  style={{
-                    width: '100%',
-                    padding: 12,
-                    border: '1px solid #ddd',
-                    borderRadius: 4,
-                    fontSize: 14,
-                    boxSizing: 'border-box',
-                  }}
-                />
-              </div>
-
-              <div style={{ marginBottom: 24 }}>
-                <label style={{ display: 'block', marginBottom: 8, fontWeight: 600, fontSize: 14 }}>
                   비밀번호 *
                 </label>
                 <input
@@ -1454,11 +1489,58 @@ export default function SalesManagementPage() {
                 />
               </div>
 
+              <div style={{ marginBottom: 20 }}>
+                <label style={{ display: 'block', marginBottom: 8, fontWeight: 600, fontSize: 14 }}>
+                  비밀번호 확인 *
+                </label>
+                <input
+                  type="password"
+                  value={newPersonData.passwordConfirm}
+                  onChange={(e) => setNewPersonData({ ...newPersonData, passwordConfirm: e.target.value })}
+                  placeholder="비밀번호 재입력"
+                  style={{
+                    width: '100%',
+                    padding: 12,
+                    border: '1px solid #ddd',
+                    borderRadius: 4,
+                    fontSize: 14,
+                    boxSizing: 'border-box',
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: 24 }}>
+                <label style={{ display: 'block', marginBottom: 8, fontWeight: 600, fontSize: 14 }}>
+                  이메일
+                </label>
+                <input
+                  type="email"
+                  value={newPersonData.email}
+                  onChange={(e) => setNewPersonData({ ...newPersonData, email: e.target.value })}
+                  placeholder="예: hong@example.com"
+                  style={{
+                    width: '100%',
+                    padding: 12,
+                    border: '1px solid #ddd',
+                    borderRadius: 4,
+                    fontSize: 14,
+                    boxSizing: 'border-box',
+                  }}
+                />
+              </div>
+
               <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
                 <button
                   onClick={() => {
                     setShowCreateModal(false);
-                    setNewPersonData({ name: '', phone: '', email: '', password: '' });
+                    setNewPersonData({ 
+                      organizationName: '', 
+                      managerName: '', 
+                      phone: '', 
+                      email: '', 
+                      password: '', 
+                      passwordConfirm: '' 
+                    });
                     setSelectedHeadManagerId('');
                   }}
                   style={{
