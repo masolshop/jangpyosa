@@ -1,0 +1,32 @@
+AWS 서버에서 실행할 명령어 (복사해서 사용):
+
+cd /home/ubuntu/jangpyosa && git fetch origin && git reset --hard origin/main && cd apps/api && npm run build && cd ../web && npm run build && cd ../.. && pm2 restart jangpyosa-api && pm2 restart jangpyosa-web && pm2 list
+
+또는 단계별로:
+
+1. SSH 접속:
+   ssh ubuntu@43.201.0.129
+
+2. 프로젝트 디렉토리로 이동:
+   cd /home/ubuntu/jangpyosa
+
+3. 최신 코드 가져오기:
+   git fetch origin
+   git reset --hard origin/main
+
+4. API 빌드:
+   cd apps/api
+   npm run build
+
+5. Web 빌드:
+   cd ../web
+   npm run build
+
+6. PM2 재시작:
+   cd ../..
+   pm2 restart jangpyosa-api
+   pm2 restart jangpyosa-web
+
+7. 상태 확인:
+   pm2 list
+   pm2 logs --lines 50
