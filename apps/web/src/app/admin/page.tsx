@@ -80,7 +80,7 @@ export default function AdminRootPage() {
             icon="👥"
             title="영업 관리"
             description="매니저, 지사, 본부 관리"
-            link="/admin/sales"
+            link="/admin/sales-management"
           />
           <MenuCard
             icon="🏢"

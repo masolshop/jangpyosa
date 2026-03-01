@@ -301,6 +301,55 @@ router.post('/people/:id/promote', requireAuth, requireRole('SUPER_ADMIN'), asyn
 });
 
 /**
+ * POST /sales/people/:id/toggle-active
+ * 영업 사원 활성화/비활성화
+ */
+router.post('/people/:id/toggle-active', requireAuth, requireRole('SUPER_ADMIN'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { isActive, inactiveReason } = req.body;
+    
+    const salesPerson = await prisma.salesPerson.findUnique({
+      where: { id },
+    });
+    
+    if (!salesPerson) {
+      return res.status(404).json({ error: '영업 사원을 찾을 수 없습니다' });
+    }
+    
+    const updated = await prisma.salesPerson.update({
+      where: { id },
+      data: {
+        isActive,
+        inactiveReason: isActive ? null : inactiveReason,
+      },
+      include: {
+        manager: true,
+        subordinates: true,
+      },
+    });
+    
+    // 활동 로그 기록
+    await prisma.salesActivityLog.create({
+      data: {
+        salesPersonId: id,
+        adminUserId: req.user!.id,
+        action: SalesAction.STATUS_CHANGE,
+        fromValue: salesPerson.isActive ? 'ACTIVE' : 'INACTIVE',
+        toValue: isActive ? 'ACTIVE' : 'INACTIVE',
+        reason: inactiveReason,
+        notes: `상태 변경: ${salesPerson.isActive ? '활성' : '비활성'} → ${isActive ? '활성' : '비활성'}`,
+      },
+    });
+    
+    res.json({ salesPerson: updated });
+  } catch (error: any) {
+    console.error('[POST /sales/people/:id/toggle-active] Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
  * POST /sales/people/:id/transfer
  * 영업 사원 조직 이동
  */
