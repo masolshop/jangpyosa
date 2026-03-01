@@ -7,32 +7,9 @@ import {
   calculateMonthlyData,
   type CalcEmployee,
 } from "../services/employment-calculator-v2.js";
+import { getUserCompany, getBuyerId } from "../utils/company.js";
 
 const router = Router();
-
-// 헬퍼 함수: 사용자의 회사 정보 조회
-async function getUserCompany(userId: string, userRole: string) {
-  if (userRole === "SUPER_ADMIN") {
-    return await prisma.company.findFirst({
-      where: { 
-        type: "BUYER",
-        buyerProfile: { isNot: null }
-      },
-      include: { buyerProfile: true },
-    });
-  } else {
-    // 일반 사용자 또는 팀원: companyId로 조회
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      include: {
-        company: {
-          include: { buyerProfile: true }
-        }
-      }
-    });
-    return user?.company;
-  }
-}
 
 // 직원 목록 조회
 router.get("/", requireAuth, async (req, res) => {
@@ -475,6 +452,21 @@ router.put("/:id", requireAuth, async (req, res) => {
       },
     });
 
+    // ✅ 전화번호가 변경된 경우 연관된 User 계정의 companyId 동기화
+    if (body.phone && employee.phone) {
+      const cleanPhone = employee.phone.replace(/\D/g, "");
+      await prisma.user.updateMany({
+        where: {
+          phone: cleanPhone,
+          employeeId: employee.id,
+          role: "EMPLOYEE",
+        },
+        data: {
+          companyId: company.id,
+        },
+      });
+    }
+
     return res.json({ employee });
   } catch (error: any) {
     console.error("직원 수정 실패:", error);
@@ -508,6 +500,18 @@ router.delete("/:id", requireAuth, async (req, res) => {
     if (!existing || existing.buyerId !== company.buyerProfile.id) {
       return res.status(404).json({ error: "직원을 찾을 수 없습니다." });
     }
+
+    // ✅ 연관된 User 계정의 employeeId와 companyId 해제
+    await prisma.user.updateMany({
+      where: {
+        employeeId: employeeId,
+        role: "EMPLOYEE",
+      },
+      data: {
+        employeeId: null,
+        companyId: null,
+      },
+    });
 
     await prisma.disabledEmployee.delete({
       where: { id: employeeId },

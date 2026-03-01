@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "../index.js";
 import { requireAuth } from "../middleware/auth.js";
 import { getKSTDate, getKSTTime, getKSTNow } from "../utils/kst.js";
+import { getUserCompany, getBuyerId } from "../utils/company.js";
 
 const router = Router();
 
@@ -352,27 +353,11 @@ router.get("/company", requireAuth, async (req, res) => {
       return res.status(403).json({ error: "부담금기업 또는 표준사업장만 접근 가능합니다." });
     }
 
-    // 회사 조회
-    let company;
-    if (userRole === "SUPER_ADMIN") {
-      company = await prisma.company.findFirst({
-        where: { type: "BUYER", buyerProfile: { isNot: null } },
-        include: { buyerProfile: true },
-      });
-    } else {
-      // 일반 사용자 또는 팀원: companyId로 조회
-      const user = await prisma.user.findUnique({
-        where: { id: userId },
-        include: {
-          company: {
-            include: { buyerProfile: true }
-          }
-        }
-      });
-      company = user?.company;
-    }
+    // ✅ 통합 헬퍼 함수 사용
+    const company = await getUserCompany(userId, userRole);
+    const buyerId = getBuyerId(company);
 
-    if (!company || !company.buyerProfile) {
+    if (!company || !buyerId) {
       return res.status(404).json({ error: "기업 정보가 없습니다." });
     }
 
@@ -381,7 +366,7 @@ router.get("/company", requireAuth, async (req, res) => {
     // 직원 목록 조회
     const employees = await prisma.disabledEmployee.findMany({
       where: { 
-        buyerId: company.buyerProfile.id,
+        buyerId: buyerId,
         resignDate: null, // 재직 중인 직원만
       },
       orderBy: { name: "asc" },
