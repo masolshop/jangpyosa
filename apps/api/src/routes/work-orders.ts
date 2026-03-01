@@ -630,6 +630,61 @@ router.post('/:id/confirm', requireAuth, async (req, res) => {
       }
     });
 
+    // 확인 통계 조회
+    const confirmedCount = await prisma.workOrderConfirmation.count({
+      where: { workOrderId }
+    });
+
+    // 대상 직원 수 계산
+    let totalCount = 0;
+    if (workOrder.targetType === 'ALL') {
+      totalCount = await prisma.disabledEmployee.count({
+        where: { buyerId: workOrder.buyerId }
+      });
+    } else if (workOrder.targetType === 'GROUP' && workOrder.targetEmployees) {
+      const targetIds = JSON.parse(workOrder.targetEmployees);
+      totalCount = targetIds.length;
+    } else if (workOrder.targetType === 'INDIVIDUAL') {
+      totalCount = 1;
+    }
+
+    // 관리자에게 알림 (첫 확인, 50%, 100% 또는 마지막 1명 남았을 때)
+    const confirmPercentage = totalCount > 0 ? (confirmedCount / totalCount) * 100 : 0;
+    const shouldNotify = 
+      confirmedCount === 1 || // 첫 확인
+      confirmPercentage >= 50 && confirmedCount === Math.ceil(totalCount * 0.5) ||
+      confirmedCount === totalCount || // 전체 완료
+      (totalCount - confirmedCount) === 1; // 마지막 1명 남음
+
+    if (shouldNotify) {
+      // 관리자 조회
+      const managers = await prisma.user.findMany({
+        where: {
+          companyId: workOrder.companyId,
+          role: { in: ['BUYER', 'SUPER_ADMIN'] }
+        },
+        select: { id: true }
+      });
+
+      if (managers.length > 0) {
+        const employee = await prisma.disabledEmployee.findUnique({
+          where: { id: user.employeeId },
+          select: { name: true }
+        });
+
+        // 알림 생성 (동적 import)
+        const { notifyWorkOrderCompleted } = await import('../services/notificationService.js');
+        await notifyWorkOrderCompleted({
+          managerIds: managers.map(m => m.id),
+          employeeName: employee?.name || '직원',
+          workOrderTitle: workOrder.title,
+          workOrderId: workOrder.id,
+          confirmedCount,
+          totalCount
+        });
+      }
+    }
+
     return res.json({ 
       message: '업무지시를 확인했습니다',
       confirmation 

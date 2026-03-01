@@ -412,3 +412,110 @@ export async function notifyLowLeaveBalance(params: {
     category: NotificationCategory.LEAVE,
   });
 }
+
+/**
+ * 공지사항 확인 알림 (관리자에게)
+ * 직원이 공지를 확인했을 때 관리자에게 알림
+ */
+export async function notifyAnnouncementRead(params: {
+  managerIds: string[];
+  employeeName: string;
+  announcementTitle: string;
+  announcementId: string;
+  readCount: number;
+  totalCount: number;
+}) {
+  const { managerIds, employeeName, announcementTitle, announcementId, readCount, totalCount } = params;
+  
+  return createBulkNotifications(managerIds, {
+    type: NotificationType.ANNOUNCEMENT,
+    title: '✅ 공지사항 확인됨',
+    message: `${employeeName}님이 "${announcementTitle}"을(를) 확인했습니다. (${readCount}/${totalCount}명)`,
+    link: `/dashboard/announcements/${announcementId}/readers`,
+    data: { announcementId, employeeName, readCount, totalCount },
+    priority: NotificationPriority.LOW,
+    category: NotificationCategory.GENERAL,
+  });
+}
+
+/**
+ * 업무 완료 알림 (관리자에게)
+ * 직원이 업무를 완료했을 때 관리자에게 알림
+ */
+export async function notifyWorkOrderCompleted(params: {
+  managerIds: string[];
+  employeeName: string;
+  workOrderTitle: string;
+  workOrderId: string;
+  confirmedCount: number;
+  totalCount: number;
+}) {
+  const { managerIds, employeeName, workOrderTitle, workOrderId, confirmedCount, totalCount } = params;
+  
+  return createBulkNotifications(managerIds, {
+    type: NotificationType.WORK_ORDER_COMPLETED,
+    title: '✅ 업무 완료 확인',
+    message: `${employeeName}님이 "${workOrderTitle}" 업무를 완료했습니다. (${confirmedCount}/${totalCount}명)`,
+    link: `/dashboard/work-orders/${workOrderId}`,
+    data: { workOrderId, employeeName, confirmedCount, totalCount },
+    priority: NotificationPriority.NORMAL,
+    category: NotificationCategory.WORK,
+  });
+}
+
+/**
+ * 근태 이상 알림 (관리자에게)
+ * 지각, 조퇴, 결근 등 근태 이상 발생 시
+ */
+export async function notifyAttendanceIssue(params: {
+  managerIds: string[];
+  employeeName: string;
+  issueType: 'LATE' | 'EARLY_LEAVE' | 'ABSENT' | 'NO_CHECKOUT';
+  date: string;
+  details?: string;
+}) {
+  const { managerIds, employeeName, issueType, date, details } = params;
+  
+  const issueTypeText = {
+    LATE: '지각',
+    EARLY_LEAVE: '조퇴',
+    ABSENT: '결근',
+    NO_CHECKOUT: '퇴근 미체크'
+  }[issueType];
+  
+  const message = details 
+    ? `${employeeName}님이 ${date}에 ${issueTypeText} 처리되었습니다. (${details})`
+    : `${employeeName}님이 ${date}에 ${issueTypeText} 처리되었습니다.`;
+  
+  return createBulkNotifications(managerIds, {
+    type: NotificationType.ATTENDANCE_ISSUE,
+    title: `⚠️ 근태 이상: ${issueTypeText}`,
+    message,
+    link: `/dashboard/attendance`,
+    data: { employeeName, issueType, date, details },
+    priority: NotificationPriority.NORMAL,
+    category: NotificationCategory.GENERAL,
+  });
+}
+
+/**
+ * 출근 알림 (직원에게)
+ * 출근 시간이 다가왔을 때
+ */
+export async function notifyAttendanceReminder(params: {
+  employeeId: string;
+  time: string;
+}) {
+  const { employeeId, time } = params;
+  
+  return createNotification({
+    userId: employeeId,
+    type: NotificationType.ATTENDANCE_REMINDER,
+    title: '⏰ 출근 시간 알림',
+    message: `${time}까지 출근해주세요.`,
+    link: `/employee/attendance`,
+    data: { time },
+    priority: NotificationPriority.NORMAL,
+    category: NotificationCategory.GENERAL,
+  });
+}

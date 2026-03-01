@@ -425,6 +425,53 @@ router.post('/:id/read', requireAuth, async (req, res) => {
       }
     });
 
+    // 읽음 통계 조회
+    const readCount = await prisma.announcementReadLog.count({
+      where: { announcementId }
+    });
+    
+    const totalEmployees = await prisma.disabledEmployee.count({
+      where: { buyerId: announcement.buyerId }
+    });
+
+    // 관리자에게 알림 (10%, 50%, 100% 읽음 시 또는 마지막 1명 남았을 때)
+    const readPercentage = (readCount / totalEmployees) * 100;
+    const shouldNotify = 
+      readCount === 1 || // 첫 확인
+      readPercentage === 10 ||
+      readPercentage === 50 ||
+      readPercentage === 100 ||
+      (totalEmployees - readCount) === 1; // 마지막 1명 남음
+
+    if (shouldNotify) {
+      // 관리자 조회
+      const managers = await prisma.user.findMany({
+        where: {
+          companyId: announcement.companyId,
+          role: { in: ['BUYER', 'SUPER_ADMIN'] }
+        },
+        select: { id: true }
+      });
+
+      if (managers.length > 0) {
+        const employee = await prisma.disabledEmployee.findUnique({
+          where: { id: user.employeeId },
+          select: { name: true }
+        });
+
+        // 알림 생성 (동적 import)
+        const { notifyAnnouncementRead } = await import('../services/notificationService.js');
+        await notifyAnnouncementRead({
+          managerIds: managers.map(m => m.id),
+          employeeName: employee?.name || '직원',
+          announcementTitle: announcement.title,
+          announcementId: announcement.id,
+          readCount,
+          totalCount: totalEmployees
+        });
+      }
+    }
+
     return res.json({ 
       message: '공지사항을 읽음으로 처리했습니다',
       readLog 
