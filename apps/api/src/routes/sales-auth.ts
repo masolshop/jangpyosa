@@ -275,7 +275,7 @@ router.post('/login', async (req, res) => {
 
     // 비활성 계정 확인
     if (!salesPerson.isActive) {
-      return res.status(403).json({ error: '비활성 상태의 계정입니다. 관리자에게 문의하세요' });
+      return res.status(403).json({ error: '승인대기중입니다. 승인후 이용가능합니다.' });
     }
 
     // JWT 토큰 생성
