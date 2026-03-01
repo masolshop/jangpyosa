@@ -343,22 +343,21 @@ export default function Sidebar() {
             </div>
           )}
 
-          {/* 관리자용 메뉴 (BUYER, SUPPLIER, SUPER_ADMIN, 영업 사원 역할인 경우) */}
-          {(userRole && ["BUYER", "SUPPLIER", "SUPER_ADMIN"].includes(userRole)) || 
-           (salesRole && ['MANAGER', 'BRANCH_MANAGER', 'HEAD_MANAGER'].includes(salesRole)) ? (
+          {/* 무료장애인직원관리솔루션 메뉴 (항상 표시, 비로그인 시 회원가입 페이지로 이동) */}
+          {userRole !== "EMPLOYEE" && (
             <div style={{ marginBottom: 24 }}>
               <div style={{ fontSize: 21.424, color: "#fff", marginBottom: 12, fontWeight: "bold", textAlign: "center" }}>
-                장애인직원관리솔루션
+                무료장애인직원관리솔루션
               </div>
-              <MenuItem href="/dashboard/employees" label="장애인직원등록관리" icon="👥" active={isActive("/dashboard/employees")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} />
-              <MenuItem href="/dashboard/monthly" label="고용장려금부담금관리" icon="📅" active={isActive("/dashboard/monthly")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} />
-              <MenuItem href="/dashboard/attendance" label="장애인직원근태관리" active={isActive("/dashboard/attendance")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} notificationCount={notificationCounts.attendance} onNotificationClear={() => markNotificationsByTypeAsRead(['ATTENDANCE_REMINDER', 'ATTENDANCE_ISSUE'])} />
-              <MenuItem href="/dashboard/work-orders" label="장애인직원업무관리" active={isActive("/dashboard/work-orders")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} notificationCount={notificationCounts.workOrder} onNotificationClear={() => markNotificationsByTypeAsRead(['WORK_ORDER', 'WORK_ORDER_COMPLETED'])} />
-              <MenuItem href="/dashboard/announcements" label="장애인직원공지관리" active={isActive("/dashboard/announcements")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} notificationCount={notificationCounts.announcement} onNotificationClear={() => markNotificationsByTypeAsRead(['ANNOUNCEMENT', 'ANNOUNCEMENT_READ'])} />
-              <MenuItem href="/dashboard/leave" label="장애인직원휴가관리" active={isActive("/dashboard/leave")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} notificationCount={notificationCounts.leave} onNotificationClear={() => markNotificationsByTypeAsRead(['LEAVE_REQUEST', 'LEAVE_APPROVED', 'LEAVE_REJECTED'])} />
-              <MenuItem href="/dashboard/company" label="기업대시보드" icon="🏢" active={isActive("/dashboard/company")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} />
+              <MenuItem href="/dashboard/employees" label="장애인직원등록관리" icon="👥" active={isActive("/dashboard/employees")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} requiresAuth={true} />
+              <MenuItem href="/dashboard/monthly" label="고용장려금부담금관리" icon="📅" active={isActive("/dashboard/monthly")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} requiresAuth={true} />
+              <MenuItem href="/dashboard/attendance" label="장애인직원근태관리" active={isActive("/dashboard/attendance")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} notificationCount={notificationCounts.attendance} onNotificationClear={() => markNotificationsByTypeAsRead(['ATTENDANCE_REMINDER', 'ATTENDANCE_ISSUE'])} requiresAuth={true} />
+              <MenuItem href="/dashboard/work-orders" label="장애인직원업무관리" active={isActive("/dashboard/work-orders")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} notificationCount={notificationCounts.workOrder} onNotificationClear={() => markNotificationsByTypeAsRead(['WORK_ORDER', 'WORK_ORDER_COMPLETED'])} requiresAuth={true} />
+              <MenuItem href="/dashboard/announcements" label="장애인직원공지관리" active={isActive("/dashboard/announcements")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} notificationCount={notificationCounts.announcement} onNotificationClear={() => markNotificationsByTypeAsRead(['ANNOUNCEMENT', 'ANNOUNCEMENT_READ'])} requiresAuth={true} />
+              <MenuItem href="/dashboard/leave" label="장애인직원휴가관리" active={isActive("/dashboard/leave")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} notificationCount={notificationCounts.leave} onNotificationClear={() => markNotificationsByTypeAsRead(['LEAVE_REQUEST', 'LEAVE_APPROVED', 'LEAVE_REJECTED'])} requiresAuth={true} />
+              <MenuItem href="/dashboard/company" label="기업대시보드" icon="🏢" active={isActive("/dashboard/company")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} requiresAuth={true} />
             </div>
-          ) : null}
+          )}
 
           {/* 직원용 메뉴 (EMPLOYEE 역할인 경우) */}
           {userRole === "EMPLOYEE" && (
@@ -403,21 +402,17 @@ export default function Sidebar() {
             </div>
           )}
 
-          {/* 연계고용감면센터 메뉴 (직원이 아닌 경우만 표시) */}
+          {/* 연계고용감면센터 메뉴 (직원이 아닌 경우만 표시, 비로그인 시 회원가입 페이지로 이동) */}
           {userRole !== "EMPLOYEE" && (
             <div style={{ marginBottom: 24 }}>
               <div style={{ fontSize: 21.424, color: "#fff", marginBottom: 12, fontWeight: "bold", textAlign: "center" }}>
                 연계고용감면센터
               </div>
-              {userRole === "SUPPLIER" && (
-                <MenuItem href="/products/manage" label="연계고용감면상품관리" icon="🏭" active={isActive("/products/manage") || isActive("/supplier/profile")} />
-              )}
+              <MenuItem href="/products/manage" label="연계고용감면상품관리" icon="🏭" active={isActive("/products/manage") || isActive("/supplier/profile")} requiresRole={["SUPPLIER"]} currentRole={userRole} requiresAuth={true} />
               <MenuItem href="/catalog" label="상품 카탈로그" icon="🛒" active={pathname?.startsWith("/catalog")} />
-              {userRole === "BUYER" && (
-                <MenuItem href="/cart" label="도급계약장바구니" icon="🛍️" active={isActive("/cart")} />
-              )}
-              <MenuItem href="/dashboard/contracts" label="도급계약 이행·결제 관리" icon="📋" active={pathname?.startsWith("/dashboard/contracts")} requiresRole={["BUYER", "SUPER_ADMIN", "SUPPLIER"]} currentRole={userRole} />
-              <MenuItem href="/dashboard/performances" label="월별 도급계약감면관리" icon="📊" active={pathname?.startsWith("/dashboard/performances")} requiresRole={["BUYER", "SUPER_ADMIN", "SUPPLIER"]} currentRole={userRole} />
+              <MenuItem href="/cart" label="도급계약장바구니" icon="🛍️" active={isActive("/cart")} requiresRole={["BUYER"]} currentRole={userRole} requiresAuth={true} />
+              <MenuItem href="/dashboard/contracts" label="도급계약 이행·결제 관리" icon="📋" active={pathname?.startsWith("/dashboard/contracts")} requiresRole={["BUYER", "SUPER_ADMIN", "SUPPLIER"]} currentRole={userRole} requiresAuth={true} />
+              <MenuItem href="/dashboard/performances" label="월별 도급계약감면관리" icon="📊" active={pathname?.startsWith("/dashboard/performances")} requiresRole={["BUYER", "SUPER_ADMIN", "SUPPLIER"]} currentRole={userRole} requiresAuth={true} />
               <MenuItem href="/purchase-cases" label="연계고용감면사례" icon="📦" active={isActive("/purchase-cases")} />
               <MenuItem href="/contract-sample" label="표준도급계약서 샘플" icon="📄" active={isActive("/contract-sample")} />
             </div>
@@ -505,9 +500,10 @@ interface MenuItemProps {
   requiresRole?: string[];
   currentRole?: string | null;
   notificationCount?: number; // 알림 개수 (종으로 표시)
+  requiresAuth?: boolean; // 로그인 필요 여부
 }
 
-function MenuItem({ href, label, icon, active = false, onClick, onNotificationClear, subItems, requiresRole, currentRole, notificationCount }: MenuItemProps) {
+function MenuItem({ href, label, icon, active = false, onClick, onNotificationClear, subItems, requiresRole, currentRole, notificationCount, requiresAuth = false }: MenuItemProps) {
   const pathname = usePathname();
   const [showSubItems, setShowSubItems] = useState(false);
   const hasAccess = !requiresRole || (currentRole && requiresRole.includes(currentRole));
@@ -520,13 +516,21 @@ function MenuItem({ href, label, icon, active = false, onClick, onNotificationCl
       <a
         href={href}
         onClick={(e) => {
+          // requiresAuth가 true이고 로그인되지 않았으면 회원가입 페이지로 리다이렉트
+          if (requiresAuth && !currentRole) {
+            e.preventDefault();
+            window.location.href = '/signup';
+            return;
+          }
+
           if (requiresRole && requiresRole.length > 0 && (!currentRole || !requiresRole.includes(currentRole))) {
             e.preventDefault();
             const roleLabels = [];
             if (requiresRole.includes("BUYER")) roleLabels.push("고용의무기업");
             if (requiresRole.includes("SUPPLIER")) roleLabels.push("표준사업장");
             if (requiresRole.includes("SUPER_ADMIN")) roleLabels.push("관리자");
-            alert(`이 메뉴는 로그인이 필요합니다.\n\n필요한 권한: ${roleLabels.join(", ") || "특정 권한"}`);
+            alert(`이 메뉴는 회원가입이 필요합니다.\n\n필요한 권한: ${roleLabels.join(", ") || "특정 권한"}`);
+            window.location.href = '/signup';
             return;
           }
 
@@ -552,16 +556,16 @@ function MenuItem({ href, label, icon, active = false, onClick, onNotificationCl
           borderRadius: 8,
           border: "1px solid rgba(255, 255, 255, 0.3)",
           textDecoration: "none",
-          color: active ? "white" : hasAccess ? "#ccc" : "#666",
+          color: active ? "white" : "#ccc",
           background: active ? "#0070f3" : "transparent",
           fontSize: 18.2,
           fontWeight: active ? 600 : 400,
           transition: "all 0.3s",
-          opacity: hasAccess ? 1 : 0.6,
-          cursor: hasAccess ? "pointer" : "not-allowed",
+          opacity: 1,
+          cursor: "pointer",
         }}
         onMouseEnter={(e) => {
-          if (!active && hasAccess) {
+          if (!active) {
             e.currentTarget.style.background = "#2a2a2a";
             e.currentTarget.style.color = "white";
             e.currentTarget.style.border = "1px solid rgba(255, 255, 255, 0.5)";
@@ -570,7 +574,7 @@ function MenuItem({ href, label, icon, active = false, onClick, onNotificationCl
           }
         }}
         onMouseLeave={(e) => {
-          if (!active && hasAccess) {
+          if (!active) {
             e.currentTarget.style.background = "transparent";
             e.currentTarget.style.color = "#ccc";
             e.currentTarget.style.border = "1px solid rgba(255, 255, 255, 0.3)";
