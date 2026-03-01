@@ -64,8 +64,8 @@ export default function ManagerDashboard() {
     setManagerInfo(info);
     loadStats(info);
     
-    // 본부장이면 하위 조직 로드
-    if (info.role === 'HEAD_MANAGER') {
+    // 본부장 또는 지사장이면 하위 조직 로드
+    if (info.role === 'HEAD_MANAGER' || info.role === 'BRANCH_MANAGER') {
       loadSubordinates(info.id);
     }
   }, [router]);
@@ -449,8 +449,8 @@ export default function ManagerDashboard() {
           문의사항이 있으시면 본사로 연락해주세요.
         </div>
 
-        {/* 본부장 전용: 지사 및 매니저 관리 */}
-        {managerInfo.role === 'HEAD_MANAGER' && (
+        {/* 본부장/지사장 전용: 하위 조직 관리 */}
+        {(managerInfo.role === 'HEAD_MANAGER' || managerInfo.role === 'BRANCH_MANAGER') && (
           <div style={{ marginTop: 32 }}>
             <div style={{
               display: 'flex',
@@ -462,24 +462,26 @@ export default function ManagerDashboard() {
                 🏢 하위 조직 관리
               </h3>
               <div style={{ display: 'flex', gap: 8 }}>
-                <button
-                  onClick={() => {
-                    setCreateType('BRANCH_MANAGER');
-                    setShowCreateModal(true);
-                  }}
-                  style={{
-                    padding: '10px 16px',
-                    background: '#f97316',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: 6,
-                    cursor: 'pointer',
-                    fontSize: 14,
-                    fontWeight: 600,
-                  }}
-                >
-                  ➕ 지사 생성
-                </button>
+                {managerInfo.role === 'HEAD_MANAGER' && (
+                  <button
+                    onClick={() => {
+                      setCreateType('BRANCH_MANAGER');
+                      setShowCreateModal(true);
+                    }}
+                    style={{
+                      padding: '10px 16px',
+                      background: '#f97316',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: 6,
+                      cursor: 'pointer',
+                      fontSize: 14,
+                      fontWeight: 600,
+                    }}
+                  >
+                    ➕ 지사 생성
+                  </button>
+                )}
                 <button
                   onClick={() => {
                     setCreateType('MANAGER');
