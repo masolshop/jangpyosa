@@ -706,7 +706,44 @@ export default function SalesManagementPage() {
               width: '100%',
               maxWidth: 500,
               boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+              position: 'relative',
             }}>
+              {/* X 닫기 버튼 */}
+              <button
+                onClick={() => {
+                  setShowCreateModal(false);
+                  setNewPersonData({ name: '', phone: '', email: '', password: '' });
+                  setSelectedHeadManagerId('');
+                }}
+                style={{
+                  position: 'absolute',
+                  top: 16,
+                  right: 16,
+                  width: 32,
+                  height: 32,
+                  border: 'none',
+                  backgroundColor: 'transparent',
+                  fontSize: 24,
+                  color: '#999',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: 4,
+                  transition: 'all 0.2s',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#f5f5f5';
+                  e.currentTarget.style.color = '#333';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.color = '#999';
+                }}
+              >
+                ✕
+              </button>
+
               <h2 style={{ fontSize: 24, fontWeight: 'bold', marginBottom: 8 }}>
                 {createType === 'HEAD_MANAGER' ? '🏢 본부 생성' : '🏪 지사 생성'}
               </h2>
