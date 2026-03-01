@@ -17,209 +17,710 @@ const getManagerToken = () => {
   return localStorage.getItem(MANAGER_TOKEN_KEY);
 };
 
-const getManagerInfo = () => {
-  if (typeof window === 'undefined') return null;
-  const info = localStorage.getItem(MANAGER_INFO_KEY);
-  return info ? JSON.parse(info) : null;
-};
-
 const clearManagerAuth = () => {
   if (typeof window === 'undefined') return;
   localStorage.removeItem(MANAGER_TOKEN_KEY);
   localStorage.removeItem(MANAGER_INFO_KEY);
 };
 
-export default function ManagerDashboard() {
+// ==================== 타입 정의 ====================
+
+interface SalesPersonInfo {
+  id: string;
+  role: 'MANAGER' | 'BRANCH_MANAGER' | 'HEAD_MANAGER';
+  organizationName?: string;
+  name: string;
+  phone: string;
+  email?: string;
+}
+
+// 매니저 대시보드 타입
+interface ManagerStats {
+  totalCompanies: number;
+  privateCompanies: number;
+  publicCompanies: number;
+  governmentCompanies: number;
+}
+
+interface ManagerCompany {
+  id: string;
+  companyId: string;
+  companyName: string;
+  companyBizNo: string;
+  company?: {
+    id: string;
+    name: string;
+    bizNo: string;
+    buyerType: string;
+    representative?: string;
+    createdAt: string;
+    buyerProfile?: {
+      employeeCount?: number;
+      disabledCount?: number;
+    };
+  };
+}
+
+// 지사 대시보드 타입
+interface BranchStats {
+  totalManagers: number;
+  totalCompanies: number;
+  privateCompanies: number;
+  publicCompanies: number;
+  governmentCompanies: number;
+}
+
+interface BranchManager {
+  id: string;
+  name: string;
+  phone: string;
+  email?: string;
+  role: string;
+  createdAt: string;
+  stats: {
+    privateCompanies: number;
+    publicCompanies: number;
+    governmentCompanies: number;
+  };
+}
+
+// 본부 대시보드 타입
+interface HeadquartersStats {
+  totalBranches: number;
+  totalManagers: number;
+  totalCompanies: number;
+  privateCompanies: number;
+  publicCompanies: number;
+  governmentCompanies: number;
+}
+
+interface HeadquartersBranch {
+  id: string;
+  organizationName?: string;
+  name: string;
+  phone: string;
+  email?: string;
+  createdAt: string;
+  managerCount: number;
+  stats: {
+    privateCompanies: number;
+    publicCompanies: number;
+    governmentCompanies: number;
+  };
+}
+
+// ==================== 공통 컴포넌트 ====================
+
+const StatCard = ({ 
+  icon, 
+  title, 
+  value, 
+  unit = "개",
+  color = "blue" 
+}: { 
+  icon: string;
+  title: string;
+  value: number;
+  unit?: string;
+  color?: string;
+}) => {
+  const colorClasses = {
+    blue: "bg-blue-50 text-blue-600",
+    green: "bg-green-50 text-green-600",
+    purple: "bg-purple-50 text-purple-600",
+    orange: "bg-orange-50 text-orange-600",
+    red: "bg-red-50 text-red-600",
+  };
+  
+  return (
+    <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-gray-600 text-sm mb-1">{title}</p>
+          <p className="text-2xl font-bold text-gray-900">
+            {value.toLocaleString()}
+            <span className="text-sm font-normal ml-1">{unit}</span>
+          </p>
+        </div>
+        <div className={`p-3 rounded-full ${colorClasses[color as keyof typeof colorClasses]}`}>
+          <span className="text-2xl">{icon}</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const InfoRow = ({ label, value }: { label: string; value?: string }) => (
+  <div className="flex justify-between py-2 border-b border-gray-100 last:border-0">
+    <span className="text-gray-600 font-medium">{label}</span>
+    <span className="text-gray-900">{value || '-'}</span>
+  </div>
+);
+
+// ==================== 매니저 대시보드 ====================
+
+const ManagerDashboard = ({ 
+  accountInfo, 
+  stats, 
+  companies 
+}: { 
+  accountInfo: SalesPersonInfo;
+  stats: ManagerStats;
+  companies: ManagerCompany[];
+}) => {
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  
+  const filteredCompanies = companies.filter(c => {
+    if (selectedCategory === 'all') return true;
+    if (selectedCategory === 'private') return c.company?.buyerType === 'PRIVATE_COMPANY';
+    if (selectedCategory === 'public') return c.company?.buyerType === 'PUBLIC_INSTITUTION';
+    if (selectedCategory === 'government') return c.company?.buyerType === 'GOVERNMENT';
+    return true;
+  });
+  
+  const getBuyerTypeLabel = (type?: string) => {
+    if (!type) return '-';
+    switch (type) {
+      case 'PRIVATE_COMPANY': return '민간기업';
+      case 'PUBLIC_INSTITUTION': return '공공기관';
+      case 'GOVERNMENT': return '정부기관';
+      default: return type;
+    }
+  };
+  
+  return (
+    <div className="space-y-6">
+      {/* 계정 정보 */}
+      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <h2 className="text-xl font-bold mb-4 flex items-center">
+          <span className="mr-2">👤</span>
+          계정 정보
+        </h2>
+        <InfoRow label="이름" value={accountInfo.name} />
+        <InfoRow label="전화번호" value={accountInfo.phone} />
+        <InfoRow label="이메일" value={accountInfo.email} />
+        <InfoRow label="역할" value="매니저" />
+      </div>
+
+      {/* 통계 요약 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          icon="🏢"
+          title="총 추천 의무고용기업"
+          value={stats.totalCompanies}
+          color="blue"
+        />
+        <StatCard
+          icon="🏭"
+          title="민간기업"
+          value={stats.privateCompanies}
+          color="green"
+        />
+        <StatCard
+          icon="🏛️"
+          title="공공기관"
+          value={stats.publicCompanies}
+          color="purple"
+        />
+        <StatCard
+          icon="🏫"
+          title="정부교육기관"
+          value={stats.governmentCompanies}
+          color="orange"
+        />
+      </div>
+
+      {/* 추천 기업 리스트 */}
+      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-bold flex items-center">
+            <span className="mr-2">📋</span>
+            추천 기업 리스트
+          </h2>
+          <select
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="all">전체 ({stats.totalCompanies})</option>
+            <option value="private">민간기업 ({stats.privateCompanies})</option>
+            <option value="public">공공기관 ({stats.publicCompanies})</option>
+            <option value="government">정부교육기관 ({stats.governmentCompanies})</option>
+          </select>
+        </div>
+        
+        {filteredCompanies.length === 0 ? (
+          <div className="text-center py-12 text-gray-500">
+            추천한 기업이 없습니다
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">기업명</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">사업자번호</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">대표자</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">구분</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">직원수</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">장애인수</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {filteredCompanies.map((company) => (
+                  <tr key={company.id} className="hover:bg-gray-50">
+                    <td className="px-4 py-3 text-sm text-gray-900">
+                      {company.companyName || company.company?.name}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-600">
+                      {company.companyBizNo || company.company?.bizNo}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-600">
+                      {company.company?.representative || '-'}
+                    </td>
+                    <td className="px-4 py-3 text-sm">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        company.company?.buyerType === 'PRIVATE_COMPANY' ? 'bg-green-100 text-green-700' :
+                        company.company?.buyerType === 'PUBLIC_INSTITUTION' ? 'bg-purple-100 text-purple-700' :
+                        company.company?.buyerType === 'GOVERNMENT' ? 'bg-orange-100 text-orange-700' :
+                        'bg-gray-100 text-gray-700'
+                      }`}>
+                        {getBuyerTypeLabel(company.company?.buyerType)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-600">
+                      {company.company?.buyerProfile?.employeeCount?.toLocaleString() || '-'}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-600">
+                      {company.company?.buyerProfile?.disabledCount?.toLocaleString() || '-'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ==================== 지사 대시보드 ====================
+
+const BranchDashboard = ({ 
+  accountInfo, 
+  stats, 
+  managers 
+}: { 
+  accountInfo: SalesPersonInfo;
+  stats: BranchStats;
+  managers: BranchManager[];
+}) => {
+  return (
+    <div className="space-y-6">
+      {/* 계정 정보 */}
+      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <h2 className="text-xl font-bold mb-4 flex items-center">
+          <span className="mr-2">🏪</span>
+          지사 정보
+        </h2>
+        <InfoRow label="지사명" value={accountInfo.organizationName} />
+        <InfoRow label="지사장명" value={accountInfo.name} />
+        <InfoRow label="전화번호" value={accountInfo.phone} />
+        <InfoRow label="이메일" value={accountInfo.email} />
+      </div>
+
+      {/* 통계 요약 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <StatCard
+          icon="👥"
+          title="소속 매니저"
+          value={stats.totalManagers}
+          unit="명"
+          color="blue"
+        />
+        <StatCard
+          icon="🏢"
+          title="총 추천기업"
+          value={stats.totalCompanies}
+          color="blue"
+        />
+        <StatCard
+          icon="🏭"
+          title="민간기업"
+          value={stats.privateCompanies}
+          color="green"
+        />
+        <StatCard
+          icon="🏛️"
+          title="공공기관"
+          value={stats.publicCompanies}
+          color="purple"
+        />
+        <StatCard
+          icon="🏫"
+          title="정부교육기관"
+          value={stats.governmentCompanies}
+          color="orange"
+        />
+      </div>
+
+      {/* 매니저 리스트 */}
+      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <h2 className="text-xl font-bold mb-4 flex items-center">
+          <span className="mr-2">👥</span>
+          소속 매니저 리스트
+        </h2>
+        
+        {managers.length === 0 ? (
+          <div className="text-center py-12 text-gray-500">
+            소속 매니저가 없습니다
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">이름</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">전화번호</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">이메일</th>
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">민간기업</th>
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">공공기관</th>
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">정부교육기관</th>
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">합계</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {managers.map((manager) => {
+                  const total = manager.stats.privateCompanies + manager.stats.publicCompanies + manager.stats.governmentCompanies;
+                  return (
+                    <tr key={manager.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3 text-sm font-medium text-gray-900">{manager.name}</td>
+                      <td className="px-4 py-3 text-sm text-gray-600">{manager.phone}</td>
+                      <td className="px-4 py-3 text-sm text-gray-600">{manager.email || '-'}</td>
+                      <td className="px-4 py-3 text-sm text-center">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          {manager.stats.privateCompanies}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-center">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                          {manager.stats.publicCompanies}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-center">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                          {manager.stats.governmentCompanies}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-center">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          {total}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ==================== 본부 대시보드 ====================
+
+const HeadquartersDashboard = ({ 
+  accountInfo, 
+  stats, 
+  branches 
+}: { 
+  accountInfo: SalesPersonInfo;
+  stats: HeadquartersStats;
+  branches: HeadquartersBranch[];
+}) => {
+  return (
+    <div className="space-y-6">
+      {/* 계정 정보 */}
+      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <h2 className="text-xl font-bold mb-4 flex items-center">
+          <span className="mr-2">🏢</span>
+          본부 정보
+        </h2>
+        <InfoRow label="본부명" value={accountInfo.organizationName} />
+        <InfoRow label="본부장명" value={accountInfo.name} />
+        <InfoRow label="전화번호" value={accountInfo.phone} />
+        <InfoRow label="이메일" value={accountInfo.email} />
+      </div>
+
+      {/* 통계 요약 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+        <StatCard
+          icon="🏪"
+          title="소속 지사"
+          value={stats.totalBranches}
+          unit="개"
+          color="blue"
+        />
+        <StatCard
+          icon="👥"
+          title="소속 매니저"
+          value={stats.totalManagers}
+          unit="명"
+          color="blue"
+        />
+        <StatCard
+          icon="🏢"
+          title="총 추천기업"
+          value={stats.totalCompanies}
+          color="blue"
+        />
+        <StatCard
+          icon="🏭"
+          title="민간기업"
+          value={stats.privateCompanies}
+          color="green"
+        />
+        <StatCard
+          icon="🏛️"
+          title="공공기관"
+          value={stats.publicCompanies}
+          color="purple"
+        />
+        <StatCard
+          icon="🏫"
+          title="정부교육기관"
+          value={stats.governmentCompanies}
+          color="orange"
+        />
+      </div>
+
+      {/* 지사 리스트 */}
+      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <h2 className="text-xl font-bold mb-4 flex items-center">
+          <span className="mr-2">🏪</span>
+          소속 지사 리스트
+        </h2>
+        
+        {branches.length === 0 ? (
+          <div className="text-center py-12 text-gray-500">
+            소속 지사가 없습니다
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">지사명</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">지사장</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">전화번호</th>
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">매니저</th>
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">민간기업</th>
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">공공기관</th>
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">정부교육기관</th>
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">합계</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {branches.map((branch) => {
+                  const total = branch.stats.privateCompanies + branch.stats.publicCompanies + branch.stats.governmentCompanies;
+                  return (
+                    <tr key={branch.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                        {branch.organizationName || '-'}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-900">{branch.name}</td>
+                      <td className="px-4 py-3 text-sm text-gray-600">{branch.phone}</td>
+                      <td className="px-4 py-3 text-sm text-center">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          {branch.managerCount}명
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-center">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          {branch.stats.privateCompanies}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-center">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                          {branch.stats.publicCompanies}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-center">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                          {branch.stats.governmentCompanies}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-center">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          {total}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ==================== 메인 대시보드 페이지 ====================
+
+export default function SalesDashboard() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [managerInfo, setManagerInfo] = useState<any>(null);
-  const [stats, setStats] = useState({
-    totalReferrals: 0,
-    activeReferrals: 0,
-    totalRevenue: 0,
-    commission: 0,
-  });
-  const [subordinates, setSubordinates] = useState<any[]>([]);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [createType, setCreateType] = useState<'BRANCH_MANAGER' | 'MANAGER'>('BRANCH_MANAGER');
-  const [newPersonData, setNewPersonData] = useState({
-    name: '',
-    phone: '',
-    email: '',
-    password: '',
-  });
-  const [editingPerson, setEditingPerson] = useState<any>(null);
-  const [showEditModal, setShowEditModal] = useState(false);
+  const [error, setError] = useState<string>('');
+  
+  // 계정 정보
+  const [accountInfo, setAccountInfo] = useState<SalesPersonInfo | null>(null);
+  
+  // 매니저 데이터
+  const [managerStats, setManagerStats] = useState<ManagerStats | null>(null);
+  const [managerCompanies, setManagerCompanies] = useState<ManagerCompany[]>([]);
+  
+  // 지사 데이터
+  const [branchStats, setBranchStats] = useState<BranchStats | null>(null);
+  const [branchManagers, setBranchManagers] = useState<BranchManager[]>([]);
+  
+  // 본부 데이터
+  const [headquartersStats, setHeadquartersStats] = useState<HeadquartersStats | null>(null);
+  const [headquartersBranches, setHeadquartersBranches] = useState<HeadquartersBranch[]>([]);
 
   useEffect(() => {
-    const token = getManagerToken();
-    const info = getManagerInfo();
+    loadDashboard();
+  }, []);
 
-    if (!token || !info) {
-      // 로그인 안 되어 있으면 로그인 페이지로
+  const loadDashboard = async () => {
+    const token = getManagerToken();
+    if (!token) {
       router.push('/admin/sales');
       return;
     }
 
-    setManagerInfo(info);
-    loadStats(info);
-    
-    // 본부장 또는 지사장이면 하위 조직 로드
-    if (info.role === 'HEAD_MANAGER' || info.role === 'BRANCH_MANAGER') {
-      loadSubordinates(info.id);
-    }
-  }, [router]);
+    try {
+      setLoading(true);
+      setError('');
 
-  const loadStats = (info: any) => {
-    setStats({
-      totalReferrals: info.totalReferrals || 0,
-      activeReferrals: info.activeReferrals || 0,
-      totalRevenue: info.totalRevenue || 0,
-      commission: info.commission || 0,
+      // 1. 계정 정보 가져오기
+      const meResponse = await fetch(`${API_BASE}/sales/auth/me`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!meResponse.ok) {
+        throw new Error('인증이 만료되었습니다');
+      }
+
+      const meData = await meResponse.json();
+      const role = meData.role;
+      
+      setAccountInfo({
+        id: meData.id,
+        role: role,
+        organizationName: meData.organizationName,
+        name: meData.name,
+        phone: meData.phone,
+        email: meData.email,
+      });
+
+      // 2. 역할별 데이터 로드
+      if (role === 'MANAGER') {
+        await loadManagerDashboard(token);
+      } else if (role === 'BRANCH_MANAGER') {
+        await loadBranchDashboard(token);
+      } else if (role === 'HEAD_MANAGER') {
+        await loadHeadquartersDashboard(token);
+      }
+
+    } catch (error: any) {
+      console.error('Dashboard load error:', error);
+      setError(error.message || '대시보드를 불러오는데 실패했습니다');
+      if (error.message.includes('인증')) {
+        clearManagerAuth();
+        router.push('/admin/sales');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadManagerDashboard = async (token: string) => {
+    // 통계
+    const statsResponse = await fetch(`${API_BASE}/sales/dashboard/stats`, {
+      headers: { 'Authorization': `Bearer ${token}` },
     });
-    setLoading(false);
-  };
+    if (statsResponse.ok) {
+      const stats = await statsResponse.json();
+      setManagerStats(stats);
+    }
 
-  const loadSubordinates = async (managerId: string) => {
-    try {
-      const token = getManagerToken();
-      const response = await fetch(`${API_BASE}/sales/people?managerId=${managerId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setSubordinates(data);
-      }
-    } catch (error) {
-      console.error('하위 조직 조회 실패:', error);
+    // 추천 기업 리스트
+    const companiesResponse = await fetch(`${API_BASE}/sales/dashboard/companies`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+    if (companiesResponse.ok) {
+      const companies = await companiesResponse.json();
+      setManagerCompanies(companies);
     }
   };
 
-  const handleCreatePerson = async () => {
-    try {
-      const { name, phone, email, password } = newPersonData;
-      
-      if (!name || !phone || !password) {
-        alert('필수 정보를 입력해주세요');
-        return;
-      }
-
-      const token = getManagerToken();
-      const response = await fetch(`${API_BASE}/sales/people/create`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name,
-          phone,
-          email,
-          password,
-          role: createType,
-          managerId: managerInfo.id,
-        }),
+  const loadBranchDashboard = async (token: string) => {
+    // 통계
+    const statsResponse = await fetch(`${API_BASE}/sales/dashboard/stats`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+    if (statsResponse.ok) {
+      const stats = await statsResponse.json();
+      setBranchStats({
+        totalManagers: stats.managers || 0,
+        totalCompanies: stats.totalCompanies,
+        privateCompanies: stats.privateCompanies,
+        publicCompanies: stats.publicCompanies,
+        governmentCompanies: stats.governmentCompanies,
       });
+    }
 
-      if (response.ok) {
-        alert('✅ 생성이 완료되었습니다');
-        setShowCreateModal(false);
-        setNewPersonData({ name: '', phone: '', email: '', password: '' });
-        loadSubordinates(managerInfo.id);
-      } else {
-        const error = await response.json();
-        alert(`❌ 생성 실패: ${error.error}`);
-      }
-    } catch (error) {
-      console.error('생성 오류:', error);
-      alert('❌ 생성 중 오류가 발생했습니다');
+    // 매니저 리스트
+    const managersResponse = await fetch(`${API_BASE}/sales/dashboard/managers`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+    if (managersResponse.ok) {
+      const managers = await managersResponse.json();
+      setBranchManagers(managers);
     }
   };
 
-  const handleEditPerson = async () => {
-    try {
-      const { name, phone, email } = editingPerson;
-      
-      if (!name || !phone) {
-        alert('필수 정보를 입력해주세요');
-        return;
-      }
-
-      const token = getManagerToken();
-      const response = await fetch(`${API_BASE}/sales/people/${editingPerson.id}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ name, phone, email }),
+  const loadHeadquartersDashboard = async (token: string) => {
+    // 통계
+    const statsResponse = await fetch(`${API_BASE}/sales/dashboard/stats`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+    if (statsResponse.ok) {
+      const stats = await statsResponse.json();
+      setHeadquartersStats({
+        totalBranches: stats.branches || 0,
+        totalManagers: stats.managers || 0,
+        totalCompanies: stats.totalCompanies,
+        privateCompanies: stats.privateCompanies,
+        publicCompanies: stats.publicCompanies,
+        governmentCompanies: stats.governmentCompanies,
       });
-
-      if (response.ok) {
-        alert('✅ 수정이 완료되었습니다');
-        setShowEditModal(false);
-        setEditingPerson(null);
-        loadSubordinates(managerInfo.id);
-      } else {
-        const error = await response.json();
-        alert(`❌ 수정 실패: ${error.error}`);
-      }
-    } catch (error) {
-      console.error('수정 오류:', error);
-      alert('❌ 수정 중 오류가 발생했습니다');
-    }
-  };
-
-  const handleDeletePerson = async (person: any) => {
-    if (!confirm(`정말 ${person.name}을(를) 삭제하시겠습니까?`)) {
-      return;
     }
 
-    try {
-      const token = getManagerToken();
-      const response = await fetch(`${API_BASE}/sales/people/${person.id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        alert('✅ 삭제되었습니다');
-        loadSubordinates(managerInfo.id);
-      } else {
-        const error = await response.json();
-        alert(`❌ 삭제 실패: ${error.error}`);
-      }
-    } catch (error) {
-      console.error('삭제 오류:', error);
-      alert('❌ 삭제 중 오류가 발생했습니다');
-    }
-  };
-
-  const handleToggleActive = async (id: string, currentStatus: boolean) => {
-    try {
-      const token = getManagerToken();
-      const response = await fetch(`${API_BASE}/sales/people/${id}/toggle-active`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        alert(`✅ ${currentStatus ? '비활성화' : '활성화'}되었습니다`);
-        loadSubordinates(managerInfo.id);
-      } else {
-        const error = await response.json();
-        alert(`❌ 실패: ${error.error}`);
-      }
-    } catch (error) {
-      console.error('상태 변경 오류:', error);
-      alert('❌ 상태 변경 중 오류가 발생했습니다');
+    // 지사 리스트
+    const branchesResponse = await fetch(`${API_BASE}/sales/dashboard/branches`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+    if (branchesResponse.ok) {
+      const branches = await branchesResponse.json();
+      setHeadquartersBranches(branches);
     }
   };
 
@@ -228,670 +729,83 @@ export default function ManagerDashboard() {
     router.push('/admin/sales');
   };
 
-  const getRoleName = (role: string) => {
-    switch (role) {
-      case 'MANAGER':
-        return '매니저';
-      case 'BRANCH_MANAGER':
-        return '지사장';
-      case 'HEAD_MANAGER':
-        return '본부장';
-      default:
-        return role;
-    }
-  };
-
   if (loading) {
     return (
-      <div style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: '#f9fafb',
-      }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>⏳</div>
-          <p style={{ fontSize: 16, color: '#6b7280' }}>로딩 중...</p>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">로딩 중...</p>
         </div>
       </div>
     );
   }
 
-  if (!managerInfo) {
-    return null;
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full">
+          <div className="text-red-600 text-center mb-4">
+            <span className="text-4xl">⚠️</span>
+          </div>
+          <p className="text-center text-gray-800 mb-4">{error}</p>
+          <button
+            onClick={() => router.push('/admin/sales')}
+            className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700"
+          >
+            로그인 페이지로
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: '#f9fafb',
-    }}>
+    <div className="min-h-screen bg-gray-50">
       {/* 헤더 */}
-      <header style={{
-        background: 'white',
-        borderBottom: '1px solid #e5e7eb',
-        padding: '16px 24px',
-      }}>
-        <div style={{
-          maxWidth: 1200,
-          margin: '0 auto',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-        }}>
-          <div>
-            <h1 style={{ fontSize: 24, fontWeight: 'bold', margin: 0 }}>
-              📊 영업 사원 대시보드
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <h1 className="text-2xl font-bold text-gray-900">
+              {accountInfo?.role === 'MANAGER' && '매니저 대시보드'}
+              {accountInfo?.role === 'BRANCH_MANAGER' && '지사 대시보드'}
+              {accountInfo?.role === 'HEAD_MANAGER' && '본부 대시보드'}
             </h1>
-            <p style={{ fontSize: 14, color: '#6b7280', margin: '4px 0 0 0' }}>
-              {managerInfo.name} ({getRoleName(managerInfo.role)})
-            </p>
-          </div>
-          <button
-            onClick={handleLogout}
-            style={{
-              padding: '8px 16px',
-              background: '#ef4444',
-              color: 'white',
-              border: 'none',
-              borderRadius: 6,
-              cursor: 'pointer',
-              fontSize: 14,
-              fontWeight: 600,
-            }}
-          >
-            로그아웃
-          </button>
-        </div>
-      </header>
-
-      {/* 메인 콘텐츠 */}
-      <main style={{
-        maxWidth: 1200,
-        margin: '0 auto',
-        padding: '32px 24px',
-      }}>
-        {/* 환영 메시지 */}
-        <div style={{
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          borderRadius: 12,
-          padding: 32,
-          marginBottom: 32,
-          color: 'white',
-        }}>
-          <h2 style={{ fontSize: 28, fontWeight: 'bold', margin: 0, marginBottom: 8 }}>
-            환영합니다, {managerInfo.name}님! 👋
-          </h2>
-          <p style={{ fontSize: 16, margin: 0, opacity: 0.9 }}>
-            오늘도 좋은 하루 되세요!
-          </p>
-        </div>
-
-        {/* 통계 카드 */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-          gap: 24,
-          marginBottom: 32,
-        }}>
-          <StatCard
-            icon="👥"
-            title="총 추천 고객"
-            value={stats.totalReferrals}
-            unit="명"
-            color="#3b82f6"
-          />
-          <StatCard
-            icon="✅"
-            title="활성 고객"
-            value={stats.activeReferrals}
-            unit="명"
-            color="#10b981"
-          />
-          <StatCard
-            icon="💰"
-            title="총 매출"
-            value={stats.totalRevenue.toLocaleString()}
-            unit="원"
-            color="#f59e0b"
-          />
-          <StatCard
-            icon="🎁"
-            title="수수료"
-            value={stats.commission.toLocaleString()}
-            unit="원"
-            color="#8b5cf6"
-          />
-        </div>
-
-        {/* 추천인 링크 */}
-        <div style={{
-          background: 'white',
-          borderRadius: 12,
-          padding: 24,
-          boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-          marginBottom: 32,
-        }}>
-          <h3 style={{ fontSize: 18, fontWeight: 'bold', margin: 0, marginBottom: 16 }}>
-            🔗 나의 추천인 링크
-          </h3>
-          <div style={{
-            background: '#f9fafb',
-            border: '1px solid #e5e7eb',
-            borderRadius: 8,
-            padding: 16,
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-          }}>
-            <code style={{
-              fontSize: 14,
-              color: '#667eea',
-              fontWeight: 600,
-            }}>
-              {managerInfo.referralLink}
-            </code>
             <button
-              onClick={() => {
-                navigator.clipboard.writeText(managerInfo.referralLink);
-                alert('📋 링크가 복사되었습니다!');
-              }}
-              style={{
-                padding: '8px 16px',
-                background: '#667eea',
-                color: 'white',
-                border: 'none',
-                borderRadius: 6,
-                cursor: 'pointer',
-                fontSize: 14,
-                fontWeight: 600,
-              }}
+              onClick={handleLogout}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
             >
-              복사
+              로그아웃
             </button>
           </div>
         </div>
-
-        {/* 계정 정보 */}
-        <div style={{
-          background: 'white',
-          borderRadius: 12,
-          padding: 24,
-          boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-        }}>
-          <h3 style={{ fontSize: 18, fontWeight: 'bold', margin: 0, marginBottom: 16 }}>
-            👤 계정 정보
-          </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <InfoRow label="이름" value={managerInfo.name} />
-            <InfoRow label="역할" value={getRoleName(managerInfo.role)} />
-            <InfoRow label="핸드폰" value={managerInfo.phone} />
-            <InfoRow label="이메일" value={managerInfo.email || '-'} />
-            <InfoRow label="추천인 코드" value={managerInfo.referralCode} />
-            <InfoRow 
-              label="상태" 
-              value={managerInfo.isActive ? '✅ 활성' : '❌ 비활성'}
-            />
-          </div>
-        </div>
-
-        {/* 안내 메시지 */}
-        <div style={{
-          marginTop: 32,
-          padding: 16,
-          background: '#fef3c7',
-          borderRadius: 8,
-          fontSize: 14,
-          color: '#92400e',
-        }}>
-          💡 <strong>안내:</strong> 등업 및 지사 배정은 슈퍼어드민이 수행합니다. 
-          문의사항이 있으시면 본사로 연락해주세요.
-        </div>
-
-        {/* 본부장/지사장 전용: 하위 조직 관리 */}
-        {(managerInfo.role === 'HEAD_MANAGER' || managerInfo.role === 'BRANCH_MANAGER') && (
-          <div style={{ marginTop: 32 }}>
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: 16,
-            }}>
-              <h3 style={{ fontSize: 20, fontWeight: 'bold', margin: 0 }}>
-                🏢 하위 조직 관리
-              </h3>
-              <div style={{ display: 'flex', gap: 8 }}>
-                {managerInfo.role === 'HEAD_MANAGER' && (
-                  <button
-                    onClick={() => {
-                      setCreateType('BRANCH_MANAGER');
-                      setShowCreateModal(true);
-                    }}
-                    style={{
-                      padding: '10px 16px',
-                      background: '#f97316',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: 6,
-                      cursor: 'pointer',
-                      fontSize: 14,
-                      fontWeight: 600,
-                    }}
-                  >
-                    ➕ 지사 생성
-                  </button>
-                )}
-                <button
-                  onClick={() => {
-                    setCreateType('MANAGER');
-                    setShowCreateModal(true);
-                  }}
-                  style={{
-                    padding: '10px 16px',
-                    background: '#3b82f6',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: 6,
-                    cursor: 'pointer',
-                    fontSize: 14,
-                    fontWeight: 600,
-                  }}
-                >
-                  ➕ 매니저 생성
-                </button>
-              </div>
-            </div>
-
-            {/* 하위 조직 리스트 */}
-            <div style={{
-              background: 'white',
-              borderRadius: 12,
-              padding: 24,
-              boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-            }}>
-              {subordinates.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: 40, color: '#9ca3af' }}>
-                  <div style={{ fontSize: 48, marginBottom: 16 }}>📭</div>
-                  <p style={{ fontSize: 16 }}>하위 조직이 없습니다</p>
-                </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  {subordinates.map((person) => (
-                    <div
-                      key={person.id}
-                      style={{
-                        padding: 16,
-                        border: '1px solid #e5e7eb',
-                        borderRadius: 8,
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                      }}
-                    >
-                      <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                          <span style={{ fontSize: 16, fontWeight: 'bold' }}>
-                            {person.name}
-                          </span>
-                          <span style={{
-                            padding: '2px 8px',
-                            background: person.role === 'BRANCH_MANAGER' ? '#f97316' : '#3b82f6',
-                            color: 'white',
-                            borderRadius: 4,
-                            fontSize: 12,
-                          }}>
-                            {person.role === 'BRANCH_MANAGER' ? '지사장' : '매니저'}
-                          </span>
-                          <span style={{
-                            padding: '2px 8px',
-                            background: person.isActive ? '#10b981' : '#ef4444',
-                            color: 'white',
-                            borderRadius: 4,
-                            fontSize: 12,
-                          }}>
-                            {person.isActive ? '활성' : '비활성'}
-                          </span>
-                        </div>
-                        <div style={{ fontSize: 14, color: '#6b7280' }}>
-                          {person.phone} {person.email && `• ${person.email}`}
-                        </div>
-                        <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 4 }}>
-                          추천: {person.totalReferrals}명 | 활성: {person.activeReferrals}명 | 
-                          매출: ₩{person.totalRevenue?.toLocaleString() || 0}
-                        </div>
-                      </div>
-                      <div style={{ display: 'flex', gap: 8 }}>
-                        <button
-                          onClick={() => {
-                            setEditingPerson(person);
-                            setShowEditModal(true);
-                          }}
-                          style={{
-                            padding: '6px 12px',
-                            background: '#3b82f6',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: 4,
-                            cursor: 'pointer',
-                            fontSize: 12,
-                          }}
-                        >
-                          ✏️ 수정
-                        </button>
-                        <button
-                          onClick={() => handleToggleActive(person.id, person.isActive)}
-                          style={{
-                            padding: '6px 12px',
-                            background: person.isActive ? '#f59e0b' : '#10b981',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: 4,
-                            cursor: 'pointer',
-                            fontSize: 12,
-                          }}
-                        >
-                          {person.isActive ? '🔒 비활성화' : '🔓 활성화'}
-                        </button>
-                        <button
-                          onClick={() => handleDeletePerson(person)}
-                          style={{
-                            padding: '6px 12px',
-                            background: '#ef4444',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: 4,
-                            cursor: 'pointer',
-                            fontSize: 12,
-                          }}
-                        >
-                          🗑️ 삭제
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* 생성 모달 */}
-        {showCreateModal && (
-          <div style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(0,0,0,0.5)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-          }}>
-            <div style={{
-              background: 'white',
-              borderRadius: 12,
-              padding: 32,
-              width: '90%',
-              maxWidth: 500,
-            }}>
-              <h3 style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 24 }}>
-                {createType === 'BRANCH_MANAGER' ? '🏪 지사 생성' : '👤 매니저 생성'}
-              </h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                <input
-                  type="text"
-                  placeholder="이름"
-                  value={newPersonData.name}
-                  onChange={(e) => setNewPersonData({ ...newPersonData, name: e.target.value })}
-                  style={{
-                    padding: 12,
-                    border: '1px solid #e5e7eb',
-                    borderRadius: 6,
-                    fontSize: 14,
-                  }}
-                />
-                <input
-                  type="tel"
-                  placeholder="전화번호 (예: 01012345678)"
-                  value={newPersonData.phone}
-                  onChange={(e) => setNewPersonData({ ...newPersonData, phone: e.target.value })}
-                  style={{
-                    padding: 12,
-                    border: '1px solid #e5e7eb',
-                    borderRadius: 6,
-                    fontSize: 14,
-                  }}
-                />
-                <input
-                  type="email"
-                  placeholder="이메일 (선택)"
-                  value={newPersonData.email}
-                  onChange={(e) => setNewPersonData({ ...newPersonData, email: e.target.value })}
-                  style={{
-                    padding: 12,
-                    border: '1px solid #e5e7eb',
-                    borderRadius: 6,
-                    fontSize: 14,
-                  }}
-                />
-                <input
-                  type="password"
-                  placeholder="비밀번호 (최소 6자)"
-                  value={newPersonData.password}
-                  onChange={(e) => setNewPersonData({ ...newPersonData, password: e.target.value })}
-                  style={{
-                    padding: 12,
-                    border: '1px solid #e5e7eb',
-                    borderRadius: 6,
-                    fontSize: 14,
-                  }}
-                />
-              </div>
-              <div style={{ display: 'flex', gap: 8, marginTop: 24 }}>
-                <button
-                  onClick={() => {
-                    setShowCreateModal(false);
-                    setNewPersonData({ name: '', phone: '', email: '', password: '' });
-                  }}
-                  style={{
-                    flex: 1,
-                    padding: 12,
-                    background: '#3b82f6',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: 6,
-                    cursor: 'pointer',
-                    fontSize: 14,
-                    fontWeight: 600,
-                  }}
-                >
-                  취소
-                </button>
-                <button
-                  onClick={handleCreatePerson}
-                  style={{
-                    flex: 1,
-                    padding: 12,
-                    background: createType === 'BRANCH_MANAGER' ? '#f97316' : '#3b82f6',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: 6,
-                    cursor: 'pointer',
-                    fontSize: 14,
-                    fontWeight: 600,
-                  }}
-                >
-                  생성
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* 수정 모달 */}
-        {showEditModal && editingPerson && (
-          <div style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(0,0,0,0.5)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-          }}>
-            <div style={{
-              background: 'white',
-              borderRadius: 12,
-              padding: 32,
-              width: '90%',
-              maxWidth: 500,
-            }}>
-              <h3 style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 24 }}>
-                ✏️ 정보 수정
-              </h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                <input
-                  type="text"
-                  placeholder="이름"
-                  value={editingPerson.name}
-                  onChange={(e) => setEditingPerson({ ...editingPerson, name: e.target.value })}
-                  style={{
-                    padding: 12,
-                    border: '1px solid #e5e7eb',
-                    borderRadius: 6,
-                    fontSize: 14,
-                  }}
-                />
-                <input
-                  type="tel"
-                  placeholder="전화번호"
-                  value={editingPerson.phone}
-                  onChange={(e) => setEditingPerson({ ...editingPerson, phone: e.target.value })}
-                  style={{
-                    padding: 12,
-                    border: '1px solid #e5e7eb',
-                    borderRadius: 6,
-                    fontSize: 14,
-                  }}
-                />
-                <input
-                  type="email"
-                  placeholder="이메일"
-                  value={editingPerson.email || ''}
-                  onChange={(e) => setEditingPerson({ ...editingPerson, email: e.target.value })}
-                  style={{
-                    padding: 12,
-                    border: '1px solid #e5e7eb',
-                    borderRadius: 6,
-                    fontSize: 14,
-                  }}
-                />
-              </div>
-              <div style={{ display: 'flex', gap: 8, marginTop: 24 }}>
-                <button
-                  onClick={() => {
-                    setShowEditModal(false);
-                    setEditingPerson(null);
-                  }}
-                  style={{
-                    flex: 1,
-                    padding: 12,
-                    background: '#3b82f6',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: 6,
-                    cursor: 'pointer',
-                    fontSize: 14,
-                    fontWeight: 600,
-                  }}
-                >
-                  취소
-                </button>
-                <button
-                  onClick={handleEditPerson}
-                  style={{
-                    flex: 1,
-                    padding: 12,
-                    background: '#10b981',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: 6,
-                    cursor: 'pointer',
-                    fontSize: 14,
-                    fontWeight: 600,
-                  }}
-                >
-                  저장
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-      </main>
-    </div>
-  );
-}
-
-function StatCard({ icon, title, value, unit, color }: {
-  icon: string;
-  title: string;
-  value: number | string;
-  unit: string;
-  color: string;
-}) {
-  return (
-    <div style={{
-      background: 'white',
-      borderRadius: 12,
-      padding: 24,
-      boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-    }}>
-      <div style={{
-        fontSize: 32,
-        marginBottom: 12,
-      }}>
-        {icon}
       </div>
-      <p style={{
-        fontSize: 14,
-        color: '#6b7280',
-        margin: 0,
-        marginBottom: 8,
-      }}>
-        {title}
-      </p>
-      <p style={{
-        fontSize: 28,
-        fontWeight: 'bold',
-        color,
-        margin: 0,
-      }}>
-        {value} <span style={{ fontSize: 16, fontWeight: 'normal' }}>{unit}</span>
-      </p>
-    </div>
-  );
-}
 
-function InfoRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div style={{
-      display: 'flex',
-      justifyContent: 'space-between',
-      padding: '12px 0',
-      borderBottom: '1px solid #f3f4f6',
-    }}>
-      <span style={{ fontSize: 14, color: '#6b7280', fontWeight: 500 }}>
-        {label}
-      </span>
-      <span style={{ fontSize: 14, color: '#111', fontWeight: 600 }}>
-        {value}
-      </span>
+      {/* 메인 컨텐츠 */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {accountInfo?.role === 'MANAGER' && managerStats && (
+          <ManagerDashboard
+            accountInfo={accountInfo}
+            stats={managerStats}
+            companies={managerCompanies}
+          />
+        )}
+        
+        {accountInfo?.role === 'BRANCH_MANAGER' && branchStats && (
+          <BranchDashboard
+            accountInfo={accountInfo}
+            stats={branchStats}
+            managers={branchManagers}
+          />
+        )}
+        
+        {accountInfo?.role === 'HEAD_MANAGER' && headquartersStats && (
+          <HeadquartersDashboard
+            accountInfo={accountInfo}
+            stats={headquartersStats}
+            branches={headquartersBranches}
+          />
+        )}
+      </div>
     </div>
   );
 }

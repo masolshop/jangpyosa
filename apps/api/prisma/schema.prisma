@@ -91,6 +91,7 @@ model Company {
   activityLogs      ActivityLog[]    // 🆕 활동 로그
   leaveTypes        LeaveType[]      // 🆕 휴가 유형 목록
   leaveRequests     LeaveRequest[]   // 🆕 휴가 신청 목록
+  referrals         CompanyReferral[] @relation("CompanyReferrals") // 추천 정보
 }
 
 model SupplierRegistry {
@@ -824,6 +825,7 @@ model CompanyReferral {
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
   
+  company           Company     @relation("CompanyReferrals", fields: [companyId], references: [id])
   salesPerson       SalesPerson @relation(fields: [salesPersonId], references: [id])
   
   @@unique([companyId, salesPersonId])

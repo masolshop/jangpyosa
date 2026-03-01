@@ -881,4 +881,395 @@ router.get('/organizations', async (req, res) => {
   }
 });
 
+/**
+ * GET /sales/dashboard/stats
+ * 매니저/지사/본부 통합 대시보드 통계
+ * 
+ * 매니저: 자신이 추천한 기업 통계
+ * 지사: 소속 매니저들이 추천한 기업 통계 합계
+ * 본부: 소속 지사+매니저들이 추천한 기업 통계 합계
+ */
+router.get('/dashboard/stats', requireAuth, async (req, res) => {
+  try {
+    const { user } = req;
+    
+    if (!user) {
+      return res.status(401).json({ error: '인증이 필요합니다' });
+    }
+    
+    // 현재 로그인한 영업사원 정보 조회
+    const salesPerson = await prisma.salesPerson.findUnique({
+      where: { userId: user.id },
+      include: {
+        subordinates: {
+          where: { isActive: true },
+          include: {
+            subordinates: {
+              where: { isActive: true },
+            },
+          },
+        },
+      },
+    });
+    
+    if (!salesPerson) {
+      return res.status(404).json({ error: '영업 사원 정보를 찾을 수 없습니다' });
+    }
+    
+    // 집계 대상 ID 목록
+    let targetIds: string[] = [salesPerson.id];
+    
+    // 역할에 따라 하위 조직 포함
+    if (salesPerson.role === 'BRANCH_MANAGER') {
+      // 지사장: 자신 + 소속 매니저들
+      const managerIds = salesPerson.subordinates.map(s => s.id);
+      targetIds = [...targetIds, ...managerIds];
+    } else if (salesPerson.role === 'HEAD_MANAGER') {
+      // 본부장: 자신 + 소속 지사들 + 소속 매니저들
+      const branchIds = salesPerson.subordinates.map(s => s.id);
+      const managerIds = salesPerson.subordinates.flatMap(branch => 
+        branch.subordinates?.map(m => m.id) || []
+      );
+      targetIds = [...targetIds, ...branchIds, ...managerIds];
+    }
+    
+    // CompanyReferral에서 추천 기업 정보 조회 (Company 조인하여 buyerType 가져오기)
+    const referrals = await prisma.companyReferral.findMany({
+      where: {
+        salesPersonId: { in: targetIds },
+        isActive: true,
+      },
+      include: {
+        company: {
+          select: {
+            buyerType: true,
+            type: true,
+          },
+        },
+      },
+    });
+    
+    // 기업 유형별 집계
+    const stats = {
+      totalCompanies: referrals.length,
+      privateCompanies: 0,    // 민간기업
+      publicCompanies: 0,     // 공공기관
+      governmentCompanies: 0, // 국가지자체교육청
+      managers: 0,            // 소속 매니저 수
+      branches: 0,            // 소속 지사 수
+    };
+    
+    // BUYER 유형의 기업만 집계
+    referrals.forEach(ref => {
+      if (ref.company?.type === 'BUYER' && ref.company?.buyerType) {
+        switch (ref.company.buyerType) {
+          case 'PRIVATE_COMPANY':
+            stats.privateCompanies++;
+            break;
+          case 'PUBLIC_INSTITUTION':
+            stats.publicCompanies++;
+            break;
+          case 'GOVERNMENT':
+            stats.governmentCompanies++;
+            break;
+        }
+      }
+    });
+    
+    // 역할별 하위 조직 수 집계
+    if (salesPerson.role === 'HEAD_MANAGER') {
+      // 본부장: 지사 수와 매니저 수
+      stats.branches = salesPerson.subordinates.filter(s => s.role === 'BRANCH_MANAGER').length;
+      stats.managers = salesPerson.subordinates.flatMap(branch => 
+        branch.subordinates || []
+      ).length + salesPerson.subordinates.filter(s => s.role === 'MANAGER').length;
+    } else if (salesPerson.role === 'BRANCH_MANAGER') {
+      // 지사장: 매니저 수만
+      stats.managers = salesPerson.subordinates.length;
+    }
+    
+    res.json({
+      role: salesPerson.role,
+      organizationName: salesPerson.organizationName,
+      name: salesPerson.name,
+      phone: salesPerson.phone,
+      email: salesPerson.email,
+      stats,
+    });
+  } catch (error: any) {
+    console.error('[GET /sales/dashboard/stats] Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /sales/dashboard/companies
+ * 매니저 추천 기업 리스트
+ */
+router.get('/dashboard/companies', requireAuth, async (req, res) => {
+  try {
+    const { user } = req;
+    const { buyerType } = req.query; // PRIVATE_COMPANY, PUBLIC_INSTITUTION, GOVERNMENT
+    
+    if (!user) {
+      return res.status(401).json({ error: '인증이 필요합니다' });
+    }
+    
+    // 현재 로그인한 영업사원 정보 조회
+    const salesPerson = await prisma.salesPerson.findUnique({
+      where: { userId: user.id },
+    });
+    
+    if (!salesPerson) {
+      return res.status(404).json({ error: '영업 사원 정보를 찾을 수 없습니다' });
+    }
+    
+    // 매니저만 자신의 추천 기업 리스트를 볼 수 있음
+    if (salesPerson.role !== 'MANAGER') {
+      return res.status(403).json({ error: '매니저만 접근 가능합니다' });
+    }
+    
+    const where: any = {
+      salesPersonId: salesPerson.id,
+      isActive: true,
+      company: {
+        type: 'BUYER',
+      },
+    };
+    
+    // buyerType 필터
+    if (buyerType) {
+      where.company.buyerType = buyerType;
+    }
+    
+    const companies = await prisma.companyReferral.findMany({
+      where,
+      include: {
+        company: {
+          select: {
+            id: true,
+            name: true,
+            bizNo: true,
+            buyerType: true,
+            representative: true,
+            createdAt: true,
+            buyerProfile: {
+              select: {
+                employeeCount: true,
+                disabledCount: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+    
+    res.json(companies);
+  } catch (error: any) {
+    console.error('[GET /sales/dashboard/companies] Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /sales/dashboard/managers
+ * 지사/본부 소속 매니저 리스트 (각 매니저의 추천 기업 통계 포함)
+ */
+router.get('/dashboard/managers', requireAuth, async (req, res) => {
+  try {
+    const { user } = req;
+    
+    if (!user) {
+      return res.status(401).json({ error: '인증이 필요합니다' });
+    }
+    
+    // 현재 로그인한 영업사원 정보 조회
+    const salesPerson = await prisma.salesPerson.findUnique({
+      where: { userId: user.id },
+      include: {
+        subordinates: {
+          where: { isActive: true },
+          orderBy: { createdAt: 'asc' },
+        },
+      },
+    });
+    
+    if (!salesPerson) {
+      return res.status(404).json({ error: '영업 사원 정보를 찾을 수 없습니다' });
+    }
+    
+    // 지사장이나 본부장만 접근 가능
+    if (salesPerson.role === 'MANAGER') {
+      return res.status(403).json({ error: '권한이 없습니다' });
+    }
+    
+    // 각 매니저의 추천 기업 통계 조회
+    const managersWithStats = await Promise.all(
+      salesPerson.subordinates.map(async (manager) => {
+        const referrals = await prisma.companyReferral.findMany({
+          where: {
+            salesPersonId: manager.id,
+            isActive: true,
+            company: {
+              type: 'BUYER',
+            },
+          },
+          include: {
+            company: {
+              select: {
+                buyerType: true,
+              },
+            },
+          },
+        });
+        
+        const stats = {
+          privateCompanies: 0,
+          publicCompanies: 0,
+          governmentCompanies: 0,
+        };
+        
+        referrals.forEach(ref => {
+          if (ref.company?.buyerType) {
+            switch (ref.company.buyerType) {
+              case 'PRIVATE_COMPANY':
+                stats.privateCompanies++;
+                break;
+              case 'PUBLIC_INSTITUTION':
+                stats.publicCompanies++;
+                break;
+              case 'GOVERNMENT':
+                stats.governmentCompanies++;
+                break;
+            }
+          }
+        });
+        
+        return {
+          id: manager.id,
+          name: manager.name,
+          phone: manager.phone,
+          email: manager.email,
+          role: manager.role,
+          createdAt: manager.createdAt,
+          stats,
+        };
+      })
+    );
+    
+    res.json(managersWithStats);
+  } catch (error: any) {
+    console.error('[GET /sales/dashboard/managers] Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /sales/dashboard/branches
+ * 본부 소속 지사 리스트 (각 지사의 추천 기업 통계 포함)
+ */
+router.get('/dashboard/branches', requireAuth, async (req, res) => {
+  try {
+    const { user } = req;
+    
+    if (!user) {
+      return res.status(401).json({ error: '인증이 필요합니다' });
+    }
+    
+    // 현재 로그인한 영업사원 정보 조회
+    const salesPerson = await prisma.salesPerson.findUnique({
+      where: { userId: user.id },
+      include: {
+        subordinates: {
+          where: { 
+            isActive: true,
+            role: 'BRANCH_MANAGER',
+          },
+          include: {
+            subordinates: {
+              where: { isActive: true },
+            },
+          },
+          orderBy: { createdAt: 'asc' },
+        },
+      },
+    });
+    
+    if (!salesPerson) {
+      return res.status(404).json({ error: '영업 사원 정보를 찾을 수 없습니다' });
+    }
+    
+    // 본부장만 접근 가능
+    if (salesPerson.role !== 'HEAD_MANAGER') {
+      return res.status(403).json({ error: '본부장만 접근 가능합니다' });
+    }
+    
+    // 각 지사의 추천 기업 통계 조회 (지사 자체 + 소속 매니저)
+    const branchesWithStats = await Promise.all(
+      salesPerson.subordinates.map(async (branch) => {
+        // 지사 자체 + 소속 매니저 ID
+        const targetIds = [branch.id, ...(branch.subordinates?.map(m => m.id) || [])];
+        
+        const referrals = await prisma.companyReferral.findMany({
+          where: {
+            salesPersonId: { in: targetIds },
+            isActive: true,
+            company: {
+              type: 'BUYER',
+            },
+          },
+          include: {
+            company: {
+              select: {
+                buyerType: true,
+              },
+            },
+          },
+        });
+        
+        const stats = {
+          privateCompanies: 0,
+          publicCompanies: 0,
+          governmentCompanies: 0,
+        };
+        
+        referrals.forEach(ref => {
+          if (ref.company?.buyerType) {
+            switch (ref.company.buyerType) {
+              case 'PRIVATE_COMPANY':
+                stats.privateCompanies++;
+                break;
+              case 'PUBLIC_INSTITUTION':
+                stats.publicCompanies++;
+                break;
+              case 'GOVERNMENT':
+                stats.governmentCompanies++;
+                break;
+            }
+          }
+        });
+        
+        return {
+          id: branch.id,
+          organizationName: branch.organizationName,
+          name: branch.name,
+          phone: branch.phone,
+          email: branch.email,
+          createdAt: branch.createdAt,
+          managerCount: branch.subordinates?.length || 0,
+          stats,
+        };
+      })
+    );
+    
+    res.json(branchesWithStats);
+  } catch (error: any) {
+    console.error('[GET /sales/dashboard/branches] Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export default router;
