@@ -39,6 +39,7 @@ import leaveRoutes from "./routes/leave.js";
 import annualLeaveRoutes from "./routes/annual-leave.js";
 import salesRoutes from "./routes/sales.js";
 import referralRoutes from "./routes/referral.js";
+import salesAuthRoutes from "./routes/sales-auth.js";
 
 // Prisma Client with monitoring
 export const prisma = createPrismaWithMonitoring();
@@ -92,6 +93,7 @@ app.use("/work-orders", workOrdersRoutes);
 app.use("/notifications", notificationsRoutes);
 app.use("/leave", leaveRoutes);
 app.use("/annual-leave", annualLeaveRoutes);
+app.use("/sales/auth", salesAuthRoutes);
 app.use("/sales", salesRoutes);
 app.use("/referral", referralRoutes);
 app.use("/", performancesRoutes); // performances와 contracts 엔드포인트 모두 포함
