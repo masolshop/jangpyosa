@@ -202,6 +202,39 @@ export default function OrganizationsManagementPage() {
     }
   };
 
+  // 전체 초기화 (모든 본부/지사 및 승인 대기 매니저 삭제)
+  const handleResetAll = async () => {
+    if (!confirm('⚠️ 경고: 모든 본부/지사 및 승인 대기 매니저가 삭제됩니다.\n\n정말 전체 초기화를 진행하시겠습니까?')) {
+      return;
+    }
+
+    if (!confirm('정말로 진행하시겠습니까? 이 작업은 되돌릴 수 없습니다!')) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('accessToken');
+      const response = await fetch(`${API_BASE}/sales/organizations/reset-all`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        showMessage('success', `전체 초기화 완료: 본부 ${data.deleted.headquarters}개, 지사 ${data.deleted.branches}개, 승인 대기 매니저 ${data.deleted.managers}명 삭제`);
+        loadOrganizations();
+      } else {
+        showMessage('error', data.error || '초기화에 실패했습니다');
+      }
+    } catch (error) {
+      console.error('전체 초기화 에러:', error);
+      showMessage('error', '서버 연결에 실패했습니다');
+    }
+  };
+
   if (loading) {
     return (
       <div style={{
@@ -255,20 +288,36 @@ export default function OrganizationsManagementPage() {
               본부 및 지사 기본 정보를 등록합니다 (계정 생성 없음)
             </p>
           </div>
-          <button
-            onClick={() => router.push('/admin')}
-            style={{
-              padding: '12px 24px',
-              background: '#6b7280',
-              color: 'white',
-              border: 'none',
-              borderRadius: 8,
-              cursor: 'pointer',
-              fontWeight: 600,
-            }}
-          >
-            ← 대시보드로
-          </button>
+          <div style={{ display: 'flex', gap: 12 }}>
+            <button
+              onClick={handleResetAll}
+              style={{
+                padding: '12px 24px',
+                background: '#ef4444',
+                color: 'white',
+                border: 'none',
+                borderRadius: 8,
+                cursor: 'pointer',
+                fontWeight: 600,
+              }}
+            >
+              🗑️ 전체 초기화
+            </button>
+            <button
+              onClick={() => router.push('/admin')}
+              style={{
+                padding: '12px 24px',
+                background: '#6b7280',
+                color: 'white',
+                border: 'none',
+                borderRadius: 8,
+                cursor: 'pointer',
+                fontWeight: 600,
+              }}
+            >
+              ← 대시보드로
+            </button>
+          </div>
         </div>
 
         {/* 메시지 */}

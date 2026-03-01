@@ -1482,6 +1482,85 @@ router.patch('/organizations/:id', requireAuth, requireRole('SUPER_ADMIN'), asyn
 });
 
 /**
+ * DELETE /sales/organizations/reset-all
+ * 모든 본부/지사 및 승인 대기 매니저 일괄 삭제 (슈퍼어드민 전용)
+ */
+router.delete('/organizations/reset-all', requireAuth, requireRole('SUPER_ADMIN'), async (req, res) => {
+  try {
+    console.log('[DELETE /sales/organizations/reset-all] 전체 초기화 시작...');
+    
+    // 1. 승인 대기 중인 매니저 삭제 (isActive = false)
+    const inactiveSalesPeople = await prisma.salesPerson.findMany({
+      where: { isActive: false },
+      include: {
+        referredCompanies: true,
+      },
+    });
+    
+    console.log(`[RESET] 승인 대기 매니저 ${inactiveSalesPeople.length}명 발견`);
+    
+    // 추천 기업 기록 삭제
+    for (const person of inactiveSalesPeople) {
+      if (person.referredCompanies.length > 0) {
+        await prisma.companyReferral.deleteMany({
+          where: { salesPersonId: person.id },
+        });
+      }
+    }
+    
+    // User 계정 삭제
+    for (const person of inactiveSalesPeople) {
+      await prisma.user.delete({
+        where: { id: person.userId },
+      }).catch(() => {
+        console.log(`User ${person.userId} 이미 삭제됨`);
+      });
+    }
+    
+    // SalesPerson 삭제
+    const deletedManagers = await prisma.salesPerson.deleteMany({
+      where: { isActive: false },
+    });
+    
+    console.log(`[RESET] 승인 대기 매니저 ${deletedManagers.count}명 삭제 완료`);
+    
+    // 2. 모든 본부/지사 삭제
+    // 먼저 SalesPerson의 organizationId를 null로 설정
+    await prisma.salesPerson.updateMany({
+      where: { organizationId: { not: null } },
+      data: { organizationId: null },
+    });
+    
+    // 지사 삭제 (parentId가 있는 것)
+    const deletedBranches = await prisma.organization.deleteMany({
+      where: { type: 'BRANCH' },
+    });
+    
+    console.log(`[RESET] 지사 ${deletedBranches.count}개 삭제 완료`);
+    
+    // 본부 삭제 (parentId가 없는 것)
+    const deletedHeadquarters = await prisma.organization.deleteMany({
+      where: { type: 'HEADQUARTERS' },
+    });
+    
+    console.log(`[RESET] 본부 ${deletedHeadquarters.count}개 삭제 완료`);
+    
+    res.json({ 
+      success: true,
+      message: '모든 본부/지사 및 승인 대기 매니저가 삭제되었습니다',
+      deleted: {
+        managers: deletedManagers.count,
+        branches: deletedBranches.count,
+        headquarters: deletedHeadquarters.count,
+      },
+    });
+  } catch (error: any) {
+    console.error('[DELETE /sales/organizations/reset-all] Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
  * DELETE /sales/organizations/:id
  * 본부/지사 삭제 (슈퍼어드민 전용)
  */
