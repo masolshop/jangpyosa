@@ -692,9 +692,16 @@ export default function SalesDashboard() {
       console.log('[Dashboard] Stats response status:', statsResponse.status);
       
       if (statsResponse.ok) {
-        const stats = await statsResponse.json();
-        console.log('[Dashboard] Stats data:', stats);
-        setManagerStats(stats);
+        const data = await statsResponse.json();
+        console.log('[Dashboard] Stats data:', data);
+        // API returns { role, name, phone, email, stats: {...} }
+        const stats = data.stats || data;
+        setManagerStats({
+          totalCompanies: stats.totalCompanies || 0,
+          privateCompanies: stats.privateCompanies || 0,
+          publicCompanies: stats.publicCompanies || 0,
+          governmentCompanies: stats.governmentCompanies || 0,
+        });
       } else {
         const errorText = await statsResponse.text();
         console.error('[Dashboard] Stats error:', errorText);
@@ -746,14 +753,16 @@ export default function SalesDashboard() {
       console.log('[Dashboard] Branch stats response status:', statsResponse.status);
       
       if (statsResponse.ok) {
-        const stats = await statsResponse.json();
-        console.log('[Dashboard] Branch stats data:', stats);
+        const data = await statsResponse.json();
+        console.log('[Dashboard] Branch stats data:', data);
+        // API returns { role, name, phone, email, stats: {...} }
+        const stats = data.stats || data;
         setBranchStats({
           totalManagers: stats.managers || 0,
-          totalCompanies: stats.totalCompanies,
-          privateCompanies: stats.privateCompanies,
-          publicCompanies: stats.publicCompanies,
-          governmentCompanies: stats.governmentCompanies,
+          totalCompanies: stats.totalCompanies || 0,
+          privateCompanies: stats.privateCompanies || 0,
+          publicCompanies: stats.publicCompanies || 0,
+          governmentCompanies: stats.governmentCompanies || 0,
         });
       } else {
         const errorText = await statsResponse.text();
@@ -808,15 +817,17 @@ export default function SalesDashboard() {
       console.log('[Dashboard] HQ stats response status:', statsResponse.status);
       
       if (statsResponse.ok) {
-        const stats = await statsResponse.json();
-        console.log('[Dashboard] HQ stats data:', stats);
+        const data = await statsResponse.json();
+        console.log('[Dashboard] HQ stats data:', data);
+        // API returns { role, name, phone, email, stats: {...} }
+        const stats = data.stats || data;
         setHeadquartersStats({
           totalBranches: stats.branches || 0,
           totalManagers: stats.managers || 0,
-          totalCompanies: stats.totalCompanies,
-          privateCompanies: stats.privateCompanies,
-          publicCompanies: stats.publicCompanies,
-          governmentCompanies: stats.governmentCompanies,
+          totalCompanies: stats.totalCompanies || 0,
+          privateCompanies: stats.privateCompanies || 0,
+          publicCompanies: stats.publicCompanies || 0,
+          governmentCompanies: stats.governmentCompanies || 0,
         });
       } else {
         const errorText = await statsResponse.text();
