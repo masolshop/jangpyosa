@@ -376,4 +376,40 @@ router.get('/me', async (req, res) => {
   }
 });
 
+/**
+ * GET /sales/referral/:phone
+ * 추천인 정보 조회 (공개 API)
+ */
+router.get('/referral/:phone', async (req, res) => {
+  try {
+    const { phone } = req.params;
+
+    // 핸드폰 번호로 SalesPerson 조회
+    const salesPerson = await prisma.salesPerson.findUnique({
+      where: { phone },
+      select: {
+        name: true,
+        phone: true,
+        role: true,
+        referralCode: true,
+        isActive: true,
+      },
+    });
+
+    if (!salesPerson) {
+      return res.status(404).json({ error: '추천인을 찾을 수 없습니다' });
+    }
+
+    // 비활성 계정 체크
+    if (!salesPerson.isActive) {
+      return res.status(404).json({ error: '유효하지 않은 추천인입니다' });
+    }
+
+    res.json(salesPerson);
+  } catch (error: any) {
+    console.error('[GET /sales/referral/:phone] Error:', error);
+    res.status(500).json({ error: '추천인 정보 조회 중 오류가 발생했습니다' });
+  }
+});
+
 export default router;
