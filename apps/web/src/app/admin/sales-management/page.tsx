@@ -252,9 +252,13 @@ export default function SalesManagementPage() {
     if (!deletingPerson) return;
 
     try {
+      console.log('[DELETE] Sending delete request for:', deletingPerson.id, deletingPerson.name);
+      
       const response = await apiFetch(`/sales/people/${deletingPerson.id}`, {
         method: 'DELETE',
       });
+      
+      console.log('[DELETE] Response:', response);
 
       setSuccessMessage('삭제되었습니다.');
       setTimeout(() => setSuccessMessage(''), 3000);
@@ -262,8 +266,12 @@ export default function SalesManagementPage() {
       setDeletingPerson(null);
       loadSalesPeople();
     } catch (err: any) {
-      setError(err.message || '삭제 실패');
-      setTimeout(() => setError(''), 3000);
+      console.error('[DELETE] Error:', err);
+      setError(err.message || err.data?.error || '삭제 실패');
+      setTimeout(() => setError(''), 5000);
+      // 에러 발생 시에도 모달은 닫기
+      setShowDeleteModal(false);
+      setDeletingPerson(null);
     }
   };
 
