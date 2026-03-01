@@ -18,6 +18,7 @@ export default function Sidebar() {
   const [companyName, setCompanyName] = useState<string | null>(null);
   const [managerName, setManagerName] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [salesRole, setSalesRole] = useState<string | null>(null); // MANAGER, BRANCH_MANAGER, HEAD_MANAGER
   const [notificationCounts, setNotificationCounts] = useState<{
     total: number;
     leave: number;
@@ -155,6 +156,17 @@ export default function Sidebar() {
         }
       }
 
+      // 매니저/지사/본부 인증 확인
+      const managerInfo = localStorage.getItem("manager_info");
+      if (managerInfo) {
+        try {
+          const info = JSON.parse(managerInfo);
+          setSalesRole(info.role); // MANAGER, BRANCH_MANAGER, HEAD_MANAGER
+        } catch (e) {
+          console.error("매니저 정보 파싱 실패:", e);
+        }
+      }
+
       // 알림 개수 조회
       fetchUnreadCount();
 
@@ -208,10 +220,13 @@ export default function Sidebar() {
     if (typeof window !== "undefined") {
       localStorage.removeItem("user");
       localStorage.removeItem("userRole");
+      localStorage.removeItem("manager_auth_token");
+      localStorage.removeItem("manager_info");
     }
     setUserRole(null);
     setUserName(null);
     setCompanyName(null);
+    setSalesRole(null);
     window.location.href = "/";
   };
 
@@ -429,6 +444,25 @@ export default function Sidebar() {
               </>
             )}
           </div>
+
+          {/* 매니저/지사/본부 대시보드 */}
+          {salesRole && ['MANAGER', 'BRANCH_MANAGER', 'HEAD_MANAGER'].includes(salesRole) && (
+            <div style={{ marginBottom: 24 }}>
+              <div style={{ fontSize: 21.424, color: "#fff", marginBottom: 12, fontWeight: "bold", textAlign: "center" }}>
+                영업 대시보드
+              </div>
+              <MenuItem 
+                href="/admin/sales/dashboard" 
+                label={
+                  salesRole === 'MANAGER' ? '매니저 대시보드' :
+                  salesRole === 'BRANCH_MANAGER' ? '지사 대시보드' :
+                  '본부 대시보드'
+                }
+                icon="📊" 
+                active={isActive("/admin/sales/dashboard")} 
+              />
+            </div>
+          )}
 
           {userRole === "SUPER_ADMIN" && (
             <div style={{ marginBottom: 24 }}>
