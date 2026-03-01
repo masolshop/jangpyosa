@@ -629,17 +629,27 @@ export default function SalesDashboard() {
       }
 
       const meData = await meResponse.json();
-      console.log('[Dashboard] Account info:', meData);
-      const role = meData.role;
+      console.log('[Dashboard] Raw API response:', meData);
+      
+      // API returns { salesPerson: {...} }
+      const salesPerson = meData.salesPerson || meData;
+      console.log('[Dashboard] SalesPerson data:', salesPerson);
+      
+      const role = salesPerson.role;
       console.log('[Dashboard] User role:', role);
       
+      if (!role) {
+        console.error('[Dashboard] Role is undefined! SalesPerson:', salesPerson);
+        throw new Error('역할 정보를 찾을 수 없습니다');
+      }
+      
       setAccountInfo({
-        id: meData.id,
+        id: salesPerson.id,
         role: role,
-        organizationName: meData.organizationName,
-        name: meData.name,
-        phone: meData.phone,
-        email: meData.email,
+        organizationName: salesPerson.organizationName,
+        name: salesPerson.name,
+        phone: salesPerson.phone,
+        email: salesPerson.email,
       });
 
       // 2. 역할별 데이터 로드
