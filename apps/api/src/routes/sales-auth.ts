@@ -384,9 +384,12 @@ router.get('/referral/:phone', async (req, res) => {
   try {
     const { phone } = req.params;
 
+    // 핸드폰 번호 정규화 (하이픈, 공백 제거)
+    const normalizedPhone = phone.replace(/[-\s]/g, '');
+
     // 핸드폰 번호로 SalesPerson 조회
     const salesPerson = await prisma.salesPerson.findUnique({
-      where: { phone },
+      where: { phone: normalizedPhone },
       select: {
         name: true,
         phone: true,

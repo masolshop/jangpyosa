@@ -31,8 +31,11 @@ export default function ReferralPage({ params }: { params: { phone: string } }) 
       setLoading(true);
       setError('');
 
+      // 핸드폰 번호 정규화 (하이픈, 공백 제거)
+      const normalizedPhone = params.phone.replace(/[-\s]/g, '');
+
       // 추천인 정보 조회 API 호출
-      const response = await fetch(`${API_BASE}/sales/referral/${params.phone}`);
+      const response = await fetch(`${API_BASE}/sales/referral/${normalizedPhone}`);
       
       if (!response.ok) {
         throw new Error('추천인 정보를 찾을 수 없습니다');
@@ -62,8 +65,10 @@ export default function ReferralPage({ params }: { params: { phone: string } }) 
   };
 
   const handleSignup = (type: 'buyer' | 'supplier') => {
+    // 핸드폰 번호 정규화 (하이픈, 공백 제거)
+    const normalizedPhone = params.phone.replace(/[-\s]/g, '');
     // 추천인 정보를 쿼리 파라미터로 전달
-    router.push(`/signup?referrer=${params.phone}&type=${type}`);
+    router.push(`/signup?referrer=${normalizedPhone}&type=${type}`);
   };
 
   if (loading) {
