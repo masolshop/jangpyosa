@@ -130,18 +130,31 @@ export default function EmployeesPage() {
       // ✅ 직접 /employees API 사용 (모든 필드 반환)
       const token = localStorage.getItem("token");
       if (!token) {
+        console.warn("⚠️ 토큰이 없습니다. 로그인 페이지로 이동합니다.");
         router.push("/login");
         return;
       }
 
+      console.log("🔍 API 호출 시작:", `${API_BASE}/employees`);
       const response = await fetch(`${API_BASE}/employees`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
+      console.log("🔍 API 응답 상태:", response.status);
+
+      if (response.status === 401) {
+        console.warn("⚠️ 인증 실패 (401). 로그인 페이지로 이동합니다.");
+        localStorage.removeItem("token");
+        router.push("/login");
+        return;
+      }
+
       if (!response.ok) {
-        throw new Error("직원 목록을 불러올 수 없습니다.");
+        const errorData = await response.json().catch(() => ({}));
+        console.error("❌ API 에러:", response.status, errorData);
+        throw new Error(errorData.error || "직원 목록을 불러올 수 없습니다.");
       }
 
       const result = await response.json();
@@ -161,7 +174,8 @@ export default function EmployeesPage() {
       
       setEmployees(data as any || []);
     } catch (e: any) {
-      if (e.message.includes("로그인")) {
+      console.error("❌ fetchEmployees 에러:", e);
+      if (e.message.includes("로그인") || e.message.includes("인증")) {
         router.push("/login");
         return;
       }
