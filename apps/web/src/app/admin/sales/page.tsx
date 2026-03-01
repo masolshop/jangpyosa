@@ -236,7 +236,28 @@ export default function SalesLoginPage() {
         width: '100%',
         maxWidth: 450,
         padding: 40,
+        position: 'relative',
       }}>
+        {/* 닫기 버튼 (회원가입 시에만 표시) */}
+        {!isLogin && (
+          <button
+            onClick={() => router.push('/')}
+            style={{
+              position: 'absolute',
+              top: 16,
+              right: 16,
+              background: 'transparent',
+              border: 'none',
+              fontSize: 24,
+              cursor: 'pointer',
+              color: '#6b7280',
+              padding: 8,
+              lineHeight: 1,
+            }}
+          >
+            ×
+          </button>
+        )}
         {/* 로고 및 제목 */}
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}>📊</div>
@@ -646,6 +667,31 @@ export default function SalesLoginPage() {
             <a href="/forgot-password" style={{ color: '#6b7280', textDecoration: 'underline' }}>
               아이디/비밀번호 찾기
             </a>
+          </div>
+        )}
+
+        {/* 회원가입 시 로그인 페이지로 이동 버튼 */}
+        {!isLogin && (
+          <div style={{
+            marginTop: 16,
+            textAlign: 'center',
+            fontSize: 14,
+          }}>
+            <span style={{ color: '#6b7280' }}>이미 계정이 있으신가요? </span>
+            <button
+              onClick={() => setIsLogin(true)}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: '#667eea',
+                textDecoration: 'underline',
+                cursor: 'pointer',
+                fontSize: 14,
+                fontWeight: 600,
+              }}
+            >
+              로그인하기
+            </button>
           </div>
         )}
 

@@ -144,10 +144,8 @@ router.post('/signup', async (req, res) => {
     // 비밀번호 해싱
     const passwordHash = await bcrypt.hash(password, 10);
 
-    // 주민번호 뒤 7자리 암호화 (보안)
-    const encryptedRrn2 = await bcrypt.hash(rrn2, 10);
-
     // User 생성 (EMPLOYEE 역할)
+    // 주민번호 앞 6자리(생년월일)만 DB 저장
     const user = await prisma.user.create({
       data: {
         phone,
@@ -155,6 +153,7 @@ router.post('/signup', async (req, res) => {
         passwordHash,
         name,
         role: 'EMPLOYEE', // 영업 사원은 EMPLOYEE 역할
+        birthDate: rrn1, // 주민번호 앞 6자리만 저장 (생년월일)
       },
     });
 

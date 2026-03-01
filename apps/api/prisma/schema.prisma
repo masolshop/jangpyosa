@@ -37,6 +37,9 @@ model User {
   privacyAgreed     Boolean  @default(false)
   privacyAgreedAt   DateTime?
   
+  // 🆕 매니저 실명인증 정보 (EMPLOYEE 역할 중 영업 사원)
+  birthDate         String?                // 주민번호 앞 6자리 (생년월일, 실명인증용)
+  
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
   companyType       String?
