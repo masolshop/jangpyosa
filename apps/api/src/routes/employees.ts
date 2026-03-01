@@ -40,14 +40,25 @@ router.get("/", requireAuth, async (req, res) => {
     const userId = req.user!.id;
     const userRole = req.user!.role;
 
+    console.log("🔍 [GET /employees] userId:", userId);
+    console.log("🔍 [GET /employees] userRole:", userRole);
+
     // BUYER, SUPPLIER, SUPER_ADMIN 모두 접근 가능
     if (userRole !== "BUYER" && userRole !== "SUPPLIER" && userRole !== "SUPER_ADMIN") {
+      console.log("❌ [GET /employees] 역할 불일치:", userRole);
       return res.status(403).json({ error: "부담금기업 또는 표준사업장만 접근 가능합니다." });
     }
 
     const company = await getUserCompany(userId, userRole);
+    
+    console.log("🔍 [GET /employees] company:", company ? {
+      id: company.id,
+      name: company.name,
+      buyerProfileId: company.buyerProfile?.id
+    } : "없음");
 
     if (!company || !company.buyerProfile) {
+      console.log("❌ [GET /employees] 회사 정보 없음");
       return res.status(404).json({ error: "기업 정보가 없습니다." });
     }
 
