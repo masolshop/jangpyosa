@@ -33,6 +33,10 @@ export default function AdminLogin() {
 
       // 슈퍼어드민 권한 확인
       if (data.user.role !== 'SUPER_ADMIN') {
+        // 매니저 계정인 경우 친절한 안내
+        if (data.user.role === 'EMPLOYEE') {
+          throw new Error('매니저 계정은 /admin/sales 페이지에서 로그인해주세요.');
+        }
         throw new Error('슈퍼어드민 권한이 없습니다');
       }
 
