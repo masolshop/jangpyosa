@@ -53,13 +53,19 @@ router.get('/types', requireAuth, async (req, res) => {
 // 휴가 유형 생성
 router.post('/types', requireAuth, async (req, res) => {
   try {
-    const user = (req as any).user;
+    const reqUser = (req as any).user;
     
-    if (user.role !== 'BUYER' && user.role !== 'SUPER_ADMIN') {
+    if (reqUser.role !== 'BUYER' && reqUser.role !== 'SUPER_ADMIN') {
       return res.status(403).json({ error: '권한이 없습니다' });
     }
 
-    if (!user.companyId) {
+    // DB에서 User 정보 조회
+    const user = await prisma.user.findUnique({
+      where: { id: reqUser.id },
+      select: { companyId: true }
+    });
+
+    if (!user?.companyId) {
       return res.status(403).json({ error: '회사 소속이 아닙니다' });
     }
 
@@ -103,14 +109,20 @@ router.post('/types', requireAuth, async (req, res) => {
 // 휴가 유형 수정
 router.put('/types/:id', requireAuth, async (req, res) => {
   try {
-    const user = (req as any).user;
+    const reqUser = (req as any).user;
     const { id } = req.params;
     
-    if (user.role !== 'BUYER' && user.role !== 'SUPER_ADMIN') {
+    if (reqUser.role !== 'BUYER' && reqUser.role !== 'SUPER_ADMIN') {
       return res.status(403).json({ error: '권한이 없습니다' });
     }
 
-    if (!user.companyId) {
+    // DB에서 User 정보 조회
+    const user = await prisma.user.findUnique({
+      where: { id: reqUser.id },
+      select: { companyId: true }
+    });
+
+    if (!user?.companyId) {
       return res.status(403).json({ error: '회사 소속이 아닙니다' });
     }
 
@@ -166,14 +178,20 @@ router.put('/types/:id', requireAuth, async (req, res) => {
 // 휴가 유형 삭제
 router.delete('/types/:id', requireAuth, async (req, res) => {
   try {
-    const user = (req as any).user;
+    const reqUser = (req as any).user;
     const { id } = req.params;
     
-    if (user.role !== 'BUYER' && user.role !== 'SUPER_ADMIN') {
+    if (reqUser.role !== 'BUYER' && reqUser.role !== 'SUPER_ADMIN') {
       return res.status(403).json({ error: '권한이 없습니다' });
     }
 
-    if (!user.companyId) {
+    // DB에서 User 정보 조회
+    const user = await prisma.user.findUnique({
+      where: { id: reqUser.id },
+      select: { companyId: true }
+    });
+
+    if (!user?.companyId) {
       return res.status(403).json({ error: '회사 소속이 아닙니다' });
     }
 
@@ -475,12 +493,22 @@ router.get('/requests', requireAuth, async (req, res) => {
 // 휴가 승인
 router.patch('/requests/:id/approve', requireAuth, async (req, res) => {
   try {
-    const user = (req as any).user;
+    const reqUser = (req as any).user;
     const { id } = req.params;
     const { reviewNote } = req.body;
     
-    if (user.role !== 'BUYER' && user.role !== 'SUPER_ADMIN') {
+    if (reqUser.role !== 'BUYER' && reqUser.role !== 'SUPER_ADMIN') {
       return res.status(403).json({ error: '권한이 없습니다' });
+    }
+
+    // DB에서 User 정보 조회
+    const user = await prisma.user.findUnique({
+      where: { id: reqUser.id },
+      select: { id: true, companyId: true }
+    });
+
+    if (!user?.companyId) {
+      return res.status(403).json({ error: '회사 소속이 아닙니다' });
     }
 
     const request = await prisma.leaveRequest.findFirst({
@@ -537,16 +565,26 @@ router.patch('/requests/:id/approve', requireAuth, async (req, res) => {
 // 휴가 거부
 router.patch('/requests/:id/reject', requireAuth, async (req, res) => {
   try {
-    const user = (req as any).user;
+    const reqUser = (req as any).user;
     const { id } = req.params;
     const { reviewNote } = req.body;
     
-    if (user.role !== 'BUYER' && user.role !== 'SUPER_ADMIN') {
+    if (reqUser.role !== 'BUYER' && reqUser.role !== 'SUPER_ADMIN') {
       return res.status(403).json({ error: '권한이 없습니다' });
     }
 
     if (!reviewNote) {
       return res.status(400).json({ error: '거부 사유를 입력해주세요' });
+    }
+
+    // DB에서 User 정보 조회
+    const user = await prisma.user.findUnique({
+      where: { id: reqUser.id },
+      select: { id: true, companyId: true }
+    });
+
+    if (!user?.companyId) {
+      return res.status(403).json({ error: '회사 소속이 아닙니다' });
     }
 
     const request = await prisma.leaveRequest.findFirst({
