@@ -446,11 +446,9 @@ export default function Sidebar() {
                 <MenuItem href="/login" label="기업 로그인" icon="🔑" active={isActive("/login")} />
                 <MenuItem href="/signup" label="기업 회원가입" icon="✍️" active={isActive("/signup")} />
                 <div style={{ borderTop: "1px solid #333", marginTop: 12, paddingTop: 12 }}>
-                  <MenuItem href="/admin/sales" label="매니저/지사/본부 로그인" icon="👔" active={isActive("/admin/sales")} />
-                </div>
-                <div style={{ borderTop: "1px solid #333", marginTop: 12, paddingTop: 12 }}>
                   <MenuItem href="/employee/login" label="장애인직원로그인" icon="👷" active={isActive("/employee/login")} />
                   <MenuItem href="/employee/signup" label="장애인직원회원가입" icon="📝" active={isActive("/employee/signup")} />
+                  <MenuItem href="/admin/sales" label="매니저/지사/본부 로그인" icon="👔" active={isActive("/admin/sales")} />
                 </div>
               </>
             )}
