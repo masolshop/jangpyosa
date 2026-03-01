@@ -593,12 +593,17 @@ export default function SalesDashboard() {
   const [headquartersBranches, setHeadquartersBranches] = useState<HeadquartersBranch[]>([]);
 
   useEffect(() => {
+    console.log('[Dashboard] Component mounted');
     loadDashboard();
   }, []);
 
   const loadDashboard = async () => {
+    console.log('[Dashboard] loadDashboard called');
     const token = getManagerToken();
+    console.log('[Dashboard] Token:', token ? 'exists' : 'not found');
+    
     if (!token) {
+      console.log('[Dashboard] No token, redirecting to login');
       router.push('/admin/sales');
       return;
     }
@@ -608,18 +613,25 @@ export default function SalesDashboard() {
       setError('');
 
       // 1. 계정 정보 가져오기
+      console.log('[Dashboard] Fetching account info...');
       const meResponse = await fetch(`${API_BASE}/sales/auth/me`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
       });
 
+      console.log('[Dashboard] /sales/auth/me response status:', meResponse.status);
+
       if (!meResponse.ok) {
+        const errorText = await meResponse.text();
+        console.error('[Dashboard] Auth failed:', errorText);
         throw new Error('인증이 만료되었습니다');
       }
 
       const meData = await meResponse.json();
+      console.log('[Dashboard] Account info:', meData);
       const role = meData.role;
+      console.log('[Dashboard] User role:', role);
       
       setAccountInfo({
         id: meData.id,
@@ -631,6 +643,7 @@ export default function SalesDashboard() {
       });
 
       // 2. 역할별 데이터 로드
+      console.log('[Dashboard] Loading role-specific data...');
       if (role === 'MANAGER') {
         await loadManagerDashboard(token);
       } else if (role === 'BRANCH_MANAGER') {
@@ -639,14 +652,22 @@ export default function SalesDashboard() {
         await loadHeadquartersDashboard(token);
       }
 
+      console.log('[Dashboard] Dashboard loaded successfully');
+
     } catch (error: any) {
-      console.error('Dashboard load error:', error);
+      console.error('[Dashboard] Dashboard load error:', error);
+      console.error('[Dashboard] Error message:', error.message);
+      console.error('[Dashboard] Error stack:', error.stack);
       setError(error.message || '대시보드를 불러오는데 실패했습니다');
       if (error.message.includes('인증')) {
+        console.log('[Dashboard] Auth error, clearing and redirecting');
         clearManagerAuth();
-        router.push('/admin/sales');
+        setTimeout(() => {
+          router.push('/admin/sales');
+        }, 100);
       }
     } finally {
+      console.log('[Dashboard] Setting loading to false');
       setLoading(false);
     }
   };
