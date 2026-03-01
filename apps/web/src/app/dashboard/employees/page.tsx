@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { API_BASE } from "@/lib/api";
-import { getToken, getUserRole } from "@/lib/auth";
+import { getToken, getUserRole, clearToken } from "@/lib/auth";
 import * as XLSX from "xlsx";
 
 // ============================================
@@ -144,7 +144,7 @@ export default function EmployeesPage() {
     
     try {
       // ✅ 직접 /employees API 사용 (모든 필드 반환)
-      const token = localStorage.getItem("token");
+      const token = getToken();
       if (!token) {
         console.warn("⚠️ 토큰이 없습니다. 로그인 페이지로 이동합니다.");
         router.push("/login");
@@ -162,7 +162,7 @@ export default function EmployeesPage() {
 
       if (response.status === 401) {
         console.warn("⚠️ 인증 실패 (401). 로그인 페이지로 이동합니다.");
-        localStorage.removeItem("token");
+        clearToken();
         router.push("/login");
         return;
       }
