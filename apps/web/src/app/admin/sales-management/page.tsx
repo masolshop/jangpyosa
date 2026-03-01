@@ -37,6 +37,7 @@ export default function SalesManagementPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [salesPeople, setSalesPeople] = useState<SalesPerson[]>([]);
+  const [pendingPeople, setPendingPeople] = useState<SalesPerson[]>([]); // 승인 대기 중인 매니저
   const [filteredPeople, setFilteredPeople] = useState<SalesPerson[]>([]);
   const [selectedRole, setSelectedRole] = useState<string>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
@@ -78,6 +79,7 @@ export default function SalesManagementPage() {
   // 영업 인원 목록 로드
   useEffect(() => {
     loadSalesPeople();
+    loadPendingPeople();
   }, []);
 
   // 필터링
@@ -102,12 +104,21 @@ export default function SalesManagementPage() {
   const loadSalesPeople = async () => {
     try {
       setLoading(true);
-      const data = await apiFetch('/sales/people');
+      const data = await apiFetch('/sales/people?isActive=true');
       setSalesPeople(data.salesPeople || []);
     } catch (err: any) {
       setError(err.message || '데이터 로드 실패');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadPendingPeople = async () => {
+    try {
+      const data = await apiFetch('/sales/people?isActive=false');
+      setPendingPeople(data.salesPeople || []);
+    } catch (err: any) {
+      console.error('승인 대기 목록 로드 실패:', err);
     }
   };
 
