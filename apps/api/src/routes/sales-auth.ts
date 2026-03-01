@@ -2,24 +2,134 @@ import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import { config } from '../config.js';
 
 const router = Router();
 const prisma = new PrismaClient();
 
 const JWT_SECRET = config.jwtSecret || 'your-secret-key';
+const APICK_API_KEY = process.env.APICK_API_KEY || '41173030f4fc1055778b2f97ce9659b5';
+
+/**
+ * POST /sales/auth/verify-identity
+ * 주민번호 실명인증 - 이름 반환
+ */
+router.post('/verify-identity', async (req, res) => {
+  try {
+    const { rrn1, rrn2 } = req.body;
+
+    // 입력 검증
+    if (!rrn1 || !rrn2) {
+      return res.status(400).json({ error: '주민등록번호를 입력해주세요' });
+    }
+
+    // 주민번호 형식 검증
+    if (!/^\d{6}$/.test(rrn1) || !/^\d{7}$/.test(rrn2)) {
+      return res.status(400).json({ error: '주민등록번호 형식이 올바르지 않습니다' });
+    }
+
+    // 주민번호로 이름 조회를 위해 임시 이름 사용
+    // 실제로는 APICK API가 주민번호만으로 이름을 반환하지 않으므로
+    // 별도의 실명인증 API를 사용해야 합니다
+    // 여기서는 주민번호 검증만 수행하고 클라이언트에서 이름 입력받도록 수정
+    
+    return res.json({
+      success: true,
+      verified: false,
+      message: '주민번호가 확인되었습니다. 성명을 입력해주세요.',
+      requiresName: true,
+    });
+  } catch (error) {
+    console.error('[POST /sales/auth/verify-identity] Error:', error);
+    return res.status(500).json({ error: '서버 오류가 발생했습니다' });
+  }
+});
+
+/**
+ * POST /sales/auth/verify-identity-with-name
+ * 주민번호 + 성명 실명인증
+ */
+router.post('/verify-identity-with-name', async (req, res) => {
+  try {
+    const { name, rrn1, rrn2 } = req.body;
+
+    // 입력 검증
+    if (!name || !rrn1 || !rrn2) {
+      return res.status(400).json({ error: '성명과 주민등록번호를 입력해주세요' });
+    }
+
+    // 주민번호 형식 검증
+    if (!/^\d{6}$/.test(rrn1) || !/^\d{7}$/.test(rrn2)) {
+      return res.status(400).json({ error: '주민등록번호 형식이 올바르지 않습니다' });
+    }
+
+    // APICK API 호출
+    const response = await fetch('https://apick.app/rest/name_rrn_auth', {
+      method: 'POST',
+      headers: {
+        'CL_AUTH_KEY': APICK_API_KEY,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        name,
+        rrn1,
+        rrn2,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!data.api?.success) {
+      return res.status(500).json({ error: '실명인증 API 호출에 실패했습니다' });
+    }
+
+    // 실명인증 결과
+    if (data.data.result === 1) {
+      // 인증 성공
+      return res.json({
+        success: true,
+        verified: true,
+        name: name,
+        message: data.data.msg,
+      });
+    } else if (data.data.result === 0) {
+      // 인증 실패
+      return res.status(400).json({
+        success: false,
+        verified: false,
+        error: '실명과 주민등록번호가 일치하지 않습니다',
+      });
+    } else {
+      // 오류
+      return res.status(500).json({
+        success: false,
+        verified: false,
+        error: '실명확인에 실패했습니다',
+      });
+    }
+  } catch (error) {
+    console.error('[POST /sales/auth/verify-identity-with-name] Error:', error);
+    return res.status(500).json({ error: '서버 오류가 발생했습니다' });
+  }
+});
 
 /**
  * POST /sales/auth/signup
- * 매니저 회원가입
+ * 매니저 회원가입 (실명인증 필수)
  */
 router.post('/signup', async (req, res) => {
   try {
-    const { name, phone, email, password } = req.body;
+    const { name, phone, email, password, rrn1, rrn2, verified } = req.body;
 
     // 입력 검증
     if (!name || !phone || !password) {
       return res.status(400).json({ error: '필수 정보를 입력해주세요' });
+    }
+
+    // 실명인증 확인 (프론트엔드에서 verified=true 전달)
+    if (!verified || !rrn1 || !rrn2) {
+      return res.status(400).json({ error: '실명인증이 필요합니다' });
     }
 
     // 핸드폰 번호 중복 확인
@@ -33,6 +143,9 @@ router.post('/signup', async (req, res) => {
 
     // 비밀번호 해싱
     const passwordHash = await bcrypt.hash(password, 10);
+
+    // 주민번호 뒤 7자리 암호화 (보안)
+    const encryptedRrn2 = await bcrypt.hash(rrn2, 10);
 
     // User 생성 (EMPLOYEE 역할)
     const user = await prisma.user.create({
@@ -60,6 +173,12 @@ router.post('/signup', async (req, res) => {
         totalRevenue: 0,
         commission: 0,
         isActive: true,
+        // 실명인증 정보 저장 (선택적)
+        metadata: {
+          rrn1, // 주민번호 앞자리 (생년월일)
+          rrnVerified: true, // 실명인증 완료
+          verifiedAt: new Date().toISOString(),
+        } as any,
       },
     });
 

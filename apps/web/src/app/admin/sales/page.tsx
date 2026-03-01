@@ -53,12 +53,23 @@ export default function SalesLoginPage() {
 
   // 회원가입 폼
   const [signupForm, setSignupForm] = useState({
-    name: '',
     phone: '',
     email: '',
     password: '',
     confirmPassword: '',
   });
+
+  // 실명인증 폼 (회원가입 전 단계)
+  const [identityForm, setIdentityForm] = useState({
+    name: '', // 성명
+    rrn1: '', // 주민번호 앞 6자리
+    rrn2: '', // 주민번호 뒤 7자리
+  });
+
+  // 실명인증 결과
+  const [identityVerified, setIdentityVerified] = useState(false);
+  const [verifiedName, setVerifiedName] = useState(''); // 인증된 이름
+  const [verifying, setVerifying] = useState(false);
 
   // 이미 로그인되어 있는지 확인
   useEffect(() => {
@@ -107,10 +118,57 @@ export default function SalesLoginPage() {
     }
   };
 
+  // 실명인증 처리 (1단계: 주민번호 + 이름 입력)
+  const handleVerifyIdentity = async () => {
+    if (!identityForm.name || !identityForm.rrn1 || !identityForm.rrn2) {
+      setError('성명과 주민등록번호를 모두 입력해주세요');
+      return;
+    }
+
+    setVerifying(true);
+    setError('');
+
+    try {
+      const response = await fetch(`${API_BASE}/sales/auth/verify-identity-with-name`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: identityForm.name,
+          rrn1: identityForm.rrn1,
+          rrn2: identityForm.rrn2,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.verified) {
+        setIdentityVerified(true);
+        setVerifiedName(data.name);
+        setError('');
+        alert('✅ 실명인증이 완료되었습니다!');
+      } else {
+        setIdentityVerified(false);
+        setError(data.error || '실명인증에 실패했습니다');
+      }
+    } catch (err) {
+      setError('서버 연결에 실패했습니다');
+    } finally {
+      setVerifying(false);
+    }
+  };
+
   // 회원가입 처리
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    // 실명인증 확인
+    if (!identityVerified) {
+      setError('실명인증을 먼저 진행해주세요');
+      return;
+    }
 
     // 비밀번호 확인
     if (signupForm.password !== signupForm.confirmPassword) {
@@ -133,10 +191,13 @@ export default function SalesLoginPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          name: signupForm.name,
+          name: verifiedName, // 인증된 이름
           phone: signupForm.phone,
           email: signupForm.email,
           password: signupForm.password,
+          rrn1: identityForm.rrn1,
+          rrn2: identityForm.rrn2,
+          verified: identityVerified,
         }),
       });
 
@@ -309,8 +370,154 @@ export default function SalesLoginPage() {
             </button>
           </form>
         ) : (
-          /* 회원가입 폼 */
-          <form onSubmit={handleSignup}>
+          /* 회원가입 폼 - 2단계 프로세스 */
+          <div>
+            {/* 1단계: 실명인증 */}
+            {!identityVerified ? (
+              <div>
+                <div style={{
+                  marginBottom: 16,
+                  padding: 12,
+                  background: '#fef3c7',
+                  borderRadius: 8,
+                  fontSize: 13,
+                  color: '#92400e',
+                }}>
+                  🔐 <strong>1단계: 실명인증</strong><br/>
+                  주민등록번호로 본인인증을 진행합니다
+                </div>
+
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, fontSize: 14 }}>
+                    성명 *
+                  </label>
+                  <input
+                    type="text"
+                    value={identityForm.name}
+                    onChange={(e) => setIdentityForm({ ...identityForm, name: e.target.value })}
+                    placeholder="홍길동"
+                    required
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: 8,
+                      fontSize: 14,
+                    }}
+                  />
+                </div>
+
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, fontSize: 14 }}>
+                    주민등록번호 *
+                  </label>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <input
+                      type="text"
+                      value={identityForm.rrn1}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, '');
+                        if (value.length <= 6) {
+                          setIdentityForm({ ...identityForm, rrn1: value });
+                        }
+                      }}
+                      placeholder="생년월일 6자리"
+                      maxLength={6}
+                      required
+                      style={{
+                        flex: 1,
+                        padding: '12px',
+                        border: '1px solid #d1d5db',
+                        borderRadius: 8,
+                        fontSize: 14,
+                        textAlign: 'center',
+                      }}
+                    />
+                    <span style={{ fontSize: 18, fontWeight: 'bold' }}>-</span>
+                    <input
+                      type="password"
+                      value={identityForm.rrn2}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, '');
+                        if (value.length <= 7) {
+                          setIdentityForm({ ...identityForm, rrn2: value });
+                        }
+                      }}
+                      placeholder="●●●●●●●"
+                      maxLength={7}
+                      required
+                      style={{
+                        flex: 1,
+                        padding: '12px',
+                        border: '1px solid #d1d5db',
+                        borderRadius: 8,
+                        fontSize: 14,
+                        textAlign: 'center',
+                      }}
+                    />
+                  </div>
+                  <div style={{ fontSize: 12, color: '#6b7280', marginTop: 4 }}>
+                    예: 850101-1234567
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleVerifyIdentity}
+                  disabled={verifying || !identityForm.name || !identityForm.rrn1 || !identityForm.rrn2}
+                  style={{
+                    width: '100%',
+                    padding: '14px',
+                    background: verifying ? '#9ca3af' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: 8,
+                    cursor: verifying ? 'not-allowed' : 'pointer',
+                    fontWeight: 600,
+                    fontSize: 16,
+                  }}
+                >
+                  {verifying ? '인증 중...' : '실명인증'}
+                </button>
+              </div>
+            ) : (
+              /* 2단계: 회원가입 정보 입력 */
+              <form onSubmit={handleSignup}>
+                <div style={{
+                  marginBottom: 16,
+                  padding: 12,
+                  background: '#d1fae5',
+                  borderRadius: 8,
+                  fontSize: 13,
+                  color: '#065f46',
+                }}>
+                  ✅ <strong>실명인증 완료</strong><br/>
+                  이제 회원가입 정보를 입력해주세요
+                </div>
+
+                {/* 인증된 이름 (읽기 전용) */}
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, fontSize: 14 }}>
+                    이름
+                  </label>
+                  <input
+                    type="text"
+                    value={verifiedName}
+                    readOnly
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: 8,
+                      fontSize: 14,
+                      background: '#f9fafb',
+                      color: '#6b7280',
+                    }}
+                  />
+                  <div style={{ fontSize: 12, color: '#10b981', marginTop: 4 }}>
+                    ✅ 실명인증 완료
+                  </div>
+                </div>
             <div style={{ marginBottom: 16 }}>
               <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, fontSize: 14 }}>
                 아이디 (핸드폰번호) *
@@ -334,25 +541,7 @@ export default function SalesLoginPage() {
               </div>
             </div>
 
-            <div style={{ marginBottom: 16 }}>
-              <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, fontSize: 14 }}>
-                이름 *
-              </label>
-              <input
-                type="text"
-                value={signupForm.name}
-                onChange={(e) => setSignupForm({ ...signupForm, name: e.target.value })}
-                placeholder="홍길동"
-                required
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  border: '1px solid #d1d5db',
-                  borderRadius: 8,
-                  fontSize: 14,
-                }}
-              />
-            </div>
+
 
             <div style={{ marginBottom: 16 }}>
               <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, fontSize: 14 }}>
@@ -443,6 +632,8 @@ export default function SalesLoginPage() {
               ℹ️ 가입 후 지사/본부는 슈퍼어드민이 배정합니다
             </div>
           </form>
+            )}
+          </div>
         )}
 
         {/* 아이디/비밀번호 찾기 */}
