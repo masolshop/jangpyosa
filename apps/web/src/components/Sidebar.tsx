@@ -427,17 +427,27 @@ export default function Sidebar() {
             <div style={{ fontSize: 13.2, color: "#666", marginBottom: 8, fontWeight: "bold" }}>
               계정
             </div>
-            {userRole ? (
+            {userRole || salesRole ? (
               <>
-                <div style={{ padding: "8px 12px", marginBottom: 4, fontSize: 13, color: "#28a745" }}>
-                  ✓ 로그인됨 ({userRole === "SUPER_ADMIN" ? "슈퍼관리자" : userRole === "AGENT" ? "매니저" : userRole === "SUPPLIER" ? "표준사업장" : userRole === "BUYER" ? "고용의무기업" : userRole === "EMPLOYEE" ? "직원" : userRole})
-                </div>
+                {userRole && (
+                  <div style={{ padding: "8px 12px", marginBottom: 4, fontSize: 13, color: "#28a745" }}>
+                    ✓ 로그인됨 ({userRole === "SUPER_ADMIN" ? "슈퍼관리자" : userRole === "AGENT" ? "매니저" : userRole === "SUPPLIER" ? "표준사업장" : userRole === "BUYER" ? "고용의무기업" : userRole === "EMPLOYEE" ? "직원" : userRole})
+                  </div>
+                )}
+                {salesRole && (
+                  <div style={{ padding: "8px 12px", marginBottom: 4, fontSize: 13, color: "#28a745" }}>
+                    ✓ 영업 로그인됨 ({salesRole === "MANAGER" ? "매니저" : salesRole === "BRANCH_MANAGER" ? "지사장" : salesRole === "HEAD_MANAGER" ? "본부장" : salesRole})
+                  </div>
+                )}
                 <MenuItem href="#" label="로그아웃" icon="🚪" onClick={handleLogout} />
               </>
             ) : (
               <>
                 <MenuItem href="/login" label="기업 로그인" icon="🔑" active={isActive("/login")} />
                 <MenuItem href="/signup" label="기업 회원가입" icon="✍️" active={isActive("/signup")} />
+                <div style={{ borderTop: "1px solid #333", marginTop: 12, paddingTop: 12 }}>
+                  <MenuItem href="/admin/sales" label="매니저/지사/본부 로그인" icon="👔" active={isActive("/admin/sales")} />
+                </div>
                 <div style={{ borderTop: "1px solid #333", marginTop: 12, paddingTop: 12 }}>
                   <MenuItem href="/employee/login" label="장애인직원로그인" icon="👷" active={isActive("/employee/login")} />
                   <MenuItem href="/employee/signup" label="장애인직원회원가입" icon="📝" active={isActive("/employee/signup")} />
