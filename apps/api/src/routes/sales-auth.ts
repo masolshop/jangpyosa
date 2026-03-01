@@ -225,9 +225,17 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ error: '핸드폰 번호와 비밀번호를 입력해주세요' });
     }
 
+    // 전화번호 정규화 (하이픈 제거 및 0 추가)
+    const normalizedPhone = phone.replace(/[-\s]/g, '');
+    const phoneToSearch = normalizedPhone.startsWith('0') ? normalizedPhone : '0' + normalizedPhone;
+
+    console.log('[LOGIN] Original phone:', phone);
+    console.log('[LOGIN] Normalized phone:', normalizedPhone);
+    console.log('[LOGIN] Phone to search:', phoneToSearch);
+
     // 사용자 찾기
     const user = await prisma.user.findUnique({
-      where: { phone },
+      where: { phone: phoneToSearch },
     });
 
     if (!user) {
