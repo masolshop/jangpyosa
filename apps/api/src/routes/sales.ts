@@ -1278,4 +1278,256 @@ router.get('/dashboard/branches', requireSalesAuth, async (req: any, res) => {
   }
 });
 
+/**
+ * GET /sales/organizations
+ * 본부/지사 목록 조회
+ */
+router.get('/organizations', async (req, res) => {
+  try {
+    const organizations = await prisma.organization.findMany({
+      where: { isActive: true },
+      include: {
+        subOrganizations: {
+          where: { isActive: true },
+          select: {
+            id: true,
+            name: true,
+            type: true,
+            leaderName: true,
+            phone: true,
+            email: true,
+            createdAt: true,
+          },
+        },
+        salesPeople: {
+          where: { isActive: true },
+          select: {
+            id: true,
+            name: true,
+            role: true,
+            phone: true,
+          },
+        },
+      },
+      orderBy: [
+        { type: 'asc' }, // HEADQUARTERS 먼저
+        { createdAt: 'desc' },
+      ],
+    });
+    
+    // 본부와 지사를 구분하여 반환
+    const headquarters = organizations.filter(org => org.type === 'HEADQUARTERS');
+    const branches = organizations.filter(org => org.type === 'BRANCH');
+    
+    res.json({ 
+      headquarters: headquarters.map(hq => ({
+        id: hq.id,
+        name: hq.name,
+        leaderName: hq.leaderName,
+        phone: hq.phone,
+        email: hq.email,
+        branches: hq.subOrganizations,
+        salesPeople: hq.salesPeople,
+        createdAt: hq.createdAt,
+      })),
+      branches: branches.map(branch => ({
+        id: branch.id,
+        name: branch.name,
+        leaderName: branch.leaderName,
+        phone: branch.phone,
+        email: branch.email,
+        managerId: branch.parentId,
+        salesPeople: branch.salesPeople,
+        createdAt: branch.createdAt,
+      })),
+    });
+  } catch (error: any) {
+    console.error('[GET /sales/organizations] Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * POST /sales/organizations
+ * 본부/지사 등록 (슈퍼어드민 전용)
+ */
+router.post('/organizations', requireAuth, requireRole('SUPER_ADMIN'), async (req, res) => {
+  try {
+    const { name, type, leaderName, phone, email, parentId, notes } = req.body;
+    
+    // 필수 필드 검증
+    if (!name || !type || !leaderName || !phone) {
+      return res.status(400).json({ 
+        error: '조직명, 유형, 담당자명, 핸드폰번호는 필수입니다' 
+      });
+    }
+    
+    // 유형 검증
+    if (type !== 'HEADQUARTERS' && type !== 'BRANCH') {
+      return res.status(400).json({ 
+        error: '유형은 HEADQUARTERS 또는 BRANCH 이어야 합니다' 
+      });
+    }
+    
+    // 지사인 경우 본부 ID 필수
+    if (type === 'BRANCH' && !parentId) {
+      return res.status(400).json({ 
+        error: '지사는 소속 본부를 선택해야 합니다' 
+      });
+    }
+    
+    // 핸드폰번호 중복 확인
+    const existingOrg = await prisma.organization.findUnique({
+      where: { phone },
+    });
+    
+    if (existingOrg) {
+      return res.status(400).json({ 
+        error: '이미 등록된 핸드폰번호입니다' 
+      });
+    }
+    
+    // 본부/지사 생성
+    const organization = await prisma.organization.create({
+      data: {
+        name,
+        type,
+        leaderName,
+        phone,
+        email,
+        parentId: type === 'BRANCH' ? parentId : null,
+        notes,
+      },
+      include: {
+        parent: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+    
+    res.json({ 
+      success: true,
+      organization,
+      message: `${type === 'HEADQUARTERS' ? '본부' : '지사'}가 등록되었습니다`,
+    });
+  } catch (error: any) {
+    console.error('[POST /sales/organizations] Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * PATCH /sales/organizations/:id
+ * 본부/지사 정보 수정 (슈퍼어드민 전용)
+ */
+router.patch('/organizations/:id', requireAuth, requireRole('SUPER_ADMIN'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, leaderName, phone, email, parentId, notes, isActive } = req.body;
+    
+    const organization = await prisma.organization.findUnique({
+      where: { id },
+    });
+    
+    if (!organization) {
+      return res.status(404).json({ error: '조직을 찾을 수 없습니다' });
+    }
+    
+    // 핸드폰번호 변경 시 중복 확인
+    if (phone && phone !== organization.phone) {
+      const existingOrg = await prisma.organization.findUnique({
+        where: { phone },
+      });
+      
+      if (existingOrg) {
+        return res.status(400).json({ 
+          error: '이미 등록된 핸드폰번호입니다' 
+        });
+      }
+    }
+    
+    const updated = await prisma.organization.update({
+      where: { id },
+      data: {
+        ...(name && { name }),
+        ...(leaderName && { leaderName }),
+        ...(phone && { phone }),
+        ...(email !== undefined && { email }),
+        ...(parentId !== undefined && { parentId }),
+        ...(notes !== undefined && { notes }),
+        ...(isActive !== undefined && { isActive }),
+      },
+      include: {
+        parent: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+    
+    res.json({ 
+      success: true,
+      organization: updated,
+      message: '조직 정보가 수정되었습니다',
+    });
+  } catch (error: any) {
+    console.error('[PATCH /sales/organizations/:id] Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * DELETE /sales/organizations/:id
+ * 본부/지사 삭제 (슈퍼어드민 전용)
+ */
+router.delete('/organizations/:id', requireAuth, requireRole('SUPER_ADMIN'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const organization = await prisma.organization.findUnique({
+      where: { id },
+      include: {
+        subOrganizations: true,
+        salesPeople: true,
+      },
+    });
+    
+    if (!organization) {
+      return res.status(404).json({ error: '조직을 찾을 수 없습니다' });
+    }
+    
+    // 하위 조직이 있으면 삭제 불가
+    if (organization.subOrganizations.length > 0) {
+      return res.status(400).json({ 
+        error: '하위 조직이 있는 본부는 삭제할 수 없습니다. 먼저 하위 조직을 삭제하거나 이동해주세요.' 
+      });
+    }
+    
+    // 소속 영업사원이 있으면 삭제 불가
+    if (organization.salesPeople.length > 0) {
+      return res.status(400).json({ 
+        error: '소속 영업사원이 있는 조직은 삭제할 수 없습니다. 먼저 영업사원을 이동하거나 삭제해주세요.' 
+      });
+    }
+    
+    // 조직 삭제
+    await prisma.organization.delete({
+      where: { id },
+    });
+    
+    res.json({ 
+      success: true,
+      message: '조직이 삭제되었습니다',
+    });
+  } catch (error: any) {
+    console.error('[DELETE /sales/organizations/:id] Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export default router;

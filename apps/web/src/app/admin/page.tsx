@@ -251,6 +251,12 @@ export default function AdminRootPage() {
           marginBottom: 32,
         }}>
           <MenuCard
+            icon="📍"
+            title="본부/지사 관리"
+            description="본부 및 지사 기본 정보 등록"
+            link="/admin/organizations"
+          />
+          <MenuCard
             icon="👥"
             title="영업 관리"
             description="매니저, 지사, 본부 관리"

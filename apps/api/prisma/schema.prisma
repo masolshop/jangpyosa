@@ -752,7 +752,7 @@ model SalesPerson {
   id                String    @id @default(cuid())
   userId            String    @unique // User ID (로그인 계정)
   name              String    // 이름 (대표자명)
-  organizationName  String?   // 조직명 (본부명 또는 지사명)
+  organizationName  String?   // 조직명 (본부명 또는 지사명) - 레거시 필드
   phone             String    @unique // 핸드폰번호 (추천인 링크 생성용)
   email             String?   // 이메일
   
@@ -763,6 +763,10 @@ model SalesPerson {
   managerId         String?   // 상위 관리자 ID (지사장/본부장)
   manager           SalesPerson?  @relation("SalesHierarchy", fields: [managerId], references: [id])
   subordinates      SalesPerson[] @relation("SalesHierarchy")
+  
+  // 🆕 소속 조직 (Organization과 연결)
+  organizationId    String?   // 소속 조직 ID
+  organization      Organization? @relation("OrganizationMembers", fields: [organizationId], references: [id])
   
   // 추천인 정보
   referralCode      String    @unique // 추천인 코드 (핸드폰번호 기반)
@@ -793,6 +797,7 @@ model SalesPerson {
   
   @@index([role])
   @@index([managerId])
+  @@index([organizationId])
   @@index([phone])
   @@index([referralCode])
   @@index([isActive])
@@ -834,6 +839,37 @@ model CompanyReferral {
   @@index([referralCode])
   @@index([isActive])
   @@index([createdAt])
+}
+
+// 본부/지사 조직 정보 (계정 없이 정보만 등록)
+model Organization {
+  id                String        @id @default(cuid())
+  name              String        // 본부명/지사명
+  type              String        // HEADQUARTERS (본부), BRANCH (지사)
+  leaderName        String        // 본부장/지사장명
+  phone             String        @unique // 핸드폰번호
+  email             String?       // 이메일
+  
+  // 조직 계층 구조
+  parentId          String?       // 상위 조직 ID (지사의 경우 본부 ID)
+  parent            Organization? @relation("OrganizationHierarchy", fields: [parentId], references: [id])
+  subOrganizations  Organization[] @relation("OrganizationHierarchy")
+  
+  // 연결된 영업사원 (승인 후 매핑)
+  salesPeople       SalesPerson[] @relation("OrganizationMembers")
+  
+  // 상태
+  isActive          Boolean       @default(true)
+  
+  // 메타 정보
+  notes             String?       // 관리자 메모
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  
+  @@index([type])
+  @@index([parentId])
+  @@index([phone])
+  @@index([isActive])
 }
 
 // 영업 활동 로그
