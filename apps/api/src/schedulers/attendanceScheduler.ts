@@ -13,10 +13,28 @@ export async function runAttendanceLateCheck() {
   
   const today = new Date().toISOString().split('T')[0];
   
-  // 모든 활성 직원 조회
+  // 모든 활성 직원 조회 (User를 통해 EMPLOYEE 역할 확인)
+  const users = await prisma.user.findMany({
+    where: { 
+      role: 'EMPLOYEE',
+      employeeId: { not: null }
+    },
+    select: { 
+      employeeId: true 
+    }
+  });
+  
+  const employeeIds = users.map(u => u.employeeId).filter((id): id is string => id !== null);
+  
+  if (employeeIds.length === 0) {
+    console.log('[Attendance Scheduler] 직원 없음');
+    return { count: 0, employees: [] };
+  }
+  
+  // 직원 정보 및 출근 기록 조회
   const employees = await prisma.disabledEmployee.findMany({
     where: {
-      user: { role: 'EMPLOYEE' }
+      id: { in: employeeIds }
     },
     select: {
       id: true,
@@ -60,9 +78,27 @@ export async function runAttendanceAbsentCheck() {
   
   const today = new Date().toISOString().split('T')[0];
   
+  // 모든 활성 직원 조회
+  const users = await prisma.user.findMany({
+    where: { 
+      role: 'EMPLOYEE',
+      employeeId: { not: null }
+    },
+    select: { 
+      employeeId: true 
+    }
+  });
+  
+  const employeeIds = users.map(u => u.employeeId).filter((id): id is string => id !== null);
+  
+  if (employeeIds.length === 0) {
+    console.log('[Attendance Scheduler] 직원 없음');
+    return { count: 0, employees: [] };
+  }
+  
   const employees = await prisma.disabledEmployee.findMany({
     where: {
-      user: { role: 'EMPLOYEE' }
+      id: { in: employeeIds }
     },
     select: {
       id: true,
