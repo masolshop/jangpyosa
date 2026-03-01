@@ -579,8 +579,10 @@ router.delete('/people/:id', requireAuth, requireRole('SUPER_ADMIN'), async (req
       });
     }
     
+    console.log(`[DELETE] Deleting salesPerson: ${id}, name: ${salesPerson.name}`);
+    
     // 소프트 삭제 (비활성화)
-    await prisma.salesPerson.update({
+    const updatedSalesPerson = await prisma.salesPerson.update({
       where: { id },
       data: {
         isActive: false,
@@ -588,7 +590,7 @@ router.delete('/people/:id', requireAuth, requireRole('SUPER_ADMIN'), async (req
       },
     });
     
-    // User 테이블에는 isActive가 없으므로 생략
+    console.log(`[DELETE] SalesPerson updated:`, updatedSalesPerson);
     
     // 활동 로그 기록
     await prisma.salesActivityLog.create({
