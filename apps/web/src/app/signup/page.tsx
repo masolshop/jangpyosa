@@ -640,7 +640,7 @@ function SignupContent() {
             <ul style={{ margin: 0, paddingLeft: 20 }}>
               <li><strong>고용부담금 기업</strong>: 3가지 유형(민간기업, 공공기관, 국가/지자체/교육청)이 있으며, 유형에 따라 의무고용률과 감면 계산식이 다릅니다.</li>
               <li><strong>표준사업장 기업</strong>: 장애인표준사업장 인증을 받은 기업만 가입 가능합니다.</li>
-              <li><strong>매니저</strong>: 소속 지사를 선택하고, 기업 추천 시 사용할 추천코드를 등록합니다.</li>
+              <li style={{ marginTop: 8, color: "#8b5cf6", fontWeight: 600 }}>👔 영업 사원은 <a href="/admin/sales" style={{ color: "#8b5cf6", textDecoration: "underline" }}>영업 사원 전용 페이지</a>에서 가입하세요.</li>
               <li style={{ marginTop: 8, color: "#0070f3", fontWeight: 600 }}>💡 이미 가입한 기업의 담당자는 동일한 사업자번호로 추가 가입 가능합니다.</li>
             </ul>
           </div>
@@ -735,45 +735,7 @@ function SignupContent() {
               </ul>
             </div>
 
-            {/* 매니저 */}
-            <div
-              onClick={() => handleTypeSelect("agent")}
-              style={{
-                padding: 24,
-                border: "2px solid #ddd",
-                borderRadius: 12,
-                cursor: "pointer",
-                textAlign: "center",
-                transition: "all 0.2s",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = "#0070f3";
-                e.currentTarget.style.background = "#f5f9ff";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = "#ddd";
-                e.currentTarget.style.background = "white";
-              }}
-            >
-              <div style={{ fontSize: 48, marginBottom: 12 }}>👤</div>
-              <h3 style={{ margin: 0, fontSize: 18 }}>매니저</h3>
-              <p style={{ margin: "8px 0 0 0", fontSize: 14, color: "#666" }}>
-                지사 소속 영업 담당자
-              </p>
-              <ul
-                style={{
-                  marginTop: 12,
-                  paddingLeft: 20,
-                  fontSize: 13,
-                  color: "#666",
-                  textAlign: "left",
-                }}
-              >
-                <li>🎯 기업 추천 및 매칭</li>
-                <li>🔑 추천코드 관리</li>
-                <li>📈 실적 및 수수료 관리</li>
-              </ul>
-            </div>
+
           </div>
 
           <div style={{ marginTop: 32, textAlign: "center", fontSize: 14, color: "#666" }}>

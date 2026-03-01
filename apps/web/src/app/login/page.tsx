@@ -4,7 +4,7 @@ import { useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { setToken, setUserRole } from "@/lib/auth";
 
-type UserType = "AGENT" | "SUPPLIER" | "BUYER" | "";
+type UserType = "SUPPLIER" | "BUYER" | "";
 
 export default function LoginPage() {
   const [userType, setUserType] = useState<UserType>("");
@@ -55,8 +55,6 @@ export default function LoginPage() {
       setTimeout(() => {
         if (out.user.role === "SUPER_ADMIN") {
           window.location.href = "/admin/branches";
-        } else if (out.user.role === "AGENT") {
-          window.location.href = "/";
         } else if (out.user.role === "SUPPLIER") {
           window.location.href = "/supplier/profile";
         } else if (out.user.role === "BUYER") {
@@ -93,7 +91,6 @@ export default function LoginPage() {
 
   const getUserTypeLabel = (type: UserType) => {
     switch (type) {
-      case "AGENT": return "매니저";
       case "SUPPLIER": return "표준사업장";
       case "BUYER": return "고용의무기업";
       default: return "";
@@ -124,15 +121,15 @@ export default function LoginPage() {
           </label>
           <div style={{ 
             display: "grid", 
-            gridTemplateColumns: "repeat(3, 1fr)", 
-            gap: 8,
+            gridTemplateColumns: "repeat(2, 1fr)", 
+            gap: 12,
             marginBottom: 16
           }}>
             <button
               type="button"
               onClick={() => setUserType("BUYER")}
               style={{
-                padding: "12px 16px",
+                padding: "16px",
                 border: `2px solid ${userType === "BUYER" ? "#0070f3" : "#ddd"}`,
                 background: userType === "BUYER" ? "#e7f3ff" : "white",
                 color: userType === "BUYER" ? "#0070f3" : "#666",
@@ -149,7 +146,7 @@ export default function LoginPage() {
               type="button"
               onClick={() => setUserType("SUPPLIER")}
               style={{
-                padding: "12px 16px",
+                padding: "16px",
                 border: `2px solid ${userType === "SUPPLIER" ? "#0070f3" : "#ddd"}`,
                 background: userType === "SUPPLIER" ? "#e7f3ff" : "white",
                 color: userType === "SUPPLIER" ? "#0070f3" : "#666",
@@ -162,23 +159,6 @@ export default function LoginPage() {
             >
               🏭 표준사업장
             </button>
-            <button
-              type="button"
-              onClick={() => setUserType("AGENT")}
-              style={{
-                padding: "12px 16px",
-                border: `2px solid ${userType === "AGENT" ? "#0070f3" : "#ddd"}`,
-                background: userType === "AGENT" ? "#e7f3ff" : "white",
-                color: userType === "AGENT" ? "#0070f3" : "#666",
-                borderRadius: 8,
-                cursor: "pointer",
-                fontSize: 14,
-                fontWeight: userType === "AGENT" ? 600 : 400,
-                transition: "all 0.2s"
-              }}
-            >
-              👔 매니저
-            </button>
           </div>
 
           <label>
@@ -187,9 +167,7 @@ export default function LoginPage() {
           <input
             type="text"
             placeholder={
-              userType === "AGENT" 
-                ? "010-1234-5678" 
-                : userType === "SUPPLIER" || userType === "BUYER"
+              userType === "SUPPLIER" || userType === "BUYER"
                 ? "영문+숫자 조합 ID"
                 : "핸드폰 번호 또는 ID"
             }
@@ -273,18 +251,17 @@ export default function LoginPage() {
             • 장애인표준사업장 인증을 받은 기업<br/>
             • 상품/서비스 등록, 도급계약 수주, 월별 이행 내역 관리
           </p>
-          <p>
-            <strong>👔 매니저 (AGENT)</strong><br/>
-            • 지사 소속 영업 담당자<br/>
-            • 기업 추천 및 매칭, 추천코드 관리, 실적 관리
+          <p style={{ marginTop: 12, padding: 10, background: "#e7f3ff", borderRadius: 6, color: "#0070f3" }}>
+            👔 <strong>영업 사원이신가요?</strong><br/>
+            <a href="/admin/sales" style={{ color: "#0070f3", fontWeight: 600, textDecoration: "underline" }}>
+              영업 사원 전용 로그인 페이지로 이동 →
+            </a>
           </p>
           <p style={{ marginTop: 12, padding: 10, background: "#fff3cd", borderRadius: 6, color: "#856404" }}>
             ⚠️ 가입 시 선택한 <strong>회원 유형</strong>과 동일한 버튼을 눌러 로그인하세요!<br/>
             유형이 다르면 "회원 유형 불일치" 오류가 발생합니다.
           </p>
         </div>
-
-
       </div>
 
       <style>{`
