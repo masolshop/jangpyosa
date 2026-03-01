@@ -32,9 +32,15 @@ router.get('/people', requireAuth, requireRole('SUPER_ADMIN'), async (req, res) 
     
     const where: any = {};
     
+    // 기본적으로 활성 사용자만 조회 (isActive 파라미터가 명시적으로 전달되지 않은 경우)
+    if (isActive !== undefined) {
+      where.isActive = isActive === 'true';
+    } else {
+      where.isActive = true; // 기본값: 활성 사용자만
+    }
+    
     if (role) where.role = role;
     if (managerId) where.managerId = managerId;
-    if (isActive !== undefined) where.isActive = isActive === 'true';
     
     if (search) {
       where.OR = [
