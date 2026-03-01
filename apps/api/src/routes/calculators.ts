@@ -562,7 +562,7 @@ r.get("/company/:companyId/employees", async (req, res) => {
     const severeCount = employees.filter(e => e.severity === 'SEVERE').length;
     const mildCount = employees.filter(e => e.severity === 'MILD').length;
     const recognizedCount = employees.reduce((sum, emp) => {
-      return sum + ((emp.severity === 'SEVERE' && emp.monthlyWorkHours >= 60) ? 2.0 : 1.0);
+      return sum + ((emp.severity === 'SEVERE' && (emp.monthlyWorkHours || 0) >= 60) ? 2.0 : 1.0);
     }, 0);
     
     res.json({
@@ -576,8 +576,8 @@ r.get("/company/:companyId/employees", async (req, res) => {
       },
       profile: {
         id: profile.id,
-        employeeCount: profile.employeeCount,
-        disabledCount: profile.disabledCount,
+        employeeCount: (profile as any).employeeCount || 0,
+        disabledCount: (profile as any).disabledCount || 0,
       },
       employees: employees.map(emp => ({
         id: emp.id,
@@ -596,7 +596,7 @@ r.get("/company/:companyId/employees", async (req, res) => {
         meetsMinimumWage: emp.meetsMinimumWage,
         workType: emp.workType,
         memo: emp.memo,
-        recognizedCount: (emp.severity === 'SEVERE' && emp.monthlyWorkHours >= 60) ? 2.0 : 1.0,
+        recognizedCount: (emp.severity === 'SEVERE' && (emp.monthlyWorkHours || 0) >= 60) ? 2.0 : 1.0,
       })),
       summary: {
         totalEmployees: employees.length,
@@ -655,9 +655,9 @@ r.get("/companies/list", async (req, res) => {
           type: c.type,
           buyerType: c.buyerType,
           profileId: profile?.id,
-          employeeCount: profile?.employeeCount || 0,
-          disabledCount: profile?.disabledCount || 0,
-          actualDisabledCount: profile?._count?.disabledEmployees || 0,
+          employeeCount: (profile as any)?.employeeCount || 0,
+          disabledCount: (profile as any)?.disabledCount || 0,
+          actualDisabledCount: (profile as any)?._count?.disabledEmployees || 0,
         };
       })
     });

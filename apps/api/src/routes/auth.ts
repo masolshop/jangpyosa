@@ -352,9 +352,9 @@ r.post("/signup/supplier", async (req, res) => {
       where: { bizNo: cleanBizNo },
     });
 
-    if (registry && user.company?.supplierProfile) {
+    if (registry && updatedUser?.company?.supplierProfile) {
       await prisma.supplierProfile.update({
-        where: { id: user.company.supplierProfile.id },
+        where: { id: updatedUser.company.supplierProfile.id },
         data: {
           registryBizNo: cleanBizNo,
           region: registry.region,
