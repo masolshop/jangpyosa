@@ -67,6 +67,10 @@ export default function SalesManagementPage() {
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [transferPerson, setTransferPerson] = useState<SalesPerson | null>(null);
   const [transferTargetId, setTransferTargetId] = useState<string>('');
+  
+  // 삭제 확인 모달 상태
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletingPerson, setDeletingPerson] = useState<SalesPerson | null>(null);
 
   // 영업 인원 목록 로드
   useEffect(() => {
@@ -240,17 +244,22 @@ export default function SalesManagementPage() {
   };
 
   const handleDelete = async (person: SalesPerson) => {
-    if (!confirm(`정말 ${person.name}을(를) 삭제하시겠습니까?\n\n주의: 이 작업은 되돌릴 수 없습니다.`)) {
-      return;
-    }
+    setDeletingPerson(person);
+    setShowDeleteModal(true);
+  };
+  
+  const confirmDelete = async () => {
+    if (!deletingPerson) return;
 
     try {
-      const response = await apiFetch(`/sales/people/${person.id}`, {
+      const response = await apiFetch(`/sales/people/${deletingPerson.id}`, {
         method: 'DELETE',
       });
 
       setSuccessMessage('삭제되었습니다.');
       setTimeout(() => setSuccessMessage(''), 3000);
+      setShowDeleteModal(false);
+      setDeletingPerson(null);
       loadSalesPeople();
     } catch (err: any) {
       setError(err.message || '삭제 실패');
@@ -1463,6 +1472,80 @@ export default function SalesManagementPage() {
                   }}
                 >
                   생성
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* 삭제 확인 모달 */}
+        {showDeleteModal && deletingPerson && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+          }}>
+            <div style={{
+              background: 'white',
+              borderRadius: 8,
+              padding: 24,
+              maxWidth: 400,
+              width: '90%',
+            }}>
+              <h3 style={{ margin: '0 0 16px 0', fontSize: 18, fontWeight: 600 }}>
+                🗑️ 삭제 확인
+              </h3>
+              <p style={{ margin: '0 0 8px 0', fontSize: 14 }}>
+                정말 <strong>{deletingPerson.name}</strong>을(를) 삭제하시겠습니까?
+              </p>
+              <div style={{
+                padding: 12,
+                backgroundColor: '#fff3cd',
+                borderRadius: 4,
+                marginBottom: 16,
+                fontSize: 13,
+                color: '#856404',
+              }}>
+                ⚠️ <strong>주의:</strong> 이 작업은 되돌릴 수 없습니다.
+              </div>
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                <button
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setDeletingPerson(null);
+                  }}
+                  style={{
+                    padding: '10px 20px',
+                    backgroundColor: '#f5f5f5',
+                    border: '1px solid #ddd',
+                    borderRadius: 4,
+                    cursor: 'pointer',
+                    fontSize: 14,
+                  }}
+                >
+                  취소
+                </button>
+                <button
+                  onClick={confirmDelete}
+                  style={{
+                    padding: '10px 20px',
+                    backgroundColor: '#d32f2f',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: 4,
+                    cursor: 'pointer',
+                    fontSize: 14,
+                    fontWeight: 600,
+                  }}
+                >
+                  삭제
                 </button>
               </div>
             </div>
