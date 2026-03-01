@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { requireAuth, requireRole } from '../middleware/auth.js';
+import bcryptjs from 'bcryptjs';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -135,6 +136,130 @@ router.get('/people/:id', requireAuth, async (req, res) => {
   } catch (error: any) {
     console.error('[GET /sales/people/:id] Error:', error);
     res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * POST /sales/people/create
+ * 본부/지사 생성 (User + SalesPerson 함께 생성)
+ */
+router.post('/people/create', requireAuth, requireRole('SUPER_ADMIN'), async (req, res) => {
+  try {
+    const {
+      name,
+      phone,
+      email,
+      password,
+      role = SalesRole.MANAGER,
+      managerId,
+    } = req.body;
+    
+    // 필수 필드 확인
+    if (!name || !phone || !password) {
+      return res.status(400).json({ error: '이름, 전화번호, 비밀번호는 필수입니다' });
+    }
+
+    // 비밀번호 길이 확인
+    if (password.length < 6) {
+      return res.status(400).json({ error: '비밀번호는 최소 6자 이상이어야 합니다' });
+    }
+    
+    // 전화번호 정규화
+    const normalizedPhone = phone.replace(/[-\s]/g, '');
+    
+    // 핸드폰번호 중복 확인 (User)
+    const existingUser = await prisma.user.findUnique({
+      where: { phone: normalizedPhone },
+    });
+    
+    if (existingUser) {
+      return res.status(400).json({ error: '이미 등록된 핸드폰번호입니다' });
+    }
+
+    // 핸드폰번호 중복 확인 (SalesPerson)
+    const existingSalesPerson = await prisma.salesPerson.findUnique({
+      where: { phone: normalizedPhone },
+    });
+    
+    if (existingSalesPerson) {
+      return res.status(400).json({ error: '이미 등록된 영업 사원입니다' });
+    }
+
+    // managerId 유효성 확인
+    if (managerId) {
+      const manager = await prisma.salesPerson.findUnique({
+        where: { id: managerId },
+      });
+      if (!manager) {
+        return res.status(400).json({ error: '존재하지 않는 상위 관리자입니다' });
+      }
+    }
+    
+    // 비밀번호 해시
+    const passwordHash = await bcryptjs.hash(password, 10);
+    
+    // 추천인 코드 생성
+    const referralCode = normalizedPhone.startsWith('0') 
+      ? normalizedPhone.substring(1) 
+      : normalizedPhone;
+    const referralLink = `https://jangpyosa.com/${normalizedPhone}`;
+    
+    // User 생성
+    const user = await prisma.user.create({
+      data: {
+        phone: normalizedPhone,
+        name,
+        email: email || undefined,
+        passwordHash,
+        role: 'EMPLOYEE', // 영업 사원은 EMPLOYEE 역할
+        privacyAgreed: true,
+        privacyAgreedAt: new Date(),
+      },
+    });
+    
+    // SalesPerson 생성
+    const salesPerson = await prisma.salesPerson.create({
+      data: {
+        userId: user.id,
+        name,
+        phone: normalizedPhone,
+        email: email || undefined,
+        role,
+        managerId,
+        referralCode,
+        referralLink,
+      },
+      include: {
+        manager: {
+          select: {
+            id: true,
+            name: true,
+            role: true,
+            phone: true,
+          },
+        },
+      },
+    });
+    
+    // 활동 로그 기록
+    await prisma.salesActivityLog.create({
+      data: {
+        salesPersonId: salesPerson.id,
+        adminUserId: req.user!.id,
+        action: 'STATUS_CHANGE',
+        toValue: 'CREATED',
+        notes: `본부/지사 생성: ${name} (${role})`,
+      },
+    });
+    
+    res.status(201).json({ 
+      success: true,
+      salesPerson,
+      message: `${role === 'HEAD_MANAGER' ? '본부장' : role === 'BRANCH_MANAGER' ? '지사장' : '매니저'} 생성이 완료되었습니다`,
+    });
+  } catch (error: any) {
+    console.error('[POST /sales/people/create] Error:', error);
+    res.status(500).json({ error: error.message || '생성 실패' });
   }
 });
 
