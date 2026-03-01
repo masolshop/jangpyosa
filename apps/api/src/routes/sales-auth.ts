@@ -120,7 +120,7 @@ router.post('/verify-identity-with-name', async (req, res) => {
  */
 router.post('/signup', async (req, res) => {
   try {
-    const { name, phone, email, password, rrn1, rrn2, verified } = req.body;
+    const { name, phone, email, password, rrn1, rrn2, verified, managerId } = req.body;
 
     // 입력 검증
     if (!name || !phone || !password) {
@@ -130,6 +130,11 @@ router.post('/signup', async (req, res) => {
     // 실명인증 확인 (프론트엔드에서 verified=true 전달)
     if (!verified || !rrn1 || !rrn2) {
       return res.status(400).json({ error: '실명인증이 필요합니다' });
+    }
+
+    // 본부/지사 선택 확인
+    if (!managerId) {
+      return res.status(400).json({ error: '소속 본부 또는 지사를 선택해주세요' });
     }
 
     // 핸드폰 번호 중복 확인
@@ -157,7 +162,7 @@ router.post('/signup', async (req, res) => {
       },
     });
 
-    // SalesPerson 생성 (기본 MANAGER 역할)
+    // SalesPerson 생성 (기본 MANAGER 역할, 승인 대기 상태)
     const salesPerson = await prisma.salesPerson.create({
       data: {
         userId: user.id,
@@ -165,41 +170,32 @@ router.post('/signup', async (req, res) => {
         phone: user.phone,
         email: user.email,
         role: 'MANAGER', // 기본 매니저로 시작
+        managerId: managerId, // 선택한 본부/지사 ID
         referralCode: user.phone.replace(/^0/, ''), // 0 제거
         referralLink: `https://jangpyosa.com/${user.phone}`,
         totalReferrals: 0,
         activeReferrals: 0,
         totalRevenue: 0,
         commission: 0,
-        isActive: true,
+        isActive: false, // 슈퍼어드민 승인 대기
+        inactiveReason: '가입 승인 대기',
       },
     });
 
-    // JWT 토큰 생성
-    const token = jwt.sign(
-      {
-        userId: user.id,
-        salesPersonId: salesPerson.id,
-        role: salesPerson.role,
-      },
-      JWT_SECRET,
-      { expiresIn: '30d' }
-    );
-
-    // 활동 로그
     // 활동 로그
     await prisma.salesActivityLog.create({
       data: {
         salesPersonId: salesPerson.id,
         action: 'SIGNUP',
         fromValue: null,
-        toValue: JSON.stringify({ role: 'MANAGER' }),
-        reason: '신규 가입',
+        toValue: JSON.stringify({ role: 'MANAGER', status: 'PENDING_APPROVAL' }),
+        reason: '신규 가입 - 승인 대기',
       },
     });
 
     res.json({
-      token,
+      success: true,
+      message: '회원가입이 완료되었습니다. 슈퍼어드민 승인 후 로그인이 가능합니다.',
       salesPerson: {
         id: salesPerson.id,
         userId: user.id,
@@ -207,8 +203,7 @@ router.post('/signup', async (req, res) => {
         phone: salesPerson.phone,
         email: salesPerson.email,
         role: salesPerson.role,
-        referralCode: salesPerson.referralCode,
-        referralLink: salesPerson.referralLink,
+        isActive: false,
       },
     });
   } catch (error: any) {

@@ -859,4 +859,51 @@ router.get('/my-info', requireAuth, async (req, res) => {
   }
 });
 
+/**
+ * GET /sales/organizations
+ * 본부/지사 목록 조회 (회원가입용 - 인증 불필요)
+ */
+router.get('/organizations', async (req, res) => {
+  try {
+    // 활성 상태인 본부만 조회
+    const headquarters = await prisma.salesPerson.findMany({
+      where: {
+        role: 'HEAD_MANAGER',
+        isActive: true,
+      },
+      select: {
+        id: true,
+        name: true,
+      },
+      orderBy: {
+        createdAt: 'asc',
+      },
+    });
+
+    // 활성 상태인 지사만 조회
+    const branches = await prisma.salesPerson.findMany({
+      where: {
+        role: 'BRANCH_MANAGER',
+        isActive: true,
+      },
+      select: {
+        id: true,
+        name: true,
+        managerId: true, // 소속 본부 ID
+      },
+      orderBy: {
+        createdAt: 'asc',
+      },
+    });
+
+    res.json({
+      headquarters,
+      branches,
+    });
+  } catch (error: any) {
+    console.error('[GET /sales/organizations] Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export default router;

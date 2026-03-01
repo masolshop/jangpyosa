@@ -57,7 +57,16 @@ export default function SalesLoginPage() {
     email: '',
     password: '',
     confirmPassword: '',
+    managerId: '', // 선택한 본부/지사 ID
   });
+
+  // 본부/지사 목록
+  const [organizations, setOrganizations] = useState<{
+    headquarters: Array<{ id: string; name: string }>;
+    branches: Array<{ id: string; name: string; managerId: string }>;
+  }>({ headquarters: [], branches: [] });
+  const [selectedHeadquarter, setSelectedHeadquarter] = useState(''); // 선택한 본부
+  const [availableBranches, setAvailableBranches] = useState<Array<{ id: string; name: string }>>([]); // 필터링된 지사
 
   // 실명인증 폼 (회원가입 전 단계)
   const [identityForm, setIdentityForm] = useState({
@@ -80,6 +89,36 @@ export default function SalesLoginPage() {
       router.push('/admin/sales/dashboard');
     }
   }, [router]);
+
+  // 본부/지사 목록 로드
+  useEffect(() => {
+    const loadOrganizations = async () => {
+      try {
+        const response = await fetch(`${API_BASE}/sales/organizations`);
+        const data = await response.json();
+        if (response.ok) {
+          setOrganizations(data);
+        }
+      } catch (err) {
+        console.error('본부/지사 목록 로드 실패:', err);
+      }
+    };
+    loadOrganizations();
+  }, []);
+
+  // 본부 선택 시 지사 필터링
+  useEffect(() => {
+    if (selectedHeadquarter) {
+      const filtered = organizations.branches.filter(b => b.managerId === selectedHeadquarter);
+      setAvailableBranches(filtered);
+      // 본부를 바꾸면 지사 선택 초기화
+      if (signupForm.managerId && !filtered.find(b => b.id === signupForm.managerId)) {
+        setSignupForm({ ...signupForm, managerId: '' });
+      }
+    } else {
+      setAvailableBranches([]);
+    }
+  }, [selectedHeadquarter, organizations.branches]);
 
   // 로그인 처리
   const handleLogin = async (e: React.FormEvent) => {
@@ -170,6 +209,12 @@ export default function SalesLoginPage() {
       return;
     }
 
+    // 본부/지사 선택 확인
+    if (!signupForm.managerId) {
+      setError('소속 본부 또는 지사를 선택해주세요');
+      return;
+    }
+
     // 비밀번호 확인
     if (signupForm.password !== signupForm.confirmPassword) {
       setError('비밀번호가 일치하지 않습니다');
@@ -198,18 +243,33 @@ export default function SalesLoginPage() {
           rrn1: identityForm.rrn1,
           rrn2: identityForm.rrn2,
           verified: identityVerified,
+          managerId: signupForm.managerId, // 선택한 본부/지사 ID
         }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        // 자동 로그인
-        setManagerToken(data.token);
-        setManagerInfo(data.salesPerson);
+        // 승인 대기 메시지 표시
+        alert('회원가입이 완료되었습니다!\n\n슈퍼어드민 승인 후 로그인이 가능합니다.');
         
-        // 대시보드로 이동
-        router.push('/admin/sales/dashboard');
+        // 로그인 페이지로 이동
+        setIsLogin(true);
+        setIdentityVerified(false);
+        setVerifiedName('');
+        setSignupForm({
+          phone: '',
+          email: '',
+          password: '',
+          confirmPassword: '',
+          managerId: '',
+        });
+        setIdentityForm({
+          name: '',
+          rrn1: '',
+          rrn2: '',
+        });
+        setSelectedHeadquarter('');
       } else {
         setError(data.error || '회원가입에 실패했습니다');
       }
@@ -238,31 +298,29 @@ export default function SalesLoginPage() {
         padding: 40,
         position: 'relative',
       }}>
-        {/* 닫기 버튼 (회원가입 시에만 표시) */}
-        {!isLogin && (
-          <button
-            onClick={() => router.push('/')}
-            style={{
-              position: 'absolute',
-              top: 16,
-              right: 16,
-              background: 'transparent',
-              border: 'none',
-              fontSize: 24,
-              cursor: 'pointer',
-              color: '#6b7280',
-              padding: 8,
-              lineHeight: 1,
-            }}
-          >
-            ×
-          </button>
-        )}
+        {/* 닫기 버튼 (항상 표시) */}
+        <button
+          onClick={() => router.push('/')}
+          style={{
+            position: 'absolute',
+            top: 16,
+            right: 16,
+            background: 'transparent',
+            border: 'none',
+            fontSize: 24,
+            cursor: 'pointer',
+            color: '#6b7280',
+            padding: 8,
+            lineHeight: 1,
+          }}
+        >
+          ×
+        </button>
         {/* 로고 및 제목 */}
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}>📊</div>
           <h1 style={{ fontSize: 28, fontWeight: 'bold', margin: 0, marginBottom: 8 }}>
-            영업 사원 전용
+            본부지사매니저전용
           </h1>
           <p style={{ fontSize: 14, color: '#6b7280', margin: 0 }}>
             장표사닷컴 영업 관리 시스템
@@ -603,7 +661,7 @@ export default function SalesLoginPage() {
               />
             </div>
 
-            <div style={{ marginBottom: 24 }}>
+            <div style={{ marginBottom: 16 }}>
               <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, fontSize: 14 }}>
                 비밀번호 확인 *
               </label>
@@ -623,6 +681,70 @@ export default function SalesLoginPage() {
               />
             </div>
 
+            {/* 본부 선택 */}
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, fontSize: 14 }}>
+                소속 본부 선택 *
+              </label>
+              <select
+                value={selectedHeadquarter}
+                onChange={(e) => {
+                  setSelectedHeadquarter(e.target.value);
+                  // 본부 직속인 경우 본부 ID를 managerId로 설정
+                  setSignupForm({ ...signupForm, managerId: e.target.value });
+                }}
+                required
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: 8,
+                  fontSize: 14,
+                  background: 'white',
+                }}
+              >
+                <option value="">본부를 선택하세요</option>
+                {organizations.headquarters.map((hq) => (
+                  <option key={hq.id} value={hq.id}>
+                    {hq.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* 지사 선택 (본부 선택 시에만 표시) */}
+            {selectedHeadquarter && availableBranches.length > 0 && (
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, fontSize: 14 }}>
+                  소속 지사 선택 (선택사항)
+                </label>
+                <select
+                  value={signupForm.managerId}
+                  onChange={(e) => setSignupForm({ ...signupForm, managerId: e.target.value || selectedHeadquarter })}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: 8,
+                    fontSize: 14,
+                    background: 'white',
+                  }}
+                >
+                  <option value={selectedHeadquarter}>본부 직속</option>
+                  {availableBranches.map((branch) => (
+                    <option key={branch.id} value={branch.id}>
+                      {branch.name}
+                    </option>
+                  ))}
+                </select>
+                <div style={{ fontSize: 12, color: '#6b7280', marginTop: 4 }}>
+                  지사를 선택하지 않으면 본부 직속으로 배정됩니다
+                </div>
+              </div>
+            )}
+
+            <div style={{ marginBottom: 24 }} />
+
             <button
               type="submit"
               disabled={loading}
@@ -640,18 +762,6 @@ export default function SalesLoginPage() {
             >
               {loading ? '가입 중...' : '회원가입'}
             </button>
-
-            {/* 지사/본부 배정 안내 */}
-            <div style={{
-              marginTop: 16,
-              padding: 12,
-              background: '#fef3c7',
-              borderRadius: 8,
-              fontSize: 12,
-              color: '#92400e',
-            }}>
-              ℹ️ 가입 후 지사/본부는 슈퍼어드민이 배정합니다
-            </div>
           </form>
             )}
           </div>
@@ -705,7 +815,7 @@ export default function SalesLoginPage() {
           color: '#6b7280',
         }}>
           <p style={{ margin: 0, marginBottom: 8 }}>
-            💡 <strong>영업 사원 전용 계정입니다</strong>
+            💼 <strong>본부지사매니저 전용 계정입니다</strong>
           </p>
           <p style={{ margin: 0 }}>
             기업 고용의무/표준사업장 회원은 메인 페이지에서 가입해주세요.
