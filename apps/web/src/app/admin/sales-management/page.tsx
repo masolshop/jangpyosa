@@ -572,9 +572,8 @@ export default function SalesManagementPage() {
                     <th style={{ padding: 16, textAlign: 'left', fontWeight: 600 }}>역할</th>
                     <th style={{ padding: 16, textAlign: 'left', fontWeight: 600 }}>전화번호</th>
                     <th style={{ padding: 16, textAlign: 'left', fontWeight: 600 }}>이메일</th>
-                    <th style={{ padding: 16, textAlign: 'center', fontWeight: 600 }}>추천 고객</th>
-                    <th style={{ padding: 16, textAlign: 'right', fontWeight: 600 }}>총 매출</th>
-                    <th style={{ padding: 16, textAlign: 'right', fontWeight: 600 }}>커미션</th>
+                    <th style={{ padding: 16, textAlign: 'center', fontWeight: 600 }}>소속 본부</th>
+                    <th style={{ padding: 16, textAlign: 'center', fontWeight: 600 }}>소속 지사</th>
                     <th style={{ padding: 16, textAlign: 'center', fontWeight: 600 }}>상태</th>
                     <th style={{ padding: 16, textAlign: 'center', fontWeight: 600 }}>관리</th>
                   </tr>
@@ -605,16 +604,40 @@ export default function SalesManagementPage() {
                       <td style={{ padding: 16 }}>{person.phone}</td>
                       <td style={{ padding: 16, color: '#666' }}>{person.email || '-'}</td>
                       <td style={{ padding: 16, textAlign: 'center' }}>
-                        <div>{person.totalReferrals}명</div>
-                        <div style={{ fontSize: 12, color: '#666' }}>
-                          활성: {person.activeReferrals}명
-                        </div>
+                        {(() => {
+                          // 본부 찾기 (본인이 본부장이거나, 상위가 본부장이거나, 상위의 상위가 본부장인 경우)
+                          if (person.role === 'HEAD_MANAGER') {
+                            return <span style={{ fontWeight: 600, color: '#d32f2f' }}>{person.name} 본부</span>;
+                          } else if (person.manager) {
+                            if (person.manager.role === 'HEAD_MANAGER') {
+                              return person.manager.name + ' 본부';
+                            } else if (person.manager.role === 'BRANCH_MANAGER') {
+                              // 지사장의 상위를 찾아야 함
+                              const branchManager = salesPeople.find(p => p.id === person.manager?.id);
+                              if (branchManager?.manager) {
+                                return branchManager.manager.name + ' 본부';
+                              }
+                            }
+                          }
+                          return '-';
+                        })()}
                       </td>
-                      <td style={{ padding: 16, textAlign: 'right', fontWeight: 600 }}>
-                        ₩{person.totalRevenue.toLocaleString()}
-                      </td>
-                      <td style={{ padding: 16, textAlign: 'right', fontWeight: 600, color: '#2e7d32' }}>
-                        ₩{person.commission.toLocaleString()}
+                      <td style={{ padding: 16, textAlign: 'center' }}>
+                        {(() => {
+                          // 지사 찾기
+                          if (person.role === 'HEAD_MANAGER') {
+                            return '-'; // 본부장은 지사 없음
+                          } else if (person.role === 'BRANCH_MANAGER') {
+                            return <span style={{ fontWeight: 600, color: '#f57c00' }}>{person.name} 지사</span>;
+                          } else if (person.manager) {
+                            if (person.manager.role === 'BRANCH_MANAGER') {
+                              return person.manager.name + ' 지사';
+                            } else if (person.manager.role === 'HEAD_MANAGER') {
+                              return '-'; // 본부 직속 매니저는 지사 없음
+                            }
+                          }
+                          return '-';
+                        })()}
                       </td>
                       <td style={{ padding: 16, textAlign: 'center' }}>
                         <span style={{
