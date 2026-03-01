@@ -62,6 +62,11 @@ export default function SalesManagementPage() {
     phone: '',
     email: '',
   });
+  
+  // 이동 모달 상태
+  const [showTransferModal, setShowTransferModal] = useState(false);
+  const [transferPerson, setTransferPerson] = useState<SalesPerson | null>(null);
+  const [transferTargetId, setTransferTargetId] = useState<string>('');
 
   // 영업 인원 목록 로드
   useEffect(() => {
@@ -240,7 +245,7 @@ export default function SalesManagementPage() {
     }
 
     try {
-      await apiFetch(`/sales/people/${person.id}`, {
+      const response = await apiFetch(`/sales/people/${person.id}`, {
         method: 'DELETE',
       });
 
@@ -249,6 +254,48 @@ export default function SalesManagementPage() {
       loadSalesPeople();
     } catch (err: any) {
       setError(err.message || '삭제 실패');
+      setTimeout(() => setError(''), 3000);
+    }
+  };
+
+  const openTransferModal = (person: SalesPerson) => {
+    setTransferPerson(person);
+    setTransferTargetId(person.managerId || '');
+    setShowTransferModal(true);
+  };
+
+  const handleTransfer = async () => {
+    if (!transferPerson || !transferTargetId) {
+      setError('이동할 본부/지사를 선택해주세요.');
+      setTimeout(() => setError(''), 3000);
+      return;
+    }
+
+    if (transferTargetId === transferPerson.managerId) {
+      setError('현재와 동일한 본부/지사입니다.');
+      setTimeout(() => setError(''), 3000);
+      return;
+    }
+
+    try {
+      await apiFetch(`/sales/people/${transferPerson.id}/transfer`, {
+        method: 'POST',
+        body: JSON.stringify({
+          newManagerId: transferTargetId,
+          reason: '슈퍼어드민 조직 이동',
+        }),
+      });
+
+      setSuccessMessage('조직 이동이 완료되었습니다.');
+      setTimeout(() => setSuccessMessage(''), 3000);
+      
+      setShowTransferModal(false);
+      setTransferPerson(null);
+      setTransferTargetId('');
+      
+      loadSalesPeople();
+    } catch (err: any) {
+      setError(err.message || '조직 이동 실패');
       setTimeout(() => setError(''), 3000);
     }
   };
@@ -581,37 +628,84 @@ export default function SalesManagementPage() {
                         </span>
                       </td>
                       <td style={{ padding: 16, textAlign: 'center' }}>
-                        <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
-                          {getNextRole(person.role) && (
+                        <div style={{ display: 'flex', gap: 4, justifyContent: 'center', flexWrap: 'wrap' }}>
+                          <button
+                            onClick={() => openEditModal(person)}
+                            style={{
+                              padding: '6px 10px',
+                              backgroundColor: '#1976d2',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: 4,
+                              cursor: 'pointer',
+                              fontSize: 11,
+                              fontWeight: 600,
+                            }}
+                          >
+                            ✏️ 수정
+                          </button>
+                          {person.role !== 'HEAD_MANAGER' && (
                             <button
-                              onClick={() => handlePromote(person.id, getNextRole(person.role)!)}
+                              onClick={() => openTransferModal(person)}
                               style={{
-                                padding: '6px 12px',
-                                backgroundColor: '#1976d2',
+                                padding: '6px 10px',
+                                backgroundColor: '#9c27b0',
                                 color: 'white',
                                 border: 'none',
                                 borderRadius: 4,
                                 cursor: 'pointer',
-                                fontSize: 12,
+                                fontSize: 11,
                                 fontWeight: 600,
                               }}
                             >
-                              ↑ {getRoleName(getNextRole(person.role)!)}
+                              🔄 이동
+                            </button>
+                          )}
+                          {getNextRole(person.role) && (
+                            <button
+                              onClick={() => handlePromote(person.id, getNextRole(person.role)!)}
+                              style={{
+                                padding: '6px 10px',
+                                backgroundColor: '#4caf50',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: 4,
+                                cursor: 'pointer',
+                                fontSize: 11,
+                                fontWeight: 600,
+                              }}
+                            >
+                              ↑ 등업
                             </button>
                           )}
                           <button
                             onClick={() => handleToggleActive(person.id, person.isActive)}
                             style={{
-                              padding: '6px 12px',
+                              padding: '6px 10px',
                               backgroundColor: person.isActive ? '#f57c00' : '#4caf50',
                               color: 'white',
                               border: 'none',
                               borderRadius: 4,
                               cursor: 'pointer',
-                              fontSize: 12,
+                              fontSize: 11,
                             }}
                           >
-                            {person.isActive ? '비활성화' : '활성화'}
+                            {person.isActive ? '비활성' : '활성'}
+                          </button>
+                          <button
+                            onClick={() => handleDelete(person)}
+                            style={{
+                              padding: '6px 10px',
+                              backgroundColor: '#d32f2f',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: 4,
+                              cursor: 'pointer',
+                              fontSize: 11,
+                              fontWeight: 600,
+                            }}
+                          >
+                            🗑️ 삭제
                           </button>
                         </div>
                       </td>
@@ -811,6 +905,167 @@ export default function SalesManagementPage() {
                 아직 본부가 없습니다. "+ 본부 생성" 버튼을 눌러 본부를 추가하세요.
               </div>
             )}
+          </div>
+        )}
+
+        {/* 이동 모달 */}
+        {showTransferModal && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+          }}>
+            <div style={{
+              backgroundColor: 'white',
+              borderRadius: 8,
+              padding: 32,
+              width: '100%',
+              maxWidth: 500,
+              boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+              position: 'relative',
+            }}>
+              <button
+                onClick={() => {
+                  setShowTransferModal(false);
+                  setTransferPerson(null);
+                  setTransferTargetId('');
+                }}
+                style={{
+                  position: 'absolute',
+                  top: 16,
+                  right: 16,
+                  width: 32,
+                  height: 32,
+                  border: 'none',
+                  backgroundColor: 'transparent',
+                  fontSize: 24,
+                  color: '#999',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: 4,
+                }}
+              >
+                ✕
+              </button>
+
+              <h2 style={{ fontSize: 24, fontWeight: 'bold', marginBottom: 8 }}>
+                🔄 조직 이동
+              </h2>
+              <p style={{ fontSize: 14, color: '#666', marginBottom: 24 }}>
+                {transferPerson?.name}을(를) 다른 본부/지사로 이동합니다.
+              </p>
+
+              <div style={{ marginBottom: 20 }}>
+                <label style={{ display: 'block', marginBottom: 8, fontWeight: 600, fontSize: 14 }}>
+                  현재 소속
+                </label>
+                <div style={{
+                  padding: 12,
+                  backgroundColor: '#f5f5f5',
+                  borderRadius: 4,
+                  fontSize: 14,
+                }}>
+                  {transferPerson?.manager ? transferPerson.manager.name : '없음'}
+                </div>
+              </div>
+
+              <div style={{ marginBottom: 24 }}>
+                <label style={{ display: 'block', marginBottom: 8, fontWeight: 600, fontSize: 14 }}>
+                  이동할 본부/지사 선택 *
+                </label>
+                <select
+                  value={transferTargetId}
+                  onChange={(e) => setTransferTargetId(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: 12,
+                    border: '1px solid #ddd',
+                    borderRadius: 4,
+                    fontSize: 14,
+                    boxSizing: 'border-box',
+                  }}
+                >
+                  <option value="">선택하세요</option>
+                  {transferPerson?.role === 'MANAGER' && (
+                    <>
+                      <optgroup label="본부">
+                        {salesPeople
+                          .filter(p => p.role === 'HEAD_MANAGER' && p.id !== transferPerson.id)
+                          .map(head => (
+                            <option key={head.id} value={head.id}>
+                              {head.name} 본부
+                            </option>
+                          ))}
+                      </optgroup>
+                      <optgroup label="지사">
+                        {salesPeople
+                          .filter(p => p.role === 'BRANCH_MANAGER' && p.id !== transferPerson.id)
+                          .map(branch => (
+                            <option key={branch.id} value={branch.id}>
+                              {branch.name} 지사
+                            </option>
+                          ))}
+                      </optgroup>
+                    </>
+                  )}
+                  {transferPerson?.role === 'BRANCH_MANAGER' && (
+                    <optgroup label="본부">
+                      {salesPeople
+                        .filter(p => p.role === 'HEAD_MANAGER' && p.id !== transferPerson.id)
+                        .map(head => (
+                          <option key={head.id} value={head.id}>
+                            {head.name} 본부
+                          </option>
+                        ))}
+                    </optgroup>
+                  )}
+                </select>
+              </div>
+
+              <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+                <button
+                  onClick={() => {
+                    setShowTransferModal(false);
+                    setTransferPerson(null);
+                    setTransferTargetId('');
+                  }}
+                  style={{
+                    padding: '10px 20px',
+                    backgroundColor: '#f5f5f5',
+                    border: '1px solid #ddd',
+                    borderRadius: 4,
+                    cursor: 'pointer',
+                    fontSize: 14,
+                  }}
+                >
+                  취소
+                </button>
+                <button
+                  onClick={handleTransfer}
+                  style={{
+                    padding: '10px 20px',
+                    backgroundColor: '#9c27b0',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: 4,
+                    cursor: 'pointer',
+                    fontSize: 14,
+                    fontWeight: 600,
+                  }}
+                >
+                  이동
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
