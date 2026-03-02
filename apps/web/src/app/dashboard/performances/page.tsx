@@ -276,7 +276,7 @@ export default function PerformancesPage() {
   }
 
   return (
-    <div className="p-8 max-w-7xl mx-auto" style={{ marginLeft: 315 }}>
+    <div className="p-8 max-w-7xl mx-auto" style={{ marginLeft: 360 }}>
       {/* 헤더 */}
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-gray-800">📊 월별 도급계약감면관리</h1>

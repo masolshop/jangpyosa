@@ -11,7 +11,7 @@ export default function ContractSamplePage() {
   };
 
   return (
-    <div style={{ padding: "40px", maxWidth: 1200, margin: "0 auto", marginLeft: 315 }}>
+    <div style={{ padding: "40px", maxWidth: 1200, margin: "0 auto", marginLeft: 360 }}>
       {/* 헤더 */}
       <div style={{ marginBottom: 32 }}>
         <h1 style={{ fontSize: 32, fontWeight: "bold", marginBottom: 12, color: "#1a1a1a" }}>

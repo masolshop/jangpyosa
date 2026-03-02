@@ -266,7 +266,7 @@ export default function ProductEditPage() {
 
   if (loading) {
     return (
-      <div className="max-w-5xl mx-auto p-8" style={{ marginLeft: 315 }}>
+      <div className="max-w-5xl mx-auto p-8" style={{ marginLeft: 360 }}>
         <div className="text-center py-20">
           <div className="text-xl text-gray-600">로딩중...</div>
         </div>
@@ -275,7 +275,7 @@ export default function ProductEditPage() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto p-8" style={{ marginLeft: 315 }}>
+    <div className="max-w-5xl mx-auto p-8" style={{ marginLeft: 360 }}>
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-800 mb-2">
