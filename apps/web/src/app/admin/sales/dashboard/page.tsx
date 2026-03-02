@@ -670,7 +670,9 @@ const HeadquartersDashboard = ({
                 setMessage({ type: 'error', text: '수정할 지사가 없습니다' });
                 return;
               }
-              setShowEditModal(true);
+              setMessage({ type: 'success', text: '아래 지사 목록에서 각 지사의 "수정" 버튼을 클릭하세요' });
+              // 지사 목록으로 스크롤
+              document.querySelector('[class*="소속 지사 리스트"]')?.scrollIntoView({ behavior: 'smooth' });
             }}
             className="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center justify-center gap-2 font-semibold"
           >
@@ -683,7 +685,9 @@ const HeadquartersDashboard = ({
                 setMessage({ type: 'error', text: '삭제할 지사가 없습니다' });
                 return;
               }
-              setShowDeleteModal(true);
+              setMessage({ type: 'success', text: '아래 지사 목록에서 각 지사의 "삭제" 버튼을 클릭하세요' });
+              // 지사 목록으로 스크롤
+              document.querySelector('[class*="소속 지사 리스트"]')?.scrollIntoView({ behavior: 'smooth' });
             }}
             className="flex-1 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center justify-center gap-2 font-semibold"
           >
