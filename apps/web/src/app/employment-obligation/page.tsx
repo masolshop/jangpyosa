@@ -131,9 +131,14 @@ export default function EmploymentObligationPage() {
           </h2>
           <div className="space-y-4">
             <p className="text-gray-700 leading-relaxed">
-              장애인 의무고용률을 달성하지 못한 사업주는 <strong className="text-red-600">고용부담금</strong>을 
+              장애인 의무고용률을 달성하지 못한 사업주(상시근로자 100명 이상)는 <strong className="text-red-600">고용부담금</strong>을 
               납부해야 합니다. 부담금은 미달 인원 1명당 월 단위로 부과됩니다.
             </p>
+            <div className="p-4 bg-yellow-50 rounded-lg border-l-4 border-yellow-500 mb-4">
+              <p className="text-sm text-yellow-800">
+                💡 <strong>참고:</strong> 상시근로자 100명 미만 사업장은 고용부담금 납부 의무가 없습니다.
+              </p>
+            </div>
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gradient-to-r from-red-500 to-pink-600">
@@ -150,11 +155,6 @@ export default function EmploymentObligationPage() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  <tr className="hover:bg-red-50 transition-colors">
-                    <td className="px-6 py-4 text-sm text-gray-900">상시근로자 100명 미만</td>
-                    <td className="px-6 py-4 text-sm text-red-600 font-bold">1,223,320원</td>
-                    <td className="px-6 py-4 text-sm text-red-700 font-bold">14,679,840원</td>
-                  </tr>
                   <tr className="hover:bg-red-50 transition-colors">
                     <td className="px-6 py-4 text-sm text-gray-900">상시근로자 100명 이상</td>
                     <td className="px-6 py-4 text-sm text-red-600 font-bold">1,404,900원</td>
