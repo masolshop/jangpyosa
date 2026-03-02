@@ -446,20 +446,6 @@ const BranchDashboard = ({
 
 // ==================== 본부 대시보드 ====================
 
-interface BranchManager {
-  id: string;
-  name: string;
-  phone: string;
-  email?: string;
-  role: string;
-  stats: {
-    민간기업: number;
-    공공기관: number;
-    정부교육기관: number;
-    합계: number;
-  };
-}
-
 const HeadquartersDashboard = ({ 
   accountInfo, 
   stats, 
