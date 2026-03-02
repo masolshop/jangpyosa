@@ -942,6 +942,99 @@ const HeadquartersDashboard = ({
           </div>
         )}
       </div>
+
+      {/* 지사 생성/수정 모달 */}
+      {showBranchModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-lg font-bold mb-4">
+              {editingBranch ? '지사 수정' : '지사 생성'}
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  지사명 <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={branchFormData.name}
+                  onChange={(e) => setBranchFormData({ ...branchFormData, name: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="예: 강남지사"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  지사장명 <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={branchFormData.leaderName}
+                  onChange={(e) => setBranchFormData({ ...branchFormData, leaderName: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="예: 홍길동"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  전화번호 <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="tel"
+                  value={branchFormData.phone}
+                  onChange={(e) => {
+                    const formatted = e.target.value
+                      .replace(/[^0-9]/g, '')
+                      .replace(/^(\d{3})(\d{4})(\d{4})$/, '$1-$2-$3');
+                    setBranchFormData({ ...branchFormData, phone: formatted });
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="010-1234-5678"
+                  maxLength={13}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  이메일
+                </label>
+                <input
+                  type="email"
+                  value={branchFormData.email}
+                  onChange={(e) => setBranchFormData({ ...branchFormData, email: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="branch@example.com"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  메모
+                </label>
+                <textarea
+                  value={branchFormData.notes}
+                  onChange={(e) => setBranchFormData({ ...branchFormData, notes: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="메모를 입력하세요"
+                  rows={3}
+                />
+              </div>
+            </div>
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setShowBranchModal(false)}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleSaveBranch}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                {editingBranch ? '수정' : '생성'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
