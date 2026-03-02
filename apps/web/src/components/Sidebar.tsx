@@ -408,13 +408,17 @@ export default function Sidebar() {
               <div style={{ fontSize: 21.424, color: "#fff", marginBottom: 12, fontWeight: "bold", textAlign: "center" }}>
                 연계고용감면센터
               </div>
-              <MenuItem href="/products/manage" label="연계고용감면상품관리" icon="🏭" active={isActive("/products/manage") || isActive("/supplier/profile")} requiresRole={["SUPPLIER"]} currentRole={userRole} requiresAuth={true} />
-              <MenuItem href="/catalog" label="상품 카탈로그" icon="🛒" active={pathname?.startsWith("/catalog")} />
-              <MenuItem href="/cart" label="도급계약장바구니" icon="🛍️" active={isActive("/cart")} requiresRole={["BUYER"]} currentRole={userRole} requiresAuth={true} />
-              <MenuItem href="/dashboard/contracts" label="도급계약 이행·결제 관리" icon="📋" active={pathname?.startsWith("/dashboard/contracts")} requiresRole={["BUYER", "SUPER_ADMIN", "SUPPLIER"]} currentRole={userRole} requiresAuth={true} />
+              <MenuItem href="/employment-obligation" label="장애인고용의무" icon="📋" active={isActive("/employment-obligation")} />
+              <MenuItem href="/employment-levy" label="장애인고용부담금" icon="💰" active={isActive("/employment-levy")} />
+              <MenuItem href="/linkage-levy-exemption" label="연계고용부담금감면" icon="📉" active={isActive("/linkage-levy-exemption")} />
+              <MenuItem href="/purchase-cases" label="연계고용부담금감면사례" icon="📦" active={isActive("/purchase-cases")} />
+              <MenuItem href="/priority-purchase" label="공공기관우선구매제도" icon="🏛️" active={isActive("/priority-purchase")} />
+              <MenuItem href="/purchase-best-cases" label="공공기관우수구매사례" icon="⭐" active={isActive("/purchase-best-cases")} />
+              <MenuItem href="/catalog" label="표준사업장감면상품" icon="🛒" active={pathname?.startsWith("/catalog")} />
+              <MenuItem href="/cart" label="도급감면계약장바구니" icon="🛍️" active={isActive("/cart")} requiresRole={["BUYER"]} currentRole={userRole} requiresAuth={true} />
               <MenuItem href="/dashboard/performances" label="월별 도급계약감면관리" icon="📊" active={pathname?.startsWith("/dashboard/performances")} requiresRole={["BUYER", "SUPER_ADMIN", "SUPPLIER"]} currentRole={userRole} requiresAuth={true} />
-              <MenuItem href="/purchase-cases" label="연계고용감면사례" icon="📦" active={isActive("/purchase-cases")} />
               <MenuItem href="/contract-sample" label="표준도급계약서 샘플" icon="📄" active={isActive("/contract-sample")} />
+              <MenuItem href="/products/manage" label="표준사업장감면상품등록" icon="🏭" active={isActive("/products/manage") || isActive("/supplier/profile")} requiresRole={["SUPPLIER"]} currentRole={userRole} requiresAuth={true} />
             </div>
           )}
 
