@@ -275,8 +275,8 @@ export default function Sidebar() {
           href="/"
           style={{
             display: "block",
-            marginBottom: 16,
-            marginTop: 8,
+            marginBottom: 8,
+            marginTop: 4,
             textDecoration: "none",
             color: "white",
             cursor: "pointer",
@@ -295,18 +295,18 @@ export default function Sidebar() {
             alt="장표사닷컴"
             style={{
               width: "100%",
-              maxWidth: "224px",
+              maxWidth: "200px",
               height: "auto",
               display: "block",
-              margin: "0 auto 12px auto",
+              margin: "0 auto 6px auto",
             }}
           />
           <p
             style={{
               margin: 0,
-              fontSize: 18,
+              fontSize: 16,
               color: "#e0e0e0",
-              lineHeight: 1.4,
+              lineHeight: 1.3,
               fontWeight: 500,
               textAlign: "center",
             }}
@@ -323,9 +323,9 @@ export default function Sidebar() {
           {companyName && (
             <div
               style={{
-                marginBottom: 20,
-                marginTop: 20,
-                padding: "16px",
+                marginBottom: 12,
+                marginTop: 12,
+                padding: "12px",
                 background: "rgba(255, 255, 255, 0.1)",
                 border: "1px solid rgba(255, 255, 255, 0.2)",
                 borderRadius: 8,
@@ -345,8 +345,8 @@ export default function Sidebar() {
 
           {/* 무료장애인직원관리솔루션 메뉴 (항상 표시, 비로그인 시 회원가입 페이지로 이동) */}
           {userRole !== "EMPLOYEE" && (
-            <div style={{ marginBottom: 24 }}>
-              <div style={{ fontSize: 21.424, color: "#fff", marginBottom: 12, fontWeight: "bold", textAlign: "center" }}>
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 18, color: "#fff", marginBottom: 8, fontWeight: "bold", textAlign: "center" }}>
                 무료장애인직원관리솔루션
               </div>
               <MenuItem href="/dashboard/employees" label="장애인직원등록관리" icon="👥" active={isActive("/dashboard/employees")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} requiresAuth={true} />
@@ -361,8 +361,8 @@ export default function Sidebar() {
 
           {/* 직원용 메뉴 (EMPLOYEE 역할인 경우) */}
           {userRole === "EMPLOYEE" && (
-            <div style={{ marginBottom: 24 }}>
-              <div style={{ fontSize: 21.424, color: "#fff", marginBottom: 12, fontWeight: "bold", textAlign: "center" }}>
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 18, color: "#fff", marginBottom: 8, fontWeight: "bold", textAlign: "center" }}>
                 직원 메뉴
               </div>
               <MenuItem
@@ -391,8 +391,8 @@ export default function Sidebar() {
 
           {/* 계산기 메뉴 (직원이 아닌 경우만 표시) */}
           {userRole !== "EMPLOYEE" && (
-            <div style={{ marginBottom: 24 }}>
-              <div style={{ fontSize: 21.424, color: "#fff", marginBottom: 12, fontWeight: "bold", textAlign: "center" }}>
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 18, color: "#fff", marginBottom: 8, fontWeight: "bold", textAlign: "center" }}>
                 고용부담금감면계산기
               </div>
               <MenuItem href="/calculators/incentive-annual" label="고용장려금계산기" icon="💸" active={isActive("/calculators/incentive-annual")} />
@@ -404,8 +404,8 @@ export default function Sidebar() {
 
           {/* 연계고용부담금감면센터 메뉴 (직원이 아닌 경우만 표시, 비로그인 시 회원가입 페이지로 이동) */}
           {userRole !== "EMPLOYEE" && (
-            <div style={{ marginBottom: 24 }}>
-              <div style={{ fontSize: 21.424, color: "#fff", marginBottom: 12, fontWeight: "bold", textAlign: "center" }}>
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 18, color: "#fff", marginBottom: 8, fontWeight: "bold", textAlign: "center" }}>
                 연계고용부담금감면센터
               </div>
               <MenuItem href="/employment-obligation" label="장애인고용의무" icon="📋" active={isActive("/employment-obligation")} />
@@ -456,8 +456,8 @@ export default function Sidebar() {
 
           {/* 매니저/지사/본부 대시보드 (영업 사원 또는 SUPER_ADMIN) */}
           {(salesRole && ['MANAGER', 'BRANCH_MANAGER', 'HEAD_MANAGER'].includes(salesRole)) || userRole === "SUPER_ADMIN" ? (
-            <div style={{ marginBottom: 24 }}>
-              <div style={{ fontSize: 21.424, color: "#fff", marginBottom: 12, fontWeight: "bold", textAlign: "center" }}>
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 18, color: "#fff", marginBottom: 8, fontWeight: "bold", textAlign: "center" }}>
                 영업 대시보드
               </div>
               <MenuItem 
@@ -475,8 +475,8 @@ export default function Sidebar() {
           ) : null}
 
           {userRole === "SUPER_ADMIN" && (
-            <div style={{ marginBottom: 24 }}>
-              <div style={{ fontSize: 21.424, color: "#fff", marginBottom: 12, fontWeight: "bold", textAlign: "center" }}>
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 18, color: "#fff", marginBottom: 8, fontWeight: "bold", textAlign: "center" }}>
                 슈퍼어드민
               </div>
               <MenuItem href="/admin/" label="영업관리 대시보드" icon="📊" active={isActive("/admin/")} />
