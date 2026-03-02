@@ -560,8 +560,7 @@ const HeadquartersDashboard = ({
     setEditingBranch(branch);
     setBranchFormData({
       name: branch.organizationName || branch.name || '',
-      leaderName: branch.name || '',
-      phone: branch.phone || '',
+      managerId: '', // 수정 시에는 지사장 변경 불가 (향후 기능 추가 가능)
       email: branch.email || '',
       notes: ''
     });

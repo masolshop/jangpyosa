@@ -1798,44 +1798,22 @@ router.patch('/branches/:id', requireSalesAuth, async (req, res) => {
       return res.status(403).json({ error: '자신의 본부 소속 지사만 수정할 수 있습니다' });
     }
     
-    const { name, leaderName, phone, email, notes, isActive } = req.body;
+    const { name, email, notes, isActive } = req.body;
     
-    // 핸드폰번호 변경 시 중복 확인
-    if (phone && phone !== branch.phone) {
-      const existingOrg = await prisma.organization.findUnique({
-        where: { phone },
-      });
-      
-      if (existingOrg) {
-        return res.status(400).json({ 
-          error: '이미 등록된 핸드폰번호입니다' 
-        });
-      }
-    }
-    
-    const updated = await prisma.organization.update({
+    // 지사 정보 업데이트
+    const updatedBranch = await prisma.organization.update({
       where: { id },
       data: {
         ...(name && { name }),
-        ...(leaderName && { leaderName }),
-        ...(phone && { phone }),
         ...(email !== undefined && { email }),
         ...(notes !== undefined && { notes }),
         ...(isActive !== undefined && { isActive }),
-      },
-      include: {
-        parent: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
       },
     });
     
     res.json({ 
       success: true,
-      branch: updated,
+      branch: updatedBranch,
       message: '지사 정보가 수정되었습니다',
     });
   } catch (error: any) {
