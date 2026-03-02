@@ -23,7 +23,7 @@ function LayoutContentInner({ children }: { children: React.ReactNode }) {
   return (
     <>
       <Sidebar />
-      <main style={{ marginLeft: 245, minHeight: '100vh' }}>
+      <main style={{ marginLeft: 294, minHeight: '100vh' }}>
         {children}
       </main>
     </>

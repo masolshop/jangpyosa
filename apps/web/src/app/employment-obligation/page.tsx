@@ -2,7 +2,7 @@
 
 export default function EmploymentObligationPage() {
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-8" style={{ marginLeft: '245px' }}>
+    <div className="min-h-screen bg-gray-50 p-4 md:p-8" style={{ marginLeft: '294px' }}>
       <div className="max-w-7xl mx-auto">
         {/* 헤더 */}
         <div className="mb-6">
