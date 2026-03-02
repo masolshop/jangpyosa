@@ -424,6 +424,24 @@ export default function SalesManagementPage() {
     });
   };
 
+  // 계층형 목록을 위한 정렬 함수
+  const getHierarchicalList = (people: SalesPerson[]) => {
+    const result: SalesPerson[] = [];
+    const heads = people.filter(p => p.role === 'HEAD_MANAGER');
+    
+    heads.forEach(head => {
+      result.push(head);
+      const branches = people.filter(p => p.managerId === head.id && p.role === 'BRANCH_MANAGER');
+      branches.forEach(branch => {
+        result.push(branch);
+        const managers = people.filter(p => p.managerId === branch.id && p.role === 'MANAGER');
+        result.push(...managers);
+      });
+    });
+    
+    return result;
+  };
+
   if (loading) {
     return (
       <div style={{
@@ -657,15 +675,26 @@ export default function SalesManagementPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredPeople.map((person) => (
-                    <tr key={person.id} style={{ borderBottom: '1px solid #e0e0e0' }}>
-                      <td style={{ padding: 16 }}>
-                        <div style={{ fontWeight: 600 }}>{person.name}</div>
-                        {person.manager && (
-                          <div style={{ fontSize: 12, color: '#666', marginTop: 4 }}>
-                            상위: {person.manager.name}
+                  {getHierarchicalList(filteredPeople).map((person) => {
+                    // 역할에 따른 인덴트 및 배경색
+                    const indent = person.role === 'HEAD_MANAGER' ? 0 : person.role === 'BRANCH_MANAGER' ? 20 : 40;
+                    const bgColor = person.role === 'HEAD_MANAGER' ? '#ffebee' : person.role === 'BRANCH_MANAGER' ? '#fff3e0' : '#f5f5f5';
+                    const icon = person.role === 'HEAD_MANAGER' ? '🏢' : person.role === 'BRANCH_MANAGER' ? '🏪' : '👤';
+                    
+                    return (
+                    <tr key={person.id} style={{ borderBottom: '1px solid #e0e0e0', backgroundColor: bgColor }}>
+                      <td style={{ padding: 16, paddingLeft: 16 + indent }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span>{icon}</span>
+                          <div>
+                            <div style={{ fontWeight: 600 }}>{person.name}</div>
+                            {person.organizationName && (
+                              <div style={{ fontSize: 11, color: '#999', marginTop: 2 }}>
+                                {person.organizationName}
+                              </div>
+                            )}
                           </div>
-                        )}
+                        </div>
                       </td>
                       <td style={{ padding: 16 }}>
                         <span style={{
@@ -819,7 +848,8 @@ export default function SalesManagementPage() {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
 
