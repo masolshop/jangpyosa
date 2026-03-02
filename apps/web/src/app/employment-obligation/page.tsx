@@ -36,7 +36,7 @@ export default function EmploymentObligationPage() {
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
             <span className="text-3xl">📊</span>
-            의무고용률
+            2026년 의무고용률
           </h2>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
@@ -56,17 +56,17 @@ export default function EmploymentObligationPage() {
               <tbody className="bg-white divide-y divide-gray-200">
                 <tr className="hover:bg-blue-50 transition-colors">
                   <td className="px-6 py-4 text-sm text-gray-900 font-semibold">국가 및 지방자치단체</td>
-                  <td className="px-6 py-4 text-sm text-gray-700">50명 이상</td>
-                  <td className="px-6 py-4 text-sm text-blue-600 font-bold">3.6%</td>
+                  <td className="px-6 py-4 text-sm text-gray-700">100명 이상</td>
+                  <td className="px-6 py-4 text-sm text-blue-600 font-bold">3.8%</td>
                 </tr>
                 <tr className="hover:bg-blue-50 transition-colors">
                   <td className="px-6 py-4 text-sm text-gray-900 font-semibold">공공기관</td>
-                  <td className="px-6 py-4 text-sm text-gray-700">50명 이상</td>
-                  <td className="px-6 py-4 text-sm text-blue-600 font-bold">3.6%</td>
+                  <td className="px-6 py-4 text-sm text-gray-700">100명 이상</td>
+                  <td className="px-6 py-4 text-sm text-blue-600 font-bold">3.8%</td>
                 </tr>
                 <tr className="hover:bg-blue-50 transition-colors">
-                  <td className="px-6 py-4 text-sm text-gray-900 font-semibold">민간기업</td>
-                  <td className="px-6 py-4 text-sm text-gray-700">50명 이상</td>
+                  <td className="px-6 py-4 text-sm text-gray-900 font-semibold">민간기업 (100명 이상)</td>
+                  <td className="px-6 py-4 text-sm text-gray-700">100명 이상</td>
                   <td className="px-6 py-4 text-sm text-blue-600 font-bold">3.1%</td>
                 </tr>
               </tbody>
@@ -74,7 +74,7 @@ export default function EmploymentObligationPage() {
           </div>
           <div className="mt-4 p-4 bg-blue-50 rounded-lg">
             <p className="text-sm text-blue-800">
-              💡 <strong>참고:</strong> 2024년 기준 의무고용률이며, 매년 변동될 수 있습니다.
+              💡 <strong>참고:</strong> 2026년 기준 의무고용률입니다. 상시근로자 100명 이상 사업장이 대상입니다.
             </p>
           </div>
         </div>
@@ -91,15 +91,15 @@ export default function EmploymentObligationPage() {
               <ul className="space-y-2 text-sm text-blue-800">
                 <li className="flex items-start gap-2">
                   <span className="text-blue-600 font-bold">✓</span>
-                  <span>상시 50명 이상의 근로자를 고용하는 사업주</span>
+                  <span><strong>상시 100명 이상</strong>의 근로자를 고용하는 사업주</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-blue-600 font-bold">✓</span>
-                  <span>국가, 지방자치단체, 공공기관</span>
+                  <span>국가, 지방자치단체, 공공기관 (100명 이상)</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-blue-600 font-bold">✓</span>
-                  <span>민간기업 (상시근로자 50명 이상)</span>
+                  <span>민간기업 (상시근로자 100명 이상)</span>
                 </li>
               </ul>
             </div>
@@ -127,7 +127,7 @@ export default function EmploymentObligationPage() {
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
             <span className="text-3xl">⚠️</span>
-            미이행 시 고용부담금
+            미이행 시 고용부담금 (2026년 기준)
           </h2>
           <div className="space-y-4">
             <p className="text-gray-700 leading-relaxed">
@@ -144,23 +144,28 @@ export default function EmploymentObligationPage() {
                     <th className="px-6 py-3 text-left text-sm font-bold text-white uppercase tracking-wider">
                       월 부담금 (미달 인원 1명당)
                     </th>
+                    <th className="px-6 py-3 text-left text-sm font-bold text-white uppercase tracking-wider">
+                      연간 부담금 (1명당)
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   <tr className="hover:bg-red-50 transition-colors">
                     <td className="px-6 py-4 text-sm text-gray-900">상시근로자 100명 미만</td>
-                    <td className="px-6 py-4 text-sm text-red-600 font-bold">1,168,000원</td>
+                    <td className="px-6 py-4 text-sm text-red-600 font-bold">1,223,320원</td>
+                    <td className="px-6 py-4 text-sm text-red-700 font-bold">14,679,840원</td>
                   </tr>
                   <tr className="hover:bg-red-50 transition-colors">
                     <td className="px-6 py-4 text-sm text-gray-900">상시근로자 100명 이상</td>
-                    <td className="px-6 py-4 text-sm text-red-600 font-bold">1,340,000원</td>
+                    <td className="px-6 py-4 text-sm text-red-600 font-bold">1,404,900원</td>
+                    <td className="px-6 py-4 text-sm text-red-700 font-bold">16,858,800원</td>
                   </tr>
                 </tbody>
               </table>
             </div>
             <div className="p-4 bg-red-50 rounded-lg">
               <p className="text-sm text-red-800">
-                ⚠️ <strong>주의:</strong> 2024년 기준 부담금이며, 매년 최저임금 인상에 따라 변동됩니다.
+                ⚠️ <strong>주의:</strong> 2026년 기준 부담금입니다. 최저임금 인상에 따라 매년 조정됩니다.
               </p>
             </div>
           </div>
