@@ -142,7 +142,7 @@ function SignupContent() {
     setBizNo(formatBizNo(e.target.value));
   };
 
-  // APICK 사업자번호 자동 인증
+  // 사업자번호 자동 인증 (표준사업장: SupplierRegistry, 고용부담금 기업: APICK)
   async function verifyBizNo() {
     const cleanBizNo = bizNo.replace(/\D/g, "");
     if (cleanBizNo.length !== 10) {
@@ -155,19 +155,38 @@ function SignupContent() {
     setCompanyInfo(null);
     
     try {
-      const response = await fetch(`/api/apick/bizno/${cleanBizNo}`);
-      const data = await response.json();
-      
-      if (!response.ok) {
-        setMsg(`❌ ${data.message || "사업자번호 인증 실패"}`);
-        return;
+      // 표준사업장: SupplierRegistry에서 인증 확인
+      if (type === "supplier") {
+        const response = await fetch(`/api/registry/verify/${cleanBizNo}`);
+        const data = await response.json();
+        
+        if (!response.ok) {
+          setMsg(`❌ ${data.message || "장애인표준사업장 인증을 확인할 수 없습니다"}`);
+          return;
+        }
+        
+        setCompanyInfo({
+          name: data.registry?.name || "회사명 확인 필요",
+          ceo: data.registry?.representative || "대표자명 확인 필요"
+        });
+        setMsg("✅ 장애인표준사업장 인증 확인 완료");
+      } 
+      // 고용부담금 기업: APICK API로 인증
+      else {
+        const response = await fetch(`/api/apick/bizno/${cleanBizNo}`);
+        const data = await response.json();
+        
+        if (!response.ok) {
+          setMsg(`❌ ${data.message || "사업자번호 인증 실패"}`);
+          return;
+        }
+        
+        setCompanyInfo({
+          name: data.companyName || "회사명 확인 필요",
+          ceo: data.ceoName || "대표자명 확인 필요"
+        });
+        setMsg("✅ 사업자번호 인증 완료");
       }
-      
-      setCompanyInfo({
-        name: data.companyName || "회사명 확인 필요",
-        ceo: data.ceoName || "대표자명 확인 필요"
-      });
-      setMsg("✅ 사업자번호 인증 완료");
     } catch (error) {
       console.error("BizNo verification error:", error);
       setMsg("❌ 사업자번호 인증 중 오류 발생");
@@ -798,8 +817,8 @@ function SignupContent() {
           {type === "supplier" && (
             <p style={{ margin: 0 }}>
               💡 <strong>표준사업장 가입 안내</strong><br/>
-              사업자번호 입력 시 APICK API로 자동 인증되며, 기업명과 대표자명이 자동으로 입력됩니다.<br/>
-              <span style={{ color: "#d32f2f", fontWeight: 600 }}>⚠️ 동일한 사업자번호로 중복 가입 시 에러가 발생합니다.</span>
+              사업자번호 입력 시 장애인표준사업장 인증 여부가 자동으로 확인됩니다.<br/>
+              <span style={{ color: "#d32f2f", fontWeight: 600 }}>⚠️ 장애인표준사업장 인증을 받은 기업만 가입 가능합니다.</span>
             </p>
           )}
           {type === "buyer" && (
