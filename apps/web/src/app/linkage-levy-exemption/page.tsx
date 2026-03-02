@@ -44,9 +44,9 @@ export default function LinkageLevyExemptionPage() {
           <div className="grid md:grid-cols-2 gap-6">
             <div className="p-6 bg-gradient-to-br from-green-50 to-green-100 rounded-lg border-2 border-green-200">
               <h3 className="text-xl font-semibold text-green-900 mb-3">최대 감면율</h3>
-              <p className="text-5xl font-bold text-green-600 mb-3">90%</p>
+              <p className="text-5xl font-bold text-green-600 mb-3">50~90%</p>
               <p className="text-sm text-green-800 leading-relaxed">
-                장애인 근로자 1인당 고용부담금의 <strong>최대 90%</strong>까지 감면 가능
+                장애인 근로자 1인당 고용부담금의 <strong>50%에서 최대 90%</strong>까지 감면 가능
               </p>
             </div>
             <div className="p-6 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border-2 border-blue-200">
@@ -54,11 +54,11 @@ export default function LinkageLevyExemptionPage() {
               <div className="space-y-2 text-sm text-blue-800">
                 <p className="flex items-center gap-2">
                   <span className="text-blue-600 font-bold">✓</span>
-                  <span>월 부담금 1,404,900원 → 약 140,490원</span>
+                  <span>월 부담금 1,404,900원 → 약 140,490원~702,450원</span>
                 </p>
                 <p className="flex items-center gap-2">
                   <span className="text-blue-600 font-bold">✓</span>
-                  <span>연간 최대 약 1,518만원 절감 (1인당)</span>
+                  <span>연간 최대 약 843만원~1,518만원 절감 (1인당)</span>
                 </p>
                 <p className="flex items-center gap-2">
                   <span className="text-blue-600 font-bold">✓</span>
