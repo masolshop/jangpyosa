@@ -1610,8 +1610,63 @@ router.delete('/organizations/:id', requireAuth, requireRole('SUPER_ADMIN'), asy
 });
 
 /**
+ * GET /sales/available-managers
+ * 지사장으로 임명 가능한 매니저 목록 조회 (본부장 권한)
+ */
+router.get('/available-managers', requireSalesAuth, async (req, res) => {
+  try {
+    const salesPerson = (req as any).salesPerson;
+    
+    // 본부장 권한 확인
+    if (salesPerson.role !== 'HEAD_MANAGER') {
+      return res.status(403).json({ error: '본부장만 조회할 수 있습니다' });
+    }
+    
+    const { search } = req.query;
+    
+    // 검색 조건 구성
+    const where: any = {
+      organizationId: salesPerson.organizationId, // 같은 본부 소속
+      role: 'MANAGER', // MANAGER만 (BRANCH_MANAGER, HEAD_MANAGER 제외)
+      isActive: true,
+    };
+    
+    // 이름 검색
+    if (search && typeof search === 'string') {
+      where.OR = [
+        { name: { contains: search } },
+        { phone: { contains: search } },
+      ];
+    }
+    
+    const managers = await prisma.salesPerson.findMany({
+      where,
+      select: {
+        id: true,
+        name: true,
+        phone: true,
+        email: true,
+        role: true,
+        createdAt: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+    
+    res.json({ 
+      success: true,
+      managers,
+    });
+  } catch (error: any) {
+    console.error('[GET /sales/available-managers] Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
  * POST /sales/branches
- * 지사 생성 (본부장 권한)
+ * 지사 생성 (본부장 권한) - 기존 매니저를 지사장으로 등업
  */
 router.post('/branches', requireSalesAuth, async (req, res) => {
   try {
@@ -1622,23 +1677,12 @@ router.post('/branches', requireSalesAuth, async (req, res) => {
       return res.status(403).json({ error: '본부장만 지사를 생성할 수 있습니다' });
     }
     
-    const { name, leaderName, phone, email, notes } = req.body;
+    const { name, managerId, email, notes } = req.body;
     
     // 필수 필드 검증
-    if (!name || !leaderName || !phone) {
+    if (!name || !managerId) {
       return res.status(400).json({ 
-        error: '지사명, 지사장명, 핸드폰번호는 필수 입력 항목입니다' 
-      });
-    }
-    
-    // 핸드폰번호 중복 확인
-    const existingOrg = await prisma.organization.findUnique({
-      where: { phone },
-    });
-    
-    if (existingOrg) {
-      return res.status(400).json({ 
-        error: '이미 등록된 핸드폰번호입니다' 
+        error: '지사명과 지사장(매니저)은 필수 입력 항목입니다' 
       });
     }
     
@@ -1653,32 +1697,72 @@ router.post('/branches', requireSalesAuth, async (req, res) => {
       });
     }
     
-    // 지사 생성
-    const branch = await prisma.organization.create({
-      data: {
-        name,
-        type: 'BRANCH',
-        leaderName,
-        phone,
-        email: email || null,
-        parentId: headOrg.id,
-        notes: notes || null,
-        isActive: true,
-      },
-      include: {
-        parent: {
-          select: {
-            id: true,
-            name: true,
-          },
+    // 선택한 매니저 확인
+    const manager = await prisma.salesPerson.findUnique({
+      where: { id: managerId },
+    });
+    
+    if (!manager) {
+      return res.status(404).json({ error: '매니저를 찾을 수 없습니다' });
+    }
+    
+    // 매니저가 본부 소속인지 확인
+    if (manager.organizationId !== headOrg.id) {
+      return res.status(400).json({ 
+        error: '다른 본부 소속 매니저는 지사장으로 임명할 수 없습니다' 
+      });
+    }
+    
+    // 이미 지사장이나 본부장인지 확인
+    if (manager.role === 'BRANCH_MANAGER' || manager.role === 'HEAD_MANAGER') {
+      return res.status(400).json({ 
+        error: '이미 지사장 또는 본부장입니다' 
+      });
+    }
+    
+    // 지사 생성 및 매니저 등업을 트랜잭션으로 처리
+    const result = await prisma.$transaction(async (tx) => {
+      // 지사 생성
+      const branch = await tx.organization.create({
+        data: {
+          name,
+          type: 'BRANCH',
+          leaderName: manager.name,
+          phone: manager.phone,
+          email: email || manager.email || null,
+          parentId: headOrg.id,
+          notes: notes || null,
+          isActive: true,
         },
-      },
+      });
+      
+      // 매니저를 지사장으로 등업
+      const updatedManager = await tx.salesPerson.update({
+        where: { id: managerId },
+        data: {
+          role: 'BRANCH_MANAGER',
+          organizationId: branch.id,
+        },
+      });
+      
+      // 활동 로그 기록
+      await tx.salesActivityLog.create({
+        data: {
+          salesPersonId: managerId,
+          action: 'PROMOTION',
+          description: `${manager.role}에서 BRANCH_MANAGER로 등업 (지사: ${name})`,
+          performedById: salesPerson.id,
+        },
+      });
+      
+      return { branch, updatedManager };
     });
     
     res.json({ 
       success: true,
-      branch,
-      message: '지사가 생성되었습니다',
+      branch: result.branch,
+      manager: result.updatedManager,
+      message: `지사가 생성되고 ${manager.name}님이 지사장으로 임명되었습니다`,
     });
   } catch (error: any) {
     console.error('[POST /sales/branches] Error:', error);

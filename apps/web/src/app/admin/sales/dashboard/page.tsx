@@ -464,11 +464,16 @@ const HeadquartersDashboard = ({
   const [editingBranch, setEditingBranch] = useState<any>(null);
   const [branchFormData, setBranchFormData] = useState({
     name: '',
-    leaderName: '',
-    phone: '',
+    managerId: '',
     email: '',
     notes: ''
   });
+  
+  // 매니저 검색
+  const [availableManagers, setAvailableManagers] = useState<any[]>([]);
+  const [managerSearch, setManagerSearch] = useState('');
+  const [loadingManagers, setLoadingManagers] = useState(false);
+  const [selectedManager, setSelectedManager] = useState<any>(null);
   
   // 매니저 이동 모달
   const [showTransferModal, setShowTransferModal] = useState(false);
@@ -511,17 +516,44 @@ const HeadquartersDashboard = ({
     }
   };
   
+  // 매니저 검색
+  const searchAvailableManagers = async (query: string) => {
+    try {
+      const token = getManagerToken();
+      const url = `${API_BASE}/sales/available-managers${query ? `?search=${encodeURIComponent(query)}` : ''}`;
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to load managers');
+      }
+      
+      const data = await response.json();
+      setAvailableManagers(data.managers || []);
+    } catch (error) {
+      console.error('Failed to load managers:', error);
+      setAvailableManagers([]);
+    }
+  };
+  
   // 지사 생성 모달 열기
   const handleCreateBranch = () => {
     setEditingBranch(null);
     setBranchFormData({
       name: '',
-      leaderName: '',
-      phone: '',
+      managerId: '',
       email: '',
       notes: ''
     });
+    setSelectedManager(null);
+    setManagerSearch('');
+    setAvailableManagers([]);
     setShowBranchModal(true);
+    // 전체 매니저 목록 로드
+    searchAvailableManagers('');
   };
   
   // 지사 수정 모달 열기
@@ -540,6 +572,17 @@ const HeadquartersDashboard = ({
   // 지사 저장
   const handleSaveBranch = async () => {
     try {
+      // 유효성 검증
+      if (!branchFormData.name) {
+        setMessage({ type: 'error', text: '지사명을 입력해주세요' });
+        return;
+      }
+      
+      if (!branchFormData.managerId) {
+        setMessage({ type: 'error', text: '지사장으로 임명할 매니저를 선택해주세요' });
+        return;
+      }
+      
       const token = getManagerToken();
       const url = editingBranch 
         ? `${API_BASE}/sales/branches/${editingBranch.id}`
@@ -560,7 +603,8 @@ const HeadquartersDashboard = ({
         throw new Error(error.error || 'Failed to save branch');
       }
       
-      setMessage({ type: 'success', text: editingBranch ? '지사가 수정되었습니다' : '지사가 생성되었습니다' });
+      const result = await response.json();
+      setMessage({ type: 'success', text: result.message || (editingBranch ? '지사가 수정되었습니다' : '지사가 생성되었습니다') });
       setShowBranchModal(false);
       window.location.reload(); // 새로고침하여 목록 업데이트
     } catch (error: any) {
@@ -945,11 +989,22 @@ const HeadquartersDashboard = ({
 
       {/* 지사 생성/수정 모달 */}
       {showBranchModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-bold mb-4">
-              {editingBranch ? '지사 수정' : '지사 생성'}
-            </h3>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setShowBranchModal(false)}>
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold">
+                {editingBranch ? '지사 수정' : '🏢 지사 생성'}
+              </h3>
+              <button 
+                onClick={() => setShowBranchModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+            <p className="text-sm text-gray-600 mb-4">
+              새로운 지사를 생성합니다. 지사장으로 임명할 매니저를 검색하여 선택하세요.
+            </p>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -963,39 +1018,82 @@ const HeadquartersDashboard = ({
                   placeholder="예: 강남지사"
                 />
               </div>
+              
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  지사장명 <span className="text-red-500">*</span>
+                  지사장 선택 (매니저 검색) <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="text"
-                  value={branchFormData.leaderName}
-                  onChange={(e) => setBranchFormData({ ...branchFormData, leaderName: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="예: 홍길동"
-                />
+                <div className="flex gap-2 mb-2">
+                  <input
+                    type="text"
+                    value={managerSearch}
+                    onChange={(e) => {
+                      setManagerSearch(e.target.value);
+                      searchAvailableManagers(e.target.value);
+                    }}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="매니저 이름 또는 전화번호로 검색"
+                  />
+                  <button
+                    onClick={() => searchAvailableManagers(managerSearch)}
+                    className="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200"
+                  >
+                    🔍 검색
+                  </button>
+                </div>
+                
+                {/* 선택된 매니저 표시 */}
+                {selectedManager && (
+                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg mb-2">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <div className="font-semibold text-blue-900">{selectedManager.name}</div>
+                        <div className="text-sm text-blue-700">{selectedManager.phone}</div>
+                        {selectedManager.email && <div className="text-sm text-blue-600">{selectedManager.email}</div>}
+                      </div>
+                      <button
+                        onClick={() => {
+                          setSelectedManager(null);
+                          setBranchFormData({ ...branchFormData, managerId: '' });
+                        }}
+                        className="text-red-600 hover:text-red-800"
+                      >
+                        ✕ 선택 취소
+                      </button>
+                    </div>
+                  </div>
+                )}
+                
+                {/* 매니저 검색 결과 */}
+                {!selectedManager && availableManagers.length > 0 && (
+                  <div className="max-h-60 overflow-y-auto border border-gray-300 rounded-lg">
+                    {availableManagers.map((manager) => (
+                      <div
+                        key={manager.id}
+                        onClick={() => {
+                          setSelectedManager(manager);
+                          setBranchFormData({ ...branchFormData, managerId: manager.id });
+                        }}
+                        className="p-3 hover:bg-gray-50 cursor-pointer border-b last:border-b-0"
+                      >
+                        <div className="font-medium">{manager.name}</div>
+                        <div className="text-sm text-gray-600">{manager.phone}</div>
+                        {manager.email && <div className="text-xs text-gray-500">{manager.email}</div>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                {!selectedManager && managerSearch && availableManagers.length === 0 && (
+                  <div className="p-3 text-center text-gray-500 border border-gray-300 rounded-lg">
+                    검색 결과가 없습니다
+                  </div>
+                )}
               </div>
+              
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  전화번호 <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="tel"
-                  value={branchFormData.phone}
-                  onChange={(e) => {
-                    const formatted = e.target.value
-                      .replace(/[^0-9]/g, '')
-                      .replace(/^(\d{3})(\d{4})(\d{4})$/, '$1-$2-$3');
-                    setBranchFormData({ ...branchFormData, phone: formatted });
-                  }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="010-1234-5678"
-                  maxLength={13}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  이메일
+                  이메일 (선택)
                 </label>
                 <input
                   type="email"
@@ -1004,16 +1102,18 @@ const HeadquartersDashboard = ({
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="branch@example.com"
                 />
+                <p className="text-xs text-gray-500 mt-1">지사 대표 이메일 (매니저 이메일과 별도)</p>
               </div>
+              
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  메모
+                  메모 (선택)
                 </label>
                 <textarea
                   value={branchFormData.notes}
                   onChange={(e) => setBranchFormData({ ...branchFormData, notes: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="메모를 입력하세요"
+                  placeholder="추가 메모사항"
                   rows={3}
                 />
               </div>
@@ -1027,14 +1127,32 @@ const HeadquartersDashboard = ({
               </button>
               <button
                 onClick={handleSaveBranch}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                disabled={!branchFormData.name || !branchFormData.managerId}
+                className={`flex-1 px-4 py-2 rounded-lg ${
+                  branchFormData.name && branchFormData.managerId
+                    ? 'bg-blue-600 text-white hover:bg-blue-700'
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                }`}
               >
-                {editingBranch ? '수정' : '생성'}
+                {editingBranch ? '수정' : '생성 및 지사장 임명'}
               </button>
             </div>
           </div>
         </div>
       )}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  메모
+                </label>
+                <textarea
+                  value={branchFormData.notes}
+                  onChange={(e) => setBranchFormData({ ...branchFormData, notes: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="메모를 입력하세요"
+                  rows={3}
+                />
     </div>
   );
 };
