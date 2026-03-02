@@ -1609,4 +1609,387 @@ router.delete('/organizations/:id', requireAuth, requireRole('SUPER_ADMIN'), asy
   }
 });
 
+/**
+ * POST /sales/branches
+ * 지사 생성 (본부장 권한)
+ */
+router.post('/branches', requireSalesAuth, async (req, res) => {
+  try {
+    const salesPerson = (req as any).salesPerson;
+    
+    // 본부장 권한 확인
+    if (salesPerson.role !== 'HEAD_MANAGER') {
+      return res.status(403).json({ error: '본부장만 지사를 생성할 수 있습니다' });
+    }
+    
+    const { name, leaderName, phone, email, notes } = req.body;
+    
+    // 필수 필드 검증
+    if (!name || !leaderName || !phone) {
+      return res.status(400).json({ 
+        error: '지사명, 지사장명, 핸드폰번호는 필수 입력 항목입니다' 
+      });
+    }
+    
+    // 핸드폰번호 중복 확인
+    const existingOrg = await prisma.organization.findUnique({
+      where: { phone },
+    });
+    
+    if (existingOrg) {
+      return res.status(400).json({ 
+        error: '이미 등록된 핸드폰번호입니다' 
+      });
+    }
+    
+    // 본부장의 조직 ID 찾기
+    const headOrg = await prisma.organization.findUnique({
+      where: { id: salesPerson.organizationId },
+    });
+    
+    if (!headOrg || headOrg.type !== 'HEADQUARTERS') {
+      return res.status(400).json({ 
+        error: '본부 정보를 찾을 수 없습니다' 
+      });
+    }
+    
+    // 지사 생성
+    const branch = await prisma.organization.create({
+      data: {
+        name,
+        type: 'BRANCH',
+        leaderName,
+        phone,
+        email: email || null,
+        parentId: headOrg.id,
+        notes: notes || null,
+        isActive: true,
+      },
+      include: {
+        parent: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+    
+    res.json({ 
+      success: true,
+      branch,
+      message: '지사가 생성되었습니다',
+    });
+  } catch (error: any) {
+    console.error('[POST /sales/branches] Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * PATCH /sales/branches/:id
+ * 지사 정보 수정 (본부장 권한)
+ */
+router.patch('/branches/:id', requireSalesAuth, async (req, res) => {
+  try {
+    const salesPerson = (req as any).salesPerson;
+    const { id } = req.params;
+    
+    // 본부장 권한 확인
+    if (salesPerson.role !== 'HEAD_MANAGER') {
+      return res.status(403).json({ error: '본부장만 지사를 수정할 수 있습니다' });
+    }
+    
+    const branch = await prisma.organization.findUnique({
+      where: { id },
+    });
+    
+    if (!branch) {
+      return res.status(404).json({ error: '지사를 찾을 수 없습니다' });
+    }
+    
+    // 본부장의 소속 본부 하위 지사인지 확인
+    if (branch.parentId !== salesPerson.organizationId) {
+      return res.status(403).json({ error: '자신의 본부 소속 지사만 수정할 수 있습니다' });
+    }
+    
+    const { name, leaderName, phone, email, notes, isActive } = req.body;
+    
+    // 핸드폰번호 변경 시 중복 확인
+    if (phone && phone !== branch.phone) {
+      const existingOrg = await prisma.organization.findUnique({
+        where: { phone },
+      });
+      
+      if (existingOrg) {
+        return res.status(400).json({ 
+          error: '이미 등록된 핸드폰번호입니다' 
+        });
+      }
+    }
+    
+    const updated = await prisma.organization.update({
+      where: { id },
+      data: {
+        ...(name && { name }),
+        ...(leaderName && { leaderName }),
+        ...(phone && { phone }),
+        ...(email !== undefined && { email }),
+        ...(notes !== undefined && { notes }),
+        ...(isActive !== undefined && { isActive }),
+      },
+      include: {
+        parent: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+    
+    res.json({ 
+      success: true,
+      branch: updated,
+      message: '지사 정보가 수정되었습니다',
+    });
+  } catch (error: any) {
+    console.error('[PATCH /sales/branches/:id] Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * DELETE /sales/branches/:id
+ * 지사 삭제 (본부장 권한)
+ */
+router.delete('/branches/:id', requireSalesAuth, async (req, res) => {
+  try {
+    const salesPerson = (req as any).salesPerson;
+    const { id } = req.params;
+    
+    // 본부장 권한 확인
+    if (salesPerson.role !== 'HEAD_MANAGER') {
+      return res.status(403).json({ error: '본부장만 지사를 삭제할 수 있습니다' });
+    }
+    
+    const branch = await prisma.organization.findUnique({
+      where: { id },
+      include: {
+        salesPeople: true,
+      },
+    });
+    
+    if (!branch) {
+      return res.status(404).json({ error: '지사를 찾을 수 없습니다' });
+    }
+    
+    // 본부장의 소속 본부 하위 지사인지 확인
+    if (branch.parentId !== salesPerson.organizationId) {
+      return res.status(403).json({ error: '자신의 본부 소속 지사만 삭제할 수 있습니다' });
+    }
+    
+    // 소속 매니저가 있으면 삭제 불가
+    if (branch.salesPeople.length > 0) {
+      return res.status(400).json({ 
+        error: '소속 매니저가 있는 지사는 삭제할 수 없습니다. 먼저 매니저를 이동하거나 삭제해주세요.' 
+      });
+    }
+    
+    await prisma.organization.delete({
+      where: { id },
+    });
+    
+    res.json({ 
+      success: true,
+      message: '지사가 삭제되었습니다',
+    });
+  } catch (error: any) {
+    console.error('[DELETE /sales/branches/:id] Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * PATCH /sales/managers/:id/transfer
+ * 매니저 지사 이동 (본부장 권한)
+ */
+router.patch('/managers/:id/transfer', requireSalesAuth, async (req, res) => {
+  try {
+    const salesPerson = (req as any).salesPerson;
+    const { id } = req.params;
+    const { targetBranchId } = req.body;
+    
+    // 본부장 권한 확인
+    if (salesPerson.role !== 'HEAD_MANAGER') {
+      return res.status(403).json({ error: '본부장만 매니저를 이동시킬 수 있습니다' });
+    }
+    
+    if (!targetBranchId) {
+      return res.status(400).json({ error: '이동할 지사를 선택해주세요' });
+    }
+    
+    // 매니저 찾기
+    const manager = await prisma.salesPerson.findUnique({
+      where: { id },
+      include: {
+        organization: true,
+      },
+    });
+    
+    if (!manager) {
+      return res.status(404).json({ error: '매니저를 찾을 수 없습니다' });
+    }
+    
+    // 현재 소속이 본부장의 본부 하위인지 확인
+    if (manager.organization?.parentId !== salesPerson.organizationId) {
+      return res.status(403).json({ error: '자신의 본부 소속 매니저만 이동시킬 수 있습니다' });
+    }
+    
+    // 목적지 지사 확인
+    const targetBranch = await prisma.organization.findUnique({
+      where: { id: targetBranchId },
+    });
+    
+    if (!targetBranch) {
+      return res.status(404).json({ error: '목적지 지사를 찾을 수 없습니다' });
+    }
+    
+    // 목적지 지사가 본부장의 본부 하위인지 확인
+    if (targetBranch.parentId !== salesPerson.organizationId) {
+      return res.status(403).json({ error: '자신의 본부 소속 지사로만 이동시킬 수 있습니다' });
+    }
+    
+    // 매니저 이동
+    const updated = await prisma.salesPerson.update({
+      where: { id },
+      data: {
+        organizationId: targetBranchId,
+        organizationName: targetBranch.name,
+      },
+      include: {
+        organization: true,
+      },
+    });
+    
+    res.json({ 
+      success: true,
+      manager: updated,
+      message: `${updated.name} 매니저가 ${targetBranch.name}(으)로 이동되었습니다`,
+    });
+  } catch (error: any) {
+    console.error('[PATCH /sales/managers/:id/transfer] Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /sales/branches/:id/managers
+ * 지사 소속 매니저 리스트 조회 (본부장/지사장 권한)
+ */
+router.get('/branches/:id/managers', requireSalesAuth, async (req, res) => {
+  try {
+    const salesPerson = (req as any).salesPerson;
+    const { id } = req.params;
+    
+    // 본부장 또는 지사장 권한 확인
+    if (salesPerson.role !== 'HEAD_MANAGER' && salesPerson.role !== 'BRANCH_MANAGER') {
+      return res.status(403).json({ error: '권한이 없습니다' });
+    }
+    
+    const branch = await prisma.organization.findUnique({
+      where: { id },
+    });
+    
+    if (!branch) {
+      return res.status(404).json({ error: '지사를 찾을 수 없습니다' });
+    }
+    
+    // 권한 확인
+    if (salesPerson.role === 'HEAD_MANAGER') {
+      // 본부장: 자신의 본부 하위 지사만 조회 가능
+      if (branch.parentId !== salesPerson.organizationId) {
+        return res.status(403).json({ error: '자신의 본부 소속 지사만 조회할 수 있습니다' });
+      }
+    } else if (salesPerson.role === 'BRANCH_MANAGER') {
+      // 지사장: 자신의 지사만 조회 가능
+      if (branch.id !== salesPerson.organizationId) {
+        return res.status(403).json({ error: '자신의 지사만 조회할 수 있습니다' });
+      }
+    }
+    
+    // 매니저 리스트 조회
+    const managers = await prisma.salesPerson.findMany({
+      where: {
+        organizationId: id,
+        isActive: true,
+      },
+      include: {
+        referredCompanies: {
+          where: {
+            isActive: true,
+          },
+          select: {
+            id: true,
+            companyType: true,
+            totalRevenue: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+    
+    // 매니저별 통계 계산
+    const managersWithStats = managers.map(manager => {
+      const stats = {
+        민간기업: 0,
+        공공기관: 0,
+        정부교육기관: 0,
+        합계: 0,
+      };
+      
+      manager.referredCompanies.forEach(company => {
+        stats.합계++;
+        if (company.companyType === '민간기업') {
+          stats.민간기업++;
+        } else if (company.companyType === '공공기관') {
+          stats.공공기관++;
+        } else if (company.companyType === '정부교육기관') {
+          stats.정부교육기관++;
+        }
+      });
+      
+      return {
+        id: manager.id,
+        name: manager.name,
+        phone: manager.phone,
+        email: manager.email,
+        role: manager.role,
+        totalReferrals: manager.totalReferrals,
+        activeReferrals: manager.activeReferrals,
+        totalRevenue: manager.totalRevenue,
+        commission: manager.commission,
+        stats,
+        createdAt: manager.createdAt,
+      };
+    });
+    
+    res.json({
+      success: true,
+      branch: {
+        id: branch.id,
+        name: branch.name,
+        leaderName: branch.leaderName,
+      },
+      managers: managersWithStats,
+      total: managersWithStats.length,
+    });
+  } catch (error: any) {
+    console.error('[GET /sales/branches/:id/managers] Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export default router;

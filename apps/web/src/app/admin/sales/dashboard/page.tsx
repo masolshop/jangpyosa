@@ -76,8 +76,17 @@ interface BranchManager {
   phone: string;
   email?: string;
   role: string;
-  createdAt: string;
+  createdAt?: string;
+  totalReferrals?: number;
+  activeReferrals?: number;
+  totalRevenue?: number;
+  commission?: number;
   stats: {
+    민간기업: number;
+    공공기관: number;
+    정부교육기관: number;
+    합계: number;
+  } | {
     privateCompanies: number;
     publicCompanies: number;
     governmentCompanies: number;
@@ -432,6 +441,20 @@ const BranchDashboard = ({
 
 // ==================== 본부 대시보드 ====================
 
+interface BranchManager {
+  id: string;
+  name: string;
+  phone: string;
+  email?: string;
+  role: string;
+  stats: {
+    민간기업: number;
+    공공기관: number;
+    정부교육기관: number;
+    합계: number;
+  };
+}
+
 const HeadquartersDashboard = ({ 
   accountInfo, 
   stats, 
@@ -441,6 +464,44 @@ const HeadquartersDashboard = ({
   stats: HeadquartersStats;
   branches: HeadquartersBranch[];
 }) => {
+  const [selectedBranchId, setSelectedBranchId] = useState<string | null>(null);
+  const [branchManagers, setBranchManagers] = useState<BranchManager[]>([]);
+  const [loadingManagers, setLoadingManagers] = useState(false);
+  
+  const loadBranchManagers = async (branchId: string) => {
+    setLoadingManagers(true);
+    try {
+      const token = getManagerToken();
+      const response = await fetch(`${API_BASE}/sales/branches/${branchId}/managers`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to load branch managers');
+      }
+      
+      const data = await response.json();
+      setBranchManagers(data.managers || []);
+    } catch (error) {
+      console.error('Failed to load branch managers:', error);
+      setBranchManagers([]);
+    } finally {
+      setLoadingManagers(false);
+    }
+  };
+  
+  const handleBranchClick = (branchId: string) => {
+    if (selectedBranchId === branchId) {
+      setSelectedBranchId(null);
+      setBranchManagers([]);
+    } else {
+      setSelectedBranchId(branchId);
+      loadBranchManagers(branchId);
+    }
+  };
+  
   return (
     <div className="space-y-6">
       {/* 계정 정보 */}
@@ -526,39 +587,121 @@ const HeadquartersDashboard = ({
               <tbody className="divide-y divide-gray-200">
                 {branches.map((branch) => {
                   const total = branch.stats.privateCompanies + branch.stats.publicCompanies + branch.stats.governmentCompanies;
+                  const isExpanded = selectedBranchId === branch.id;
+                  
                   return (
-                    <tr key={branch.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                        {branch.organizationName || '-'}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-900">{branch.name}</td>
-                      <td className="px-4 py-3 text-sm text-gray-600">{branch.phone}</td>
-                      <td className="px-4 py-3 text-sm text-center">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                          {branch.managerCount}명
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-center">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          {branch.stats.privateCompanies}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-center">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                          {branch.stats.publicCompanies}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-center">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-                          {branch.stats.governmentCompanies}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-center">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                          {total}
-                        </span>
-                      </td>
-                    </tr>
+                    <>
+                      <tr 
+                        key={branch.id} 
+                        className="hover:bg-gray-50 cursor-pointer"
+                        onClick={() => handleBranchClick(branch.id)}
+                      >
+                        <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                          <div className="flex items-center">
+                            <span className="mr-2">{isExpanded ? '▼' : '▶'}</span>
+                            {branch.organizationName || '-'}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-900">{branch.name}</td>
+                        <td className="px-4 py-3 text-sm text-gray-600">{branch.phone}</td>
+                        <td className="px-4 py-3 text-sm text-center">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            {branch.managerCount}명
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-center">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            {branch.stats.privateCompanies}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-center">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                            {branch.stats.publicCompanies}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-center">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                            {branch.stats.governmentCompanies}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-center">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            {total}
+                          </span>
+                        </td>
+                      </tr>
+                      
+                      {/* 매니저 리스트 (확장 시) */}
+                      {isExpanded && (
+                        <tr key={`${branch.id}-managers`}>
+                          <td colSpan={8} className="px-4 py-4 bg-gray-50">
+                            {loadingManagers ? (
+                              <div className="text-center py-4 text-gray-500">
+                                매니저 정보를 불러오는 중...
+                              </div>
+                            ) : branchManagers.length === 0 ? (
+                              <div className="text-center py-4 text-gray-500">
+                                소속 매니저가 없습니다
+                              </div>
+                            ) : (
+                              <div className="ml-8">
+                                <h4 className="font-semibold text-gray-700 mb-3">
+                                  📋 소속 매니저 리스트
+                                </h4>
+                                <table className="w-full bg-white rounded-lg shadow-sm">
+                                  <thead className="bg-gray-100">
+                                    <tr>
+                                      <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">지사명</th>
+                                      <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">지사장</th>
+                                      <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">전화번호</th>
+                                      <th className="px-4 py-2 text-center text-sm font-semibold text-gray-700">매니저</th>
+                                      <th className="px-4 py-2 text-center text-sm font-semibold text-gray-700">민간기업</th>
+                                      <th className="px-4 py-2 text-center text-sm font-semibold text-gray-700">공공기관</th>
+                                      <th className="px-4 py-2 text-center text-sm font-semibold text-gray-700">정부교육기관</th>
+                                      <th className="px-4 py-2 text-center text-sm font-semibold text-gray-700">합계</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-gray-200">
+                                    {branchManagers.map((manager) => (
+                                      <tr key={manager.id} className="hover:bg-gray-50">
+                                        <td className="px-4 py-2 text-sm text-gray-900">{manager.name}</td>
+                                        <td className="px-4 py-2 text-sm text-gray-600">{manager.phone}</td>
+                                        <td className="px-4 py-2 text-sm text-gray-600">{manager.email || '-'}</td>
+                                        <td className="px-4 py-2 text-sm text-center">
+                                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                                            {manager.role === 'BRANCH_MANAGER' ? '지사장' : '매니저'}
+                                          </span>
+                                        </td>
+                                        <td className="px-4 py-2 text-sm text-center">
+                                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                            {manager.stats.민간기업}
+                                          </span>
+                                        </td>
+                                        <td className="px-4 py-2 text-sm text-center">
+                                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
+                                            {manager.stats.공공기관}
+                                          </span>
+                                        </td>
+                                        <td className="px-4 py-2 text-sm text-center">
+                                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800">
+                                            {manager.stats.정부교육기관}
+                                          </span>
+                                        </td>
+                                        <td className="px-4 py-2 text-sm text-center">
+                                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                            {manager.stats.합계}
+                                          </span>
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      )}
+                    </>
                   );
                 })}
               </tbody>
