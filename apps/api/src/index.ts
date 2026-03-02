@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import compression from "compression";
+import { createServer } from "http";
 import { config } from "./config.js";
 import { PrismaClient } from "@prisma/client";
 import path from "path";
@@ -8,6 +9,7 @@ import { fileURLToPath } from "url";
 import { dirname } from "path";
 import { getKSTNow } from "./utils/kst.js";
 import { createPrismaWithMonitoring, startPerformanceReporting } from "./lib/prisma-monitoring.js";
+import { initializeWebSocket } from "./services/websocket.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -111,7 +113,11 @@ app.use((err: any, _req: express.Request, res: express.Response, _next: express.
   res.status(500).json({ error: err.message || "INTERNAL_ERROR" });
 });
 
-app.listen(config.port, '0.0.0.0', async () => {
+// HTTP 서버 생성 및 WebSocket 초기화
+const httpServer = createServer(app);
+initializeWebSocket(httpServer);
+
+httpServer.listen(config.port, '0.0.0.0', async () => {
   console.log(`🚀 장표사닷컴 API listening on 0.0.0.0:${config.port}`);
   console.log(`📊 Database: ${process.env.DATABASE_URL?.split("@")[1] || "local"}`);
   console.log(`🔐 APICK Provider: ${config.apickProvider}`);

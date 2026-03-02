@@ -7,6 +7,7 @@ import { config } from "../config.js";
 import { verifyBizNo } from "../services/apick.js";
 import { getKSTNow } from "../utils/kst.js";
 import { requireAuth } from "../middleware/auth.js";
+import { sendReferralNotification } from "../services/websocket.js";
 
 const r = Router();
 
@@ -526,10 +527,26 @@ r.post("/signup/buyer", async (req, res) => {
           include: { buyerProfile: true },
         },
         referredBy: {
-          include: { branch: true },
+          include: { 
+            branch: true,
+            salesPerson: true,
+          },
         },
       },
     });
+
+    // 🔔 추천인이 있으면 실시간 알림 전송
+    if (referredBy && referredBy.salesPerson) {
+      sendReferralNotification(
+        referredBy.salesPerson.id,
+        apickResult.name || "알 수 없는 회사",
+        updatedUser!.name,
+        buyerType
+      ).catch(err => {
+        console.error("❌ 추천 알림 전송 실패:", err);
+      });
+      console.log(`📢 추천 알림 전송: ${referredBy.name} → ${updatedUser!.name} (${apickResult.name})`);
+    }
 
     return res.json({
       message: "고용부담금 기업 가입 완료",

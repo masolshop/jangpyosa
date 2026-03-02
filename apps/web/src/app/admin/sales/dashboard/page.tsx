@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
+import NotificationToast from "@/components/NotificationToast";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 
   (typeof window !== 'undefined' && window.location.hostname === 'jangpyosa.com' 
@@ -2041,6 +2042,9 @@ export default function SalesDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* 실시간 알림 토스트 */}
+      <NotificationToast token={getManagerToken()} />
+      
       {/* 헤더 */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
