@@ -105,7 +105,14 @@ export default function PurchaseBestCasesPage() {
               { category: "지방의료원", icon: "🏥", color: "red" },
               { category: "특별법인", icon: "📜", color: "pink" }
             ].map((item) => (
-              <div key={item.category} className={`p-4 bg-${item.color}-50 rounded-lg border-l-4 border-${item.color}-500 text-center`}>
+              <div 
+                key={item.category} 
+                className={`p-4 bg-${item.color}-50 rounded-lg border-l-4 border-${item.color}-500 text-center cursor-pointer hover:bg-${item.color}-100 transition-all hover:shadow-md transform hover:scale-105`}
+                onClick={() => {
+                  // 카테고리별 필터링 기능 (향후 구현 가능)
+                  console.log(`${item.category} 클릭됨`);
+                }}
+              >
                 <div className="text-3xl mb-2">{item.icon}</div>
                 <p className={`text-sm font-semibold text-${item.color}-900`}>{item.category}</p>
               </div>
