@@ -2202,4 +2202,80 @@ router.get('/branches/:id/managers', requireSalesAuth, async (req, res) => {
   }
 });
 
+// 매니저를 본부장/지사장으로 승격
+router.post('/people/:id/promote-to-leader', requireAuth, requireRole('SUPER_ADMIN'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { role, organizationName, managerId } = req.body;
+
+    // 유효한 역할인지 확인
+    if (!['HEAD_MANAGER', 'BRANCH_MANAGER'].includes(role)) {
+      return res.status(400).json({ error: '유효하지 않은 역할입니다' });
+    }
+
+    // 매니저 찾기
+    const salesPerson = await prisma.salesPerson.findUnique({
+      where: { id },
+      include: {
+        user: true,
+      },
+    });
+
+    if (!salesPerson) {
+      return res.status(404).json({ error: '영업 사원을 찾을 수 없습니다' });
+    }
+
+    // 지사장인 경우 본부를 지정해야 함
+    if (role === 'BRANCH_MANAGER' && !managerId) {
+      return res.status(400).json({ error: '지사장은 소속 본부를 지정해야 합니다' });
+    }
+
+    // 본부장인 경우 managerId는 null
+    const finalManagerId = role === 'HEAD_MANAGER' ? null : managerId;
+
+    // SalesPerson 업데이트
+    const updated = await prisma.salesPerson.update({
+      where: { id },
+      data: {
+        role,
+        organizationName,
+        managerId: finalManagerId,
+      },
+      include: {
+        manager: true,
+        subordinates: true,
+        user: true,
+      },
+    });
+
+    // User 역할도 업데이트
+    if (salesPerson.userId) {
+      await prisma.user.update({
+        where: { id: salesPerson.userId },
+        data: {
+          role: role === 'HEAD_MANAGER' || role === 'BRANCH_MANAGER' ? 'AGENT' : 'AGENT',
+        },
+      });
+    }
+
+    res.json({
+      success: true,
+      salesPerson: {
+        id: updated.id,
+        name: updated.name,
+        phone: updated.phone,
+        email: updated.email,
+        role: updated.role,
+        organizationName: updated.organizationName,
+        managerId: updated.managerId,
+        manager: updated.manager,
+        isActive: updated.isActive,
+      },
+    });
+  } catch (error: any) {
+    console.error('[POST /sales/people/:id/promote-to-leader] Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export default router;

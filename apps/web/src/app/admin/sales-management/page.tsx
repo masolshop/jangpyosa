@@ -52,6 +52,9 @@ export default function SalesManagementPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createType, setCreateType] = useState<'HEAD_MANAGER' | 'BRANCH_MANAGER'>('HEAD_MANAGER');
   const [selectedHeadManagerId, setSelectedHeadManagerId] = useState<string>('');
+  const [searchPhone, setSearchPhone] = useState('');
+  const [searchedManager, setSearchedManager] = useState<SalesPerson | null>(null);
+  const [organizationName, setOrganizationName] = useState('');
   const [newPersonData, setNewPersonData] = useState({
     organizationName: '', // 본부명 또는 지사명
     managerName: '', // 본부장명 또는 지사장명
@@ -172,26 +175,44 @@ export default function SalesManagementPage() {
     }
   };
 
+  const searchManagerByPhone = async () => {
+    if (!searchPhone) {
+      setError('전화번호를 입력해주세요.');
+      setTimeout(() => setError(''), 3000);
+      return;
+    }
+
+    try {
+      // 전화번호로 매니저 찾기
+      const cleanPhone = searchPhone.replace(/[-\s]/g, '');
+      const manager = salesPeople.find(p => p.phone.replace(/[-\s]/g, '') === cleanPhone);
+      
+      if (!manager) {
+        setError('해당 전화번호로 등록된 매니저를 찾을 수 없습니다.');
+        setTimeout(() => setError(''), 3000);
+        return;
+      }
+
+      setSearchedManager(manager);
+      setSuccessMessage(`${manager.name} 매니저를 찾았습니다.`);
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } catch (err: any) {
+      setError(err.message || '검색 실패');
+      setTimeout(() => setError(''), 3000);
+    }
+  };
+
   const handleCreatePerson = async () => {
-    const { organizationName, managerName, phone, password, passwordConfirm, email } = newPersonData;
-
-    // 필수 항목 검증
-    if (!organizationName || !managerName || !phone || !password) {
-      setError('조직명, 대표자명, 전화번호, 비밀번호는 필수입니다.');
+    // 검색된 매니저가 있어야 함
+    if (!searchedManager) {
+      setError('먼저 전화번호로 매니저를 검색해주세요.');
       setTimeout(() => setError(''), 3000);
       return;
     }
 
-    // 비밀번호 확인
-    if (password !== passwordConfirm) {
-      setError('비밀번호가 일치하지 않습니다.');
-      setTimeout(() => setError(''), 3000);
-      return;
-    }
-
-    // 비밀번호 길이 검증
-    if (password.length < 6) {
-      setError('비밀번호는 최소 6자 이상이어야 합니다.');
+    // 조직명 필수
+    if (!organizationName) {
+      setError(createType === 'HEAD_MANAGER' ? '본부명을 입력해주세요.' : '지사명을 입력해주세요.');
       setTimeout(() => setError(''), 3000);
       return;
     }
@@ -203,45 +224,42 @@ export default function SalesManagementPage() {
     }
 
     try {
-      await apiFetch('/sales/people/create', {
+      // 기존 매니저를 승격 (본부장/지사장으로 임명)
+      await apiFetch(`/sales/people/${searchedManager.id}/promote-to-leader`, {
         method: 'POST',
         body: JSON.stringify({
-          organizationName, // 본부명 또는 지사명
-          name: managerName, // 본부장명 또는 지사장명
-          phone: phone.replace(/[-\s]/g, ''),
-          email: email || undefined,
-          password,
           role: createType,
+          organizationName,
           managerId: createType === 'BRANCH_MANAGER' ? selectedHeadManagerId : undefined,
         }),
       });
 
-      setSuccessMessage(`${getRoleName(createType)} 생성이 완료되었습니다.`);
+      setSuccessMessage(`${searchedManager.name}님을 ${getRoleName(createType)}로 임명했습니다.`);
       setTimeout(() => setSuccessMessage(''), 3000);
       
       // 모달 닫고 초기화
       setShowCreateModal(false);
-      setNewPersonData({ 
-        organizationName: '', 
-        managerName: '', 
-        phone: '', 
-        email: '', 
-        password: '', 
-        passwordConfirm: '' 
-      });
+      setSearchPhone('');
+      setSearchedManager(null);
+      setOrganizationName('');
       setSelectedHeadManagerId('');
       
       loadSalesPeople();
     } catch (err: any) {
-      setError(err.message || '생성 실패');
+      setError(err.message || '임명 실패');
       setTimeout(() => setError(''), 3000);
     }
   };
 
   const openCreateModal = (type: 'HEAD_MANAGER' | 'BRANCH_MANAGER', headManagerId?: string) => {
     setCreateType(type);
+    setSearchPhone('');
+    setSearchedManager(null);
+    setOrganizationName('');
     if (headManagerId) {
       setSelectedHeadManagerId(headManagerId);
+    } else {
+      setSelectedHeadManagerId('');
     }
     setShowCreateModal(true);
   };
@@ -1599,115 +1617,70 @@ export default function SalesManagementPage() {
                 </div>
               )}
 
+              {/* 전화번호로 매니저 검색 */}
+              <div style={{ marginBottom: 20 }}>
+                <label style={{ display: 'block', marginBottom: 8, fontWeight: 600, fontSize: 14 }}>
+                  매니저 전화번호로 검색 *
+                </label>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input
+                    type="tel"
+                    value={searchPhone}
+                    onChange={(e) => setSearchPhone(e.target.value)}
+                    placeholder="예: 01012345678"
+                    style={{
+                      flex: 1,
+                      padding: 12,
+                      border: '1px solid #ddd',
+                      borderRadius: 4,
+                      fontSize: 14,
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                  <button
+                    onClick={searchManagerByPhone}
+                    style={{
+                      padding: '12px 20px',
+                      backgroundColor: '#1976d2',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: 4,
+                      cursor: 'pointer',
+                      fontSize: 14,
+                      fontWeight: 600,
+                    }}
+                  >
+                    🔍 검색
+                  </button>
+                </div>
+                {searchedManager && (
+                  <div style={{
+                    marginTop: 12,
+                    padding: 12,
+                    backgroundColor: '#e8f5e9',
+                    borderRadius: 4,
+                    border: '1px solid #4caf50',
+                  }}>
+                    <div style={{ fontWeight: 600, color: '#2e7d32', marginBottom: 4 }}>
+                      ✓ 매니저를 찾았습니다
+                    </div>
+                    <div style={{ fontSize: 14, color: '#666' }}>
+                      이름: {searchedManager.name} | 역할: {getRoleName(searchedManager.role)} | 전화번호: {searchedManager.phone}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* 조직명 입력 */}
               <div style={{ marginBottom: 20 }}>
                 <label style={{ display: 'block', marginBottom: 8, fontWeight: 600, fontSize: 14 }}>
                   {createType === 'HEAD_MANAGER' ? '본부명' : '지사명'} *
                 </label>
                 <input
                   type="text"
-                  value={newPersonData.organizationName}
-                  onChange={(e) => setNewPersonData({ ...newPersonData, organizationName: e.target.value })}
+                  value={organizationName}
+                  onChange={(e) => setOrganizationName(e.target.value)}
                   placeholder={createType === 'HEAD_MANAGER' ? '예: 서울본부' : '예: 강남지사'}
-                  style={{
-                    width: '100%',
-                    padding: 12,
-                    border: '1px solid #ddd',
-                    borderRadius: 4,
-                    fontSize: 14,
-                    boxSizing: 'border-box',
-                  }}
-                />
-              </div>
-
-              <div style={{ marginBottom: 20 }}>
-                <label style={{ display: 'block', marginBottom: 8, fontWeight: 600, fontSize: 14 }}>
-                  {createType === 'HEAD_MANAGER' ? '본부장명' : '지사장명'} *
-                </label>
-                <input
-                  type="text"
-                  value={newPersonData.managerName}
-                  onChange={(e) => setNewPersonData({ ...newPersonData, managerName: e.target.value })}
-                  placeholder="예: 홍길동"
-                  style={{
-                    width: '100%',
-                    padding: 12,
-                    border: '1px solid #ddd',
-                    borderRadius: 4,
-                    fontSize: 14,
-                    boxSizing: 'border-box',
-                  }}
-                />
-              </div>
-
-              <div style={{ marginBottom: 20 }}>
-                <label style={{ display: 'block', marginBottom: 8, fontWeight: 600, fontSize: 14 }}>
-                  전화번호 (ID) *
-                </label>
-                <input
-                  type="tel"
-                  value={newPersonData.phone}
-                  onChange={(e) => setNewPersonData({ ...newPersonData, phone: e.target.value })}
-                  placeholder="예: 01012345678 또는 010-1234-5678"
-                  style={{
-                    width: '100%',
-                    padding: 12,
-                    border: '1px solid #ddd',
-                    borderRadius: 4,
-                    fontSize: 14,
-                    boxSizing: 'border-box',
-                  }}
-                />
-              </div>
-
-              <div style={{ marginBottom: 20 }}>
-                <label style={{ display: 'block', marginBottom: 8, fontWeight: 600, fontSize: 14 }}>
-                  비밀번호 *
-                </label>
-                <input
-                  type="password"
-                  value={newPersonData.password}
-                  onChange={(e) => setNewPersonData({ ...newPersonData, password: e.target.value })}
-                  placeholder="최소 6자 이상"
-                  style={{
-                    width: '100%',
-                    padding: 12,
-                    border: '1px solid #ddd',
-                    borderRadius: 4,
-                    fontSize: 14,
-                    boxSizing: 'border-box',
-                  }}
-                />
-              </div>
-
-              <div style={{ marginBottom: 20 }}>
-                <label style={{ display: 'block', marginBottom: 8, fontWeight: 600, fontSize: 14 }}>
-                  비밀번호 확인 *
-                </label>
-                <input
-                  type="password"
-                  value={newPersonData.passwordConfirm}
-                  onChange={(e) => setNewPersonData({ ...newPersonData, passwordConfirm: e.target.value })}
-                  placeholder="비밀번호 재입력"
-                  style={{
-                    width: '100%',
-                    padding: 12,
-                    border: '1px solid #ddd',
-                    borderRadius: 4,
-                    fontSize: 14,
-                    boxSizing: 'border-box',
-                  }}
-                />
-              </div>
-
-              <div style={{ marginBottom: 24 }}>
-                <label style={{ display: 'block', marginBottom: 8, fontWeight: 600, fontSize: 14 }}>
-                  이메일
-                </label>
-                <input
-                  type="email"
-                  value={newPersonData.email}
-                  onChange={(e) => setNewPersonData({ ...newPersonData, email: e.target.value })}
-                  placeholder="예: hong@example.com"
                   style={{
                     width: '100%',
                     padding: 12,
@@ -1723,14 +1696,9 @@ export default function SalesManagementPage() {
                 <button
                   onClick={() => {
                     setShowCreateModal(false);
-                    setNewPersonData({ 
-                      organizationName: '', 
-                      managerName: '', 
-                      phone: '', 
-                      email: '', 
-                      password: '', 
-                      passwordConfirm: '' 
-                    });
+                    setSearchPhone('');
+                    setSearchedManager(null);
+                    setOrganizationName('');
                     setSelectedHeadManagerId('');
                   }}
                   style={{
