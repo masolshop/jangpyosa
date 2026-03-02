@@ -472,7 +472,6 @@ const HeadquartersDashboard = ({
   // 매니저 검색
   const [availableManagers, setAvailableManagers] = useState<any[]>([]);
   const [managerSearch, setManagerSearch] = useState('');
-  const [loadingManagers, setLoadingManagers] = useState(false);
   const [selectedManager, setSelectedManager] = useState<any>(null);
   
   // 매니저 이동 모달
