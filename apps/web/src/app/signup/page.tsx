@@ -161,7 +161,7 @@ function SignupContent() {
         const data = await response.json();
         
         if (!response.ok) {
-          setMsg(`❌ ${data.message || "장애인표준사업장 인증을 확인할 수 없습니다"}`);
+          setMsg("❌ 표준사업장이 아닙니다. 등록된 장애인표준사업장만 가입 가능합니다.");
           return;
         }
         
