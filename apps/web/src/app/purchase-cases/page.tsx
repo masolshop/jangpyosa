@@ -120,7 +120,7 @@ export default function PurchaseCasesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-8 pt-[60vh] md:ml-[350px]">
+    <div className="min-h-screen bg-gray-50 p-4 md:p-8 pt-[60vh]" style={{ marginLeft: '350px' }}>
       <div className="max-w-7xl mx-auto">
         {/* 헤더 */}
         <div className="mb-4">
