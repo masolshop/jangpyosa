@@ -552,8 +552,8 @@ function MenuItem({ href, label, icon, active = false, onClick, onNotificationCl
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          padding: "10px 14px",
-          marginBottom: 7,
+          padding: "8px 14px",
+          marginBottom: 5,
           borderRadius: 8,
           border: "1px solid rgba(255, 255, 255, 0.3)",
           textDecoration: "none",
@@ -629,8 +629,8 @@ function MenuItem({ href, label, icon, active = false, onClick, onNotificationCl
               href={item.href}
               style={{
                 display: "block",
-                padding: "8px 12px",
-                marginBottom: 4,
+                padding: "6px 12px",
+                marginBottom: 3,
                 borderRadius: 4,
                 textDecoration: "none",
                 color: pathname === item.href ? "#0070f3" : "#999",
