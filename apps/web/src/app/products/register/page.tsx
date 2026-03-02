@@ -24,7 +24,8 @@ const CONTRACT_TYPES = [
   {
     value: 'PUBLIC_PRIORITY',
     label: '공공기관',
-    items: ['우수구매', '표준사업장', '설치']
+    subLabel: '우수구매',
+    items: ['표준사업장', '설치']
   },
   {
     value: 'RENTAL',
@@ -282,7 +283,12 @@ export default function ProductRegisterPage() {
                       required
                       className="mr-2"
                     />
-                    <strong className="text-base">{type.label}</strong>
+                    <div className="flex flex-col">
+                      <strong className="text-base">{type.label}</strong>
+                      {'subLabel' in type && (
+                        <strong className="text-base">{type.subLabel}</strong>
+                      )}
+                    </div>
                   </div>
                   <div className="text-xs text-gray-600 space-y-1 ml-6">
                     {type.items.slice(0, 3).map((item, idx) => (
