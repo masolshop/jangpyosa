@@ -401,7 +401,12 @@ const BranchDashboard = ({
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {managers.map((manager) => {
-                  const total = manager.stats.privateCompanies + manager.stats.publicCompanies + manager.stats.governmentCompanies;
+                  const stats = manager.stats as any;
+                  const privateCount = stats.privateCompanies ?? 0;
+                  const publicCount = stats.publicCompanies ?? 0;
+                  const governmentCount = stats.governmentCompanies ?? 0;
+                  const total = privateCount + publicCount + governmentCount;
+                  
                   return (
                     <tr key={manager.id} className="hover:bg-gray-50">
                       <td className="px-4 py-3 text-sm font-medium text-gray-900">{manager.name}</td>
@@ -409,17 +414,17 @@ const BranchDashboard = ({
                       <td className="px-4 py-3 text-sm text-gray-600">{manager.email || '-'}</td>
                       <td className="px-4 py-3 text-sm text-center">
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          {manager.stats.privateCompanies}
+                          {privateCount}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-sm text-center">
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                          {manager.stats.publicCompanies}
+                          {publicCount}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-sm text-center">
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-                          {manager.stats.governmentCompanies}
+                          {governmentCount}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-sm text-center">
