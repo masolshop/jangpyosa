@@ -16,6 +16,18 @@ router.get("/", requireAuth, async (req, res) => {
       return res.status(403).json({ error: "부담금기업만 접근 가능합니다." });
     }
 
+    // 사용자 정보 조회 (추천인 정보 포함)
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        referredBy: {
+          include: {
+            salesPerson: true,
+          },
+        },
+      },
+    });
+
     // SUPER_ADMIN일 경우 첫 번째 BUYER 회사 데이터 조회
     let company;
     if (userRole === "SUPER_ADMIN") {
@@ -179,6 +191,13 @@ router.get("/", requireAuth, async (req, res) => {
       },
       employeeStats, // 📊 직원 통계 추가
       monthlyResults,
+      // 추천인 정보 추가
+      referrer: user?.referredBy ? {
+        name: user.referredBy.name,
+        phone: user.referredBy.phone,
+        salesPersonName: user.referredBy.salesPerson?.name,
+        organizationName: user.referredBy.salesPerson?.organizationName,
+      } : null,
     });
   } catch (error: any) {
     console.error("대시보드 데이터 조회 실패:", error);

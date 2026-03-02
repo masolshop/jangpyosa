@@ -31,6 +31,12 @@ type DashboardData = {
     male: number;
     female: number;
   };
+  referrer?: {
+    name: string;
+    phone: string;
+    salesPersonName?: string;
+    organizationName?: string;
+  } | null;
 };
 
 type CartItem = {
@@ -170,6 +176,39 @@ export default function DashboardPage() {
         <p style={{ color: "#666", marginTop: 8 }}>
           {data.company.name} - {data.year}년 장애인고용 현황
         </p>
+
+        {/* 추천인 정보 박스 */}
+        {data.referrer && (
+          <div
+            style={{
+              marginTop: 16,
+              padding: 16,
+              background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+              borderRadius: 8,
+              color: "white",
+              boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", marginBottom: 12 }}>
+              <span style={{ fontSize: 24, marginRight: 8 }}>👤</span>
+              <h3 style={{ margin: 0, fontSize: 18, fontWeight: "600" }}>담당 추천인</h3>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "8px 16px", fontSize: 14 }}>
+              <span style={{ opacity: 0.9 }}>이름:</span>
+              <span style={{ fontWeight: "600" }}>{data.referrer.salesPersonName || data.referrer.name}</span>
+              
+              <span style={{ opacity: 0.9 }}>연락처:</span>
+              <span style={{ fontWeight: "600" }}>{data.referrer.phone}</span>
+              
+              {data.referrer.organizationName && (
+                <>
+                  <span style={{ opacity: 0.9 }}>소속:</span>
+                  <span style={{ fontWeight: "600" }}>{data.referrer.organizationName}</span>
+                </>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* 종합 현황 */}
         <div
