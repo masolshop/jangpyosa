@@ -45,6 +45,9 @@ export default function SalesManagementPage() {
   const [successMessage, setSuccessMessage] = useState('');
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   
+  // 조직도 확장/축소 상태
+  const [expandedBranches, setExpandedBranches] = useState<Set<string>>(new Set());
+  
   // 모달 상태
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createType, setCreateType] = useState<'HEAD_MANAGER' | 'BRANCH_MANAGER'>('HEAD_MANAGER');
@@ -397,10 +400,18 @@ export default function SalesManagementPage() {
   const getOrganizationTree = () => {
     const headManagers = salesPeople.filter(p => p.role === 'HEAD_MANAGER');
     
-    return headManagers.map(head => ({
-      ...head,
-      subordinates: salesPeople.filter(p => p.managerId === head.id),
-    }));
+    return headManagers.map(head => {
+      const branches = salesPeople.filter(p => p.managerId === head.id && p.role === 'BRANCH_MANAGER');
+      const branchesWithManagers = branches.map(branch => ({
+        ...branch,
+        subordinates: salesPeople.filter(p => p.managerId === branch.id && p.role === 'MANAGER'),
+      }));
+      
+      return {
+        ...head,
+        subordinates: branchesWithManagers,
+      };
+    });
   };
 
   if (loading) {
@@ -630,6 +641,7 @@ export default function SalesManagementPage() {
                     <th style={{ padding: 16, textAlign: 'left', fontWeight: 600 }}>이메일</th>
                     <th style={{ padding: 16, textAlign: 'center', fontWeight: 600 }}>소속 본부</th>
                     <th style={{ padding: 16, textAlign: 'center', fontWeight: 600 }}>소속 지사</th>
+                    <th style={{ padding: 16, textAlign: 'center', fontWeight: 600 }}>추천 합계</th>
                     <th style={{ padding: 16, textAlign: 'center', fontWeight: 600 }}>상태</th>
                     <th style={{ padding: 16, textAlign: 'center', fontWeight: 600 }}>관리</th>
                   </tr>
@@ -694,6 +706,23 @@ export default function SalesManagementPage() {
                           }
                           return '-';
                         })()}
+                      </td>
+                      <td style={{ padding: 16, textAlign: 'center' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                          <span style={{ 
+                            fontWeight: 600, 
+                            color: '#1976d2',
+                            fontSize: 16
+                          }}>
+                            {person.totalReferrals || 0}
+                          </span>
+                          <span style={{ 
+                            fontSize: 11, 
+                            color: '#666' 
+                          }}>
+                            (활성: {person.activeReferrals || 0})
+                          </span>
+                        </div>
                       </td>
                       <td style={{ padding: 16, textAlign: 'center' }}>
                         <span style={{
@@ -819,15 +848,29 @@ export default function SalesManagementPage() {
             {getOrganizationTree().map((headManager) => (
               <div key={headManager.id} style={{ marginBottom: 32 }}>
                 {/* 본부장 */}
-                <div style={{
+                <div 
+                  onClick={() => {
+                    const newExpanded = new Set(expandedBranches);
+                    if (newExpanded.has(headManager.id)) {
+                      newExpanded.delete(headManager.id);
+                    } else {
+                      newExpanded.add(headManager.id);
+                    }
+                    setExpandedBranches(newExpanded);
+                  }}
+                  style={{
                   padding: 20,
                   backgroundColor: '#ffebee',
                   borderRadius: 8,
                   marginBottom: 16,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  border: expandedBranches.has(headManager.id) ? '2px solid #d32f2f' : '2px solid transparent',
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
-                      <div style={{ fontSize: 18, fontWeight: 'bold', color: '#d32f2f', marginBottom: 8 }}>
+                      <div style={{ fontSize: 18, fontWeight: 'bold', color: '#d32f2f', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span>{expandedBranches.has(headManager.id) ? '▼' : '▶'}</span>
                         🏢 {headManager.name} 본부
                       </div>
                       <div style={{ fontSize: 14, color: '#666' }}>
@@ -835,9 +878,12 @@ export default function SalesManagementPage() {
                       </div>
                       <div style={{ fontSize: 14, color: '#666', marginTop: 4 }}>
                         지사 {headManager.subordinates?.filter(s => s.role === 'BRANCH_MANAGER').length || 0}개 | 소속매니저 {headManager.subordinates?.filter(s => s.role === 'MANAGER').length || 0}명
+                        <span style={{ marginLeft: 12, fontWeight: 600, color: '#1976d2' }}>
+                          | 추천: {headManager.totalReferrals || 0} (활성: {headManager.activeReferrals || 0})
+                        </span>
                       </div>
                     </div>
-                    <div style={{ display: 'flex', gap: 8 }}>
+                    <div style={{ display: 'flex', gap: 8 }} onClick={(e) => e.stopPropagation()}>
                       <button
                         onClick={() => openEditModal(headManager)}
                         style={{
@@ -887,94 +933,189 @@ export default function SalesManagementPage() {
                   </div>
                 </div>
 
-                {/* 지사장들 */}
-                <div style={{ paddingLeft: 40 }}>
-                  {headManager.subordinates && headManager.subordinates.length > 0 ? (
-                    headManager.subordinates.map((branch) => (
-                      <div key={branch.id} style={{
-                        padding: 16,
-                        backgroundColor: '#fff3e0',
-                        borderRadius: 8,
-                        marginBottom: 12,
-                        borderLeft: '4px solid #f57c00',
-                      }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <div>
-                            <div style={{ fontSize: 16, fontWeight: 'bold', color: '#f57c00', marginBottom: 4 }}>
-                              🏪 {branch.organizationName || branch.name} (지사장: {branch.name})
-                            </div>
-                            <div style={{ fontSize: 13, color: '#666' }}>
-                              📞 {branch.phone} | ✉️ {branch.email || '-'}
-                            </div>
-                            <div style={{ fontSize: 13, color: '#666', marginTop: 4 }}>
-                              <span style={{ fontWeight: 600, color: '#f57c00' }}>
-                                소속매니저 {branch.subordinates?.length || 0}명
-                              </span>
+                {/* 지사장들 - 본부가 확장되어 있을 때만 표시 */}
+                {expandedBranches.has(headManager.id) && (
+                  <div style={{ paddingLeft: 40 }}>
+                    {headManager.subordinates && headManager.subordinates.length > 0 ? (
+                      headManager.subordinates.map((branch) => (
+                        <div key={branch.id}>
+                          <div 
+                            onClick={() => {
+                              const newExpanded = new Set(expandedBranches);
+                              if (newExpanded.has(branch.id)) {
+                                newExpanded.delete(branch.id);
+                              } else {
+                                newExpanded.add(branch.id);
+                              }
+                              setExpandedBranches(newExpanded);
+                            }}
+                            style={{
+                              padding: 16,
+                              backgroundColor: '#fff3e0',
+                              borderRadius: 8,
+                              marginBottom: 12,
+                              borderLeft: '4px solid #f57c00',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s',
+                              border: expandedBranches.has(branch.id) ? '2px solid #f57c00' : '2px solid transparent',
+                            }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <div>
+                                <div style={{ fontSize: 16, fontWeight: 'bold', color: '#f57c00', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8 }}>
+                                  <span>{expandedBranches.has(branch.id) ? '▼' : '▶'}</span>
+                                  🏪 {branch.organizationName || branch.name} (지사장: {branch.name})
+                                </div>
+                                <div style={{ fontSize: 13, color: '#666' }}>
+                                  📞 {branch.phone} | ✉️ {branch.email || '-'}
+                                </div>
+                                <div style={{ fontSize: 13, color: '#666', marginTop: 4 }}>
+                                  <span style={{ fontWeight: 600, color: '#f57c00' }}>
+                                    소속매니저 {branch.subordinates?.length || 0}명
+                                  </span>
+                                  <span style={{ marginLeft: 12, fontWeight: 600, color: '#1976d2' }}>
+                                    | 추천: {branch.totalReferrals || 0} (활성: {branch.activeReferrals || 0})
+                                  </span>
+                                </div>
+                              </div>
+                              <div style={{ display: 'flex', gap: 8 }} onClick={(e) => e.stopPropagation()}>
+                                <button
+                                  onClick={() => openEditModal(branch)}
+                                  style={{
+                                    padding: '6px 12px',
+                                    backgroundColor: '#1976d2',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: 4,
+                                    cursor: 'pointer',
+                                    fontSize: 12,
+                                    fontWeight: 600,
+                                  }}
+                                >
+                                  ✏️ 수정
+                                </button>
+                                <button
+                                  onClick={() => handleToggleActive(branch.id, branch.isActive)}
+                                  style={{
+                                    padding: '6px 12px',
+                                    backgroundColor: branch.isActive ? '#f57c00' : '#4caf50',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: 4,
+                                    cursor: 'pointer',
+                                    fontSize: 12,
+                                  }}
+                                >
+                                  {branch.isActive ? '비활성화' : '활성화'}
+                                </button>
+                                <button
+                                  onClick={() => handleDelete(branch)}
+                                  style={{
+                                    padding: '6px 12px',
+                                    backgroundColor: '#d32f2f',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: 4,
+                                    cursor: 'pointer',
+                                    fontSize: 12,
+                                    fontWeight: 600,
+                                  }}
+                                >
+                                  🗑️ 삭제
+                                </button>
+                              </div>
                             </div>
                           </div>
-                          <div style={{ display: 'flex', gap: 8 }}>
-                            <button
-                              onClick={() => openEditModal(branch)}
-                              style={{
-                                padding: '6px 12px',
-                                backgroundColor: '#1976d2',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: 4,
-                                cursor: 'pointer',
-                                fontSize: 12,
-                                fontWeight: 600,
-                              }}
-                            >
-                              ✏️ 수정
-                            </button>
-                            <button
-                              onClick={() => handleToggleActive(branch.id, branch.isActive)}
-                              style={{
-                                padding: '6px 12px',
-                                backgroundColor: branch.isActive ? '#f57c00' : '#4caf50',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: 4,
-                                cursor: 'pointer',
-                                fontSize: 12,
-                              }}
-                            >
-                              {branch.isActive ? '비활성화' : '활성화'}
-                            </button>
-                            <button
-                              onClick={() => handleDelete(branch)}
-                              style={{
-                                padding: '6px 12px',
-                                backgroundColor: '#d32f2f',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: 4,
-                                cursor: 'pointer',
-                                fontSize: 12,
-                                fontWeight: 600,
-                              }}
-                            >
-                              🗑️ 삭제
-                            </button>
-                          </div>
+
+                          {/* 매니저들 - 지사가 확장되어 있을 때만 표시 */}
+                          {expandedBranches.has(branch.id) && branch.subordinates && branch.subordinates.length > 0 && (
+                            <div style={{ paddingLeft: 40, marginBottom: 12 }}>
+                              {branch.subordinates.map((manager) => (
+                                <div key={manager.id} style={{
+                                  padding: 12,
+                                  backgroundColor: '#e3f2fd',
+                                  borderRadius: 6,
+                                  marginBottom: 8,
+                                  borderLeft: '3px solid #1976d2',
+                                }}>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <div>
+                                      <div style={{ fontSize: 14, fontWeight: 'bold', color: '#1976d2', marginBottom: 2 }}>
+                                        👤 {manager.name}
+                                      </div>
+                                      <div style={{ fontSize: 12, color: '#666' }}>
+                                        📞 {manager.phone} | ✉️ {manager.email || '-'}
+                                      </div>
+                                      <div style={{ fontSize: 12, color: '#666', marginTop: 2 }}>
+                                        <span style={{ fontWeight: 600, color: '#1976d2' }}>
+                                          추천: {manager.totalReferrals || 0} (활성: {manager.activeReferrals || 0})
+                                        </span>
+                                      </div>
+                                    </div>
+                                    <div style={{ display: 'flex', gap: 4 }} onClick={(e) => e.stopPropagation()}>
+                                      <button
+                                        onClick={() => openEditModal(manager)}
+                                        style={{
+                                          padding: '4px 8px',
+                                          backgroundColor: '#1976d2',
+                                          color: 'white',
+                                          border: 'none',
+                                          borderRadius: 4,
+                                          cursor: 'pointer',
+                                          fontSize: 11,
+                                        }}
+                                      >
+                                        ✏️ 수정
+                                      </button>
+                                      <button
+                                        onClick={() => openTransferModal(manager)}
+                                        style={{
+                                          padding: '4px 8px',
+                                          backgroundColor: '#f57c00',
+                                          color: 'white',
+                                          border: 'none',
+                                          borderRadius: 4,
+                                          cursor: 'pointer',
+                                          fontSize: 11,
+                                        }}
+                                      >
+                                        ↔️ 이동
+                                      </button>
+                                      <button
+                                        onClick={() => handleDelete(manager)}
+                                        style={{
+                                          padding: '4px 8px',
+                                          backgroundColor: '#d32f2f',
+                                          color: 'white',
+                                          border: 'none',
+                                          borderRadius: 4,
+                                          cursor: 'pointer',
+                                          fontSize: 11,
+                                        }}
+                                      >
+                                        🗑️ 삭제
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
+                      ))
+                    ) : (
+                      <div style={{
+                        padding: 20,
+                        backgroundColor: '#f5f5f5',
+                        borderRadius: 8,
+                        textAlign: 'center',
+                        color: '#999',
+                        fontSize: 14,
+                      }}>
+                        아직 지사가 없습니다. "+ 지사 생성" 버튼을 눌러 지사를 추가하세요.
                       </div>
-                    ))
-                  ) : (
-                    <div style={{
-                      padding: 20,
-                      backgroundColor: '#f5f5f5',
-                      borderRadius: 8,
-                      textAlign: 'center',
-                      color: '#999',
-                      fontSize: 14,
-                    }}>
-                      아직 지사가 없습니다. "+ 지사 생성" 버튼을 눌러 지사를 추가하세요.
-                    </div>
-                  )}
-                </div>
-              </div>
+                    )}
+                  </div>
+                )}
             ))}
 
             {getOrganizationTree().length === 0 && (
