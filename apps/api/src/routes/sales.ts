@@ -2017,7 +2017,6 @@ router.get('/branches/:id/managers', requireSalesAuth, async (req, res) => {
           select: {
             id: true,
             companyType: true,
-            totalRevenue: true,
           },
         },
       },
@@ -2027,7 +2026,7 @@ router.get('/branches/:id/managers', requireSalesAuth, async (req, res) => {
     });
     
     // 매니저별 통계 계산
-    const managersWithStats = managers.map(manager => {
+    const managersWithStats = managers.map((manager: any) => {
       const stats = {
         민간기업: 0,
         공공기관: 0,
@@ -2035,7 +2034,7 @@ router.get('/branches/:id/managers', requireSalesAuth, async (req, res) => {
         합계: 0,
       };
       
-      manager.referredCompanies.forEach(company => {
+      manager.referredCompanies.forEach((company: any) => {
         stats.합계++;
         if (company.companyType === '민간기업') {
           stats.민간기업++;
