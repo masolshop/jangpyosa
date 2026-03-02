@@ -3,6 +3,11 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 
+  (typeof window !== 'undefined' && window.location.hostname === 'jangpyosa.com' 
+    ? 'https://jangpyosa.com/api' 
+    : 'http://localhost:4000');
+
 interface Product {
   id: string
   title: string
@@ -37,7 +42,7 @@ export default function ProductManagePage() {
         return
       }
 
-      const response = await fetch('http://localhost:4000/api/products/my/list', {
+      const response = await fetch(`${API_BASE}/api/products/my/list`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -82,7 +87,7 @@ export default function ProductManagePage() {
         return
       }
 
-      const response = await fetch(`http://localhost:4000/api/products/${productId}`, {
+      const response = await fetch(`${API_BASE}/api/products/${productId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -117,7 +122,7 @@ export default function ProductManagePage() {
       <div className="mb-8 flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-800 mb-2">
-            🏭 연계고용감면 상품관리
+            🏭 표준사업장감면 상품관리
           </h1>
           <p className="text-gray-600">상품을 등록하고 관리할 수 있습니다</p>
         </div>
@@ -144,7 +149,7 @@ export default function ProductManagePage() {
             등록된 상품이 없습니다
           </h3>
           <p className="text-gray-600 mb-6">
-            첫 번째 상품을 등록하고 연계고용 감면을 받아보세요!
+            첫 번째 상품을 등록하고 연계고용부담금 감면을 받아보세요!
           </p>
           <button
             onClick={() => router.push('/products/register')}
