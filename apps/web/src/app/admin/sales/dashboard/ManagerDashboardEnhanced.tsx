@@ -1,6 +1,8 @@
 // 간소화된 매니저 대시보드 추가 기능
 // 기존 ManagerDashboard 컴포넌트 앞에 추가할 코드
 
+import { useRef, useEffect } from 'react';
+
 // 1. 자동 새로고침 훅
 export function useAutoRefresh(callback: () => void, enabled: boolean, interval: number = 30000) {
   const intervalRef = useRef<NodeJS.Timeout | null>(null);

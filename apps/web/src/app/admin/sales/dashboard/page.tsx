@@ -193,13 +193,80 @@ const InfoRow = ({ label, value }: { label: string; value?: string }) => (
 const ManagerDashboard = ({ 
   accountInfo, 
   stats, 
-  companies 
+  companies,
+  onRefresh
 }: { 
   accountInfo: SalesPersonInfo;
   stats: ManagerStats;
   companies: ManagerCompany[];
+  onRefresh?: () => void;
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [monthlyReport, setMonthlyReport] = useState<ReportData[]>([]);
+  const [reportPeriod, setReportPeriod] = useState<'monthly' | 'quarterly'>('monthly');
+  const [loadingReport, setLoadingReport] = useState(false);
+  const [autoRefresh, setAutoRefresh] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState(new Date());
+  const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // 월별/분기별 리포트 로드
+  const loadMonthlyReport = useCallback(async () => {
+    setLoadingReport(true);
+    try {
+      const token = getManagerToken();
+      const response = await fetch(
+        `${API_BASE}/agent/reports/${reportPeriod}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        }
+      );
+      
+      if (response.ok) {
+        const data = await response.json();
+        setMonthlyReport(data.reports || []);
+      }
+    } catch (error) {
+      console.error('리포트 로드 실패:', error);
+    } finally {
+      setLoadingReport(false);
+    }
+  }, [reportPeriod]);
+  
+  // 수동 새로고침
+  const handleManualRefresh = () => {
+    setLastUpdated(new Date());
+    if (onRefresh) {
+      onRefresh();
+    }
+    loadMonthlyReport();
+  };
+  
+  // 자동 새로고침 설정
+  useEffect(() => {
+    if (autoRefresh) {
+      refreshIntervalRef.current = setInterval(() => {
+        handleManualRefresh();
+      }, 30000); // 30초마다
+    } else {
+      if (refreshIntervalRef.current) {
+        clearInterval(refreshIntervalRef.current);
+        refreshIntervalRef.current = null;
+      }
+    }
+    
+    return () => {
+      if (refreshIntervalRef.current) {
+        clearInterval(refreshIntervalRef.current);
+      }
+    };
+  }, [autoRefresh]);
+  
+  // 리포트 기간 변경 시 로드
+  useEffect(() => {
+    loadMonthlyReport();
+  }, [loadMonthlyReport]);
   
   const filteredCompanies = companies.filter(c => {
     if (selectedCategory === 'all') return true;
@@ -221,6 +288,30 @@ const ManagerDashboard = ({
   
   return (
     <div className="space-y-6">
+      {/* 자동 새로고침 컨트롤 */}
+      <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex items-center justify-between">
+        <div className="flex items-center space-x-4">
+          <label className="flex items-center space-x-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={autoRefresh}
+              onChange={(e) => setAutoRefresh(e.target.checked)}
+              className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+            />
+            <span className="text-sm text-gray-700">자동 새로고침 (30초)</span>
+          </label>
+          <button
+            onClick={handleManualRefresh}
+            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"
+          >
+            🔄 지금 새로고침
+          </button>
+        </div>
+        <div className="text-sm text-gray-500">
+          마지막 업데이트: {lastUpdated.toLocaleTimeString()}
+        </div>
+      </div>
+
       {/* 계정 정보 */}
       <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
         <h2 className="text-xl font-bold mb-4 flex items-center">
@@ -260,6 +351,78 @@ const ManagerDashboard = ({
           </div>
         </div>
       )}
+
+      {/* 월별/분기별 리포트 */}
+      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-bold flex items-center">
+            <span className="mr-2">📈</span>
+            추천 실적 리포트
+          </h2>
+          <div className="flex items-center space-x-2">
+            <select
+              value={reportPeriod}
+              onChange={(e) => setReportPeriod(e.target.value as 'monthly' | 'quarterly')}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+            >
+              <option value="monthly">월별</option>
+              <option value="quarterly">분기별</option>
+            </select>
+          </div>
+        </div>
+        
+        {loadingReport ? (
+          <div className="text-center py-8 text-gray-500">
+            <div className="animate-spin inline-block w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
+            <p className="mt-2">리포트 로딩 중...</p>
+          </div>
+        ) : monthlyReport.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            리포트 데이터가 없습니다
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                    {reportPeriod === 'monthly' ? '월' : '분기'}
+                  </th>
+                  <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">총 추천</th>
+                  <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">활성</th>
+                  <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">민간</th>
+                  <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">공공</th>
+                  <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">정부</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {monthlyReport.map((report, index) => (
+                  <tr key={index} className="hover:bg-gray-50">
+                    <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                      {reportPeriod === 'monthly' ? report.month : report.quarter}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-right text-gray-900">
+                      {report.totalReferrals.toLocaleString()}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-right text-green-600 font-medium">
+                      {report.activeReferrals.toLocaleString()}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-right text-gray-600">
+                      {report.privateCompanies.toLocaleString()}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-right text-gray-600">
+                      {report.publicCompanies.toLocaleString()}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-right text-gray-600">
+                      {report.governmentCompanies.toLocaleString()}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
       {/* 통계 요약 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -369,14 +532,107 @@ const ManagerDashboard = ({
 const BranchDashboard = ({ 
   accountInfo, 
   stats, 
-  managers 
+  managers,
+  onRefresh
 }: { 
   accountInfo: SalesPersonInfo;
   stats: BranchStats;
   managers: BranchManager[];
+  onRefresh?: () => void;
 }) => {
+  const [monthlyReport, setMonthlyReport] = useState<ReportData[]>([]);
+  const [reportPeriod, setReportPeriod] = useState<'monthly' | 'quarterly'>('monthly');
+  const [loadingReport, setLoadingReport] = useState(false);
+  const [autoRefresh, setAutoRefresh] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState(new Date());
+  const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // 월별/분기별 리포트 로드
+  const loadMonthlyReport = useCallback(async () => {
+    setLoadingReport(true);
+    try {
+      const token = getManagerToken();
+      // 지사는 자신의 branchId를 사용
+      const response = await fetch(
+        `${API_BASE}/branch/${accountInfo.id}/reports/${reportPeriod}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        }
+      );
+      
+      if (response.ok) {
+        const data = await response.json();
+        setMonthlyReport(data.reports || []);
+      }
+    } catch (error) {
+      console.error('리포트 로드 실패:', error);
+    } finally {
+      setLoadingReport(false);
+    }
+  }, [reportPeriod, accountInfo.id]);
+  
+  // 수동 새로고침
+  const handleManualRefresh = () => {
+    setLastUpdated(new Date());
+    if (onRefresh) {
+      onRefresh();
+    }
+    loadMonthlyReport();
+  };
+  
+  // 자동 새로고침 설정
+  useEffect(() => {
+    if (autoRefresh) {
+      refreshIntervalRef.current = setInterval(() => {
+        handleManualRefresh();
+      }, 30000);
+    } else {
+      if (refreshIntervalRef.current) {
+        clearInterval(refreshIntervalRef.current);
+        refreshIntervalRef.current = null;
+      }
+    }
+    
+    return () => {
+      if (refreshIntervalRef.current) {
+        clearInterval(refreshIntervalRef.current);
+      }
+    };
+  }, [autoRefresh]);
+  
+  // 리포트 기간 변경 시 로드
+  useEffect(() => {
+    loadMonthlyReport();
+  }, [loadMonthlyReport]);
+  
   return (
     <div className="space-y-6">
+      {/* 자동 새로고침 컨트롤 */}
+      <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex items-center justify-between">
+        <div className="flex items-center space-x-4">
+          <label className="flex items-center space-x-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={autoRefresh}
+              onChange={(e) => setAutoRefresh(e.target.checked)}
+              className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+            />
+            <span className="text-sm text-gray-700">자동 새로고침 (30초)</span>
+          </label>
+          <button
+            onClick={handleManualRefresh}
+            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"
+          >
+            🔄 지금 새로고침
+          </button>
+        </div>
+        <div className="text-sm text-gray-500">
+          마지막 업데이트: {lastUpdated.toLocaleTimeString()}
+        </div>
+      </div>
+
       {/* 계정 정보 */}
       <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
         <h2 className="text-xl font-bold mb-4 flex items-center">
@@ -422,6 +678,78 @@ const BranchDashboard = ({
           value={stats.governmentCompanies}
           color="orange"
         />
+      </div>
+
+      {/* 월별/분기별 리포트 */}
+      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-bold flex items-center">
+            <span className="mr-2">📈</span>
+            지사 추천 실적 리포트
+          </h2>
+          <div className="flex items-center space-x-2">
+            <select
+              value={reportPeriod}
+              onChange={(e) => setReportPeriod(e.target.value as 'monthly' | 'quarterly')}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+            >
+              <option value="monthly">월별</option>
+              <option value="quarterly">분기별</option>
+            </select>
+          </div>
+        </div>
+        
+        {loadingReport ? (
+          <div className="text-center py-8 text-gray-500">
+            <div className="animate-spin inline-block w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
+            <p className="mt-2">리포트 로딩 중...</p>
+          </div>
+        ) : monthlyReport.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            리포트 데이터가 없습니다
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                    {reportPeriod === 'monthly' ? '월' : '분기'}
+                  </th>
+                  <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">총 추천</th>
+                  <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">활성</th>
+                  <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">민간</th>
+                  <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">공공</th>
+                  <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">정부</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {monthlyReport.map((report, index) => (
+                  <tr key={index} className="hover:bg-gray-50">
+                    <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                      {reportPeriod === 'monthly' ? report.month : report.quarter}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-right text-gray-900">
+                      {report.totalReferrals.toLocaleString()}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-right text-green-600 font-medium">
+                      {report.activeReferrals.toLocaleString()}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-right text-gray-600">
+                      {report.privateCompanies.toLocaleString()}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-right text-gray-600">
+                      {report.publicCompanies.toLocaleString()}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-right text-gray-600">
+                      {report.governmentCompanies.toLocaleString()}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* 매니저 리스트 */}
@@ -499,15 +827,25 @@ const BranchDashboard = ({
 const HeadquartersDashboard = ({ 
   accountInfo, 
   stats, 
-  branches 
+  branches,
+  onRefresh
 }: { 
   accountInfo: SalesPersonInfo;
   stats: HeadquartersStats;
   branches: HeadquartersBranch[];
+  onRefresh?: () => void;
 }) => {
   const [selectedBranchId, setSelectedBranchId] = useState<string | null>(null);
   const [branchManagers, setBranchManagers] = useState<BranchManager[]>([]);
   const [loadingManagers, setLoadingManagers] = useState(false);
+  
+  // 월별/분기별 리포트 상태
+  const [monthlyReport, setMonthlyReport] = useState<ReportData[]>([]);
+  const [reportPeriod, setReportPeriod] = useState<'monthly' | 'quarterly'>('monthly');
+  const [loadingReport, setLoadingReport] = useState(false);
+  const [autoRefresh, setAutoRefresh] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState(new Date());
+  const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
   // 지사 관리 모달
   const [showBranchModal, setShowBranchModal] = useState(false);
@@ -530,6 +868,65 @@ const HeadquartersDashboard = ({
   const [targetBranchId, setTargetBranchId] = useState('');
   
   const [message, setMessage] = useState({ type: '', text: '' });
+  
+  // 월별/분기별 리포트 로드
+  const loadMonthlyReport = useCallback(async () => {
+    setLoadingReport(true);
+    try {
+      const token = getManagerToken();
+      const response = await fetch(
+        `${API_BASE}/headquarters/reports/${reportPeriod}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        }
+      );
+      
+      if (response.ok) {
+        const data = await response.json();
+        setMonthlyReport(data.reports || []);
+      }
+    } catch (error) {
+      console.error('리포트 로드 실패:', error);
+    } finally {
+      setLoadingReport(false);
+    }
+  }, [reportPeriod]);
+  
+  // 수동 새로고침
+  const handleManualRefresh = () => {
+    setLastUpdated(new Date());
+    if (onRefresh) {
+      onRefresh();
+    }
+    loadMonthlyReport();
+  };
+  
+  // 자동 새로고침 설정
+  useEffect(() => {
+    if (autoRefresh) {
+      refreshIntervalRef.current = setInterval(() => {
+        handleManualRefresh();
+      }, 30000);
+    } else {
+      if (refreshIntervalRef.current) {
+        clearInterval(refreshIntervalRef.current);
+        refreshIntervalRef.current = null;
+      }
+    }
+    
+    return () => {
+      if (refreshIntervalRef.current) {
+        clearInterval(refreshIntervalRef.current);
+      }
+    };
+  }, [autoRefresh]);
+  
+  // 리포트 기간 변경 시 로드
+  useEffect(() => {
+    loadMonthlyReport();
+  }, [loadMonthlyReport]);
   
   const loadBranchManagers = async (branchId: string) => {
     setLoadingManagers(true);
@@ -730,6 +1127,30 @@ const HeadquartersDashboard = ({
   
   return (
     <div className="space-y-6">
+      {/* 자동 새로고침 컨트롤 */}
+      <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex items-center justify-between">
+        <div className="flex items-center space-x-4">
+          <label className="flex items-center space-x-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={autoRefresh}
+              onChange={(e) => setAutoRefresh(e.target.checked)}
+              className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+            />
+            <span className="text-sm text-gray-700">자동 새로고침 (30초)</span>
+          </label>
+          <button
+            onClick={handleManualRefresh}
+            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"
+          >
+            🔄 지금 새로고침
+          </button>
+        </div>
+        <div className="text-sm text-gray-500">
+          마지막 업데이트: {lastUpdated.toLocaleTimeString()}
+        </div>
+      </div>
+
       {/* 계정 정보 */}
       <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
         <h2 className="text-xl font-bold mb-4 flex items-center">
@@ -832,6 +1253,78 @@ const HeadquartersDashboard = ({
           value={stats.governmentCompanies}
           color="orange"
         />
+      </div>
+
+      {/* 월별/분기별 리포트 */}
+      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-bold flex items-center">
+            <span className="mr-2">📈</span>
+            전체 추천 실적 리포트
+          </h2>
+          <div className="flex items-center space-x-2">
+            <select
+              value={reportPeriod}
+              onChange={(e) => setReportPeriod(e.target.value as 'monthly' | 'quarterly')}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+            >
+              <option value="monthly">월별</option>
+              <option value="quarterly">분기별</option>
+            </select>
+          </div>
+        </div>
+        
+        {loadingReport ? (
+          <div className="text-center py-8 text-gray-500">
+            <div className="animate-spin inline-block w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
+            <p className="mt-2">리포트 로딩 중...</p>
+          </div>
+        ) : monthlyReport.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            리포트 데이터가 없습니다
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                    {reportPeriod === 'monthly' ? '월' : '분기'}
+                  </th>
+                  <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">총 추천</th>
+                  <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">활성</th>
+                  <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">민간</th>
+                  <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">공공</th>
+                  <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">정부</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {monthlyReport.map((report, index) => (
+                  <tr key={index} className="hover:bg-gray-50">
+                    <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                      {reportPeriod === 'monthly' ? report.month : report.quarter}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-right text-gray-900">
+                      {report.totalReferrals.toLocaleString()}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-right text-green-600 font-medium">
+                      {report.activeReferrals.toLocaleString()}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-right text-gray-600">
+                      {report.privateCompanies.toLocaleString()}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-right text-gray-600">
+                      {report.publicCompanies.toLocaleString()}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-right text-gray-600">
+                      {report.governmentCompanies.toLocaleString()}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* 메시지 표시 */}
@@ -1304,6 +1797,21 @@ export default function SalesDashboard() {
     }
   };
 
+  // 대시보드 새로고침 함수
+  const refreshDashboard = useCallback(() => {
+    const token = getManagerToken();
+    if (!token || !accountInfo) return;
+    
+    const role = accountInfo.role;
+    if (role === 'MANAGER') {
+      loadManagerDashboard(token);
+    } else if (role === 'BRANCH_MANAGER') {
+      loadBranchDashboard(token);
+    } else if (role === 'HEAD_MANAGER') {
+      loadHeadquartersDashboard(token);
+    }
+  }, [accountInfo]);
+
   const loadManagerDashboard = async (token: string) => {
     try {
       // 통계
@@ -1566,6 +2074,7 @@ export default function SalesDashboard() {
                 accountInfo={accountInfo}
                 stats={managerStats}
                 companies={managerCompanies}
+                onRefresh={refreshDashboard}
               />
             )}
           </>
@@ -1583,6 +2092,7 @@ export default function SalesDashboard() {
                 accountInfo={accountInfo}
                 stats={branchStats}
                 managers={branchManagers}
+                onRefresh={refreshDashboard}
               />
             )}
           </>
@@ -1600,6 +2110,7 @@ export default function SalesDashboard() {
                 accountInfo={accountInfo}
                 stats={headquartersStats}
                 branches={headquartersBranches}
+                onRefresh={refreshDashboard}
               />
             )}
           </>
