@@ -313,7 +313,7 @@ export default function Sidebar() {
           >
             장애인표준사업장
             <br />
-            연계고용감면플랫폼
+            연계고용부담금감면플랫폼
           </p>
         </a>
 
@@ -402,11 +402,11 @@ export default function Sidebar() {
             </div>
           )}
 
-          {/* 연계고용감면센터 메뉴 (직원이 아닌 경우만 표시, 비로그인 시 회원가입 페이지로 이동) */}
+          {/* 연계고용부담금감면센터 메뉴 (직원이 아닌 경우만 표시, 비로그인 시 회원가입 페이지로 이동) */}
           {userRole !== "EMPLOYEE" && (
             <div style={{ marginBottom: 24 }}>
               <div style={{ fontSize: 21.424, color: "#fff", marginBottom: 12, fontWeight: "bold", textAlign: "center" }}>
-                연계고용감면센터
+                연계고용부담금감면센터
               </div>
               <MenuItem href="/employment-obligation" label="장애인고용의무" icon="📋" active={isActive("/employment-obligation")} />
               <MenuItem href="/employment-levy" label="장애인고용부담금" icon="💰" active={isActive("/employment-levy")} />
