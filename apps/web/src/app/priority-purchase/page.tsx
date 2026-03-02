@@ -36,15 +36,15 @@ export default function PriorityPurchasePage() {
         </div>
 
         {/* 구매 의무 - 최소 0.8% 강조 */}
-        <div className="bg-gradient-to-r from-red-500 to-pink-600 rounded-lg shadow-lg p-8 mb-6 text-white">
+        <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg shadow-lg p-8 mb-6 text-white">
           <div className="text-center">
             <h2 className="text-3xl font-bold mb-4">⚠️ 공공기관 구매 의무</h2>
             <div className="bg-white bg-opacity-20 rounded-lg p-6 mb-4">
-              <p className="text-sm mb-2 text-red-100">공공기관별 총구매액 대비</p>
-              <p className="text-6xl font-bold mb-2">최소 0.8%</p>
+              <p className="text-sm mb-2 text-green-100">공공기관별 총구매액 대비</p>
+              <p className="text-3xl font-bold mb-2">최소 0.8%</p>
               <p className="text-lg font-semibold">장애인 표준사업장 생산품 구매 목표</p>
             </div>
-            <div className="text-sm text-red-100 space-y-2">
+            <div className="text-sm text-green-100 space-y-2">
               <p>✓ 공공기관은 총구매액(물품·용역, 공사비 제외)의 <strong>1%</strong> 범위 내에서</p>
               <p>고용노동부장관이 정하는 비율 <strong>(현행 최소 0.8%)</strong> 이상 구매 의무</p>
               <p className="text-xs mt-3">※ 고용노동부 고시 「공공기관의 장애인 표준사업장 생산품의 구매목표 비율」</p>
