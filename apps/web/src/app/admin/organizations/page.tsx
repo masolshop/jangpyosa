@@ -21,6 +21,15 @@ interface Organization {
   createdAt: string;
 }
 
+interface Manager {
+  id: string;
+  name: string;
+  phone: string;
+  email: string | null;
+  role: string;
+  organizationName: string | null;
+}
+
 interface OrganizationData {
   headquarters: Organization[];
   branches: Organization[];
@@ -41,12 +50,17 @@ export default function OrganizationsManagementPage() {
   const [formData, setFormData] = useState({
     name: '',
     type: 'HEADQUARTERS' as 'HEADQUARTERS' | 'BRANCH',
-    leaderName: '',
-    phone: '',
+    managerId: '',
     email: '',
     parentId: '',
     notes: '',
   });
+  
+  // 매니저 검색
+  const [managerSearch, setManagerSearch] = useState('');
+  const [managerResults, setManagerResults] = useState<Manager[]>([]);
+  const [selectedManager, setSelectedManager] = useState<Manager | null>(null);
+  const [loadingManagers, setLoadingManagers] = useState(false);
   
   // 상태 메시지
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -106,12 +120,14 @@ export default function OrganizationsManagementPage() {
     setFormData({
       name: '',
       type,
-      leaderName: '',
-      phone: '',
+      managerId: '',
       email: '',
       parentId: '',
       notes: '',
     });
+    setManagerSearch('');
+    setManagerResults([]);
+    setSelectedManager(null);
     setShowModal(true);
   };
 
@@ -122,8 +138,7 @@ export default function OrganizationsManagementPage() {
     setFormData({
       name: org.name,
       type: org.type,
-      leaderName: org.leaderName,
-      phone: org.phone,
+      managerId: '',
       email: org.email || '',
       parentId: org.parentId || '',
       notes: '',
@@ -131,16 +146,64 @@ export default function OrganizationsManagementPage() {
     setShowModal(true);
   };
 
-  // 조직 등록/수정
-  const handleSubmit = async () => {
-    if (!formData.name || !formData.leaderName || !formData.phone) {
-      showMessage('error', '조직명, 담당자명, 핸드폰번호는 필수입니다');
+  // 매니저 검색
+  const searchManagers = async () => {
+    if (!managerSearch.trim()) {
+      setManagerResults([]);
       return;
     }
     
-    if (formData.type === 'BRANCH' && !formData.parentId) {
-      showMessage('error', '지사는 소속 본부를 선택해야 합니다');
-      return;
+    setLoadingManagers(true);
+    try {
+      const token = localStorage.getItem('accessToken');
+      const response = await fetch(
+        `${API_BASE}/sales/available-managers?search=${encodeURIComponent(managerSearch)}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        }
+      );
+      
+      if (response.ok) {
+        const data = await response.json();
+        setManagerResults(data.managers || []);
+      } else {
+        showMessage('error', '매니저 검색에 실패했습니다');
+      }
+    } catch (error) {
+      console.error('매니저 검색 에러:', error);
+      showMessage('error', '서버 연결에 실패했습니다');
+    } finally {
+      setLoadingManagers(false);
+    }
+  };
+  
+  // 매니저 선택
+  const handleSelectManager = (manager: Manager) => {
+    setSelectedManager(manager);
+    setFormData({ ...formData, managerId: manager.id });
+    setManagerResults([]);
+    setManagerSearch('');
+  };
+  
+  // 조직 등록/수정
+  const handleSubmit = async () => {
+    if (modalMode === 'create') {
+      if (!formData.name || !formData.managerId) {
+        showMessage('error', '조직명과 매니저는 필수입니다');
+        return;
+      }
+      
+      if (formData.type === 'BRANCH' && !formData.parentId) {
+        showMessage('error', '지사는 소속 본부를 선택해야 합니다');
+        return;
+      }
+    } else {
+      if (!formData.name) {
+        showMessage('error', '조직명은 필수입니다');
+        return;
+      }
     }
 
     try {
@@ -618,7 +681,7 @@ export default function OrganizationsManagementPage() {
               background: 'white',
               borderRadius: 16,
               padding: 32,
-              maxWidth: 500,
+              maxWidth: modalMode === 'create' ? 600 : 500,
               width: '100%',
               maxHeight: '90vh',
               overflow: 'auto',
@@ -699,45 +762,136 @@ export default function OrganizationsManagementPage() {
                 />
               </div>
 
-              {/* 담당자명 */}
-              <div>
-                <label style={{ display: 'block', marginBottom: 6, fontWeight: 600, fontSize: 14 }}>
-                  {formData.type === 'HEADQUARTERS' ? '본부장명' : '지사장명'} *
-                </label>
-                <input
-                  type="text"
-                  value={formData.leaderName}
-                  onChange={(e) => setFormData({ ...formData, leaderName: e.target.value })}
-                  placeholder="예: 홍길동"
-                  style={{
-                    width: '100%',
-                    padding: 12,
-                    border: '1px solid #d1d5db',
-                    borderRadius: 8,
-                    fontSize: 14,
-                  }}
-                />
-              </div>
-
-              {/* 핸드폰번호 */}
-              <div>
-                <label style={{ display: 'block', marginBottom: 6, fontWeight: 600, fontSize: 14 }}>
-                  핸드폰번호 *
-                </label>
-                <input
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  placeholder="01012345678"
-                  style={{
-                    width: '100%',
-                    padding: 12,
-                    border: '1px solid #d1d5db',
-                    borderRadius: 8,
-                    fontSize: 14,
-                  }}
-                />
-              </div>
+              {/* 매니저 검색 및 선택 (등록 모드만) */}
+              {modalMode === 'create' && (
+                <div>
+                  <label style={{ display: 'block', marginBottom: 6, fontWeight: 600, fontSize: 14 }}>
+                    {formData.type === 'HEADQUARTERS' ? '본부장 선택' : '지사장 선택'} *
+                  </label>
+                  
+                  {/* 선택된 매니저 표시 */}
+                  {selectedManager ? (
+                    <div style={{
+                      padding: 12,
+                      border: '2px solid #10b981',
+                      borderRadius: 8,
+                      background: '#f0fdf4',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                    }}>
+                      <div>
+                        <p style={{ margin: 0, fontWeight: 600, fontSize: 14 }}>
+                          ✓ {selectedManager.name}
+                        </p>
+                        <p style={{ margin: 0, fontSize: 12, color: '#666' }}>
+                          📞 {selectedManager.phone}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setSelectedManager(null);
+                          setFormData({ ...formData, managerId: '' });
+                        }}
+                        style={{
+                          padding: '6px 12px',
+                          background: '#ef4444',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: 6,
+                          cursor: 'pointer',
+                          fontSize: 12,
+                        }}
+                      >
+                        선택 해제
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      {/* 매니저 검색 입력 */}
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <input
+                          type="text"
+                          value={managerSearch}
+                          onChange={(e) => setManagerSearch(e.target.value)}
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              searchManagers();
+                            }
+                          }}
+                          placeholder="매니저 이름 또는 전화번호로 검색"
+                          style={{
+                            flex: 1,
+                            padding: 12,
+                            border: '1px solid #d1d5db',
+                            borderRadius: 8,
+                            fontSize: 14,
+                          }}
+                        />
+                        <button
+                          onClick={searchManagers}
+                          disabled={loadingManagers}
+                          style={{
+                            padding: '12px 20px',
+                            background: loadingManagers ? '#ccc' : '#3b82f6',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: 8,
+                            cursor: loadingManagers ? 'not-allowed' : 'pointer',
+                            fontWeight: 600,
+                            fontSize: 14,
+                          }}
+                        >
+                          {loadingManagers ? '검색 중...' : '검색'}
+                        </button>
+                      </div>
+                      
+                      {/* 검색 결과 */}
+                      {managerResults.length > 0 && (
+                        <div style={{
+                          marginTop: 8,
+                          border: '1px solid #d1d5db',
+                          borderRadius: 8,
+                          maxHeight: 200,
+                          overflow: 'auto',
+                        }}>
+                          {managerResults.map((manager) => (
+                            <div
+                              key={manager.id}
+                              onClick={() => handleSelectManager(manager)}
+                              style={{
+                                padding: 12,
+                                borderBottom: '1px solid #f3f4f6',
+                                cursor: 'pointer',
+                                background: 'white',
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.background = '#f9fafb';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.background = 'white';
+                              }}
+                            >
+                              <p style={{ margin: 0, fontWeight: 600, fontSize: 14 }}>
+                                {manager.name}
+                              </p>
+                              <p style={{ margin: 0, fontSize: 12, color: '#666' }}>
+                                📞 {manager.phone} 
+                                {manager.organizationName && ` | ${manager.organizationName}`}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  )}
+                  
+                  <p style={{ margin: '8px 0 0', fontSize: 12, color: '#666' }}>
+                    💡 {formData.type === 'HEADQUARTERS' ? '본부장' : '지사장'}으로 임명할 매니저를 검색하여 선택하세요
+                  </p>
+                </div>
+              )}
 
               {/* 이메일 */}
               <div>
@@ -802,18 +956,23 @@ export default function OrganizationsManagementPage() {
               </button>
               <button
                 onClick={handleSubmit}
+                disabled={modalMode === 'create' && !formData.managerId}
                 style={{
                   flex: 1,
                   padding: 12,
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  background: (modalMode === 'create' && !formData.managerId) 
+                    ? '#ccc' 
+                    : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                   color: 'white',
                   border: 'none',
                   borderRadius: 8,
-                  cursor: 'pointer',
+                  cursor: (modalMode === 'create' && !formData.managerId) ? 'not-allowed' : 'pointer',
                   fontWeight: 600,
                 }}
               >
-                {modalMode === 'create' ? '등록' : '수정'}
+                {modalMode === 'create' 
+                  ? `생성 및 ${formData.type === 'HEADQUARTERS' ? '본부장' : '지사장'} 임명`
+                  : '수정'}
               </button>
             </div>
           </div>

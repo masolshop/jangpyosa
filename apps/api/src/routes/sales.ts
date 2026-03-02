@@ -1350,15 +1350,16 @@ router.get('/organizations', async (req, res) => {
 /**
  * POST /sales/organizations
  * 본부/지사 등록 (슈퍼어드민 전용)
+ * 매니저를 검색하여 본부장/지사장으로 임명
  */
 router.post('/organizations', requireAuth, requireRole('SUPER_ADMIN'), async (req, res) => {
   try {
-    const { name, type, leaderName, phone, email, parentId, notes } = req.body;
+    const { name, type, managerId, email, parentId, notes } = req.body;
     
     // 필수 필드 검증
-    if (!name || !type || !leaderName || !phone) {
+    if (!name || !type || !managerId) {
       return res.status(400).json({ 
-        error: '조직명, 유형, 담당자명, 핸드폰번호는 필수입니다' 
+        error: '조직명, 유형, 매니저는 필수입니다' 
       });
     }
     
@@ -1376,42 +1377,78 @@ router.post('/organizations', requireAuth, requireRole('SUPER_ADMIN'), async (re
       });
     }
     
-    // 핸드폰번호 중복 확인
-    const existingOrg = await prisma.organization.findUnique({
-      where: { phone },
+    // 매니저 존재 확인
+    const manager = await prisma.salesPerson.findUnique({
+      where: { id: managerId },
     });
     
-    if (existingOrg) {
-      return res.status(400).json({ 
-        error: '이미 등록된 핸드폰번호입니다' 
+    if (!manager) {
+      return res.status(404).json({ 
+        error: '해당 매니저를 찾을 수 없습니다' 
       });
     }
     
-    // 본부/지사 생성
-    const organization = await prisma.organization.create({
-      data: {
-        name,
-        type,
-        leaderName,
-        phone,
-        email,
-        parentId: type === 'BRANCH' ? parentId : null,
-        notes,
-      },
-      include: {
-        parent: {
-          select: {
-            id: true,
-            name: true,
+    // 이미 본부장이나 지사장인지 확인
+    if (manager.role !== 'MANAGER') {
+      return res.status(400).json({ 
+        error: '이미 본부장 또는 지사장으로 등록된 매니저입니다' 
+      });
+    }
+    
+    // 트랜잭션으로 본부/지사 생성 및 매니저 승진 처리
+    const result = await prisma.$transaction(async (tx) => {
+      // 본부/지사 생성
+      const organization = await tx.organization.create({
+        data: {
+          name,
+          type,
+          leaderName: manager.name,
+          phone: manager.phone,
+          email: email || manager.email,
+          parentId: type === 'BRANCH' ? parentId : null,
+          notes,
+        },
+        include: {
+          parent: {
+            select: {
+              id: true,
+              name: true,
+            },
           },
         },
-      },
+      });
+      
+      // 매니저 승진
+      const newRole = type === 'HEADQUARTERS' ? 'HEAD_MANAGER' : 'BRANCH_MANAGER';
+      const updatedManager = await tx.salesPerson.update({
+        where: { id: managerId },
+        data: {
+          role: newRole,
+          organizationId: organization.id,
+          organizationName: organization.name,
+        },
+      });
+      
+      // 활동 로그 기록
+      await tx.salesActivityLog.create({
+        data: {
+          salesPersonId: managerId,
+          action: 'PROMOTION',
+          targetId: organization.id,
+          fromValue: 'MANAGER',
+          toValue: newRole,
+          notes: `${type === 'HEADQUARTERS' ? '본부' : '지사'} "${organization.name}" ${type === 'HEADQUARTERS' ? '본부장' : '지사장'}으로 임명됨`,
+        },
+      });
+      
+      return { organization, updatedManager };
     });
     
     res.json({ 
       success: true,
-      organization,
-      message: `${type === 'HEADQUARTERS' ? '본부' : '지사'}가 등록되었습니다`,
+      organization: result.organization,
+      manager: result.updatedManager,
+      message: `${type === 'HEADQUARTERS' ? '본부' : '지사'}가 등록되고 ${manager.name}님이 ${type === 'HEADQUARTERS' ? '본부장' : '지사장'}으로 임명되었습니다`,
     });
   } catch (error: any) {
     console.error('[POST /sales/organizations] Error:', error);
@@ -1426,7 +1463,7 @@ router.post('/organizations', requireAuth, requireRole('SUPER_ADMIN'), async (re
 router.patch('/organizations/:id', requireAuth, requireRole('SUPER_ADMIN'), async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, leaderName, phone, email, parentId, notes, isActive } = req.body;
+    const { name, email, parentId, notes, isActive } = req.body;
     
     const organization = await prisma.organization.findUnique({
       where: { id },
@@ -1436,25 +1473,10 @@ router.patch('/organizations/:id', requireAuth, requireRole('SUPER_ADMIN'), asyn
       return res.status(404).json({ error: '조직을 찾을 수 없습니다' });
     }
     
-    // 핸드폰번호 변경 시 중복 확인
-    if (phone && phone !== organization.phone) {
-      const existingOrg = await prisma.organization.findUnique({
-        where: { phone },
-      });
-      
-      if (existingOrg) {
-        return res.status(400).json({ 
-          error: '이미 등록된 핸드폰번호입니다' 
-        });
-      }
-    }
-    
     const updated = await prisma.organization.update({
       where: { id },
       data: {
         ...(name && { name }),
-        ...(leaderName && { leaderName }),
-        ...(phone && { phone }),
         ...(email !== undefined && { email }),
         ...(parentId !== undefined && { parentId }),
         ...(notes !== undefined && { notes }),
@@ -1611,27 +1633,78 @@ router.delete('/organizations/:id', requireAuth, requireRole('SUPER_ADMIN'), asy
 
 /**
  * GET /sales/available-managers
- * 지사장으로 임명 가능한 매니저 목록 조회 (본부장 권한)
+ * 승진 가능한 매니저 목록 조회 (본부장 또는 슈퍼어드민)
  */
-router.get('/available-managers', requireSalesAuth, async (req, res) => {
+router.get('/available-managers', async (req, res) => {
   try {
-    const salesPerson = (req as any).salesPerson;
+    // 인증 토큰 확인
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    if (!token) {
+      return res.status(401).json({ error: '인증이 필요합니다' });
+    }
     
-    // 본부장 권한 확인
-    if (salesPerson.role !== 'HEAD_MANAGER') {
-      return res.status(403).json({ error: '본부장만 조회할 수 있습니다' });
+    // 토큰 디코딩
+    let decodedToken: any;
+    try {
+      decodedToken = jwt.verify(token, JWT_SECRET);
+    } catch (error) {
+      return res.status(401).json({ error: '유효하지 않은 토큰입니다' });
     }
     
     const { search } = req.query;
     
-    // 검색 조건 구성
+    // 슈퍼어드민인 경우 모든 MANAGER 조회 가능
+    if (decodedToken.role === 'SUPER_ADMIN') {
+      const where: any = {
+        role: 'MANAGER', // MANAGER만 (BRANCH_MANAGER, HEAD_MANAGER 제외)
+        isActive: true,
+      };
+      
+      // 이름 또는 전화번호 검색
+      if (search && typeof search === 'string') {
+        where.OR = [
+          { name: { contains: search } },
+          { phone: { contains: search } },
+        ];
+      }
+      
+      const managers = await prisma.salesPerson.findMany({
+        where,
+        select: {
+          id: true,
+          name: true,
+          phone: true,
+          email: true,
+          role: true,
+          organizationName: true,
+          createdAt: true,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
+      
+      return res.json({ 
+        success: true,
+        managers,
+      });
+    }
+    
+    // 본부장인 경우 같은 본부 소속 MANAGER만 조회
+    const salesPerson = await prisma.salesPerson.findUnique({
+      where: { userId: decodedToken.userId },
+    });
+    
+    if (!salesPerson || salesPerson.role !== 'HEAD_MANAGER') {
+      return res.status(403).json({ error: '본부장 또는 슈퍼어드민만 조회할 수 있습니다' });
+    }
+    
     const where: any = {
       organizationId: salesPerson.organizationId, // 같은 본부 소속
-      role: 'MANAGER', // MANAGER만 (BRANCH_MANAGER, HEAD_MANAGER 제외)
+      role: 'MANAGER',
       isActive: true,
     };
     
-    // 이름 검색
     if (search && typeof search === 'string') {
       where.OR = [
         { name: { contains: search } },
@@ -1647,6 +1720,7 @@ router.get('/available-managers', requireSalesAuth, async (req, res) => {
         phone: true,
         email: true,
         role: true,
+        organizationName: true,
         createdAt: true,
       },
       orderBy: {
