@@ -41,6 +41,7 @@ import salesRoutes from "./routes/sales.js";
 import referralRoutes from "./routes/referral.js";
 import salesAuthRoutes from "./routes/sales-auth.js";
 import superAdminRoutes from "./routes/super-admin.js";
+import agentStatsRoutes from "./routes/agent-stats.js";
 
 // Prisma Client with monitoring
 export const prisma = createPrismaWithMonitoring();
@@ -87,6 +88,7 @@ app.use("/employees", employeesRoutes);
 app.use("/dashboard", dashboardRoutes);
 app.use("/contracts", contractsRoutes);
 app.use("/apick", apickRoutes);
+app.use("/api", agentStatsRoutes);
 app.use("/attendance", attendanceRoutes);
 app.use("/announcements", announcementsRoutes);
 app.use("/quotes", quoteRoutes);
@@ -97,7 +99,10 @@ app.use("/leave", leaveRoutes);
 app.use("/annual-leave", annualLeaveRoutes);
 app.use("/sales/auth", salesAuthRoutes);
 app.use("/sales", salesRoutes);
+app.use("/api/agent", agentStatsRoutes);
+app.use("/performances", performancesRoutes);
 app.use("/referral", referralRoutes);
+app.use("/agent", agentStatsRoutes);
 app.use("/", performancesRoutes); // performances와 contracts 엔드포인트 모두 포함
 
 // Error handler

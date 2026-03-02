@@ -40,6 +40,11 @@ interface ManagerStats {
   privateCompanies: number;
   publicCompanies: number;
   governmentCompanies: number;
+  // 추천 시스템 추가 통계
+  totalReferrals?: number;
+  activeReferrals?: number;
+  thisMonthReferrals?: number;
+  thisWeekReferrals?: number;
 }
 
 interface ManagerCompany {
@@ -68,6 +73,9 @@ interface BranchStats {
   privateCompanies: number;
   publicCompanies: number;
   governmentCompanies: number;
+  // 추천 시스템 추가 통계
+  totalReferrals?: number;
+  activeReferrals?: number;
 }
 
 interface BranchManager {
@@ -101,6 +109,9 @@ interface HeadquartersStats {
   privateCompanies: number;
   publicCompanies: number;
   governmentCompanies: number;
+  // 추천 시스템 추가 통계
+  totalReferrals?: number;
+  activeReferrals?: number;
 }
 
 interface HeadquartersBranch {
@@ -210,6 +221,34 @@ const ManagerDashboard = ({
         <InfoRow label="이메일" value={accountInfo.email} />
         <InfoRow label="역할" value="매니저" />
       </div>
+
+      {/* 추천 통계 요약 - 신규 추가 */}
+      {(stats.totalReferrals !== undefined || stats.totalReferrals !== null) && (
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg shadow-sm border border-blue-200">
+          <h2 className="text-xl font-bold mb-4 flex items-center text-blue-900">
+            <span className="mr-2">📊</span>
+            추천 실적 현황
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-white p-4 rounded-lg">
+              <p className="text-gray-600 text-sm mb-1">총 추천</p>
+              <p className="text-2xl font-bold text-blue-600">{stats.totalReferrals || stats.totalCompanies || 0}</p>
+            </div>
+            <div className="bg-white p-4 rounded-lg">
+              <p className="text-gray-600 text-sm mb-1">활성 추천</p>
+              <p className="text-2xl font-bold text-green-600">{stats.activeReferrals || 0}</p>
+            </div>
+            <div className="bg-white p-4 rounded-lg">
+              <p className="text-gray-600 text-sm mb-1">이번 달</p>
+              <p className="text-2xl font-bold text-purple-600">{stats.thisMonthReferrals || 0}</p>
+            </div>
+            <div className="bg-white p-4 rounded-lg">
+              <p className="text-gray-600 text-sm mb-1">이번 주</p>
+              <p className="text-2xl font-bold text-orange-600">{stats.thisWeekReferrals || 0}</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 통계 요약 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

@@ -979,20 +979,94 @@ router.get('/dashboard/stats', requireSalesAuth, async (req: any, res) => {
       },
     });
     
+    // 추가: User.referredById 기반 추천 통계 (SalesPerson과 User 매핑)
+    // SalesPerson의 phone으로 User를 찾아 해당 User가 추천한 기업들 집계
+    const salesPersonPhones = await prisma.salesPerson.findMany({
+      where: { id: { in: targetIds } },
+      select: { id: true, phone: true }
+    });
+    
+    const salesPersonPhoneMap = new Map(salesPersonPhones.map(sp => [sp.phone, sp.id]));
+    const phoneList = salesPersonPhones.map(sp => sp.phone);
+    
+    // User 테이블에서 해당 핸드폰번호를 가진 AGENT role 사용자를 찾음
+    const agentUsers = await prisma.user.findMany({
+      where: { 
+        phone: { in: phoneList },
+        role: 'AGENT'
+      },
+      select: { id: true, phone: true }
+    });
+    
+    const agentUserIds = agentUsers.map(u => u.id);
+    
+    // User.referredById로 추천받은 BUYER 조회
+    const userReferrals = await prisma.user.findMany({
+      where: {
+        referredById: { in: agentUserIds },
+        role: 'BUYER'
+      },
+      include: {
+        company: {
+          select: {
+            id: true,
+            name: true,
+            bizNo: true,
+            buyerType: true,
+            isVerified: true,
+            createdAt: true
+          }
+        }
+      }
+    });
+    
     // 기업 유형별 집계
     const stats = {
-      totalCompanies: referrals.length,
+      totalCompanies: referrals.length + userReferrals.length,
+      totalReferrals: referrals.length + userReferrals.length,
+      activeReferrals: referrals.length + userReferrals.filter(r => r.company?.isVerified).length,
       privateCompanies: 0,    // 민간기업
       publicCompanies: 0,     // 공공기관
       governmentCompanies: 0, // 국가지자체교육청
       managers: 0,            // 소속 매니저 수
       branches: 0,            // 소속 지사 수
+      thisMonthReferrals: 0,  // 이번 달 추천
+      thisWeekReferrals: 0,   // 이번 주 추천
     };
     
-    // BUYER 유형의 기업만 집계
+    // 이번 달/주 계산
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - now.getDay());
+    startOfWeek.setHours(0, 0, 0, 0);
+    
+    // BUYER 유형의 기업만 집계 (CompanyReferral)
     referrals.forEach(ref => {
       if (ref.company?.type === 'BUYER' && ref.company?.buyerType) {
         switch (ref.company.buyerType) {
+          case 'PRIVATE_COMPANY':
+            stats.privateCompanies++;
+            break;
+          case 'PUBLIC_INSTITUTION':
+            stats.publicCompanies++;
+            break;
+          case 'GOVERNMENT':
+            stats.governmentCompanies++;
+            break;
+        }
+      }
+    });
+    
+    // User.referredById 기반 추천 집계
+    userReferrals.forEach(r => {
+      const createdAt = new Date(r.createdAt);
+      if (createdAt >= startOfMonth) stats.thisMonthReferrals++;
+      if (createdAt >= startOfWeek) stats.thisWeekReferrals++;
+      
+      const type = r.company?.buyerType;
+      if (type) {
+        switch (type) {
           case 'PRIVATE_COMPANY':
             stats.privateCompanies++;
             break;
