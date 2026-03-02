@@ -45,6 +45,8 @@ export default function SalesManagementPage() {
   const [successMessage, setSuccessMessage] = useState('');
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [expandedBranches, setExpandedBranches] = useState<Set<string>>(new Set());
+  const [expandedHeadquartersInList, setExpandedHeadquartersInList] = useState<Set<string>>(new Set());
+  const [expandedBranchesInList, setExpandedBranchesInList] = useState<Set<string>>(new Set());
   
   // 모달 상태
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -424,19 +426,51 @@ export default function SalesManagementPage() {
     });
   };
 
-  // 계층형 목록을 위한 정렬 함수
+  const toggleHeadquarterInList = (headId: string) => {
+    setExpandedHeadquartersInList(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(headId)) {
+        newSet.delete(headId);
+      } else {
+        newSet.add(headId);
+      }
+      return newSet;
+    });
+  };
+
+  const toggleBranchInList = (branchId: string) => {
+    setExpandedBranchesInList(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(branchId)) {
+        newSet.delete(branchId);
+      } else {
+        newSet.add(branchId);
+      }
+      return newSet;
+    });
+  };
+
+  // 계층형 목록을 위한 정렬 함수 (확장/축소 고려)
   const getHierarchicalList = (people: SalesPerson[]) => {
     const result: SalesPerson[] = [];
     const heads = people.filter(p => p.role === 'HEAD_MANAGER');
     
     heads.forEach(head => {
       result.push(head);
-      const branches = people.filter(p => p.managerId === head.id && p.role === 'BRANCH_MANAGER');
-      branches.forEach(branch => {
-        result.push(branch);
-        const managers = people.filter(p => p.managerId === branch.id && p.role === 'MANAGER');
-        result.push(...managers);
-      });
+      
+      // 본부가 확장된 경우에만 지사 표시
+      if (expandedHeadquartersInList.has(head.id)) {
+        const branches = people.filter(p => p.managerId === head.id && p.role === 'BRANCH_MANAGER');
+        branches.forEach(branch => {
+          result.push(branch);
+          
+          // 지사가 확장된 경우에만 매니저 표시
+          if (expandedBranchesInList.has(branch.id)) {
+            const managers = people.filter(p => p.managerId === branch.id && p.role === 'MANAGER');
+            result.push(...managers);
+          }
+        });
+      }
     });
     
     return result;
@@ -681,10 +715,39 @@ export default function SalesManagementPage() {
                     const bgColor = person.role === 'HEAD_MANAGER' ? '#ffebee' : person.role === 'BRANCH_MANAGER' ? '#fff3e0' : '#f5f5f5';
                     const icon = person.role === 'HEAD_MANAGER' ? '🏢' : person.role === 'BRANCH_MANAGER' ? '🏪' : '👤';
                     
+                    // 확장/축소 상태 확인
+                    const isHeadExpanded = person.role === 'HEAD_MANAGER' && expandedHeadquartersInList.has(person.id);
+                    const isBranchExpanded = person.role === 'BRANCH_MANAGER' && expandedBranchesInList.has(person.id);
+                    
+                    // 클릭 가능 여부 및 화살표
+                    const isClickable = person.role === 'HEAD_MANAGER' || person.role === 'BRANCH_MANAGER';
+                    const arrow = person.role === 'HEAD_MANAGER' 
+                      ? (isHeadExpanded ? '▼' : '▶')
+                      : person.role === 'BRANCH_MANAGER'
+                      ? (isBranchExpanded ? '▼' : '▶')
+                      : '';
+                    
+                    const handleRowClick = () => {
+                      if (person.role === 'HEAD_MANAGER') {
+                        toggleHeadquarterInList(person.id);
+                      } else if (person.role === 'BRANCH_MANAGER') {
+                        toggleBranchInList(person.id);
+                      }
+                    };
+                    
                     return (
-                    <tr key={person.id} style={{ borderBottom: '1px solid #e0e0e0', backgroundColor: bgColor }}>
+                    <tr 
+                      key={person.id} 
+                      style={{ 
+                        borderBottom: '1px solid #e0e0e0', 
+                        backgroundColor: bgColor,
+                        cursor: isClickable ? 'pointer' : 'default'
+                      }}
+                      onClick={isClickable ? handleRowClick : undefined}
+                    >
                       <td style={{ padding: 16, paddingLeft: 16 + indent }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          {arrow && <span style={{ fontSize: 14, width: 16 }}>{arrow}</span>}
                           <span>{icon}</span>
                           <div>
                             <div style={{ fontWeight: 600 }}>{person.name}</div>
@@ -765,7 +828,7 @@ export default function SalesManagementPage() {
                           {person.isActive ? '활성' : '비활성'}
                         </span>
                       </td>
-                      <td style={{ padding: 16, textAlign: 'center' }}>
+                      <td style={{ padding: 16, textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
                         <div style={{ display: 'flex', gap: 4, justifyContent: 'center', flexWrap: 'wrap' }}>
                           <button
                             onClick={() => openEditModal(person)}
