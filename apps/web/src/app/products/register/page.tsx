@@ -167,7 +167,7 @@ export default function ProductRegisterPage() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto p-8">
+    <div className="max-w-5xl mx-auto p-8" style={{ marginLeft: 315 }}>
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-800 mb-2">

@@ -213,7 +213,7 @@ export default function CartPage() {
   const supplierCount = Object.keys(supplierGroups).length;
 
   return (
-    <div className="container">
+    <div className="container" style={{ marginLeft: 315 }}>
       <div className="card">
         <h1>🛒 장바구니</h1>
 

@@ -48,7 +48,7 @@ export default function ProductCatalogPage() {
   }
 
   return (
-    <div style={{ padding: 40, maxWidth: 1400, margin: '0 auto' }}>
+    <div style={{ padding: 40, maxWidth: 1400, margin: '0 auto', marginLeft: 315 }}>
       <div style={{ marginBottom: 40 }}>
         <h1 style={{ fontSize: 32, marginBottom: 16 }}>🛒 상품 카탈로그</h1>
         <p style={{ color: '#666', fontSize: 16 }}>
