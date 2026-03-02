@@ -258,12 +258,15 @@ r.post("/signup/supplier", async (req, res) => {
       return res.status(400).json({ error: "BIZNO_ALREADY_REGISTERED", message: "이미 가입된 사업자등록번호입니다" });
     }
 
-    // APICK 유료 API로 사업자번호 인증
-    const apickResult = await verifyBizNo(cleanBizNo);
-    if (!apickResult.ok) {
+    // 표준사업장 인증 확인 (SupplierRegistry에서)
+    const registry = await prisma.supplierRegistry.findUnique({
+      where: { bizNo: cleanBizNo },
+    });
+
+    if (!registry) {
       return res.status(400).json({
-        error: "BIZNO_VERIFICATION_FAILED",
-        message: apickResult.error || "사업자번호 인증 실패",
+        error: "NOT_REGISTERED_SUPPLIER",
+        message: "등록된 장애인표준사업장이 아닙니다. 인증을 받은 표준사업장만 가입 가능합니다.",
       });
     }
 
@@ -289,7 +292,7 @@ r.post("/signup/supplier", async (req, res) => {
         phone: cleanManagerPhone,
         username: body.username,
         passwordHash,
-        name: apickResult.representative || "대표자",
+        name: registry.representative || "대표자",
         role: "SUPPLIER",
         referredById: referredBy?.id,
         
@@ -308,13 +311,13 @@ r.post("/signup/supplier", async (req, res) => {
     // 2. Company 생성 (ownerUserId 설정)
     const company = await prisma.company.create({
       data: {
-        name: apickResult.name!,
+        name: registry.name,
         bizNo: cleanBizNo,
-        representative: apickResult.representative,
+        representative: registry.representative,
         type: "SUPPLIER",
         buyerType: "STANDARD_WORKPLACE",
         isVerified: true,
-        apickData: apickResult.data ? JSON.stringify(apickResult.data) : null,
+        apickData: null,
         ownerUserId: user.id,
         supplierProfile: {
           create: {},
@@ -348,12 +351,8 @@ r.post("/signup/supplier", async (req, res) => {
       },
     });
 
-    // ✅ SupplierRegistry 매칭 (표준사업장 DB에서 자동 프리필)
-    const registry = await prisma.supplierRegistry.findUnique({
-      where: { bizNo: cleanBizNo },
-    });
-
-    if (registry && updatedUser?.company?.supplierProfile) {
+    // ✅ SupplierRegistry 정보로 프로필 업데이트
+    if (updatedUser?.company?.supplierProfile) {
       await prisma.supplierProfile.update({
         where: { id: updatedUser.company.supplierProfile.id },
         data: {
@@ -383,7 +382,7 @@ r.post("/signup/supplier", async (req, res) => {
               branch: updatedUser!.referredBy?.branch?.name,
             }
           : null,
-        registryMatched: !!registry,
+        registryMatched: true,
       },
     });
   } catch (error: any) {
