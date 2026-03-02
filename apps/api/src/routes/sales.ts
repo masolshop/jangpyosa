@@ -1750,8 +1750,9 @@ router.post('/branches', requireSalesAuth, async (req, res) => {
         data: {
           salesPersonId: managerId,
           action: 'PROMOTION',
-          description: `${manager.role}에서 BRANCH_MANAGER로 등업 (지사: ${name})`,
-          performedById: salesPerson.id,
+          fromValue: manager.role,
+          toValue: 'BRANCH_MANAGER',
+          notes: `지사 생성 및 지사장 임명: ${name}`,
         },
       });
       
