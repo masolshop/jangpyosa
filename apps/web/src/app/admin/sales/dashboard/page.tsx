@@ -459,6 +459,24 @@ const HeadquartersDashboard = ({
   const [branchManagers, setBranchManagers] = useState<BranchManager[]>([]);
   const [loadingManagers, setLoadingManagers] = useState(false);
   
+  // 지사 관리 모달
+  const [showBranchModal, setShowBranchModal] = useState(false);
+  const [editingBranch, setEditingBranch] = useState<any>(null);
+  const [branchFormData, setBranchFormData] = useState({
+    name: '',
+    leaderName: '',
+    phone: '',
+    email: '',
+    notes: ''
+  });
+  
+  // 매니저 이동 모달
+  const [showTransferModal, setShowTransferModal] = useState(false);
+  const [transferManager, setTransferManager] = useState<any>(null);
+  const [targetBranchId, setTargetBranchId] = useState('');
+  
+  const [message, setMessage] = useState({ type: '', text: '' });
+  
   const loadBranchManagers = async (branchId: string) => {
     setLoadingManagers(true);
     try {
@@ -490,6 +508,131 @@ const HeadquartersDashboard = ({
     } else {
       setSelectedBranchId(branchId);
       loadBranchManagers(branchId);
+    }
+  };
+  
+  // 지사 생성 모달 열기
+  const handleCreateBranch = () => {
+    setEditingBranch(null);
+    setBranchFormData({
+      name: '',
+      leaderName: '',
+      phone: '',
+      email: '',
+      notes: ''
+    });
+    setShowBranchModal(true);
+  };
+  
+  // 지사 수정 모달 열기
+  const handleEditBranch = (branch: any) => {
+    setEditingBranch(branch);
+    setBranchFormData({
+      name: branch.organizationName || branch.name || '',
+      leaderName: branch.name || '',
+      phone: branch.phone || '',
+      email: branch.email || '',
+      notes: ''
+    });
+    setShowBranchModal(true);
+  };
+  
+  // 지사 저장
+  const handleSaveBranch = async () => {
+    try {
+      const token = getManagerToken();
+      const url = editingBranch 
+        ? `${API_BASE}/sales/branches/${editingBranch.id}`
+        : `${API_BASE}/sales/branches`;
+      const method = editingBranch ? 'PATCH' : 'POST';
+      
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(branchFormData),
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to save branch');
+      }
+      
+      setMessage({ type: 'success', text: editingBranch ? '지사가 수정되었습니다' : '지사가 생성되었습니다' });
+      setShowBranchModal(false);
+      window.location.reload(); // 새로고침하여 목록 업데이트
+    } catch (error: any) {
+      setMessage({ type: 'error', text: error.message });
+    }
+  };
+  
+  // 지사 삭제
+  const handleDeleteBranch = async (branchId: string) => {
+    if (!confirm('정말 이 지사를 삭제하시겠습니까?')) return;
+    
+    try {
+      const token = getManagerToken();
+      const response = await fetch(`${API_BASE}/sales/branches/${branchId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to delete branch');
+      }
+      
+      setMessage({ type: 'success', text: '지사가 삭제되었습니다' });
+      window.location.reload();
+    } catch (error: any) {
+      setMessage({ type: 'error', text: error.message });
+    }
+  };
+  
+  // 매니저 이동 모달 열기
+  const handleTransferManager = (manager: any) => {
+    setTransferManager(manager);
+    setTargetBranchId('');
+    setShowTransferModal(true);
+  };
+  
+  // 매니저 이동 실행
+  const handleConfirmTransfer = async () => {
+    if (!targetBranchId) {
+      setMessage({ type: 'error', text: '이동할 지사를 선택해주세요' });
+      return;
+    }
+    
+    try {
+      const token = getManagerToken();
+      const response = await fetch(`${API_BASE}/sales/managers/${transferManager.id}/transfer`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ targetBranchId }),
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to transfer manager');
+      }
+      
+      const result = await response.json();
+      setMessage({ type: 'success', text: result.message });
+      setShowTransferModal(false);
+      
+      // 현재 지사의 매니저 목록 새로고침
+      if (selectedBranchId) {
+        loadBranchManagers(selectedBranchId);
+      }
+    } catch (error: any) {
+      setMessage({ type: 'error', text: error.message });
     }
   };
   
@@ -549,12 +692,28 @@ const HeadquartersDashboard = ({
         />
       </div>
 
+      {/* 메시지 표시 */}
+      {message.text && (
+        <div className={`p-4 rounded-lg ${message.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
+          {message.text}
+        </div>
+      )}
+
       {/* 지사 리스트 */}
       <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-        <h2 className="text-xl font-bold mb-4 flex items-center">
-          <span className="mr-2">🏪</span>
-          소속 지사 리스트
-        </h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold flex items-center">
+            <span className="mr-2">🏪</span>
+            소속 지사 리스트
+          </h2>
+          <button
+            onClick={handleCreateBranch}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+          >
+            <span>➕</span>
+            지사 생성
+          </button>
+        </div>
         
         {branches.length === 0 ? (
           <div className="text-center py-12 text-gray-500">
@@ -573,6 +732,7 @@ const HeadquartersDashboard = ({
                   <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">공공기관</th>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">정부교육기관</th>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">합계</th>
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">관리</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -584,10 +744,12 @@ const HeadquartersDashboard = ({
                     <>
                       <tr 
                         key={branch.id} 
-                        className="hover:bg-gray-50 cursor-pointer"
-                        onClick={() => handleBranchClick(branch.id)}
+                        className="hover:bg-gray-50"
                       >
-                        <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                        <td 
+                          className="px-4 py-3 text-sm font-medium text-gray-900 cursor-pointer"
+                          onClick={() => handleBranchClick(branch.id)}
+                        >
                           <div className="flex items-center">
                             <span className="mr-2">{isExpanded ? '▼' : '▶'}</span>
                             {branch.organizationName || '-'}
@@ -620,12 +782,34 @@ const HeadquartersDashboard = ({
                             {total}
                           </span>
                         </td>
+                        <td className="px-4 py-3 text-sm text-center">
+                          <div className="flex items-center justify-center gap-2">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditBranch(branch);
+                              }}
+                              className="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+                            >
+                              수정
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteBranch(branch.id);
+                              }}
+                              className="px-3 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200"
+                            >
+                              삭제
+                            </button>
+                          </div>
+                        </td>
                       </tr>
                       
                       {/* 매니저 리스트 (확장 시) */}
                       {isExpanded && (
                         <tr key={`${branch.id}-managers`}>
-                          <td colSpan={8} className="px-4 py-4 bg-gray-50">
+                          <td colSpan={9} className="px-4 py-4 bg-gray-50">
                             {loadingManagers ? (
                               <div className="text-center py-4 text-gray-500">
                                 매니저 정보를 불러오는 중...
