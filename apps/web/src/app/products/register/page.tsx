@@ -22,6 +22,11 @@ const CONTRACT_TYPES = [
     items: ['단순 시공', '내부 환경개선', '편의시설 설치']
   },
   {
+    value: 'PUBLIC_PRIORITY',
+    label: '공공기관',
+    items: ['우수구매', '표준사업장', '설치']
+  },
+  {
     value: 'RENTAL',
     label: '렌탈',
     items: ['음식물처리기', '플라스틱처리기']
@@ -167,7 +172,7 @@ export default function ProductRegisterPage() {
         <h1 className="text-3xl font-bold text-gray-800 mb-2">
           🛍️ 도급계약 상품 등록
         </h1>
-        <p className="text-gray-600">연계고용 감면 가능한 상품을 등록하세요</p>
+        <p className="text-gray-600">연계고용부담금 감면 가능한 상품을 등록하세요</p>
         
         {/* Progress Steps */}
         <div className="mt-6 flex items-center justify-center gap-4">
@@ -234,7 +239,7 @@ export default function ProductRegisterPage() {
             </label>
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(4, 1fr)',
+              gridTemplateColumns: 'repeat(5, 1fr)',
               gap: '1rem'
             }}>
               {CONTRACT_TYPES.map(type => (
@@ -250,6 +255,18 @@ export default function ProductRegisterPage() {
                     cursor: 'pointer',
                     backgroundColor: contractType === type.value ? '#eff6ff' : 'white',
                     transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (contractType !== type.value) {
+                      e.currentTarget.style.backgroundColor = '#f9fafb'
+                      e.currentTarget.style.borderColor = '#9ca3af'
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (contractType !== type.value) {
+                      e.currentTarget.style.backgroundColor = 'white'
+                      e.currentTarget.style.borderColor = '#d1d5db'
+                    }
                   }}
                 >
                   <div className="flex items-center mb-2">
