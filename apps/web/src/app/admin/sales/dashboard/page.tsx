@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 
@@ -45,6 +45,17 @@ interface ManagerStats {
   activeReferrals?: number;
   thisMonthReferrals?: number;
   thisWeekReferrals?: number;
+}
+
+// 월별/분기별 리포트 타입
+interface ReportData {
+  month?: string;
+  quarter?: string;
+  totalReferrals: number;
+  activeReferrals: number;
+  privateCompanies: number;
+  publicCompanies: number;
+  governmentCompanies: number;
 }
 
 interface ManagerCompany {

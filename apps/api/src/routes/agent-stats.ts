@@ -490,4 +490,330 @@ router.get('/headquarters/stats', requireAuth, async (req: Request, res: Respons
   }
 });
 
+/**
+ * GET /api/agent/reports/monthly
+ * 매니저 월별 추천 리포트 (최근 12개월)
+ */
+router.get('/agent/reports/monthly', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const userRole = req.user!.role;
+    
+    if (userRole !== 'AGENT') {
+      return res.status(403).json({ error: 'AGENT role 사용자만 접근 가능합니다' });
+    }
+    
+    // 최근 12개월 데이터
+    const now = new Date();
+    const monthlyData: Record<string, any> = {};
+    
+    // 월별 키 생성
+    for (let i = 11; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      monthlyData[key] = {
+        month: key,
+        totalReferrals: 0,
+        activeReferrals: 0,
+        privateCompanies: 0,
+        publicCompanies: 0,
+        governmentCompanies: 0
+      };
+    }
+    
+    // 전체 추천 조회
+    const referrals = await prisma.user.findMany({
+      where: {
+        referredById: userId,
+        role: 'BUYER'
+      },
+      include: {
+        company: {
+          select: {
+            buyerType: true,
+            isVerified: true,
+            createdAt: true
+          }
+        }
+      }
+    });
+    
+    // 월별 집계
+    referrals.forEach(r => {
+      const createdDate = new Date(r.createdAt);
+      const monthKey = `${createdDate.getFullYear()}-${String(createdDate.getMonth() + 1).padStart(2, '0')}`;
+      
+      if (monthlyData[monthKey]) {
+        monthlyData[monthKey].totalReferrals++;
+        if (r.company?.isVerified) {
+          monthlyData[monthKey].activeReferrals++;
+        }
+        
+        const type = r.company?.buyerType;
+        if (type === 'PRIVATE_COMPANY') monthlyData[monthKey].privateCompanies++;
+        else if (type === 'PUBLIC_INSTITUTION') monthlyData[monthKey].publicCompanies++;
+        else if (type === 'GOVERNMENT') monthlyData[monthKey].governmentCompanies++;
+      }
+    });
+    
+    res.json({
+      period: 'monthly',
+      months: Object.values(monthlyData)
+    });
+  } catch (error: any) {
+    console.error('[GET /agent/reports/monthly] Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /api/agent/reports/quarterly
+ * 매니저 분기별 추천 리포트 (최근 8분기)
+ */
+router.get('/agent/reports/quarterly', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const userRole = req.user!.role;
+    
+    if (userRole !== 'AGENT') {
+      return res.status(403).json({ error: 'AGENT role 사용자만 접근 가능합니다' });
+    }
+    
+    // 분기 계산 함수
+    const getQuarter = (date: Date) => {
+      const month = date.getMonth();
+      return Math.floor(month / 3) + 1;
+    };
+    
+    const getQuarterKey = (date: Date) => {
+      return `${date.getFullYear()}-Q${getQuarter(date)}`;
+    };
+    
+    // 최근 8분기 데이터 초기화
+    const now = new Date();
+    const quarterlyData: Record<string, any> = {};
+    
+    for (let i = 7; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - (i * 3), 1);
+      const key = getQuarterKey(date);
+      quarterlyData[key] = {
+        quarter: key,
+        totalReferrals: 0,
+        activeReferrals: 0,
+        privateCompanies: 0,
+        publicCompanies: 0,
+        governmentCompanies: 0
+      };
+    }
+    
+    // 전체 추천 조회
+    const referrals = await prisma.user.findMany({
+      where: {
+        referredById: userId,
+        role: 'BUYER'
+      },
+      include: {
+        company: {
+          select: {
+            buyerType: true,
+            isVerified: true,
+            createdAt: true
+          }
+        }
+      }
+    });
+    
+    // 분기별 집계
+    referrals.forEach(r => {
+      const createdDate = new Date(r.createdAt);
+      const quarterKey = getQuarterKey(createdDate);
+      
+      if (quarterlyData[quarterKey]) {
+        quarterlyData[quarterKey].totalReferrals++;
+        if (r.company?.isVerified) {
+          quarterlyData[quarterKey].activeReferrals++;
+        }
+        
+        const type = r.company?.buyerType;
+        if (type === 'PRIVATE_COMPANY') quarterlyData[quarterKey].privateCompanies++;
+        else if (type === 'PUBLIC_INSTITUTION') quarterlyData[quarterKey].publicCompanies++;
+        else if (type === 'GOVERNMENT') quarterlyData[quarterKey].governmentCompanies++;
+      }
+    });
+    
+    res.json({
+      period: 'quarterly',
+      quarters: Object.values(quarterlyData)
+    });
+  } catch (error: any) {
+    console.error('[GET /agent/reports/quarterly] Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /api/branch/:branchId/reports/monthly
+ * 지사 월별 추천 리포트
+ */
+router.get('/branch/:branchId/reports/monthly', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { branchId } = req.params;
+    
+    // 권한 체크
+    const userWithBranch = await prisma.user.findUnique({
+      where: { id: req.user!.id },
+      select: { role: true, branchId: true }
+    });
+    
+    if (userWithBranch?.role !== 'SUPER_ADMIN' && userWithBranch?.branchId !== branchId) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+    
+    // 지사의 모든 매니저 조회
+    const managers = await prisma.user.findMany({
+      where: { branchId, role: 'AGENT' },
+      select: { id: true }
+    });
+    
+    const managerIds = managers.map(m => m.id);
+    
+    // 최근 12개월 초기화
+    const now = new Date();
+    const monthlyData: Record<string, any> = {};
+    
+    for (let i = 11; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      monthlyData[key] = {
+        month: key,
+        totalReferrals: 0,
+        activeReferrals: 0,
+        privateCompanies: 0,
+        publicCompanies: 0,
+        governmentCompanies: 0
+      };
+    }
+    
+    // 전체 추천 조회
+    const referrals = await prisma.user.findMany({
+      where: {
+        referredById: { in: managerIds },
+        role: 'BUYER'
+      },
+      include: {
+        company: {
+          select: {
+            buyerType: true,
+            isVerified: true,
+            createdAt: true
+          }
+        }
+      }
+    });
+    
+    // 월별 집계
+    referrals.forEach(r => {
+      const createdDate = new Date(r.createdAt);
+      const monthKey = `${createdDate.getFullYear()}-${String(createdDate.getMonth() + 1).padStart(2, '0')}`;
+      
+      if (monthlyData[monthKey]) {
+        monthlyData[monthKey].totalReferrals++;
+        if (r.company?.isVerified) monthlyData[monthKey].activeReferrals++;
+        
+        const type = r.company?.buyerType;
+        if (type === 'PRIVATE_COMPANY') monthlyData[monthKey].privateCompanies++;
+        else if (type === 'PUBLIC_INSTITUTION') monthlyData[monthKey].publicCompanies++;
+        else if (type === 'GOVERNMENT') monthlyData[monthKey].governmentCompanies++;
+      }
+    });
+    
+    res.json({
+      period: 'monthly',
+      branchId,
+      months: Object.values(monthlyData)
+    });
+  } catch (error: any) {
+    console.error('[GET /branch/:branchId/reports/monthly] Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /api/headquarters/reports/monthly
+ * 본부 월별 추천 리포트
+ */
+router.get('/headquarters/reports/monthly', requireAuth, async (req: Request, res: Response) => {
+  try {
+    if (req.user!.role !== 'SUPER_ADMIN') {
+      return res.status(403).json({ error: 'SUPER_ADMIN role 사용자만 접근 가능합니다' });
+    }
+    
+    // 모든 AGENT 조회
+    const agents = await prisma.user.findMany({
+      where: { role: 'AGENT' },
+      select: { id: true }
+    });
+    
+    const agentIds = agents.map(a => a.id);
+    
+    // 최근 12개월 초기화
+    const now = new Date();
+    const monthlyData: Record<string, any> = {};
+    
+    for (let i = 11; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      monthlyData[key] = {
+        month: key,
+        totalReferrals: 0,
+        activeReferrals: 0,
+        privateCompanies: 0,
+        publicCompanies: 0,
+        governmentCompanies: 0
+      };
+    }
+    
+    // 전체 추천 조회
+    const referrals = await prisma.user.findMany({
+      where: {
+        referredById: { in: agentIds },
+        role: 'BUYER'
+      },
+      include: {
+        company: {
+          select: {
+            buyerType: true,
+            isVerified: true,
+            createdAt: true
+          }
+        }
+      }
+    });
+    
+    // 월별 집계
+    referrals.forEach(r => {
+      const createdDate = new Date(r.createdAt);
+      const monthKey = `${createdDate.getFullYear()}-${String(createdDate.getMonth() + 1).padStart(2, '0')}`;
+      
+      if (monthlyData[monthKey]) {
+        monthlyData[monthKey].totalReferrals++;
+        if (r.company?.isVerified) monthlyData[monthKey].activeReferrals++;
+        
+        const type = r.company?.buyerType;
+        if (type === 'PRIVATE_COMPANY') monthlyData[monthKey].privateCompanies++;
+        else if (type === 'PUBLIC_INSTITUTION') monthlyData[monthKey].publicCompanies++;
+        else if (type === 'GOVERNMENT') monthlyData[monthKey].governmentCompanies++;
+      }
+    });
+    
+    res.json({
+      period: 'monthly',
+      months: Object.values(monthlyData)
+    });
+  } catch (error: any) {
+    console.error('[GET /headquarters/reports/monthly] Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export default router;
