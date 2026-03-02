@@ -650,6 +650,52 @@ const HeadquartersDashboard = ({
         <InfoRow label="이메일" value={accountInfo.email} />
       </div>
 
+      {/* 지사 관리 버튼 */}
+      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <h2 className="text-xl font-bold mb-4 flex items-center">
+          <span className="mr-2">⚙️</span>
+          본부장 지사 관리 권한
+        </h2>
+        <div className="flex gap-4">
+          <button
+            onClick={handleCreateBranch}
+            className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center justify-center gap-2 font-semibold"
+          >
+            <span>🏢</span>
+            지사 생성
+          </button>
+          <button
+            onClick={() => {
+              if (branches.length === 0) {
+                setMessage({ type: 'error', text: '수정할 지사가 없습니다' });
+                return;
+              }
+              setShowEditModal(true);
+            }}
+            className="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center justify-center gap-2 font-semibold"
+          >
+            <span>✏️</span>
+            지사 수정
+          </button>
+          <button
+            onClick={() => {
+              if (branches.length === 0) {
+                setMessage({ type: 'error', text: '삭제할 지사가 없습니다' });
+                return;
+              }
+              setShowDeleteModal(true);
+            }}
+            className="flex-1 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center justify-center gap-2 font-semibold"
+          >
+            <span>🗑️</span>
+            지사 삭제
+          </button>
+        </div>
+        <p className="mt-4 text-sm text-gray-600">
+          💡 본부장은 소속 지사를 생성, 수정, 삭제할 수 있으며, 매니저를 다른 지사로 이동시킬 수 있습니다.
+        </p>
+      </div>
+
       {/* 통계 요약 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
         <StatCard
