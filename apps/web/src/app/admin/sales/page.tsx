@@ -101,7 +101,7 @@ export default function SalesLoginPage() {
 
         if (response.ok) {
           console.log('[Login] Token valid, redirecting to dashboard');
-          router.push('/admin/sales/dashboard');
+          window.location.href = '/admin/sales/dashboard';
         } else {
           console.log('[Login] Token invalid, clearing auth');
           clearManagerAuth();
@@ -172,8 +172,8 @@ export default function SalesLoginPage() {
         setManagerToken(data.token);
         setManagerInfo(data.salesPerson);
         
-        // 대시보드로 이동
-        router.push('/admin/sales/dashboard');
+        // 대시보드로 이동 (새로고침하여 상태 완전 초기화)
+        window.location.href = '/admin/sales/dashboard';
       } else {
         setError(data.error || '로그인에 실패했습니다');
       }

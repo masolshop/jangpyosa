@@ -41,6 +41,7 @@ interface ManagerStats {
   privateCompanies: number;
   publicCompanies: number;
   governmentCompanies: number;
+  standardWorkplaces: number;
   // 추천 시스템 추가 통계
   totalReferrals?: number;
   activeReferrals?: number;
@@ -57,6 +58,7 @@ interface ReportData {
   privateCompanies: number;
   publicCompanies: number;
   governmentCompanies: number;
+  standardWorkplaces: number;
 }
 
 interface ManagerCompany {
@@ -105,11 +107,13 @@ interface BranchManager {
     민간기업: number;
     공공기관: number;
     정부교육기관: number;
+    표준사업장: number;
     합계: number;
   } | {
     privateCompanies: number;
     publicCompanies: number;
     governmentCompanies: number;
+    standardWorkplaces: number;
   };
 }
 
@@ -121,6 +125,7 @@ interface HeadquartersStats {
   privateCompanies: number;
   publicCompanies: number;
   governmentCompanies: number;
+  standardWorkplaces: number;
   // 추천 시스템 추가 통계
   totalReferrals?: number;
   activeReferrals?: number;
@@ -138,6 +143,7 @@ interface HeadquartersBranch {
     privateCompanies: number;
     publicCompanies: number;
     governmentCompanies: number;
+    standardWorkplaces: number;
   };
 }
 
@@ -274,6 +280,7 @@ const ManagerDashboard = ({
     if (selectedCategory === 'private') return c.company?.buyerType === 'PRIVATE_COMPANY';
     if (selectedCategory === 'public') return c.company?.buyerType === 'PUBLIC_INSTITUTION';
     if (selectedCategory === 'government') return c.company?.buyerType === 'GOVERNMENT';
+    if (selectedCategory === 'standard') return c.company?.buyerType === 'STANDARD_WORKPLACE';
     return true;
   });
   
@@ -283,6 +290,7 @@ const ManagerDashboard = ({
       case 'PRIVATE_COMPANY': return '민간기업';
       case 'PUBLIC_INSTITUTION': return '공공기관';
       case 'GOVERNMENT': return '정부기관';
+      case 'STANDARD_WORKPLACE': return '표준사업장';
       default: return type;
     }
   };
@@ -426,7 +434,7 @@ const ManagerDashboard = ({
       </div>
 
       {/* 통계 요약 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <StatCard
           icon="🏢"
           title="총 추천 의무고용기업"
@@ -451,6 +459,12 @@ const ManagerDashboard = ({
           value={stats.governmentCompanies}
           color="orange"
         />
+        <StatCard
+          icon="🏭"
+          title="표준사업장"
+          value={stats.standardWorkplaces || 0}
+          color="red"
+        />
       </div>
 
       {/* 추천 기업 리스트 */}
@@ -469,6 +483,7 @@ const ManagerDashboard = ({
             <option value="private">민간기업 ({stats.privateCompanies})</option>
             <option value="public">공공기관 ({stats.publicCompanies})</option>
             <option value="government">정부교육기관 ({stats.governmentCompanies})</option>
+            <option value="standard">표준사업장 ({stats.standardWorkplaces || 0})</option>
           </select>
         </div>
         
@@ -647,7 +662,7 @@ const BranchDashboard = ({
       </div>
 
       {/* 통계 요약 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
         <StatCard
           icon="👥"
           title="소속 매니저"
@@ -678,6 +693,12 @@ const BranchDashboard = ({
           title="정부교육기관"
           value={stats.governmentCompanies}
           color="orange"
+        />
+        <StatCard
+          icon="🏭"
+          title="표준사업장"
+          value={stats.standardWorkplaces || 0}
+          color="red"
         />
       </div>
 
@@ -1215,7 +1236,7 @@ const HeadquartersDashboard = ({
       </div>
 
       {/* 통계 요약 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-4">
         <StatCard
           icon="🏪"
           title="소속 지사"
@@ -1253,6 +1274,12 @@ const HeadquartersDashboard = ({
           title="정부교육기관"
           value={stats.governmentCompanies}
           color="orange"
+        />
+        <StatCard
+          icon="🏭"
+          title="표준사업장"
+          value={stats.standardWorkplaces || 0}
+          color="red"
         />
       </div>
 

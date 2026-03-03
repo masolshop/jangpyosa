@@ -1000,11 +1000,11 @@ router.get('/dashboard/stats', requireSalesAuth, async (req: any, res) => {
     
     const agentUserIds = agentUsers.map(u => u.id);
     
-    // User.referredById로 추천받은 BUYER 조회
+    // User.referredById로 추천받은 BUYER 및 SUPPLIER 조회
     const userReferrals = await prisma.user.findMany({
       where: {
         referredById: { in: agentUserIds },
-        role: 'BUYER'
+        role: { in: ['BUYER', 'SUPPLIER'] }
       },
       include: {
         company: {
@@ -1028,6 +1028,7 @@ router.get('/dashboard/stats', requireSalesAuth, async (req: any, res) => {
       privateCompanies: 0,    // 민간기업
       publicCompanies: 0,     // 공공기관
       governmentCompanies: 0, // 국가지자체교육청
+      standardWorkplaces: 0,  // 표준사업장
       managers: 0,            // 소속 매니저 수
       branches: 0,            // 소속 지사 수
       thisMonthReferrals: 0,  // 이번 달 추천
@@ -1041,9 +1042,9 @@ router.get('/dashboard/stats', requireSalesAuth, async (req: any, res) => {
     startOfWeek.setDate(now.getDate() - now.getDay());
     startOfWeek.setHours(0, 0, 0, 0);
     
-    // BUYER 유형의 기업만 집계 (CompanyReferral)
+    // BUYER 및 SUPPLIER 유형의 기업 집계 (CompanyReferral)
     referrals.forEach(ref => {
-      if (ref.company?.type === 'BUYER' && ref.company?.buyerType) {
+      if (ref.company?.buyerType) {
         switch (ref.company.buyerType) {
           case 'PRIVATE_COMPANY':
             stats.privateCompanies++;
@@ -1053,6 +1054,9 @@ router.get('/dashboard/stats', requireSalesAuth, async (req: any, res) => {
             break;
           case 'GOVERNMENT':
             stats.governmentCompanies++;
+            break;
+          case 'STANDARD_WORKPLACE':
+            stats.standardWorkplaces++;
             break;
         }
       }
@@ -1075,6 +1079,9 @@ router.get('/dashboard/stats', requireSalesAuth, async (req: any, res) => {
             break;
           case 'GOVERNMENT':
             stats.governmentCompanies++;
+            break;
+          case 'STANDARD_WORKPLACE':
+            stats.standardWorkplaces++;
             break;
         }
       }
@@ -1124,14 +1131,13 @@ router.get('/dashboard/companies', requireSalesAuth, async (req: any, res) => {
     const where: any = {
       salesPersonId: salesPerson.id,
       isActive: true,
-      company: {
-        type: 'BUYER',
-      },
     };
     
     // buyerType 필터
     if (buyerType) {
-      where.company.buyerType = buyerType;
+      where.company = {
+        buyerType: buyerType,
+      };
     }
     
     const companies = await prisma.companyReferral.findMany({
@@ -1199,9 +1205,6 @@ router.get('/dashboard/managers', requireSalesAuth, async (req: any, res) => {
           where: {
             salesPersonId: manager.id,
             isActive: true,
-            company: {
-              type: 'BUYER',
-            },
           },
           include: {
             company: {
@@ -1216,6 +1219,7 @@ router.get('/dashboard/managers', requireSalesAuth, async (req: any, res) => {
           privateCompanies: 0,
           publicCompanies: 0,
           governmentCompanies: 0,
+          standardWorkplaces: 0,
         };
         
         referrals.forEach(ref => {
@@ -1229,6 +1233,9 @@ router.get('/dashboard/managers', requireSalesAuth, async (req: any, res) => {
                 break;
               case 'GOVERNMENT':
                 stats.governmentCompanies++;
+                break;
+              case 'STANDARD_WORKPLACE':
+                stats.standardWorkplaces++;
                 break;
             }
           }
@@ -1297,9 +1304,6 @@ router.get('/dashboard/branches', requireSalesAuth, async (req: any, res) => {
           where: {
             salesPersonId: { in: targetIds },
             isActive: true,
-            company: {
-              type: 'BUYER',
-            },
           },
           include: {
             company: {
@@ -1314,6 +1318,7 @@ router.get('/dashboard/branches', requireSalesAuth, async (req: any, res) => {
           privateCompanies: 0,
           publicCompanies: 0,
           governmentCompanies: 0,
+          standardWorkplaces: 0,
         };
         
         referrals.forEach(ref => {
@@ -1327,6 +1332,9 @@ router.get('/dashboard/branches', requireSalesAuth, async (req: any, res) => {
                 break;
               case 'GOVERNMENT':
                 stats.governmentCompanies++;
+                break;
+              case 'STANDARD_WORKPLACE':
+                stats.standardWorkplaces++;
                 break;
             }
           }
