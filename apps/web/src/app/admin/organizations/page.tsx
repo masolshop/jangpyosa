@@ -62,6 +62,12 @@ export default function OrganizationsManagementPage() {
   const [selectedManager, setSelectedManager] = useState<Manager | null>(null);
   const [loadingManagers, setLoadingManagers] = useState(false);
   
+  // 🆕 추천 매니저 검색
+  const [referrerSearch, setReferrerSearch] = useState('');
+  const [referrerResults, setReferrerResults] = useState<Manager[]>([]);
+  const [selectedReferrer, setSelectedReferrer] = useState<Manager | null>(null);
+  const [loadingReferrers, setLoadingReferrers] = useState(false);
+  
   // 상태 메시지
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
@@ -128,6 +134,10 @@ export default function OrganizationsManagementPage() {
     setManagerSearch('');
     setManagerResults([]);
     setSelectedManager(null);
+    // 🆕 추천 매니저 상태 초기화
+    setReferrerSearch('');
+    setReferrerResults([]);
+    setSelectedReferrer(null);
     setShowModal(true);
   };
 
@@ -187,6 +197,46 @@ export default function OrganizationsManagementPage() {
     setManagerSearch('');
   };
   
+  // 🆕 추천 매니저 검색
+  const searchReferrers = async () => {
+    if (!referrerSearch.trim()) {
+      setReferrerResults([]);
+      return;
+    }
+    
+    setLoadingReferrers(true);
+    try {
+      const token = localStorage.getItem('accessToken');
+      const response = await fetch(
+        `${API_BASE}/sales/available-managers?search=${encodeURIComponent(referrerSearch)}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        }
+      );
+      
+      if (response.ok) {
+        const data = await response.json();
+        setReferrerResults(data.managers || []);
+      } else {
+        showMessage('error', '추천 매니저 검색에 실패했습니다');
+      }
+    } catch (error) {
+      console.error('추천 매니저 검색 에러:', error);
+      showMessage('error', '서버 연결에 실패했습니다');
+    } finally {
+      setLoadingReferrers(false);
+    }
+  };
+  
+  // 🆕 추천 매니저 선택
+  const handleSelectReferrer = (manager: Manager) => {
+    setSelectedReferrer(manager);
+    setReferrerResults([]);
+    setReferrerSearch('');
+  };
+  
   // 조직 등록/수정
   const handleSubmit = async () => {
     if (modalMode === 'create') {
@@ -218,7 +268,10 @@ export default function OrganizationsManagementPage() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          referredById: selectedReferrer?.id || null, // 🆕 추천 매니저 ID 추가
+        }),
       });
       
       const data = await response.json();
@@ -912,6 +965,134 @@ export default function OrganizationsManagementPage() {
                   }}
                 />
               </div>
+
+              {/* 🆕 추천 매니저 검색 (선택사항) */}
+              {modalMode === 'create' && (
+                <div>
+                  <label style={{ display: 'block', marginBottom: 6, fontWeight: 600, fontSize: 14 }}>
+                    추천 매니저 검색 (선택사항)
+                  </label>
+                  
+                  {/* 선택된 추천 매니저 표시 */}
+                  {selectedReferrer ? (
+                    <div style={{
+                      padding: 12,
+                      border: '2px solid #9c27b0',
+                      borderRadius: 8,
+                      background: '#f3e5f5',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                    }}>
+                      <div>
+                        <p style={{ margin: 0, fontWeight: 600, fontSize: 14, color: '#6a1b9a' }}>
+                          ✓ {selectedReferrer.name}
+                        </p>
+                        <p style={{ margin: 0, fontSize: 12, color: '#666' }}>
+                          📞 {selectedReferrer.phone}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setSelectedReferrer(null)}
+                        style={{
+                          padding: '6px 12px',
+                          background: '#ef4444',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: 6,
+                          cursor: 'pointer',
+                          fontSize: 12,
+                        }}
+                      >
+                        선택 해제
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      {/* 추천 매니저 검색 입력 */}
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <input
+                          type="text"
+                          value={referrerSearch}
+                          onChange={(e) => setReferrerSearch(e.target.value)}
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              searchReferrers();
+                            }
+                          }}
+                          placeholder="추천 매니저 이름 또는 전화번호로 검색"
+                          style={{
+                            flex: 1,
+                            padding: 12,
+                            border: '1px solid #d1d5db',
+                            borderRadius: 8,
+                            fontSize: 14,
+                          }}
+                        />
+                        <button
+                          onClick={searchReferrers}
+                          disabled={loadingReferrers}
+                          style={{
+                            padding: '12px 20px',
+                            background: loadingReferrers ? '#ccc' : '#9c27b0',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: 8,
+                            cursor: loadingReferrers ? 'not-allowed' : 'pointer',
+                            fontWeight: 600,
+                            fontSize: 14,
+                          }}
+                        >
+                          {loadingReferrers ? '검색 중...' : '검색'}
+                        </button>
+                      </div>
+                      
+                      {/* 검색 결과 */}
+                      {referrerResults.length > 0 && (
+                        <div style={{
+                          marginTop: 8,
+                          border: '1px solid #d1d5db',
+                          borderRadius: 8,
+                          maxHeight: 200,
+                          overflow: 'auto',
+                        }}>
+                          {referrerResults.map((manager) => (
+                            <div
+                              key={manager.id}
+                              onClick={() => handleSelectReferrer(manager)}
+                              style={{
+                                padding: 12,
+                                borderBottom: '1px solid #f3f4f6',
+                                cursor: 'pointer',
+                                background: 'white',
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.background = '#f3e5f5';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.background = 'white';
+                              }}
+                            >
+                              <p style={{ margin: 0, fontWeight: 600, fontSize: 14 }}>
+                                {manager.name}
+                              </p>
+                              <p style={{ margin: 0, fontSize: 12, color: '#666' }}>
+                                📞 {manager.phone} 
+                                {manager.organizationName && ` | ${manager.organizationName}`}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  )}
+                  
+                  <p style={{ margin: '8px 0 0', fontSize: 12, color: '#666' }}>
+                    💡 이 {formData.type === 'HEADQUARTERS' ? '본부' : '지사'}를 소개한 매니저가 있다면 검색해서 연결할 수 있습니다
+                  </p>
+                </div>
+              )}
 
               {/* 메모 */}
               {modalMode === 'create' && (

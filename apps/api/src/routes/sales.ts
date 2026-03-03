@@ -1444,7 +1444,7 @@ router.get('/organizations', async (req, res) => {
  */
 router.post('/organizations', requireAuth, requireRole('SUPER_ADMIN'), async (req, res) => {
   try {
-    const { name, type, managerId, email, parentId, notes } = req.body;
+    const { name, type, managerId, email, parentId, notes, referredById } = req.body;
     
     // 필수 필드 검증
     if (!name || !type || !managerId) {
@@ -1516,6 +1516,7 @@ router.post('/organizations', requireAuth, requireRole('SUPER_ADMIN'), async (re
           role: newRole,
           organizationId: organization.id,
           organizationName: organization.name,
+          referredById: referredById || null, // 🆕 추천 매니저 ID 저장
         },
       });
       
