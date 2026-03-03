@@ -230,7 +230,7 @@ export default function OrganizationsManagementPage() {
         setReferrerResults(managers);
         
         if (managers.length === 0) {
-          showMessage('info', `"${referrerSearch}" 검색 결과가 없습니다`);
+          showMessage('success', `"${referrerSearch}" 검색 결과가 없습니다`);
         }
       } else {
         const errorData = await response.json().catch(() => ({ error: '알 수 없는 오류' }));
