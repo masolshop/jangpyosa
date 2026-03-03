@@ -2,7 +2,7 @@
 
 export default function LinkageLevyExemptionPage() {
   return (
-    <div className="min-h-screen bg-gray-50 pl-0 pr-4 md:pr-8 py-2 md:py-4">
+    <div className="min-h-screen bg-gray-50 pl-0 pr-4 md:pr-8 py-2 md:py-4" style={{ paddingLeft: 0 }}>
       <div className="max-w-7xl ml-0">
         {/* 헤더 */}
         <div className="mb-6">
