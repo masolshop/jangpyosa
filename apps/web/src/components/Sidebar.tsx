@@ -13,7 +13,9 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL ||
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const [isOpen, setIsOpen] = useState(true);
+  // 🆕 화면 크기에 따라 초기 상태 설정 (PC는 열림, 모바일은 닫힘)
+  const [isOpen, setIsOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const [userName, setUserName] = useState<string | null>(null);
   const [companyName, setCompanyName] = useState<string | null>(null);
   const [managerName, setManagerName] = useState<string | null>(null);
@@ -31,6 +33,23 @@ export default function Sidebar() {
   const prevCountRef = useRef<number>(0);
   const lastToastRef = useRef<string>(''); // 마지막 토스트 메시지 (중복 방지)
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // 🆕 화면 크기 감지 및 초기 상태 설정
+  useEffect(() => {
+    const checkScreenSize = () => {
+      const width = window.innerWidth;
+      const mobile = width < 1024; // lg breakpoint
+      setIsMobile(mobile);
+      setIsOpen(!mobile); // PC에서는 열림, 모바일에서는 닫힘
+    };
+
+    // 초기 실행
+    checkScreenSize();
+
+    // 리사이즈 이벤트 리스너
+    window.addEventListener('resize', checkScreenSize);
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
 
   // 읽지 않은 알림 개수 조회 (타입별) - 최적화
   const fetchUnreadCount = async () => {
@@ -506,9 +525,10 @@ interface MenuItemProps {
   currentRole?: string | null;
   notificationCount?: number; // 알림 개수 (종으로 표시)
   requiresAuth?: boolean; // 로그인 필요 여부
+  onMobileClick?: () => void; // 🆕 모바일에서 클릭 시 콜백
 }
 
-function MenuItem({ href, label, icon, active = false, onClick, onNotificationClear, subItems, requiresRole, currentRole, notificationCount, requiresAuth = false }: MenuItemProps) {
+function MenuItem({ href, label, icon, active = false, onClick, onNotificationClear, subItems, requiresRole, currentRole, notificationCount, requiresAuth = false, onMobileClick }: MenuItemProps) {
   const pathname = usePathname();
   const [showSubItems, setShowSubItems] = useState(false);
   const hasAccess = !requiresRole || (currentRole && requiresRole.includes(currentRole));
@@ -516,42 +536,49 @@ function MenuItem({ href, label, icon, active = false, onClick, onNotificationCl
   // 알림이 있는 메뉴인지 확인
   const hasNotifications = notificationCount !== undefined && notificationCount > 0;
 
+  const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    // 🆕 모바일에서 메뉴 클릭 시 사이드바 닫기
+    if (typeof window !== 'undefined' && window.innerWidth < 1024 && onMobileClick) {
+      setTimeout(() => onMobileClick(), 100); // 약간의 지연 후 닫기
+    }
+
+    // requiresAuth가 true이고 로그인되지 않았으면 회원가입 페이지로 리다이렉트
+    if (requiresAuth && !currentRole) {
+      e.preventDefault();
+      window.location.href = '/signup';
+      return;
+    }
+
+    if (requiresRole && requiresRole.length > 0 && (!currentRole || !requiresRole.includes(currentRole))) {
+      e.preventDefault();
+      const roleLabels = [];
+      if (requiresRole.includes("BUYER")) roleLabels.push("고용의무기업");
+      if (requiresRole.includes("SUPPLIER")) roleLabels.push("표준사업장");
+      if (requiresRole.includes("SUPER_ADMIN")) roleLabels.push("관리자");
+      alert(`이 메뉴는 회원가입이 필요합니다.\n\n필요한 권한: ${roleLabels.join(", ") || "특정 권한"}`);
+      window.location.href = '/signup';
+      return;
+    }
+
+    // 알림이 있으면 읽음 처리
+    if (hasNotifications && onNotificationClear) {
+      onNotificationClear();
+    }
+
+    if (onClick) {
+      e.preventDefault();
+      onClick();
+    } else if (subItems) {
+      e.preventDefault();
+      setShowSubItems(!showSubItems);
+    }
+  };
+
   return (
     <>
       <a
         href={href}
-        onClick={(e) => {
-          // requiresAuth가 true이고 로그인되지 않았으면 회원가입 페이지로 리다이렉트
-          if (requiresAuth && !currentRole) {
-            e.preventDefault();
-            window.location.href = '/signup';
-            return;
-          }
-
-          if (requiresRole && requiresRole.length > 0 && (!currentRole || !requiresRole.includes(currentRole))) {
-            e.preventDefault();
-            const roleLabels = [];
-            if (requiresRole.includes("BUYER")) roleLabels.push("고용의무기업");
-            if (requiresRole.includes("SUPPLIER")) roleLabels.push("표준사업장");
-            if (requiresRole.includes("SUPER_ADMIN")) roleLabels.push("관리자");
-            alert(`이 메뉴는 회원가입이 필요합니다.\n\n필요한 권한: ${roleLabels.join(", ") || "특정 권한"}`);
-            window.location.href = '/signup';
-            return;
-          }
-
-          // 알림이 있으면 읽음 처리
-          if (hasNotifications && onNotificationClear) {
-            onNotificationClear();
-          }
-
-          if (onClick) {
-            e.preventDefault();
-            onClick();
-          } else if (subItems) {
-            e.preventDefault();
-            setShowSubItems(!showSubItems);
-          }
-        }}
+        onClick={handleClick}
         style={{
           display: "flex",
           alignItems: "center",

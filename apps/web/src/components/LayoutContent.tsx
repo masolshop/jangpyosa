@@ -23,7 +23,9 @@ function LayoutContentInner({ children }: { children: React.ReactNode }) {
   return (
     <>
       <Sidebar />
-      <main style={{ marginLeft: 360, minHeight: '100vh' }}>
+      <main 
+        className="lg:ml-[330px] ml-0 min-h-screen"
+      >
         {children}
       </main>
     </>
