@@ -511,6 +511,15 @@ export default function EmployeesPage() {
           else if (workTypeStr === "혼합") workType = "HYBRID";
           else workType = "OFFICE";
           
+          // 성별 파싱 (여러 형식 지원)
+          const genderStr = row["성별*"]?.toString().trim().toLowerCase() || "";
+          let gender: "M" | "F" = "M"; // 기본값
+          if (genderStr === "여" || genderStr === "여성" || genderStr === "f" || genderStr === "female") {
+            gender = "F";
+          } else if (genderStr === "남" || genderStr === "남성" || genderStr === "m" || genderStr === "male") {
+            gender = "M";
+          }
+
           const employeeData = {
             name: row["성명*"]?.toString().trim() || "",
             phone: row["핸드폰번호*"]?.toString().trim() || "",
@@ -518,7 +527,7 @@ export default function EmployeesPage() {
             disabilityType: row["장애유형*"]?.toString().trim() || "",
             disabilityGrade: String(row["장애등급"] ?? "").trim(),
             severity: (row["중증여부*"]?.toString().trim() === "중증" ? "SEVERE" : "MILD") as "SEVERE" | "MILD",
-            gender: (row["성별*"]?.toString().trim() === "여" ? "F" : "M") as "M" | "F",
+            gender: gender,
             hireDate: row["입사일*"] ? formatExcelDate(row["입사일*"]) : "",
             resignDate: row["퇴사일"] ? formatExcelDate(row["퇴사일"]) : "",
             monthlySalary: calculateMonthlySalary(monthlyWorkHours),
@@ -630,12 +639,21 @@ export default function EmployeesPage() {
   const activeEmployees = employees.filter((e) => !e.resignDate);
   const resignedEmployees = employees.filter((e) => e.resignDate);
 
-  // 통계 계산
+  // 통계 계산 - 성별 정규화
   const totalDisabled = activeEmployees.length;
   const severeCount = activeEmployees.filter(e => e.severity === "SEVERE").length;
   const mildCount = activeEmployees.filter(e => e.severity === "MILD").length;
-  const femaleCount = activeEmployees.filter(e => e.gender === "F").length;
-  const maleCount = activeEmployees.filter(e => e.gender === "M").length;
+  
+  // 성별 카운트 (여러 형식 지원)
+  const femaleCount = activeEmployees.filter(e => {
+    const g = e.gender?.toString().toLowerCase() || "";
+    return g === "f" || g === "여" || g === "여성" || g === "female";
+  }).length;
+  
+  const maleCount = activeEmployees.filter(e => {
+    const g = e.gender?.toString().toLowerCase() || "";
+    return g === "m" || g === "남" || g === "남성" || g === "male";
+  }).length;
 
   // 🔍 디버깅: 성별 값 확인
   console.log("👥 [성별 통계 디버깅]");
@@ -644,8 +662,11 @@ export default function EmployeesPage() {
   console.log("남성:", maleCount, "명");
   console.log("성별 데이터:", activeEmployees.map(e => ({ name: e.name, gender: e.gender, genderType: typeof e.gender })));
   
-  // 🔍 gender 값이 "M"이 아닌 직원 찾기
-  const invalidGender = activeEmployees.filter(e => e.gender !== "M" && e.gender !== "F");
+  // 🔍 gender 값이 "M"/"F" 형식이 아닌 직원 찾기
+  const invalidGender = activeEmployees.filter(e => {
+    const g = e.gender?.toString().toLowerCase() || "";
+    return g !== "m" && g !== "f" && g !== "남" && g !== "여" && g !== "남성" && g !== "여성" && g !== "male" && g !== "female";
+  });
   if (invalidGender.length > 0) {
     console.warn("⚠️ 잘못된 성별 값:", invalidGender.map(e => ({ name: e.name, gender: e.gender })));
   }
