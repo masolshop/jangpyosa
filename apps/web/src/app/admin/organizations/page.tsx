@@ -207,24 +207,38 @@ export default function OrganizationsManagementPage() {
     setLoadingReferrers(true);
     try {
       const token = localStorage.getItem('accessToken');
+      
+      if (!token) {
+        showMessage('error', '로그인이 필요합니다');
+        setLoadingReferrers(false);
+        return;
+      }
+      
       const response = await fetch(
         `${API_BASE}/sales/available-managers?search=${encodeURIComponent(referrerSearch)}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
           },
         }
       );
       
       if (response.ok) {
         const data = await response.json();
-        setReferrerResults(data.managers || []);
+        const managers = data.managers || [];
+        setReferrerResults(managers);
+        
+        if (managers.length === 0) {
+          showMessage('info', `"${referrerSearch}" 검색 결과가 없습니다`);
+        }
       } else {
-        showMessage('error', '추천 매니저 검색에 실패했습니다');
+        const errorData = await response.json().catch(() => ({ error: '알 수 없는 오류' }));
+        showMessage('error', errorData.error || '추천 매니저 검색에 실패했습니다');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('추천 매니저 검색 에러:', error);
-      showMessage('error', '서버 연결에 실패했습니다');
+      showMessage('error', error.message || '서버 연결에 실패했습니다');
     } finally {
       setLoadingReferrers(false);
     }
