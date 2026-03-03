@@ -120,8 +120,8 @@ export default function PurchaseCasesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50" style={{ paddingLeft: 0, paddingRight: '2rem', paddingTop: '60vh' }}>
-      <div className="max-w-7xl" style={{ marginLeft: 0 }}>
+    <div className="min-h-screen bg-gray-50 p-4 md:p-8 pt-[60vh]" style={{ marginLeft: '360px' }}>
+      <div className="max-w-7xl mx-auto">
         {/* 헤더 */}
         <div className="mb-4">
           <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-1">
