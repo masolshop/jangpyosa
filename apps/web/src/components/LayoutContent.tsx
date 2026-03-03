@@ -1,7 +1,7 @@
 'use client';
 
 import { useSearchParams, usePathname } from 'next/navigation'
-import { Suspense } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import Sidebar from '@/components/Sidebar'
 
 function LayoutContentInner({ children }: { children: React.ReactNode }) {
@@ -22,6 +22,20 @@ function LayoutContentInner({ children }: { children: React.ReactNode }) {
     '/purchase-best-cases'
   ].some(path => pathname?.startsWith(path))
 
+  // 화면 크기 감지
+  const [isLargeScreen, setIsLargeScreen] = useState(false)
+
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsLargeScreen(window.innerWidth >= 1024)
+    }
+    
+    checkScreenSize()
+    window.addEventListener('resize', checkScreenSize)
+    
+    return () => window.removeEventListener('resize', checkScreenSize)
+  }, [])
+
   if (isEmbedded || isEmployeePage) {
     return (
       <main style={{ minHeight: '100vh', padding: 0 }}>
@@ -30,12 +44,16 @@ function LayoutContentInner({ children }: { children: React.ReactNode }) {
     )
   }
 
+  // 인라인 스타일로 marginLeft 완전 제어
+  const mainStyle: React.CSSProperties = {
+    minHeight: '100vh',
+    marginLeft: isPublicInfoPage ? 0 : (isLargeScreen ? 330 : 0)
+  }
+
   return (
     <>
       <Sidebar />
-      <main 
-        className={isPublicInfoPage ? "ml-0 min-h-screen" : "lg:ml-[330px] ml-0 min-h-screen"}
-      >
+      <main style={mainStyle}>
         {children}
       </main>
     </>
