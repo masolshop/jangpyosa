@@ -23,7 +23,11 @@ router.get("/my", requireAuth, async (req, res) => {
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { companyId: true, isCompanyOwner: true }
+      select: { 
+        companyId: true, 
+        isCompanyOwner: true,
+        referredById: true  // 추천인 ID 추가
+      }
     });
 
     companyId = user?.companyId || null;
@@ -31,6 +35,22 @@ router.get("/my", requireAuth, async (req, res) => {
 
     if (!companyId) {
       return res.status(404).json({ error: "소속 기업이 없습니다." });
+    }
+
+    // 추천인 정보 조회 (추천인이 있는 경우)
+    let referrerInfo = null;
+    if (user?.referredById) {
+      const referrer = await prisma.user.findUnique({
+        where: { id: user.referredById },
+        select: {
+          id: true,
+          name: true,
+          phone: true,
+          email: true,
+          role: true
+        }
+      });
+      referrerInfo = referrer;
     }
 
     // Company 조회
@@ -93,7 +113,8 @@ router.get("/my", requireAuth, async (req, res) => {
         industry: company.supplierProfile.industry,
       } : null,
       members: company.members,
-      isOwner: isOwner
+      isOwner: isOwner,
+      referrer: referrerInfo  // 추천인 정보 추가
     });
   } catch (error: any) {
     console.error("기업 정보 조회 실패:", error);

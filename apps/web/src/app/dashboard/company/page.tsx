@@ -15,6 +15,14 @@ type CompanyInfo = {
   attachmentEmail: string | null;
 };
 
+type ReferrerInfo = {
+  id: string;
+  name: string;
+  phone: string;
+  email: string | null;
+  role: string;
+};
+
 type TeamMember = {
   id: string;
   name: string;
@@ -59,6 +67,7 @@ export default function CompanyDashboardPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [company, setCompany] = useState<CompanyInfo | null>(null);
+  const [referrer, setReferrer] = useState<ReferrerInfo | null>(null);  // 추천인 정보
   const [isOwner, setIsOwner] = useState(false);
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
@@ -117,6 +126,7 @@ export default function CompanyDashboardPage() {
   async function loadCompanyInfo() {
     const data = await apiFetch("/companies/my");
     setCompany(data.company);
+    setReferrer(data.referrer || null);  // 추천인 정보 설정
     setIsOwner(data.isOwner);
     setCompanyForm({
       name: data.company.name,
@@ -504,6 +514,22 @@ export default function CompanyDashboardPage() {
                   {company.type === "BUYER" ? "고용부담금 기업" : "표준사업장"}
                 </p>
               </div>
+              {referrer && (
+                <>
+                  <div>
+                    <p style={{ margin: 0, fontSize: 14, color: "#666" }}>담당자 이름</p>
+                    <p style={{ margin: "4px 0 0 0", fontSize: 18, fontWeight: "bold" }}>
+                      {referrer.name}
+                    </p>
+                  </div>
+                  <div>
+                    <p style={{ margin: 0, fontSize: 14, color: "#666" }}>담당자 연락처</p>
+                    <p style={{ margin: "4px 0 0 0", fontSize: 18, fontWeight: "bold" }}>
+                      {referrer.phone}
+                    </p>
+                  </div>
+                </>
+              )}
             </div>
           )}
         </div>
