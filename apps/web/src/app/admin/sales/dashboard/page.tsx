@@ -2037,11 +2037,6 @@ export default function SalesDashboard() {
         governmentCompanies: 0,
         standardWorkplaces: 0,
       });
-        totalCompanies: 0,
-        privateCompanies: 0,
-        publicCompanies: 0,
-        governmentCompanies: 0,
-      });
       setHeadquartersBranches([]);
     }
   };
