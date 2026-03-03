@@ -1860,6 +1860,7 @@ export default function SalesDashboard() {
           privateCompanies: stats.privateCompanies || 0,
           publicCompanies: stats.publicCompanies || 0,
           governmentCompanies: stats.governmentCompanies || 0,
+          standardWorkplaces: stats.standardWorkplaces || 0,
         });
       } else {
         const errorText = await statsResponse.text();
@@ -1870,6 +1871,7 @@ export default function SalesDashboard() {
           privateCompanies: 0,
           publicCompanies: 0,
           governmentCompanies: 0,
+          standardWorkplaces: 0,
         });
       }
 
@@ -1922,6 +1924,7 @@ export default function SalesDashboard() {
           privateCompanies: stats.privateCompanies || 0,
           publicCompanies: stats.publicCompanies || 0,
           governmentCompanies: stats.governmentCompanies || 0,
+          standardWorkplaces: stats.standardWorkplaces || 0,
         });
       } else {
         const errorText = await statsResponse.text();
@@ -1933,6 +1936,7 @@ export default function SalesDashboard() {
           privateCompanies: 0,
           publicCompanies: 0,
           governmentCompanies: 0,
+          standardWorkplaces: 0,
         });
       }
 
@@ -1961,6 +1965,7 @@ export default function SalesDashboard() {
         privateCompanies: 0,
         publicCompanies: 0,
         governmentCompanies: 0,
+        standardWorkplaces: 0,
       });
       setBranchManagers([]);
     }
@@ -1987,6 +1992,7 @@ export default function SalesDashboard() {
           privateCompanies: stats.privateCompanies || 0,
           publicCompanies: stats.publicCompanies || 0,
           governmentCompanies: stats.governmentCompanies || 0,
+          standardWorkplaces: stats.standardWorkplaces || 0,
         });
       } else {
         const errorText = await statsResponse.text();
@@ -1999,6 +2005,7 @@ export default function SalesDashboard() {
           privateCompanies: 0,
           publicCompanies: 0,
           governmentCompanies: 0,
+          standardWorkplaces: 0,
         });
       }
 
@@ -2024,6 +2031,12 @@ export default function SalesDashboard() {
       setHeadquartersStats({
         totalBranches: 0,
         totalManagers: 0,
+        totalCompanies: 0,
+        privateCompanies: 0,
+        publicCompanies: 0,
+        governmentCompanies: 0,
+        standardWorkplaces: 0,
+      });
         totalCompanies: 0,
         privateCompanies: 0,
         publicCompanies: 0,
