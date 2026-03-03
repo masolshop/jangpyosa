@@ -87,6 +87,7 @@ interface BranchStats {
   privateCompanies: number;
   publicCompanies: number;
   governmentCompanies: number;
+  standardWorkplaces: number;
   // 추천 시스템 추가 통계
   totalReferrals?: number;
   activeReferrals?: number;
