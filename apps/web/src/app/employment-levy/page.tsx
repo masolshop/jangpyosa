@@ -2,7 +2,7 @@
 
 export default function EmploymentLevyPage() {
   return (
-    <div className="min-h-screen bg-gray-50 p-2 md:p-4">
+    <div className="min-h-screen bg-gray-50 pr-4 md:pr-8 py-2 md:py-4">
       <div className="max-w-7xl">
         <div className="mb-6">
           <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-2">
