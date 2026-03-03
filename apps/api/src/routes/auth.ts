@@ -346,7 +346,10 @@ r.post("/signup/supplier", async (req, res) => {
           include: { supplierProfile: true },
         },
         referredBy: {
-          include: { branch: true },
+          include: { 
+            branch: true,
+            salesPerson: true,
+          },
         },
       },
     });
@@ -362,6 +365,19 @@ r.post("/signup/supplier", async (req, res) => {
           contactTel: registry.contactTel,
         },
       });
+    }
+
+    // 🔔 추천인이 있으면 실시간 알림 전송
+    if (referredBy && referredBy.salesPerson) {
+      sendReferralNotification(
+        referredBy.salesPerson.id,
+        registry.name || "알 수 없는 회사",
+        updatedUser!.name,
+        "STANDARD_WORKPLACE"
+      ).catch(err => {
+        console.error("❌ 추천 알림 전송 실패:", err);
+      });
+      console.log(`📢 표준사업장 추천 알림 전송: ${referredBy.name} → ${updatedUser!.name} (${registry.name})`);
     }
 
     return res.json({
