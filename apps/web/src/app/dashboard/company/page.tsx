@@ -514,25 +514,67 @@ export default function CompanyDashboardPage() {
                   {company.type === "BUYER" ? "고용부담금 기업" : "표준사업장"}
                 </p>
               </div>
-              {referrer && (
-                <>
-                  <div>
-                    <p style={{ margin: 0, fontSize: 14, color: "#666" }}>담당자 이름</p>
-                    <p style={{ margin: "4px 0 0 0", fontSize: 18, fontWeight: "bold" }}>
-                      {referrer.name}
-                    </p>
-                  </div>
-                  <div>
-                    <p style={{ margin: 0, fontSize: 14, color: "#666" }}>담당자 연락처</p>
-                    <p style={{ margin: "4px 0 0 0", fontSize: 18, fontWeight: "bold" }}>
-                      {referrer.phone}
-                    </p>
-                  </div>
-                </>
-              )}
+
             </div>
           )}
         </div>
+
+        {/* 담당자 정보 박스 */}
+        {referrer && (
+          <div
+            style={{
+              padding: 24,
+              background: "linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(147, 197, 253, 0.15) 100%)",
+              borderRadius: 12,
+              marginBottom: 32,
+              border: "2px solid rgba(59, 130, 246, 0.3)",
+              boxShadow: "0 8px 16px -2px rgba(59, 130, 246, 0.2), 0 4px 8px -2px rgba(59, 130, 246, 0.15)"
+            }}
+          >
+            <div style={{ textAlign: "center", marginBottom: 20 }}>
+              <h3 style={{ 
+                margin: 0, 
+                fontSize: 18, 
+                fontWeight: 600,
+                color: "#1e40af",
+                letterSpacing: "-0.5px"
+              }}>
+                💼 장애인고용솔루션 및 연계고용부담금감면 문의는
+              </h3>
+              <h3 style={{ 
+                margin: "4px 0 0 0", 
+                fontSize: 18, 
+                fontWeight: 600,
+                color: "#1e40af",
+                letterSpacing: "-0.5px"
+              }}>
+                아래 담당자에게 문의하세요
+              </h3>
+            </div>
+            <div style={{
+              background: "white",
+              padding: 20,
+              borderRadius: 8,
+              display: "grid",
+              gridTemplateColumns: "repeat(2, 1fr)",
+              gap: 16,
+              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.05)"
+            }}>
+              <div style={{ textAlign: "center" }}>
+                <p style={{ margin: 0, fontSize: 14, color: "#666", marginBottom: 8 }}>담당자</p>
+                <p style={{ margin: 0, fontSize: 20, fontWeight: "bold", color: "#1e40af" }}>
+                  {referrer.name}
+                </p>
+              </div>
+              <div style={{ textAlign: "center" }}>
+                <p style={{ margin: 0, fontSize: 14, color: "#666", marginBottom: 8 }}>연락처</p>
+                <p style={{ margin: 0, fontSize: 20, fontWeight: "bold", color: "#1e40af" }}>
+                  {referrer.phone}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* 첨부파일 이메일 설정 */}
         <div
