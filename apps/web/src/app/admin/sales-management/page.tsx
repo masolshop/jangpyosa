@@ -19,6 +19,13 @@ interface SalesPerson {
     phone: string;
     role: string;
   };
+  referredById?: string;
+  referredBy?: {
+    id: string;
+    name: string;
+    phone: string;
+    role: string;
+  };
   subordinates?: SalesPerson[];
   referralCode: string;
   totalReferrals: number;
@@ -55,6 +62,11 @@ export default function SalesManagementPage() {
   const [searchPhone, setSearchPhone] = useState('');
   const [searchedManager, setSearchedManager] = useState<SalesPerson | null>(null);
   const [organizationName, setOrganizationName] = useState('');
+  
+  // 🆕 추천 매니저 검색 상태
+  const [referrerSearchPhone, setReferrerSearchPhone] = useState('');
+  const [searchedReferrer, setSearchedReferrer] = useState<SalesPerson | null>(null);
+  
   const [newPersonData, setNewPersonData] = useState({
     organizationName: '', // 본부명 또는 지사명
     managerName: '', // 본부장명 또는 지사장명
@@ -202,6 +214,34 @@ export default function SalesManagementPage() {
     }
   };
 
+  // 🆕 추천 매니저 검색 함수
+  const searchReferrerByPhone = async () => {
+    if (!referrerSearchPhone) {
+      setError('추천 매니저 전화번호를 입력해주세요.');
+      setTimeout(() => setError(''), 3000);
+      return;
+    }
+
+    try {
+      // 전화번호로 매니저 찾기
+      const cleanPhone = referrerSearchPhone.replace(/[-\s]/g, '');
+      const manager = salesPeople.find(p => p.phone.replace(/[-\s]/g, '') === cleanPhone);
+      
+      if (!manager) {
+        setError('해당 전화번호로 등록된 추천 매니저를 찾을 수 없습니다.');
+        setTimeout(() => setError(''), 3000);
+        return;
+      }
+
+      setSearchedReferrer(manager);
+      setSuccessMessage(`${manager.name} 추천 매니저를 찾았습니다.`);
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } catch (err: any) {
+      setError(err.message || '추천 매니저 검색 실패');
+      setTimeout(() => setError(''), 3000);
+    }
+  };
+
   const handleCreatePerson = async () => {
     // 검색된 매니저가 있어야 함
     if (!searchedManager) {
@@ -231,6 +271,7 @@ export default function SalesManagementPage() {
           role: createType,
           organizationName,
           managerId: createType === 'BRANCH_MANAGER' ? selectedHeadManagerId : undefined,
+          referredById: searchedReferrer?.id || null, // 🆕 추천 매니저 ID 전송
         }),
       });
 
@@ -243,6 +284,8 @@ export default function SalesManagementPage() {
       setSearchedManager(null);
       setOrganizationName('');
       setSelectedHeadManagerId('');
+      setReferrerSearchPhone(''); // 🆕 추천 매니저 검색 초기화
+      setSearchedReferrer(null); // 🆕 추천 매니저 초기화
       
       loadSalesPeople();
     } catch (err: any) {
@@ -721,6 +764,7 @@ export default function SalesManagementPage() {
                     <th style={{ padding: 16, textAlign: 'left', fontWeight: 600 }}>이메일</th>
                     <th style={{ padding: 16, textAlign: 'center', fontWeight: 600 }}>소속 본부</th>
                     <th style={{ padding: 16, textAlign: 'center', fontWeight: 600 }}>소속 지사</th>
+                    <th style={{ padding: 16, textAlign: 'center', fontWeight: 600 }}>추천 매니저</th>
                     <th style={{ padding: 16, textAlign: 'center', fontWeight: 600 }}>추천 합계</th>
                     <th style={{ padding: 16, textAlign: 'center', fontWeight: 600 }}>상태</th>
                     <th style={{ padding: 16, textAlign: 'center', fontWeight: 600 }}>관리</th>
@@ -826,6 +870,20 @@ export default function SalesManagementPage() {
                           }
                           return '-';
                         })()}
+                      </td>
+                      <td style={{ padding: 16, textAlign: 'center' }}>
+                        {person.referredBy ? (
+                          <div>
+                            <div style={{ fontWeight: 600, color: '#9c27b0' }}>
+                              {person.referredBy.name}
+                            </div>
+                            <div style={{ fontSize: 11, color: '#999', marginTop: 2 }}>
+                              {person.referredBy.phone}
+                            </div>
+                          </div>
+                        ) : (
+                          <span style={{ color: '#999' }}>-</span>
+                        )}
                       </td>
                       <td style={{ padding: 16, textAlign: 'center' }}>
                         <div style={{ fontWeight: 600 }}>{person.totalReferrals || 0}</div>
@@ -1692,6 +1750,63 @@ export default function SalesManagementPage() {
                 />
               </div>
 
+              {/* 🆕 추천 매니저 검색 (선택사항) */}
+              <div style={{ marginBottom: 20 }}>
+                <label style={{ display: 'block', marginBottom: 8, fontWeight: 600, fontSize: 14 }}>
+                  추천 매니저 검색 (선택사항)
+                </label>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input
+                    type="tel"
+                    value={referrerSearchPhone}
+                    onChange={(e) => setReferrerSearchPhone(e.target.value)}
+                    placeholder="예: 01012345678"
+                    style={{
+                      flex: 1,
+                      padding: 12,
+                      border: '1px solid #ddd',
+                      borderRadius: 4,
+                      fontSize: 14,
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                  <button
+                    onClick={searchReferrerByPhone}
+                    style={{
+                      padding: '12px 20px',
+                      backgroundColor: '#9c27b0',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: 4,
+                      cursor: 'pointer',
+                      fontSize: 14,
+                      fontWeight: 600,
+                    }}
+                  >
+                    🔍 검색
+                  </button>
+                </div>
+                {searchedReferrer && (
+                  <div style={{
+                    marginTop: 12,
+                    padding: 12,
+                    backgroundColor: '#f3e5f5',
+                    borderRadius: 4,
+                    border: '1px solid #9c27b0',
+                  }}>
+                    <div style={{ fontWeight: 600, color: '#6a1b9a', marginBottom: 4 }}>
+                      ✓ 추천 매니저를 찾았습니다
+                    </div>
+                    <div style={{ fontSize: 14, color: '#666' }}>
+                      이름: {searchedReferrer.name} | 역할: {getRoleName(searchedReferrer.role)} | 전화번호: {searchedReferrer.phone}
+                    </div>
+                  </div>
+                )}
+                <div style={{ marginTop: 8, fontSize: 13, color: '#999' }}>
+                  💡 이 본부/지사를 소개한 매니저가 있다면 검색해서 연결할 수 있습니다.
+                </div>
+              </div>
+
               <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
                 <button
                   onClick={() => {
@@ -1700,6 +1815,8 @@ export default function SalesManagementPage() {
                     setSearchedManager(null);
                     setOrganizationName('');
                     setSelectedHeadManagerId('');
+                    setReferrerSearchPhone(''); // 🆕 추천 매니저 검색 초기화
+                    setSearchedReferrer(null); // 🆕 추천 매니저 초기화
                   }}
                   style={{
                     padding: '10px 20px',

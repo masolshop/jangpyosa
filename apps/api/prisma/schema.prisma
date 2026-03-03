@@ -768,6 +768,11 @@ model SalesPerson {
   organizationId    String?   // 소속 조직 ID
   organization      Organization? @relation("OrganizationMembers", fields: [organizationId], references: [id])
   
+  // 🆕 추천인 매니저 (이 본부장/지사장을 소개한 매니저)
+  referredById      String?   // 추천한 매니저 ID
+  referredBy        SalesPerson?  @relation("ManagerReferral", fields: [referredById], references: [id])
+  referredManagers  SalesPerson[] @relation("ManagerReferral")
+  
   // 추천인 정보
   referralCode      String    @unique // 추천인 코드 (핸드폰번호 기반)
   referralLink      String    // 추천인 링크 (https://jangpyosa.com/{phone})
@@ -798,6 +803,7 @@ model SalesPerson {
   @@index([role])
   @@index([managerId])
   @@index([organizationId])
+  @@index([referredById])
   @@index([phone])
   @@index([referralCode])
   @@index([isActive])

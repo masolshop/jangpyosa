@@ -105,6 +105,14 @@ router.get('/people', requireAuth, requireRole('SUPER_ADMIN'), async (req, res) 
             activeReferrals: true,
           },
         },
+        referredBy: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+            role: true,
+          },
+        },
         referredCompanies: {
           where: { isActive: true },
           select: {
@@ -2214,7 +2222,7 @@ router.get('/branches/:id/managers', requireSalesAuth, async (req, res) => {
 router.post('/people/:id/promote-to-leader', requireAuth, requireRole('SUPER_ADMIN'), async (req, res) => {
   try {
     const { id } = req.params;
-    const { role, organizationName, managerId } = req.body;
+    const { role, organizationName, managerId, referredById } = req.body;
 
     // 유효한 역할인지 확인
     if (!['HEAD_MANAGER', 'BRANCH_MANAGER'].includes(role)) {
@@ -2248,11 +2256,13 @@ router.post('/people/:id/promote-to-leader', requireAuth, requireRole('SUPER_ADM
         role,
         organizationName,
         managerId: finalManagerId,
+        referredById: referredById || null, // 추천 매니저 ID
       },
       include: {
         manager: true,
         subordinates: true,
         user: true,
+        referredBy: true, // 추천 매니저 정보 포함
       },
     });
 
@@ -2277,6 +2287,8 @@ router.post('/people/:id/promote-to-leader', requireAuth, requireRole('SUPER_ADM
         organizationName: updated.organizationName,
         managerId: updated.managerId,
         manager: updated.manager,
+        referredById: updated.referredById,
+        referredBy: updated.referredBy,
         isActive: updated.isActive,
       },
     });
