@@ -1899,6 +1899,7 @@ export default function SalesDashboard() {
         privateCompanies: 0,
         publicCompanies: 0,
         governmentCompanies: 0,
+        standardWorkplaces: 0,
       });
       setManagerCompanies([]);
     }
