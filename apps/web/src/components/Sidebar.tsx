@@ -531,7 +531,8 @@ interface MenuItemProps {
 function MenuItem({ href, label, icon, active = false, onClick, onNotificationClear, subItems, requiresRole, currentRole, notificationCount, requiresAuth = false, onMobileClick }: MenuItemProps) {
   const pathname = usePathname();
   const [showSubItems, setShowSubItems] = useState(false);
-  const hasAccess = !requiresRole || (currentRole && requiresRole.includes(currentRole));
+  // 🔧 수정: requiresRole이 없거나 undefined면 공개 메뉴 (항상 접근 가능)
+  const hasAccess = !requiresRole || requiresRole.length === 0 || (currentRole && requiresRole.includes(currentRole));
   
   // 알림이 있는 메뉴인지 확인
   const hasNotifications = notificationCount !== undefined && notificationCount > 0;
