@@ -637,6 +637,19 @@ export default function EmployeesPage() {
   const femaleCount = activeEmployees.filter(e => e.gender === "F").length;
   const maleCount = activeEmployees.filter(e => e.gender === "M").length;
 
+  // 🔍 디버깅: 성별 값 확인
+  console.log("👥 [성별 통계 디버깅]");
+  console.log("총 직원 수:", activeEmployees.length);
+  console.log("여성:", femaleCount, "명");
+  console.log("남성:", maleCount, "명");
+  console.log("성별 데이터:", activeEmployees.map(e => ({ name: e.name, gender: e.gender, genderType: typeof e.gender })));
+  
+  // 🔍 gender 값이 "M"이 아닌 직원 찾기
+  const invalidGender = activeEmployees.filter(e => e.gender !== "M" && e.gender !== "F");
+  if (invalidGender.length > 0) {
+    console.warn("⚠️ 잘못된 성별 값:", invalidGender.map(e => ({ name: e.name, gender: e.gender })));
+  }
+
   return (
     <div className="container">
       <div className="card" style={{ maxWidth: "100%", margin: "20px auto" }}>
