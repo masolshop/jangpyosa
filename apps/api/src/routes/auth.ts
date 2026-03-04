@@ -143,7 +143,7 @@ const signupAgentSchema = z.object({
   password: z.string().min(8),
   name: z.string().min(1),
   email: z.string().email().optional(),
-  branchId: z.string().min(1, "지사를 선택하세요"),
+  branchId: z.string().optional(), // 🆕 선택사항으로 변경 (본부장급은 나중에 배정)
   refCode: z.string().optional(), // 추천코드 (매니저가 생성하는 고유코드)
   
   // 🆕 개인정보 동의
@@ -169,10 +169,12 @@ r.post("/signup/agent", async (req, res) => {
       }
     }
 
-    // 지사 존재 확인
-    const branch = await prisma.branch.findUnique({ where: { id: body.branchId } });
-    if (!branch) {
-      return res.status(400).json({ error: "BRANCH_NOT_FOUND" });
+    // 지사 존재 확인 (branchId가 제공된 경우에만)
+    if (body.branchId) {
+      const branch = await prisma.branch.findUnique({ where: { id: body.branchId } });
+      if (!branch) {
+        return res.status(400).json({ error: "BRANCH_NOT_FOUND" });
+      }
     }
 
     const passwordHash = await bcrypt.hash(body.password, 10);
@@ -184,7 +186,7 @@ r.post("/signup/agent", async (req, res) => {
         passwordHash,
         name: body.name,
         role: "AGENT",
-        branchId: body.branchId,
+        branchId: body.branchId || null, // 🆕 선택사항: 없으면 null
         refCode: body.refCode,
         
         // 🆕 개인정보 동의
