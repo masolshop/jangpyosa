@@ -557,6 +557,62 @@ export default function OrganizationsManagementPage() {
                         <p style={{ margin: '4px 0' }}>
                           👥 소속 매니저: {hq.salesPeople?.length || 0}명
                         </p>
+                        
+                        {/* 매니저 목록 표시 */}
+                        {hq.salesPeople && hq.salesPeople.length > 0 && (
+                          <div style={{
+                            marginTop: 12,
+                            padding: 12,
+                            background: '#f8fafc',
+                            borderRadius: 8,
+                            border: '1px solid #e2e8f0',
+                          }}>
+                            <h4 style={{
+                              fontSize: 13,
+                              fontWeight: 600,
+                              color: '#64748b',
+                              marginBottom: 8,
+                            }}>
+                              매니저 목록
+                            </h4>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                              {hq.salesPeople.map((manager: any) => (
+                                <div
+                                  key={manager.id}
+                                  style={{
+                                    padding: '8px 10px',
+                                    background: 'white',
+                                    borderRadius: 6,
+                                    border: '1px solid #e2e8f0',
+                                    fontSize: 13,
+                                  }}
+                                >
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <div>
+                                      <span style={{ fontWeight: 600, color: '#334155' }}>
+                                        {manager.name}
+                                      </span>
+                                      <span style={{
+                                        marginLeft: 8,
+                                        padding: '2px 6px',
+                                        background: manager.role === 'HEAD_MANAGER' ? '#3b82f6' : manager.role === 'BRANCH_MANAGER' ? '#10b981' : '#8b5cf6',
+                                        color: 'white',
+                                        borderRadius: 4,
+                                        fontSize: 11,
+                                        fontWeight: 600,
+                                      }}>
+                                        {manager.role === 'HEAD_MANAGER' ? '본부장' : manager.role === 'BRANCH_MANAGER' ? '지사장' : '매니저'}
+                                      </span>
+                                    </div>
+                                    <span style={{ color: '#64748b', fontSize: 12 }}>
+                                      📞 {manager.phone}
+                                    </span>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div style={{ display: 'flex', gap: 8 }}>
@@ -688,6 +744,62 @@ export default function OrganizationsManagementPage() {
                           <p style={{ margin: '4px 0' }}>
                             👥 소속 매니저: {branch.salesPeople?.length || 0}명
                           </p>
+                          
+                          {/* 매니저 목록 표시 */}
+                          {branch.salesPeople && branch.salesPeople.length > 0 && (
+                            <div style={{
+                              marginTop: 12,
+                              padding: 12,
+                              background: '#f8fafc',
+                              borderRadius: 8,
+                              border: '1px solid #e2e8f0',
+                            }}>
+                              <h4 style={{
+                                fontSize: 13,
+                                fontWeight: 600,
+                                color: '#64748b',
+                                marginBottom: 8,
+                              }}>
+                                매니저 목록
+                              </h4>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                {branch.salesPeople.map((manager: any) => (
+                                  <div
+                                    key={manager.id}
+                                    style={{
+                                      padding: '8px 10px',
+                                      background: 'white',
+                                      borderRadius: 6,
+                                      border: '1px solid #e2e8f0',
+                                      fontSize: 13,
+                                    }}
+                                  >
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                      <div>
+                                        <span style={{ fontWeight: 600, color: '#334155' }}>
+                                          {manager.name}
+                                        </span>
+                                        <span style={{
+                                          marginLeft: 8,
+                                          padding: '2px 6px',
+                                          background: manager.role === 'HEAD_MANAGER' ? '#3b82f6' : manager.role === 'BRANCH_MANAGER' ? '#10b981' : '#8b5cf6',
+                                          color: 'white',
+                                          borderRadius: 4,
+                                          fontSize: 11,
+                                          fontWeight: 600,
+                                        }}>
+                                          {manager.role === 'HEAD_MANAGER' ? '본부장' : manager.role === 'BRANCH_MANAGER' ? '지사장' : '매니저'}
+                                        </span>
+                                      </div>
+                                      <span style={{ color: '#64748b', fontSize: 12 }}>
+                                        📞 {manager.phone}
+                                      </span>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                       <div style={{ display: 'flex', gap: 8 }}>
