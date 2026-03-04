@@ -132,10 +132,10 @@ router.post('/signup', async (req, res) => {
       return res.status(400).json({ error: '실명인증이 필요합니다' });
     }
 
-    // 본부/지사 선택 확인
-    if (!managerId) {
-      return res.status(400).json({ error: '소속 본부 또는 지사를 선택해주세요' });
-    }
+    // 🆕 본부/지사 선택은 선택사항으로 변경 (관리자가 나중에 배정)
+    // if (!managerId) {
+    //   return res.status(400).json({ error: '소속 본부 또는 지사를 선택해주세요' });
+    // }
 
     // 핸드폰 번호 중복 확인
     const existingUser = await prisma.user.findUnique({
@@ -170,7 +170,7 @@ router.post('/signup', async (req, res) => {
         phone: user.phone,
         email: user.email,
         role: 'MANAGER', // 기본 매니저로 시작
-        managerId: managerId, // 선택한 본부/지사 ID
+        managerId: managerId || null, // 🆕 선택사항: 없으면 null (관리자가 나중에 배정)
         referralCode: user.phone.replace(/^0/, ''), // 0 제거
         referralLink: `https://jangpyosa.com/${user.phone}`,
         totalReferrals: 0,

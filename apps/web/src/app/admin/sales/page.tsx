@@ -236,11 +236,11 @@ export default function SalesLoginPage() {
       return;
     }
 
-    // 본부/지사 선택 확인
-    if (!signupForm.managerId) {
-      setError('소속 본부 또는 지사를 선택해주세요');
-      return;
-    }
+    // 🆕 본부/지사 선택은 선택사항으로 변경 (관리자가 나중에 배정)
+    // if (!signupForm.managerId) {
+    //   setError('소속 본부 또는 지사를 선택해주세요');
+    //   return;
+    // }
 
     // 비밀번호 확인
     if (signupForm.password !== signupForm.confirmPassword) {
@@ -743,7 +743,7 @@ export default function SalesLoginPage() {
             {/* 본부 선택 */}
             <div style={{ marginBottom: 16 }}>
               <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, fontSize: 14 }}>
-                소속 본부 선택 *
+                소속 본부 선택 (선택사항)
               </label>
               <select
                 value={selectedHeadquarter}
@@ -752,7 +752,6 @@ export default function SalesLoginPage() {
                   // 본부 직속인 경우 본부 ID를 managerId로 설정
                   setSignupForm({ ...signupForm, managerId: e.target.value });
                 }}
-                required
                 style={{
                   width: '100%',
                   padding: '12px',
@@ -762,7 +761,7 @@ export default function SalesLoginPage() {
                   background: 'white',
                 }}
               >
-                <option value="">본부를 선택하세요</option>
+                <option value="">선택하지 않아도 가입 가능합니다</option>
                 {organizations.headquarters.map((hq) => (
                   <option key={hq.id} value={hq.id}>
                     {hq.name}
@@ -797,7 +796,7 @@ export default function SalesLoginPage() {
                   ))}
                 </select>
                 <div style={{ fontSize: 12, color: '#6b7280', marginTop: 4 }}>
-                  지사를 선택하지 않으면 본부 직속으로 배정됩니다
+                  지사를 선택하지 않으면 본부 직속으로 배정됩니다. 둘 다 선택하지 않으면 관리자가 나중에 배정합니다.
                 </div>
               </div>
             )}
