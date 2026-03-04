@@ -124,7 +124,14 @@ export default function SalesLoginPage() {
         const response = await fetch(`${API_BASE}/sales/organizations`);
         const data = await response.json();
         if (response.ok) {
+          console.log('📊 본부/지사 목록 로드:', {
+            headquarters: data.headquarters?.length || 0,
+            branches: data.branches?.length || 0,
+          });
+          console.log('본부 목록:', data.headquarters);
           setOrganizations(data);
+        } else {
+          console.error('❌ 본부/지사 로드 실패:', data);
         }
       } catch (err) {
         console.error('본부/지사 목록 로드 실패:', err);
