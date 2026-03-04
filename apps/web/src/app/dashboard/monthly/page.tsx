@@ -66,7 +66,7 @@ function calculateFemaleIncentive(details?: any[]): { count: number; amount: num
 
 export default function MonthlyManagementPage() {
   const router = useRouter();
-  const [year, setYear] = useState(2024); // 2024년으로 변경 (테스트용)
+  const [year, setYear] = useState(2026); // 2026년 기본값
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
