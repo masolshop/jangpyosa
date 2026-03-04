@@ -1,5 +1,16 @@
 # 장표사닷컴 (JangPyosa.com)
 
+## ⚠️ 🔒 중요 경고
+
+**APICK API 설정은 절대 변경하지 마십시오!**
+
+- ❌ `APICK_PROVIDER: "real"` → Mock으로 변경 금지
+- ❌ `APICK_API_KEY` → 삭제 또는 변경 금지
+- ❌ Mock 코드 추가 금지
+- 📖 자세한 내용: [APICK_CONFIG_LOCK.md](./APICK_CONFIG_LOCK.md)
+
+---
+
 ## 🎉 프로젝트 개요
 
 **장표사닷컴**은 장애인 미고용 부담금 납부 대상 기업과 장애인표준사업장(878개)을 연결하는 **연계고용 도급계약 플랫폼**입니다.
