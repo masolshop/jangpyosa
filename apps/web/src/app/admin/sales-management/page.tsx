@@ -109,11 +109,25 @@ export default function SalesManagementPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletingPerson, setDeletingPerson] = useState<SalesPerson | null>(null);
 
+  // 계층별 통계 데이터 상태
+  const [hierarchyStats, setHierarchyStats] = useState<any>(null);
+  const [loadingStats, setLoadingStats] = useState(false);
+
   // 영업 인원 목록 로드
   useEffect(() => {
     loadSalesPeople();
     loadPendingPeople();
+    loadHierarchyStats(); // 통계 데이터 로드
   }, []);
+
+  // viewMode가 변경될 때 통계 데이터 로드
+  useEffect(() => {
+    if (viewMode === 'headquarters' || viewMode === 'branches' || viewMode === 'managers') {
+      if (!hierarchyStats) {
+        loadHierarchyStats();
+      }
+    }
+  }, [viewMode]);
 
   // 필터링
   useEffect(() => {
@@ -166,6 +180,21 @@ export default function SalesManagementPage() {
       setPendingPeople(data.salesPeople || []);
     } catch (err: any) {
       console.error('승인 대기 목록 로드 실패:', err);
+    }
+  };
+
+  // 계층별 통계 로드
+  const loadHierarchyStats = async () => {
+    try {
+      setLoadingStats(true);
+      console.log('📊 계층별 통계 로드 시작...');
+      const data = await apiFetch('/sales/stats/hierarchy');
+      console.log('✅ 통계 데이터:', data);
+      setHierarchyStats(data);
+    } catch (err: any) {
+      console.error('❌ 통계 로드 실패:', err);
+    } finally {
+      setLoadingStats(false);
     }
   };
 
@@ -1312,8 +1341,95 @@ export default function SalesManagementPage() {
             padding: 24,
             boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
           }}>
-            <h2 style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 24, color: '#d32f2f' }}>🏢 본부별 통계</h2>
-            <div style={{ color: '#666', fontSize: 14 }}>본부별 통계 기능 구현 예정</div>
+            <h2 style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 24, color: '#d32f2f' }}>
+              🏢 본부별 통계 (총 {hierarchyStats?.summary?.totalHeadquarters || 0}개)
+            </h2>
+            
+            {loadingStats ? (
+              <div style={{ textAlign: 'center', padding: 40, color: '#666' }}>
+                통계 데이터를 불러오는 중...
+              </div>
+            ) : hierarchyStats?.headquarters?.length > 0 ? (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead style={{ backgroundColor: '#f5f5f5' }}>
+                    <tr>
+                      <th style={{ padding: 12, textAlign: 'left', borderBottom: '2px solid #ddd' }}>본부명</th>
+                      <th style={{ padding: 12, textAlign: 'left', borderBottom: '2px solid #ddd' }}>본부장</th>
+                      <th style={{ padding: 12, textAlign: 'center', borderBottom: '2px solid #ddd' }}>지사</th>
+                      <th style={{ padding: 12, textAlign: 'center', borderBottom: '2px solid #ddd' }}>매니저</th>
+                      <th style={{ padding: 12, textAlign: 'center', borderBottom: '2px solid #ddd' }}>총 기업</th>
+                      <th style={{ padding: 12, textAlign: 'center', borderBottom: '2px solid #ddd' }}>민간기업</th>
+                      <th style={{ padding: 12, textAlign: 'center', borderBottom: '2px solid #ddd' }}>공공기관</th>
+                      <th style={{ padding: 12, textAlign: 'center', borderBottom: '2px solid #ddd' }}>정부교육</th>
+                      <th style={{ padding: 12, textAlign: 'center', borderBottom: '2px solid #ddd' }}>표준사업장</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {hierarchyStats.headquarters.map((hq: any) => (
+                      <tr key={hq.id} style={{ borderBottom: '1px solid #eee' }}>
+                        <td style={{ padding: 12, fontWeight: 600, color: '#d32f2f' }}>
+                          {hq.organizationName || hq.name}
+                        </td>
+                        <td style={{ padding: 12 }}>
+                          <div>{hq.name}</div>
+                          <div style={{ fontSize: 12, color: '#999' }}>{hq.phone}</div>
+                        </td>
+                        <td style={{ padding: 12, textAlign: 'center' }}>
+                          <span style={{ 
+                            padding: '4px 12px',
+                            backgroundColor: '#fff3e0',
+                            color: '#f57c00',
+                            borderRadius: 12,
+                            fontWeight: 600,
+                          }}>
+                            {hq.branches}개
+                          </span>
+                        </td>
+                        <td style={{ padding: 12, textAlign: 'center' }}>
+                          <span style={{ 
+                            padding: '4px 12px',
+                            backgroundColor: '#e3f2fd',
+                            color: '#1976d2',
+                            borderRadius: 12,
+                            fontWeight: 600,
+                          }}>
+                            {hq.managers}명
+                          </span>
+                        </td>
+                        <td style={{ padding: 12, textAlign: 'center', fontWeight: 600 }}>
+                          {hq.stats.totalCompanies}
+                        </td>
+                        <td style={{ padding: 12, textAlign: 'center' }}>
+                          <span style={{ color: '#4caf50', fontWeight: 600 }}>
+                            {hq.stats.privateCompanies}
+                          </span>
+                        </td>
+                        <td style={{ padding: 12, textAlign: 'center' }}>
+                          <span style={{ color: '#9c27b0', fontWeight: 600 }}>
+                            {hq.stats.publicCompanies}
+                          </span>
+                        </td>
+                        <td style={{ padding: 12, textAlign: 'center' }}>
+                          <span style={{ color: '#ff9800', fontWeight: 600 }}>
+                            {hq.stats.governmentCompanies}
+                          </span>
+                        </td>
+                        <td style={{ padding: 12, textAlign: 'center' }}>
+                          <span style={{ color: '#2196f3', fontWeight: 600 }}>
+                            {hq.stats.standardWorkplaces}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div style={{ textAlign: 'center', padding: 40, color: '#666' }}>
+                등록된 본부가 없습니다.
+              </div>
+            )}
           </div>
         )}
 
@@ -1325,8 +1441,87 @@ export default function SalesManagementPage() {
             padding: 24,
             boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
           }}>
-            <h2 style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 24, color: '#f57c00' }}>🏪 지사별 통계</h2>
-            <div style={{ color: '#666', fontSize: 14 }}>지사별 통계 기능 구현 예정</div>
+            <h2 style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 24, color: '#f57c00' }}>
+              🏪 지사별 통계 (총 {hierarchyStats?.summary?.totalBranches || 0}개)
+            </h2>
+            
+            {loadingStats ? (
+              <div style={{ textAlign: 'center', padding: 40, color: '#666' }}>
+                통계 데이터를 불러오는 중...
+              </div>
+            ) : hierarchyStats?.branches?.length > 0 ? (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead style={{ backgroundColor: '#f5f5f5' }}>
+                    <tr>
+                      <th style={{ padding: 12, textAlign: 'left', borderBottom: '2px solid #ddd' }}>지사명</th>
+                      <th style={{ padding: 12, textAlign: 'left', borderBottom: '2px solid #ddd' }}>지사장</th>
+                      <th style={{ padding: 12, textAlign: 'left', borderBottom: '2px solid #ddd' }}>소속 본부</th>
+                      <th style={{ padding: 12, textAlign: 'center', borderBottom: '2px solid #ddd' }}>매니저</th>
+                      <th style={{ padding: 12, textAlign: 'center', borderBottom: '2px solid #ddd' }}>총 기업</th>
+                      <th style={{ padding: 12, textAlign: 'center', borderBottom: '2px solid #ddd' }}>민간기업</th>
+                      <th style={{ padding: 12, textAlign: 'center', borderBottom: '2px solid #ddd' }}>공공기관</th>
+                      <th style={{ padding: 12, textAlign: 'center', borderBottom: '2px solid #ddd' }}>정부교육</th>
+                      <th style={{ padding: 12, textAlign: 'center', borderBottom: '2px solid #ddd' }}>표준사업장</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {hierarchyStats.branches.map((branch: any) => (
+                      <tr key={branch.id} style={{ borderBottom: '1px solid #eee' }}>
+                        <td style={{ padding: 12, fontWeight: 600, color: '#f57c00' }}>
+                          {branch.organizationName || branch.name}
+                        </td>
+                        <td style={{ padding: 12 }}>
+                          <div>{branch.name}</div>
+                          <div style={{ fontSize: 12, color: '#999' }}>{branch.phone}</div>
+                        </td>
+                        <td style={{ padding: 12, color: '#d32f2f', fontWeight: 500 }}>
+                          {branch.headquartersName}
+                        </td>
+                        <td style={{ padding: 12, textAlign: 'center' }}>
+                          <span style={{ 
+                            padding: '4px 12px',
+                            backgroundColor: '#e3f2fd',
+                            color: '#1976d2',
+                            borderRadius: 12,
+                            fontWeight: 600,
+                          }}>
+                            {branch.managers}명
+                          </span>
+                        </td>
+                        <td style={{ padding: 12, textAlign: 'center', fontWeight: 600 }}>
+                          {branch.stats.totalCompanies}
+                        </td>
+                        <td style={{ padding: 12, textAlign: 'center' }}>
+                          <span style={{ color: '#4caf50', fontWeight: 600 }}>
+                            {branch.stats.privateCompanies}
+                          </span>
+                        </td>
+                        <td style={{ padding: 12, textAlign: 'center' }}>
+                          <span style={{ color: '#9c27b0', fontWeight: 600 }}>
+                            {branch.stats.publicCompanies}
+                          </span>
+                        </td>
+                        <td style={{ padding: 12, textAlign: 'center' }}>
+                          <span style={{ color: '#ff9800', fontWeight: 600 }}>
+                            {branch.stats.governmentCompanies}
+                          </span>
+                        </td>
+                        <td style={{ padding: 12, textAlign: 'center' }}>
+                          <span style={{ color: '#2196f3', fontWeight: 600 }}>
+                            {branch.stats.standardWorkplaces}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div style={{ textAlign: 'center', padding: 40, color: '#666' }}>
+                등록된 지사가 없습니다.
+              </div>
+            )}
           </div>
         )}
 
@@ -1338,8 +1533,81 @@ export default function SalesManagementPage() {
             padding: 24,
             boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
           }}>
-            <h2 style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 24, color: '#1976d2' }}>👥 매니저별 통계</h2>
-            <div style={{ color: '#666', fontSize: 14 }}>매니저별 통계 기능 구현 예정</div>
+            <h2 style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 24, color: '#1976d2' }}>
+              👥 매니저별 통계 (총 {hierarchyStats?.summary?.totalManagers || 0}명)
+            </h2>
+            
+            {loadingStats ? (
+              <div style={{ textAlign: 'center', padding: 40, color: '#666' }}>
+                통계 데이터를 불러오는 중...
+              </div>
+            ) : hierarchyStats?.managers?.length > 0 ? (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead style={{ backgroundColor: '#f5f5f5' }}>
+                    <tr>
+                      <th style={{ padding: 12, textAlign: 'left', borderBottom: '2px solid #ddd' }}>매니저명</th>
+                      <th style={{ padding: 12, textAlign: 'left', borderBottom: '2px solid #ddd' }}>연락처</th>
+                      <th style={{ padding: 12, textAlign: 'left', borderBottom: '2px solid #ddd' }}>소속 본부</th>
+                      <th style={{ padding: 12, textAlign: 'left', borderBottom: '2px solid #ddd' }}>소속 지사</th>
+                      <th style={{ padding: 12, textAlign: 'center', borderBottom: '2px solid #ddd' }}>총 기업</th>
+                      <th style={{ padding: 12, textAlign: 'center', borderBottom: '2px solid #ddd' }}>민간기업</th>
+                      <th style={{ padding: 12, textAlign: 'center', borderBottom: '2px solid #ddd' }}>공공기관</th>
+                      <th style={{ padding: 12, textAlign: 'center', borderBottom: '2px solid #ddd' }}>정부교육</th>
+                      <th style={{ padding: 12, textAlign: 'center', borderBottom: '2px solid #ddd' }}>표준사업장</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {hierarchyStats.managers.map((manager: any) => (
+                      <tr key={manager.id} style={{ borderBottom: '1px solid #eee' }}>
+                        <td style={{ padding: 12, fontWeight: 600, color: '#1976d2' }}>
+                          {manager.name}
+                        </td>
+                        <td style={{ padding: 12 }}>
+                          <div style={{ fontSize: 13 }}>{manager.phone}</div>
+                          {manager.email && (
+                            <div style={{ fontSize: 12, color: '#999' }}>{manager.email}</div>
+                          )}
+                        </td>
+                        <td style={{ padding: 12, color: '#d32f2f', fontWeight: 500 }}>
+                          {manager.headquartersName}
+                        </td>
+                        <td style={{ padding: 12, color: '#f57c00', fontWeight: 500 }}>
+                          {manager.branchName}
+                        </td>
+                        <td style={{ padding: 12, textAlign: 'center', fontWeight: 600 }}>
+                          {manager.stats.totalCompanies}
+                        </td>
+                        <td style={{ padding: 12, textAlign: 'center' }}>
+                          <span style={{ color: '#4caf50', fontWeight: 600 }}>
+                            {manager.stats.privateCompanies}
+                          </span>
+                        </td>
+                        <td style={{ padding: 12, textAlign: 'center' }}>
+                          <span style={{ color: '#9c27b0', fontWeight: 600 }}>
+                            {manager.stats.publicCompanies}
+                          </span>
+                        </td>
+                        <td style={{ padding: 12, textAlign: 'center' }}>
+                          <span style={{ color: '#ff9800', fontWeight: 600 }}>
+                            {manager.stats.governmentCompanies}
+                          </span>
+                        </td>
+                        <td style={{ padding: 12, textAlign: 'center' }}>
+                          <span style={{ color: '#2196f3', fontWeight: 600 }}>
+                            {manager.stats.standardWorkplaces}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div style={{ textAlign: 'center', padding: 40, color: '#666' }}>
+                등록된 매니저가 없습니다.
+              </div>
+            )}
           </div>
         )}
 
