@@ -295,11 +295,31 @@ export function calculateMonthlyData(
   const obligatedCount = Math.floor(totalEmployeeCount * quotaRate); // 의무고용인원 (floor)
   const incentiveBaselineCount = Math.ceil(totalEmployeeCount * quotaRate); // 장려금 기준인원 (ceil) ★
 
-  // 4. 각 직원별 상세 계산
+  // 4. 먼저 총 인정수를 계산 (장려금 지급 여부 판단용)
+  let totalRecognizedCount = 0;
+  sortedEmployees.forEach((emp) => {
+    let levyRecognizedCount = 1.0;
+    if (emp.severity === "SEVERE" && emp.monthlyWorkHours >= SEVERE_MULTIPLIER_THRESHOLD) {
+      levyRecognizedCount = SEVERE_MULTIPLIER;
+    }
+    totalRecognizedCount += levyRecognizedCount;
+  });
+
+  // 5. 고용률 및 미달 여부 확인
+  const shortfallCount = Math.max(0, obligatedCount - totalRecognizedCount);
+  const isDeficit = totalRecognizedCount < obligatedCount; // 의무고용 미달 여부
+
+  console.log(`📊 [${year}년 ${month}월] 고용 현황:`);
+  console.log(`  - 의무고용인원: ${obligatedCount}명`);
+  console.log(`  - 총 인정수: ${totalRecognizedCount.toFixed(1)}명`);
+  console.log(`  - 미달인원: ${shortfallCount.toFixed(1)}명`);
+  console.log(`  - ${isDeficit ? '❌ 미달 → 장려금 없음, 부담금 발생' : '✅ 충족 → 부담금 없음, 장려금 발생'}\n`);
+
+  // 6. 각 직원별 상세 계산
   const details: EmployeeMonthlyDetail[] = [];
   let totalIncentive = 0;
-  let totalRecognizedCount = 0;
   let excludedCount = 0;
+  totalRecognizedCount = 0; // 재계산
 
   console.log(`📊 [${year}년 ${month}월] 직원별 인정수 계산 시작 (총 ${sortedEmployees.length}명)`);
   
@@ -342,10 +362,15 @@ export function calculateMonthlyData(
     const salaryLimit = Math.round(emp.monthlySalary * 0.6);
     const finalRate = Math.min(baseRate, salaryLimit);
 
-    // 장려금 지급: 기준인원 초과 && 제외사유 없음
-    if (!isWithinBaseline && !excludeReason) {
+    // ★ 장려금 지급 조건: 의무고용 충족 && 기준인원 초과 && 제외사유 없음
+    if (!isDeficit && !isWithinBaseline && !excludeReason) {
       incentiveAmount = finalRate;
       totalIncentive += incentiveAmount;
+    } else if (isDeficit && !isWithinBaseline) {
+      // 미달 상태에서는 장려금 없음 (로그만 출력)
+      if (!excludeReason) {
+        excludeReason = "의무고용 미달 (장려금 미지급)";
+      }
     }
 
     // 부담금 인정 인원 (제외 조건 없음, 모든 재직자 인정)
@@ -382,9 +407,7 @@ export function calculateMonthlyData(
     });
   });
 
-  // 5. 부담금 계산 (2026년 최신 로직)
-  const shortfallCount = Math.max(0, obligatedCount - totalRecognizedCount);
-  
+  // 7. 부담금 계산 (2026년 최신 로직)
   // 고용률 계산
   const employmentRate = obligatedCount > 0 
     ? (totalRecognizedCount / obligatedCount) * 100 
@@ -410,7 +433,7 @@ export function calculateMonthlyData(
   // 총 부담금 (0명 고용 시 = 미달인원 × 기초액)
   const levy = Math.round(shortfallCount * levyPerPerson);
 
-  console.log(`📊 [${year}년 ${month}월] 최종 계산 결과:`);
+  console.log(`\n📊 [${year}년 ${month}월] 최종 계산 결과:`);
   console.log(`  - 장애인 직원 수: ${activeEmployees.length}명`);
   console.log(`  - 총 인정수: ${totalRecognizedCount.toFixed(1)}명`);
   console.log(`  - 의무고용인원: ${obligatedCount}명`);
@@ -418,9 +441,11 @@ export function calculateMonthlyData(
   console.log(`  - 고용률: ${employmentRate.toFixed(1)}%`);
   console.log(`  - 부담금 적용률: ${(levyApplicationRate * 100).toFixed(0)}%`);
   console.log(`  - 1인당 부담금: ${levyPerPerson.toLocaleString()}원`);
-  console.log(`  - 총 부담금: ${levy.toLocaleString()}원\n`);
+  console.log(`  - 총 부담금: ${levy.toLocaleString()}원`);
+  console.log(`  - 총 장려금: ${totalIncentive.toLocaleString()}원`);
+  console.log(`  - ${isDeficit ? '❌ 미달 상태 → 장려금 0원' : '✅ 충족 상태 → 부담금 0원'}\n`);
 
-  // 6. 지급인원 및 순액 계산
+  // 8. 지급인원 및 순액 계산
   // 공식: 지급인원 = 장애인근로자수 - 기준인원 - 제외인원
   const eligibleCount = Math.max(0, activeEmployees.length - incentiveBaselineCount - excludedCount);
   const netAmount = totalIncentive - levy; // 순액 = 장려금 - 부담금
