@@ -145,9 +145,13 @@ export default function SalesLoginPage() {
     if (selectedHeadquarter) {
       const filtered = organizations.branches.filter(b => b.parentId === selectedHeadquarter);
       setAvailableBranches(filtered);
-      // 본부를 바꾸면 지사 선택 초기화
-      if (signupForm.managerId && !filtered.find(b => b.id === signupForm.managerId)) {
-        setSignupForm({ ...signupForm, managerId: '' });
+      // 본부를 바꾸면 지사 선택 초기화 (단, 본부 ID 자체는 유지)
+      if (signupForm.managerId && 
+          signupForm.managerId !== selectedHeadquarter && 
+          !filtered.find(b => b.id === signupForm.managerId)) {
+        console.log('⚠️ managerId 초기화 (이전 지사 선택 제거)');
+        // 본부 ID로 재설정
+        setSignupForm(prev => ({ ...prev, managerId: selectedHeadquarter }));
       }
     } else {
       setAvailableBranches([]);
