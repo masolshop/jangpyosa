@@ -63,3 +63,6 @@ apps/api/.env
 
 # PM2 ecosystem config with real API keys (should be configured on server)
 # ecosystem.config.js
+
+# APICK 설정 보호 (민감 정보 포함)
+ecosystem.config.js
