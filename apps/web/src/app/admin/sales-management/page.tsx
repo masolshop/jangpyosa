@@ -45,7 +45,7 @@ interface SalesPerson {
   promotedBy?: string;
 }
 
-type ViewMode = 'list' | 'organization';
+type ViewMode = 'stats' | 'headquarters' | 'branches' | 'managers';
 
 export default function SalesManagementPage() {
   const router = useRouter();
@@ -57,7 +57,7 @@ export default function SalesManagementPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
-  const [viewMode, setViewMode] = useState<ViewMode>('list');
+  const [viewMode, setViewMode] = useState<ViewMode>('stats');
   const [expandedBranches, setExpandedBranches] = useState<Set<string>>(new Set());
   const [expandedHeadquartersInList, setExpandedHeadquartersInList] = useState<Set<string>>(new Set());
   const [expandedBranchesInList, setExpandedBranchesInList] = useState<Set<string>>(new Set());
@@ -660,6 +660,154 @@ export default function SalesManagementPage() {
           </div>
         )}
 
+        {/* 영업 통계 카드 */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+          gap: 16,
+          marginBottom: 24,
+        }}>
+          {/* 소속 지사 */}
+          <div style={{
+            background: 'white',
+            borderRadius: 12,
+            padding: 20,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+            textAlign: 'center',
+          }}>
+            <div style={{ fontSize: 13, color: '#666', marginBottom: 12, fontWeight: 500 }}>
+              소속 지사
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
+              <span style={{ fontSize: 32, marginRight: 8 }}>🏪</span>
+            </div>
+            <div style={{ fontSize: 32, fontWeight: 'bold', color: '#1976d2' }}>
+              {salesPeople.filter(p => p.role === 'BRANCH_MANAGER').length}
+            </div>
+            <div style={{ fontSize: 13, color: '#999', marginTop: 4 }}>개</div>
+          </div>
+
+          {/* 소속 매니저 */}
+          <div style={{
+            background: 'white',
+            borderRadius: 12,
+            padding: 20,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+            textAlign: 'center',
+          }}>
+            <div style={{ fontSize: 13, color: '#666', marginBottom: 12, fontWeight: 500 }}>
+              소속 매니저
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
+              <span style={{ fontSize: 32, marginRight: 8 }}>👥</span>
+            </div>
+            <div style={{ fontSize: 32, fontWeight: 'bold', color: '#1976d2' }}>
+              {salesPeople.filter(p => p.role === 'MANAGER').length}
+            </div>
+            <div style={{ fontSize: 13, color: '#999', marginTop: 4 }}>명</div>
+          </div>
+
+          {/* 중소 창업 */}
+          <div style={{
+            background: 'white',
+            borderRadius: 12,
+            padding: 20,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+            textAlign: 'center',
+          }}>
+            <div style={{ fontSize: 13, color: '#666', marginBottom: 12, fontWeight: 500 }}>
+              중소 창업
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
+              <span style={{ fontSize: 32, marginRight: 8 }}>🏢</span>
+            </div>
+            <div style={{ fontSize: 32, fontWeight: 'bold', color: '#1976d2' }}>
+              {salesPeople.reduce((sum, p) => sum + (p.referredCompanies?.filter(c => c.companyType === 'PRIVATE_COMPANY').length || 0), 0)}
+            </div>
+            <div style={{ fontSize: 13, color: '#999', marginTop: 4 }}>개</div>
+          </div>
+
+          {/* 민간 기업 */}
+          <div style={{
+            background: 'white',
+            borderRadius: 12,
+            padding: 20,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+            textAlign: 'center',
+          }}>
+            <div style={{ fontSize: 13, color: '#666', marginBottom: 12, fontWeight: 500 }}>
+              민간 기업
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
+              <span style={{ fontSize: 32, marginRight: 8 }}>🏭</span>
+            </div>
+            <div style={{ fontSize: 32, fontWeight: 'bold', color: '#1976d2' }}>
+              0
+            </div>
+            <div style={{ fontSize: 13, color: '#999', marginTop: 4 }}>개</div>
+          </div>
+
+          {/* 공공 기관 */}
+          <div style={{
+            background: 'white',
+            borderRadius: 12,
+            padding: 20,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+            textAlign: 'center',
+          }}>
+            <div style={{ fontSize: 13, color: '#666', marginBottom: 12, fontWeight: 500 }}>
+              공공 기관
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
+              <span style={{ fontSize: 32, marginRight: 8 }}>🏛️</span>
+            </div>
+            <div style={{ fontSize: 32, fontWeight: 'bold', color: '#1976d2' }}>
+              0
+            </div>
+            <div style={{ fontSize: 13, color: '#999', marginTop: 4 }}>개</div>
+          </div>
+
+          {/* 정부 교육 기관 */}
+          <div style={{
+            background: 'white',
+            borderRadius: 12,
+            padding: 20,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+            textAlign: 'center',
+          }}>
+            <div style={{ fontSize: 13, color: '#666', marginBottom: 12, fontWeight: 500 }}>
+              정부 교육 기관
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
+              <span style={{ fontSize: 32, marginRight: 8 }}>🎓</span>
+            </div>
+            <div style={{ fontSize: 32, fontWeight: 'bold', color: '#1976d2' }}>
+              0
+            </div>
+            <div style={{ fontSize: 13, color: '#999', marginTop: 4 }}>개</div>
+          </div>
+
+          {/* 표준 사업장 */}
+          <div style={{
+            background: 'white',
+            borderRadius: 12,
+            padding: 20,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+            textAlign: 'center',
+          }}>
+            <div style={{ fontSize: 13, color: '#666', marginBottom: 12, fontWeight: 500 }}>
+              표준 사업장
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
+              <span style={{ fontSize: 32, marginRight: 8 }}>✅</span>
+            </div>
+            <div style={{ fontSize: 32, fontWeight: 'bold', color: '#4caf50' }}>
+              활성
+            </div>
+            <div style={{ fontSize: 13, color: '#999', marginTop: 4 }}></div>
+          </div>
+        </div>
+
         {/* 뷰 모드 전환 */}
         <div style={{
           background: 'white',
@@ -670,11 +818,11 @@ export default function SalesManagementPage() {
         }}>
           <div style={{ display: 'flex', gap: 12 }}>
             <button
-              onClick={() => setViewMode('list')}
+              onClick={() => setViewMode('stats')}
               style={{
                 padding: '8px 16px',
-                backgroundColor: viewMode === 'list' ? '#1976d2' : 'white',
-                color: viewMode === 'list' ? 'white' : '#666',
+                backgroundColor: viewMode === 'stats' ? '#1976d2' : 'white',
+                color: viewMode === 'stats' ? 'white' : '#666',
                 border: '1px solid #ddd',
                 borderRadius: 4,
                 cursor: 'pointer',
@@ -682,14 +830,14 @@ export default function SalesManagementPage() {
                 fontWeight: 600,
               }}
             >
-              📋 목록 보기
+              📊 영업관리
             </button>
             <button
-              onClick={() => setViewMode('organization')}
+              onClick={() => setViewMode('headquarters')}
               style={{
                 padding: '8px 16px',
-                backgroundColor: viewMode === 'organization' ? '#1976d2' : 'white',
-                color: viewMode === 'organization' ? 'white' : '#666',
+                backgroundColor: viewMode === 'headquarters' ? '#1976d2' : 'white',
+                color: viewMode === 'headquarters' ? 'white' : '#666',
                 border: '1px solid #ddd',
                 borderRadius: 4,
                 cursor: 'pointer',
@@ -697,13 +845,43 @@ export default function SalesManagementPage() {
                 fontWeight: 600,
               }}
             >
-              🏢 조직도 보기
+              🏢 본부 통계
+            </button>
+            <button
+              onClick={() => setViewMode('branches')}
+              style={{
+                padding: '8px 16px',
+                backgroundColor: viewMode === 'branches' ? '#1976d2' : 'white',
+                color: viewMode === 'branches' ? 'white' : '#666',
+                border: '1px solid #ddd',
+                borderRadius: 4,
+                cursor: 'pointer',
+                fontSize: 14,
+                fontWeight: 600,
+              }}
+            >
+              🏪 지사별 통계
+            </button>
+            <button
+              onClick={() => setViewMode('managers')}
+              style={{
+                padding: '8px 16px',
+                backgroundColor: viewMode === 'managers' ? '#1976d2' : 'white',
+                color: viewMode === 'managers' ? 'white' : '#666',
+                border: '1px solid #ddd',
+                borderRadius: 4,
+                cursor: 'pointer',
+                fontSize: 14,
+                fontWeight: 600,
+              }}
+            >
+              👥 매니저별 통계
             </button>
           </div>
         </div>
 
-        {/* 목록 보기 */}
-        {viewMode === 'list' && (
+        {/* 영업관리 보기 */}
+        {viewMode === 'stats' && (
           <>
             {/* 승인 대기 중인 매니저 */}
             {pendingPeople.length > 0 && (
@@ -1118,242 +1296,42 @@ export default function SalesManagementPage() {
           </>
         )}
 
-        {/* 조직도 보기 */}
-        {viewMode === 'organization' && (
+        {/* 본부 통계 */}
+        {viewMode === 'headquarters' && (
           <div style={{
             background: 'white',
             borderRadius: 8,
             padding: 24,
             boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
           }}>
-            <h2 style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 24 }}>조직도</h2>
-            
-            {getOrganizationTree().map((headManager) => {
-              const isExpanded = expandedBranches.has(headManager.id);
-              const branchCount = headManager.subordinates?.length || 0;
-              const managerCount = headManager.subordinates?.reduce((sum, branch) => sum + (branch.subordinates?.length || 0), 0) || 0;
-              
-              return (
-              <div key={headManager.id} style={{ marginBottom: 32 }}>
-                {/* 본부장 */}
-                <div 
-                  onClick={() => toggleBranchExpansion(headManager.id)}
-                  style={{
-                  padding: 20,
-                  backgroundColor: '#ffebee',
-                  borderRadius: 8,
-                  marginBottom: 16,
-                  cursor: 'pointer',
-                  border: isExpanded ? '2px solid #d32f2f' : '2px solid transparent',
-                  transition: 'all 0.3s ease',
-                }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
-                      <div style={{ fontSize: 18, fontWeight: 'bold', color: '#d32f2f', marginBottom: 8 }}>
-                        {isExpanded ? '▼' : '▶'} 🏢 {headManager.name} 본부
-                      </div>
-                      <div style={{ fontSize: 14, color: '#666' }}>
-                        📞 {headManager.phone} | ✉️ {headManager.email || '-'}
-                      </div>
-                      <div style={{ fontSize: 14, color: '#666', marginTop: 4 }}>
-                        지사 {branchCount}개 | 소속매니저 {managerCount}명
-                      </div>
-                    </div>
-                    <div style={{ display: 'flex', gap: 8 }} onClick={(e) => e.stopPropagation()}>
-                      <button
-                        onClick={() => openEditModal(headManager)}
-                        style={{
-                          padding: '8px 16px',
-                          backgroundColor: '#1976d2',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: 4,
-                          cursor: 'pointer',
-                          fontSize: 14,
-                          fontWeight: 600,
-                        }}
-                      >
-                        ✏️ 수정
-                      </button>
-                      <button
-                        onClick={() => openCreateModal('BRANCH_MANAGER', headManager.id)}
-                        style={{
-                          padding: '8px 16px',
-                          backgroundColor: '#f57c00',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: 4,
-                          cursor: 'pointer',
-                          fontSize: 14,
-                          fontWeight: 600,
-                        }}
-                      >
-                        + 지사 생성
-                      </button>
-                      <button
-                        onClick={() => handleDelete(headManager)}
-                        style={{
-                          padding: '8px 16px',
-                          backgroundColor: '#d32f2f',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: 4,
-                          cursor: 'pointer',
-                          fontSize: 14,
-                          fontWeight: 600,
-                        }}
-                      >
-                        🗑️ 삭제
-                      </button>
-                    </div>
-                  </div>
-                </div>
+            <h2 style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 24, color: '#d32f2f' }}>🏢 본부별 통계</h2>
+            <div style={{ color: '#666', fontSize: 14 }}>본부별 통계 기능 구현 예정</div>
+          </div>
+        )}
 
-                {/* 지사장들 */}
-                {isExpanded && (
-                <div style={{ paddingLeft: 40 }}>
-                  {headManager.subordinates && headManager.subordinates.length > 0 ? (
-                    headManager.subordinates.map((branch) => (
-                      <div key={branch.id} style={{
-                        padding: 16,
-                        backgroundColor: '#fff3e0',
-                        borderRadius: 8,
-                        marginBottom: 12,
-                        borderLeft: '4px solid #f57c00',
-                      }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <div>
-                            <div style={{ fontSize: 16, fontWeight: 'bold', color: '#f57c00', marginBottom: 4 }}>
-                              🏪 {branch.organizationName || branch.name} (지사장: {branch.name})
-                            </div>
-                            <div style={{ fontSize: 13, color: '#666' }}>
-                              📞 {branch.phone} | ✉️ {branch.email || '-'}
-                            </div>
-                            <div style={{ fontSize: 13, color: '#666', marginTop: 4 }}>
-                              <span style={{ fontWeight: 600, color: '#f57c00' }}>
-                                소속매니저 {branch.subordinates?.length || 0}명
-                              </span>
-                            </div>
-                          </div>
-                          <div style={{ display: 'flex', gap: 8 }}>
-                            <button
-                              onClick={() => openEditModal(branch)}
-                              style={{
-                                padding: '6px 12px',
-                                backgroundColor: '#1976d2',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: 4,
-                                cursor: 'pointer',
-                                fontSize: 12,
-                                fontWeight: 600,
-                              }}
-                            >
-                              ✏️ 수정
-                            </button>
-                            <button
-                              onClick={() => handleToggleActive(branch.id, branch.isActive)}
-                              style={{
-                                padding: '6px 12px',
-                                backgroundColor: branch.isActive ? '#f57c00' : '#4caf50',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: 4,
-                                cursor: 'pointer',
-                                fontSize: 12,
-                              }}
-                            >
-                              {branch.isActive ? '비활성화' : '활성화'}
-                            </button>
-                            <button
-                              onClick={() => handleDelete(branch)}
-                              style={{
-                                padding: '6px 12px',
-                                backgroundColor: '#d32f2f',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: 4,
-                                cursor: 'pointer',
-                                fontSize: 12,
-                                fontWeight: 600,
-                              }}
-                            >
-                              🗑️ 삭제
-                            </button>
-                          </div>
-                        </div>
-                        
-                        {/* 소속 매니저 목록 */}
-                        {branch.subordinates && branch.subordinates.length > 0 && (
-                          <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid #f0f0f0' }}>
-                            <div style={{ fontSize: 13, fontWeight: 600, color: '#666', marginBottom: 8 }}>
-                              소속 매니저 목록
-                            </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                              {branch.subordinates.map((manager) => (
-                                <div key={manager.id} style={{
-                                  padding: 10,
-                                  backgroundColor: '#f5f5f5',
-                                  borderRadius: 4,
-                                  display: 'flex',
-                                  justifyContent: 'space-between',
-                                  alignItems: 'center',
-                                }}>
-                                  <div>
-                                    <span style={{ fontWeight: 600, fontSize: 13 }}>👤 {manager.name}</span>
-                                    <span style={{ color: '#666', fontSize: 12, marginLeft: 8 }}>
-                                      📞 {manager.phone}
-                                    </span>
-                                  </div>
-                                  <button
-                                    onClick={() => openEditModal(manager)}
-                                    style={{
-                                      padding: '4px 8px',
-                                      backgroundColor: '#1976d2',
-                                      color: 'white',
-                                      border: 'none',
-                                      borderRadius: 4,
-                                      cursor: 'pointer',
-                                      fontSize: 11,
-                                      fontWeight: 600,
-                                    }}
-                                  >
-                                    ✏️ 수정
-                                  </button>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    ))
-                  ) : (
-                    <div style={{
-                      padding: 20,
-                      backgroundColor: '#f5f5f5',
-                      borderRadius: 8,
-                      textAlign: 'center',
-                      color: '#999',
-                      fontSize: 14,
-                    }}>
-                      아직 지사가 없습니다. "+ 지사 생성" 버튼을 눌러 지사를 추가하세요.
-                    </div>
-                  )}
-                </div>
-                )}
-              </div>
-            );
-            })}
+        {/* 지사별 통계 */}
+        {viewMode === 'branches' && (
+          <div style={{
+            background: 'white',
+            borderRadius: 8,
+            padding: 24,
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+          }}>
+            <h2 style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 24, color: '#f57c00' }}>🏪 지사별 통계</h2>
+            <div style={{ color: '#666', fontSize: 14 }}>지사별 통계 기능 구현 예정</div>
+          </div>
+        )}
 
-            {getOrganizationTree().length === 0 && (
-              <div style={{
-                padding: 40,
-                textAlign: 'center',
-                color: '#666',
-              }}>
-                아직 본부가 없습니다. "+ 본부 생성" 버튼을 눌러 본부를 추가하세요.
-              </div>
-            )}
+        {/* 매니저별 통계 */}
+        {viewMode === 'managers' && (
+          <div style={{
+            background: 'white',
+            borderRadius: 8,
+            padding: 24,
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+          }}>
+            <h2 style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 24, color: '#1976d2' }}>👥 매니저별 통계</h2>
+            <div style={{ color: '#666', fontSize: 14 }}>매니저별 통계 기능 구현 예정</div>
           </div>
         )}
 
