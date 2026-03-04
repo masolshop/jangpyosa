@@ -30,7 +30,9 @@ export async function GET(
     }
 
     // 백엔드 API 서버 호출
-    const apiUrl = process.env.NEXT_PUBLIC_API_BASE || process.env.API_BASE || "http://localhost:4000";
+    // 프로덕션: https://jangpyosa.com:4000, 개발: http://localhost:4000
+    const apiUrl = process.env.NEXT_PUBLIC_API_BASE || 
+                   (process.env.NODE_ENV === 'production' ? 'https://jangpyosa.com:4000' : 'http://localhost:4000');
     const backendUrl = `${apiUrl}/apick/bizno/${cleanBizNo}`;
     
     console.log(`🔍 Calling backend APICK API: ${backendUrl}`);
