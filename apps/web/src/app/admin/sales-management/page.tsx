@@ -181,6 +181,7 @@ export default function SalesManagementPage() {
       setSuccessMessage(`${action}가 완료되었습니다.`);
       setTimeout(() => setSuccessMessage(''), 3000);
       loadSalesPeople();
+      loadPendingPeople(); // 승인 대기 목록도 새로고침
     } catch (err: any) {
       setError(err.message || `${action} 실패`);
       setTimeout(() => setError(''), 3000);
@@ -683,6 +684,90 @@ export default function SalesManagementPage() {
         {/* 목록 보기 */}
         {viewMode === 'list' && (
           <>
+            {/* 승인 대기 중인 매니저 */}
+            {pendingPeople.length > 0 && (
+              <div style={{
+                background: 'white',
+                borderRadius: 8,
+                padding: 20,
+                marginBottom: 20,
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                border: '2px solid #ff9800',
+              }}>
+                <h2 style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 16, color: '#ff6f00' }}>
+                  ⏳ 승인 대기 중인 매니저 ({pendingPeople.length}명)
+                </h2>
+                <div style={{ display: 'grid', gap: 12 }}>
+                  {pendingPeople.map((person) => (
+                    <div
+                      key={person.id}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: 16,
+                        backgroundColor: '#fff3e0',
+                        borderRadius: 8,
+                        border: '1px solid #ffb74d',
+                      }}
+                    >
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 600, fontSize: 16, marginBottom: 4 }}>
+                          {person.name}
+                        </div>
+                        <div style={{ fontSize: 13, color: '#666', marginBottom: 4 }}>
+                          {person.phone} | {person.email || '이메일 없음'}
+                        </div>
+                        <div style={{ fontSize: 13, color: '#666' }}>
+                          소속: {person.organization?.name || '조직 정보 없음'} ({person.organization?.type === 'HEADQUARTERS' ? '본부' : '지사'})
+                        </div>
+                        <div style={{ fontSize: 12, color: '#999', marginTop: 4 }}>
+                          가입일: {new Date(person.createdAt).toLocaleDateString('ko-KR')}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <button
+                          onClick={() => handleToggleActive(person.id, false)}
+                          style={{
+                            padding: '8px 16px',
+                            backgroundColor: '#4caf50',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: 4,
+                            cursor: 'pointer',
+                            fontSize: 14,
+                            fontWeight: 600,
+                          }}
+                        >
+                          ✅ 승인
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (confirm(`${person.name} 매니저를 정말 거절하시겠습니까?`)) {
+                              // 거절은 삭제와 동일하게 처리
+                              setDeletingPerson(person);
+                            }
+                          }}
+                          style={{
+                            padding: '8px 16px',
+                            backgroundColor: '#f44336',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: 4,
+                            cursor: 'pointer',
+                            fontSize: 14,
+                            fontWeight: 600,
+                          }}
+                        >
+                          ❌ 거절
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* 필터 및 검색 */}
             <div style={{
               background: 'white',
