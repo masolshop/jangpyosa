@@ -71,6 +71,9 @@ export default function OrganizationsManagementPage() {
   // 🆕 매니저 목록 토글 상태 (조직 ID를 키로 사용)
   const [expandedManagers, setExpandedManagers] = useState<{ [key: string]: boolean }>({});
   
+  // 🆕 지사 목록 토글 상태 (본부 ID를 키로 사용)
+  const [expandedBranches, setExpandedBranches] = useState<{ [key: string]: boolean }>({});
+  
   // 상태 메시지
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
@@ -359,6 +362,14 @@ export default function OrganizationsManagementPage() {
     }));
   };
 
+  // 🆕 지사 목록 토글
+  const toggleBranchList = (hqId: string) => {
+    setExpandedBranches(prev => ({
+      ...prev,
+      [hqId]: !prev[hqId]
+    }));
+  };
+
   // 전체 초기화 (모든 본부/지사 및 승인 대기 매니저 삭제)
   const handleResetAll = async () => {
     if (!confirm('⚠️ 경고: 모든 본부/지사 및 승인 대기 매니저가 삭제됩니다.\n\n정말 전체 초기화를 진행하시겠습니까?')) {
@@ -572,8 +583,32 @@ export default function OrganizationsManagementPage() {
                             📧 이메일: {hq.email}
                           </p>
                         )}
-                        <p style={{ margin: '4px 0' }}>
+                        
+                        {/* 지사 수 클릭 가능하게 변경 */}
+                        <p 
+                          style={{ 
+                            margin: '4px 0',
+                            cursor: hq.branches && hq.branches.length > 0 ? 'pointer' : 'default',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 4,
+                          }}
+                          onClick={() => {
+                            if (hq.branches && hq.branches.length > 0) {
+                              toggleBranchList(hq.id);
+                            }
+                          }}
+                        >
                           🏢 소속 지사: {hq.branches?.length || 0}개
+                          {hq.branches && hq.branches.length > 0 && (
+                            <span style={{ 
+                              fontSize: 12, 
+                              color: '#3b82f6',
+                              fontWeight: 600,
+                            }}>
+                              {expandedBranches[hq.id] ? '▼' : '▶'}
+                            </span>
+                          )}
                         </p>
                         
                         {/* 매니저 수 클릭 가능하게 변경 */}
@@ -651,6 +686,62 @@ export default function OrganizationsManagementPage() {
                                     </div>
                                     <span style={{ color: '#64748b', fontSize: 12 }}>
                                       📞 {manager.phone}
+                                    </span>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* 지사 목록 표시 (토글) */}
+                        {hq.branches && hq.branches.length > 0 && expandedBranches[hq.id] && (
+                          <div style={{
+                            marginTop: 12,
+                            padding: 12,
+                            background: '#fef3f2',
+                            borderRadius: 8,
+                            border: '1px solid #fee4e2',
+                          }}>
+                            <h4 style={{
+                              fontSize: 13,
+                              fontWeight: 600,
+                              color: '#b54708',
+                              marginBottom: 8,
+                            }}>
+                              지사 목록
+                            </h4>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                              {hq.branches.map((branch: any) => (
+                                <div
+                                  key={branch.id}
+                                  style={{
+                                    padding: '8px 10px',
+                                    background: 'white',
+                                    borderRadius: 6,
+                                    border: '1px solid #fee4e2',
+                                    fontSize: 13,
+                                  }}
+                                >
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <div>
+                                      <span style={{ fontWeight: 600, color: '#334155' }}>
+                                        {branch.name}
+                                      </span>
+                                      <span style={{
+                                        marginLeft: 8,
+                                        padding: '2px 6px',
+                                        background: '#f97316',
+                                        color: 'white',
+                                        borderRadius: 4,
+                                        fontSize: 11,
+                                        fontWeight: 600,
+                                      }}>
+                                        지사
+                                      </span>
+                                    </div>
+                                    <span style={{ color: '#64748b', fontSize: 12 }}>
+                                      👤 {branch.leaderName}
                                     </span>
                                   </div>
                                 </div>
