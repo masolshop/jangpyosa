@@ -64,7 +64,7 @@ export default function SalesLoginPage() {
   // 본부/지사 목록
   const [organizations, setOrganizations] = useState<{
     headquarters: Array<{ id: string; name: string }>;
-    branches: Array<{ id: string; name: string; managerId: string }>;
+    branches: Array<{ id: string; name: string; parentId: string }>;
   }>({ headquarters: [], branches: [] });
   const [selectedHeadquarter, setSelectedHeadquarter] = useState(''); // 선택한 본부
   const [availableBranches, setAvailableBranches] = useState<Array<{ id: string; name: string }>>([]); // 필터링된 지사
