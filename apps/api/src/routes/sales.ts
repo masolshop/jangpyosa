@@ -2650,4 +2650,69 @@ router.get('/stats/hierarchy', requireAuth, requireRole('SUPER_ADMIN'), async (r
   }
 });
 
+// 🆕 추천인 매니저 핸드폰 번호로 확인 (회원가입용 - 인증 불필요)
+router.post('/verify-referrer', async (req, res) => {
+  try {
+    const { phone } = req.body;
+    
+    if (!phone) {
+      return res.status(400).json({ 
+        success: false,
+        error: '핸드폰 번호를 입력하세요' 
+      });
+    }
+    
+    // 핸드폰 번호 정규화 (하이픈 제거)
+    const cleanPhone = phone.replace(/[-\s]/g, '');
+    
+    // 매니저 찾기 (활성화된 매니저만)
+    const manager = await prisma.salesPerson.findFirst({
+      where: {
+        phone: cleanPhone,
+        isActive: true,
+      },
+      select: {
+        id: true,
+        name: true,
+        phone: true,
+        role: true,
+        organizationName: true,
+      },
+    });
+    
+    if (!manager) {
+      return res.status(404).json({ 
+        success: false,
+        error: '등록된 매니저를 찾을 수 없습니다' 
+      });
+    }
+    
+    // 역할 이름 한글로 변환
+    const roleNames: { [key: string]: string } = {
+      'MANAGER': '매니저',
+      'BRANCH_MANAGER': '지사장',
+      'HEAD_MANAGER': '본부장',
+    };
+    
+    res.json({ 
+      success: true,
+      manager: {
+        id: manager.id,
+        name: manager.name,
+        phone: manager.phone,
+        role: manager.role,
+        roleName: roleNames[manager.role] || manager.role,
+        organizationName: manager.organizationName,
+      },
+      message: `${manager.name} ${roleNames[manager.role] || ''} 확인 완료`
+    });
+  } catch (error: any) {
+    console.error('[POST /sales/verify-referrer] Error:', error);
+    res.status(500).json({ 
+      success: false,
+      error: '매니저 확인 중 오류가 발생했습니다' 
+    });
+  }
+});
+
 export default router;

@@ -57,6 +57,11 @@ function SignupContent() {
   const [managerEmail, setManagerEmail] = useState("");
   const [managerPhone, setManagerPhone] = useState("");
 
+  // 🆕 추천인 매니저 확인
+  const [referrerVerified, setReferrerVerified] = useState(false);
+  const [referrerInfo, setReferrerInfo] = useState<{name: string; role: string; organizationName: string} | null>(null);
+  const [verifyingReferrer, setVerifyingReferrer] = useState(false);
+
   const [msg, setMsg] = useState("");
   const [loading, setLoading] = useState(false);
   const [companyInfo, setCompanyInfo] = useState<{name: string; ceo: string} | null>(null);
@@ -202,6 +207,59 @@ function SignupContent() {
     }
   };
 
+  // 🆕 추천인 매니저 핸드폰 번호 확인
+  async function verifyReferrer() {
+    const cleanPhone = referrerPhone.replace(/\D/g, "");
+    if (cleanPhone.length !== 11) {
+      setMsg("핸드폰 번호 11자리를 입력하세요");
+      return;
+    }
+    
+    setVerifyingReferrer(true);
+    setMsg("");
+    setReferrerInfo(null);
+    setReferrerVerified(false);
+    
+    try {
+      const response = await fetch('/api/sales/verify-referrer', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ phone: cleanPhone }),
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        setMsg(`❌ ${data.error || "매니저를 찾을 수 없습니다"}`);
+        setReferrerVerified(false);
+        return;
+      }
+      
+      setReferrerInfo({
+        name: data.manager.name,
+        role: data.manager.roleName,
+        organizationName: data.manager.organizationName || "-"
+      });
+      setReferrerVerified(true);
+      setMsg(`✅ ${data.message}`);
+    } catch (error) {
+      console.error("Referrer verification error:", error);
+      setMsg("❌ 매니저 확인 중 오류 발생");
+      setReferrerVerified(false);
+    } finally {
+      setVerifyingReferrer(false);
+    }
+  }
+
+  const handleReferrerPhoneKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      verifyReferrer();
+    }
+  };
+
   const handleTypeSelect = (selectedType: SignupType) => {
     setType(selectedType);
     setStep("form");
@@ -338,6 +396,12 @@ function SignupContent() {
     if (type === "supplier" || type === "buyer") {
       if (!username || !bizNo || !referrerPhone || !managerName || !managerTitle || !managerEmail || !managerPhone) {
         setMsg("필수 항목을 모두 입력하세요");
+        return;
+      }
+
+      // 🆕 추천인 매니저 확인 필수
+      if (!referrerVerified) {
+        setMsg("추천인 매니저 핸드폰 번호를 확인해주세요");
         return;
       }
 
@@ -1192,16 +1256,66 @@ function SignupContent() {
 
               {/* 추천인 매니저 핸드폰 */}
               <label>추천인 매니저 핸드폰 번호 *</label>
-              <input
-                type="tel"
-                placeholder="010-9876-5432"
-                value={referrerPhone}
-                onChange={handleReferrerPhoneChange}
-                maxLength={13}
-              />
+              <div style={{ display: "flex", gap: 8 }}>
+                <input
+                  type="tel"
+                  placeholder="010-9876-5432"
+                  value={referrerPhone}
+                  onChange={(e) => {
+                    handleReferrerPhoneChange(e);
+                    setReferrerVerified(false);
+                    setReferrerInfo(null);
+                  }}
+                  onKeyDown={handleReferrerPhoneKeyDown}
+                  maxLength={13}
+                  style={{ flex: 1 }}
+                />
+                <button
+                  type="button"
+                  onClick={verifyReferrer}
+                  disabled={verifyingReferrer || referrerPhone.replace(/\D/g, "").length !== 11}
+                  style={{
+                    padding: "10px 16px",
+                    background: verifyingReferrer ? "#ccc" : referrerVerified ? "#10b981" : "#0070f3",
+                    color: "white",
+                    border: "none",
+                    borderRadius: 6,
+                    cursor: verifyingReferrer || referrerPhone.replace(/\D/g, "").length !== 11 ? "not-allowed" : "pointer",
+                    fontSize: 14,
+                    fontWeight: 600,
+                    whiteSpace: "nowrap"
+                  }}
+                >
+                  {verifyingReferrer ? "확인 중..." : referrerVerified ? "✓ 확인됨" : "확인"}
+                </button>
+              </div>
               <p style={{ fontSize: 12, color: "#666", margin: "4px 0 0 0" }}>
                 💡 담당 매니저에게 핸드폰 번호를 문의하세요
               </p>
+              
+              {/* 추천인 매니저 정보 표시 */}
+              {referrerVerified && referrerInfo && (
+                <div style={{
+                  marginTop: 12,
+                  padding: 12,
+                  background: "#f0fdf4",
+                  borderRadius: 6,
+                  border: "2px solid #10b981",
+                  fontSize: 13,
+                  lineHeight: 1.6
+                }}>
+                  <p style={{ margin: 0, fontWeight: 600, color: "#059669" }}>
+                    ✅ 추천인 매니저 확인 완료
+                  </p>
+                  <p style={{ margin: "8px 0 0 0", color: "#333" }}>
+                    <strong>이름:</strong> {referrerInfo.name}<br/>
+                    <strong>직급:</strong> {referrerInfo.role}<br/>
+                    {referrerInfo.organizationName !== "-" && (
+                      <><strong>소속:</strong> {referrerInfo.organizationName}</>
+                    )}
+                  </p>
+                </div>
+              )}
 
               {/* 개인정보 동의 */}
               <div style={{ 
