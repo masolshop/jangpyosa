@@ -779,7 +779,9 @@ export default function SalesManagementPage() {
               <span style={{ fontSize: 32, marginRight: 8 }}>🏭</span>
             </div>
             <div style={{ fontSize: 32, fontWeight: 'bold', color: '#1976d2' }}>
-              0
+              {hierarchyStats?.summary?.totalCompanies 
+                ? hierarchyStats.managers.reduce((sum: number, m: any) => sum + m.stats.privateCompanies, 0)
+                : 0}
             </div>
             <div style={{ fontSize: 13, color: '#999', marginTop: 4 }}>개</div>
           </div>
@@ -799,7 +801,9 @@ export default function SalesManagementPage() {
               <span style={{ fontSize: 32, marginRight: 8 }}>🏛️</span>
             </div>
             <div style={{ fontSize: 32, fontWeight: 'bold', color: '#1976d2' }}>
-              0
+              {hierarchyStats?.summary?.totalCompanies 
+                ? hierarchyStats.managers.reduce((sum: number, m: any) => sum + m.stats.publicCompanies, 0)
+                : 0}
             </div>
             <div style={{ fontSize: 13, color: '#999', marginTop: 4 }}>개</div>
           </div>
@@ -819,7 +823,9 @@ export default function SalesManagementPage() {
               <span style={{ fontSize: 32, marginRight: 8 }}>🎓</span>
             </div>
             <div style={{ fontSize: 32, fontWeight: 'bold', color: '#1976d2' }}>
-              0
+              {hierarchyStats?.summary?.totalCompanies 
+                ? hierarchyStats.managers.reduce((sum: number, m: any) => sum + m.stats.governmentCompanies, 0)
+                : 0}
             </div>
             <div style={{ fontSize: 13, color: '#999', marginTop: 4 }}>개</div>
           </div>
@@ -839,9 +845,11 @@ export default function SalesManagementPage() {
               <span style={{ fontSize: 32, marginRight: 8 }}>✅</span>
             </div>
             <div style={{ fontSize: 32, fontWeight: 'bold', color: '#4caf50' }}>
-              활성
+              {hierarchyStats?.summary?.totalCompanies 
+                ? hierarchyStats.managers.reduce((sum: number, m: any) => sum + m.stats.standardWorkplaces, 0)
+                : 0}
             </div>
-            <div style={{ fontSize: 13, color: '#999', marginTop: 4 }}></div>
+            <div style={{ fontSize: 13, color: '#999', marginTop: 4 }}>개</div>
           </div>
         </div>
 
