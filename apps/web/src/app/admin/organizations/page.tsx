@@ -68,6 +68,9 @@ export default function OrganizationsManagementPage() {
   const [selectedReferrer, setSelectedReferrer] = useState<Manager | null>(null);
   const [loadingReferrers, setLoadingReferrers] = useState(false);
   
+  // 🆕 매니저 목록 토글 상태 (조직 ID를 키로 사용)
+  const [expandedManagers, setExpandedManagers] = useState<{ [key: string]: boolean }>({});
+  
   // 상태 메시지
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
@@ -348,6 +351,14 @@ export default function OrganizationsManagementPage() {
     }
   };
 
+  // 🆕 매니저 목록 토글
+  const toggleManagerList = (orgId: string) => {
+    setExpandedManagers(prev => ({
+      ...prev,
+      [orgId]: !prev[orgId]
+    }));
+  };
+
   // 전체 초기화 (모든 본부/지사 및 승인 대기 매니저 삭제)
   const handleResetAll = async () => {
     if (!confirm('⚠️ 경고: 모든 본부/지사 및 승인 대기 매니저가 삭제됩니다.\n\n정말 전체 초기화를 진행하시겠습니까?')) {
@@ -564,12 +575,36 @@ export default function OrganizationsManagementPage() {
                         <p style={{ margin: '4px 0' }}>
                           🏢 소속 지사: {hq.branches?.length || 0}개
                         </p>
-                        <p style={{ margin: '4px 0' }}>
+                        
+                        {/* 매니저 수 클릭 가능하게 변경 */}
+                        <p 
+                          style={{ 
+                            margin: '4px 0',
+                            cursor: hq.salesPeople && hq.salesPeople.length > 0 ? 'pointer' : 'default',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 4,
+                          }}
+                          onClick={() => {
+                            if (hq.salesPeople && hq.salesPeople.length > 0) {
+                              toggleManagerList(hq.id);
+                            }
+                          }}
+                        >
                           👥 소속 매니저: {hq.salesPeople?.length || 0}명
+                          {hq.salesPeople && hq.salesPeople.length > 0 && (
+                            <span style={{ 
+                              fontSize: 12, 
+                              color: '#3b82f6',
+                              fontWeight: 600,
+                            }}>
+                              {expandedManagers[hq.id] ? '▼' : '▶'}
+                            </span>
+                          )}
                         </p>
                         
-                        {/* 매니저 목록 표시 */}
-                        {hq.salesPeople && hq.salesPeople.length > 0 && (
+                        {/* 매니저 목록 표시 (토글) */}
+                        {hq.salesPeople && hq.salesPeople.length > 0 && expandedManagers[hq.id] && (
                           <div style={{
                             marginTop: 12,
                             padding: 12,
@@ -751,12 +786,36 @@ export default function OrganizationsManagementPage() {
                               📧 이메일: {branch.email}
                             </p>
                           )}
-                          <p style={{ margin: '4px 0' }}>
+                          
+                          {/* 매니저 수 클릭 가능하게 변경 */}
+                          <p 
+                            style={{ 
+                              margin: '4px 0',
+                              cursor: branch.salesPeople && branch.salesPeople.length > 0 ? 'pointer' : 'default',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 4,
+                            }}
+                            onClick={() => {
+                              if (branch.salesPeople && branch.salesPeople.length > 0) {
+                                toggleManagerList(branch.id);
+                              }
+                            }}
+                          >
                             👥 소속 매니저: {branch.salesPeople?.length || 0}명
+                            {branch.salesPeople && branch.salesPeople.length > 0 && (
+                              <span style={{ 
+                                fontSize: 12, 
+                                color: '#3b82f6',
+                                fontWeight: 600,
+                              }}>
+                                {expandedManagers[branch.id] ? '▼' : '▶'}
+                              </span>
+                            )}
                           </p>
                           
-                          {/* 매니저 목록 표시 */}
-                          {branch.salesPeople && branch.salesPeople.length > 0 && (
+                          {/* 매니저 목록 표시 (토글) */}
+                          {branch.salesPeople && branch.salesPeople.length > 0 && expandedManagers[branch.id] && (
                             <div style={{
                               marginTop: 12,
                               padding: 12,
