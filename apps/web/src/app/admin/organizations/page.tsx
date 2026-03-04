@@ -549,7 +549,7 @@ export default function OrganizationsManagementPage() {
                           🏢 소속 지사: {hq.branches?.length || 0}개
                         </p>
                         <p style={{ margin: '4px 0' }}>
-                          👥 소속 영업사원: {hq.salesPeople?.length || 0}명
+                          👥 소속 매니저: {hq.salesPeople?.length || 0}명
                         </p>
                       </div>
                     </div>
@@ -680,7 +680,7 @@ export default function OrganizationsManagementPage() {
                             </p>
                           )}
                           <p style={{ margin: '4px 0' }}>
-                            👥 소속 영업사원: {branch.salesPeople?.length || 0}명
+                            👥 소속 매니저: {branch.salesPeople?.length || 0}명
                           </p>
                         </div>
                       </div>
