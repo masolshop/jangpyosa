@@ -7,7 +7,9 @@ module.exports = {
       args: "start",
       env: {
         NODE_ENV: "production",
-        PORT: 4000
+        PORT: 4000,
+        APICK_PROVIDER: "mock",
+        APICK_API_KEY: ""
       },
       max_memory_restart: "500M",
       error_file: "/home/ubuntu/.pm2/logs/jangpyosa-api-error.log",
@@ -20,7 +22,8 @@ module.exports = {
       args: "start -p 3003",
       env: {
         NODE_ENV: "production",
-        API_BASE: "http://localhost:4000"
+        API_BASE: "http://localhost:4000",
+        NEXT_PUBLIC_API_BASE: "https://jangpyosa.com:4000"
       },
       max_memory_restart: "500M",
       error_file: "/home/ubuntu/.pm2/logs/jangpyosa-web-error.log",
