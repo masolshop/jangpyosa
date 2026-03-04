@@ -124,12 +124,20 @@ export default function SalesLoginPage() {
         const response = await fetch(`${API_BASE}/sales/organizations`);
         const data = await response.json();
         if (response.ok) {
-          console.log('📊 본부/지사 목록 로드:', {
-            headquarters: data.headquarters?.length || 0,
-            branches: data.branches?.length || 0,
-          });
-          console.log('본부 목록:', data.headquarters);
+          console.log('========================================');
+          console.log('📊 본부/지사 목록 로드 성공');
+          console.log('  • headquarters 타입:', typeof data.headquarters);
+          console.log('  • headquarters Array.isArray:', Array.isArray(data.headquarters));
+          console.log('  • headquarters 길이:', data.headquarters?.length || 0);
+          console.log('  • branches 타입:', typeof data.branches);
+          console.log('  • branches Array.isArray:', Array.isArray(data.branches));
+          console.log('  • branches 길이:', data.branches?.length || 0);
+          console.log('========================================');
+          console.log('본부 목록 상세:', JSON.stringify(data.headquarters, null, 2));
+          console.log('지사 목록 상세:', JSON.stringify(data.branches, null, 2));
+          console.log('========================================');
           setOrganizations(data);
+          console.log('✅ organizations 상태 업데이트 완료');
         } else {
           console.error('❌ 본부/지사 로드 실패:', data);
         }
@@ -793,11 +801,18 @@ export default function SalesLoginPage() {
                 }}
               >
                 <option value="">본부를 선택해주세요</option>
-                {organizations.headquarters.map((hq) => (
-                  <option key={hq.id} value={hq.id}>
-                    {hq.name}
-                  </option>
-                ))}
+                {(() => {
+                  console.log('🔍 본부 드롭다운 렌더링:', {
+                    'organizations.headquarters': organizations.headquarters,
+                    'isArray': Array.isArray(organizations.headquarters),
+                    'length': organizations.headquarters?.length
+                  });
+                  return organizations.headquarters.map((hq) => (
+                    <option key={hq.id} value={hq.id}>
+                      {hq.name}
+                    </option>
+                  ));
+                })()}
               </select>
             </div>
 
