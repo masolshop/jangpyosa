@@ -2253,4 +2253,401 @@ router.post('/people/:id/promote-to-leader', requireAuth, requireRole('SUPER_ADM
   }
 });
 
+/**
+ * GET /sales/stats/hierarchy
+ * 슈퍼어드민용 계층별 통계
+ * - 본부별 통계
+ * - 지사별 통계  
+ * - 매니저별 통계
+ */
+router.get('/stats/hierarchy', requireAuth, requireRole('SUPER_ADMIN'), async (req, res) => {
+  try {
+    // 모든 본부장 조회
+    const headquarters = await prisma.salesPerson.findMany({
+      where: {
+        role: 'HEAD_MANAGER',
+        isActive: true,
+      },
+      include: {
+        subordinates: {
+          where: { isActive: true },
+          include: {
+            subordinates: {
+              where: { isActive: true },
+            },
+          },
+        },
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    // 모든 지사장 조회
+    const branches = await prisma.salesPerson.findMany({
+      where: {
+        role: 'BRANCH_MANAGER',
+        isActive: true,
+      },
+      include: {
+        manager: {
+          select: {
+            id: true,
+            name: true,
+            organizationName: true,
+          },
+        },
+        subordinates: {
+          where: { isActive: true },
+        },
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    // 모든 매니저 조회
+    const managers = await prisma.salesPerson.findMany({
+      where: {
+        role: 'MANAGER',
+        isActive: true,
+      },
+      include: {
+        manager: {
+          select: {
+            id: true,
+            name: true,
+            role: true,
+            organizationName: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    // 본부별 통계 계산
+    const headquartersStats = await Promise.all(
+      headquarters.map(async (hq) => {
+        // 본부장 + 소속 지사 + 소속 매니저 ID 수집
+        const branchIds = hq.subordinates.filter(s => s.role === 'BRANCH_MANAGER').map(s => s.id);
+        const managerIds = hq.subordinates.flatMap(branch => 
+          branch.subordinates?.map(m => m.id) || []
+        );
+        const directManagerIds = hq.subordinates.filter(s => s.role === 'MANAGER').map(s => s.id);
+        const targetIds = [hq.id, ...branchIds, ...managerIds, ...directManagerIds];
+
+        // 추천 기업 통계
+        const referrals = await prisma.companyReferral.findMany({
+          where: {
+            salesPersonId: { in: targetIds },
+            isActive: true,
+          },
+          include: {
+            company: {
+              select: {
+                buyerType: true,
+              },
+            },
+          },
+        });
+
+        // User.referredById 기반 추천도 포함
+        const salesPersonPhones = await prisma.salesPerson.findMany({
+          where: { id: { in: targetIds } },
+          select: { phone: true }
+        });
+        const phoneList = salesPersonPhones.map(sp => sp.phone);
+        
+        const agentUsers = await prisma.user.findMany({
+          where: { 
+            phone: { in: phoneList },
+            role: 'AGENT'
+          },
+          select: { id: true }
+        });
+        
+        const agentUserIds = agentUsers.map(u => u.id);
+        
+        const userReferrals = await prisma.user.findMany({
+          where: {
+            referredById: { in: agentUserIds },
+            role: { in: ['BUYER', 'SUPPLIER'] }
+          },
+          include: {
+            company: {
+              select: {
+                buyerType: true,
+              }
+            }
+          }
+        });
+
+        // 기업 유형별 집계
+        const stats = {
+          totalCompanies: referrals.length + userReferrals.length,
+          privateCompanies: 0,
+          publicCompanies: 0,
+          governmentCompanies: 0,
+          standardWorkplaces: 0,
+        };
+
+        referrals.forEach(ref => {
+          if (ref.company?.buyerType) {
+            switch (ref.company.buyerType) {
+              case 'PRIVATE_COMPANY': stats.privateCompanies++; break;
+              case 'PUBLIC_INSTITUTION': stats.publicCompanies++; break;
+              case 'GOVERNMENT': stats.governmentCompanies++; break;
+              case 'STANDARD_WORKPLACE': stats.standardWorkplaces++; break;
+            }
+          }
+        });
+
+        userReferrals.forEach(r => {
+          const type = r.company?.buyerType;
+          if (type) {
+            switch (type) {
+              case 'PRIVATE_COMPANY': stats.privateCompanies++; break;
+              case 'PUBLIC_INSTITUTION': stats.publicCompanies++; break;
+              case 'GOVERNMENT': stats.governmentCompanies++; break;
+              case 'STANDARD_WORKPLACE': stats.standardWorkplaces++; break;
+            }
+          }
+        });
+
+        return {
+          id: hq.id,
+          name: hq.name,
+          organizationName: hq.organizationName,
+          phone: hq.phone,
+          email: hq.email,
+          branches: hq.subordinates.filter(s => s.role === 'BRANCH_MANAGER').length,
+          managers: managerIds.length + directManagerIds.length,
+          stats,
+        };
+      })
+    );
+
+    // 지사별 통계 계산
+    const branchesStats = await Promise.all(
+      branches.map(async (branch) => {
+        // 지사장 + 소속 매니저 ID 수집
+        const managerIds = branch.subordinates.map(m => m.id);
+        const targetIds = [branch.id, ...managerIds];
+
+        // 추천 기업 통계
+        const referrals = await prisma.companyReferral.findMany({
+          where: {
+            salesPersonId: { in: targetIds },
+            isActive: true,
+          },
+          include: {
+            company: {
+              select: {
+                buyerType: true,
+              },
+            },
+          },
+        });
+
+        // User.referredById 기반 추천도 포함
+        const salesPersonPhones = await prisma.salesPerson.findMany({
+          where: { id: { in: targetIds } },
+          select: { phone: true }
+        });
+        const phoneList = salesPersonPhones.map(sp => sp.phone);
+        
+        const agentUsers = await prisma.user.findMany({
+          where: { 
+            phone: { in: phoneList },
+            role: 'AGENT'
+          },
+          select: { id: true }
+        });
+        
+        const agentUserIds = agentUsers.map(u => u.id);
+        
+        const userReferrals = await prisma.user.findMany({
+          where: {
+            referredById: { in: agentUserIds },
+            role: { in: ['BUYER', 'SUPPLIER'] }
+          },
+          include: {
+            company: {
+              select: {
+                buyerType: true,
+              }
+            }
+          }
+        });
+
+        // 기업 유형별 집계
+        const stats = {
+          totalCompanies: referrals.length + userReferrals.length,
+          privateCompanies: 0,
+          publicCompanies: 0,
+          governmentCompanies: 0,
+          standardWorkplaces: 0,
+        };
+
+        referrals.forEach(ref => {
+          if (ref.company?.buyerType) {
+            switch (ref.company.buyerType) {
+              case 'PRIVATE_COMPANY': stats.privateCompanies++; break;
+              case 'PUBLIC_INSTITUTION': stats.publicCompanies++; break;
+              case 'GOVERNMENT': stats.governmentCompanies++; break;
+              case 'STANDARD_WORKPLACE': stats.standardWorkplaces++; break;
+            }
+          }
+        });
+
+        userReferrals.forEach(r => {
+          const type = r.company?.buyerType;
+          if (type) {
+            switch (type) {
+              case 'PRIVATE_COMPANY': stats.privateCompanies++; break;
+              case 'PUBLIC_INSTITUTION': stats.publicCompanies++; break;
+              case 'GOVERNMENT': stats.governmentCompanies++; break;
+              case 'STANDARD_WORKPLACE': stats.standardWorkplaces++; break;
+            }
+          }
+        });
+
+        return {
+          id: branch.id,
+          name: branch.name,
+          organizationName: branch.organizationName,
+          phone: branch.phone,
+          email: branch.email,
+          headquartersName: branch.manager?.organizationName || '-',
+          managers: managerIds.length,
+          stats,
+        };
+      })
+    );
+
+    // 매니저별 통계 계산
+    const managersStats = await Promise.all(
+      managers.map(async (manager) => {
+        // 매니저 본인의 추천 기업 통계
+        const referrals = await prisma.companyReferral.findMany({
+          where: {
+            salesPersonId: manager.id,
+            isActive: true,
+          },
+          include: {
+            company: {
+              select: {
+                buyerType: true,
+              },
+            },
+          },
+        });
+
+        // User.referredById 기반 추천도 포함
+        const agentUser = await prisma.user.findFirst({
+          where: { 
+            phone: manager.phone,
+            role: 'AGENT'
+          },
+          select: { id: true }
+        });
+        
+        const userReferrals = agentUser ? await prisma.user.findMany({
+          where: {
+            referredById: agentUser.id,
+            role: { in: ['BUYER', 'SUPPLIER'] }
+          },
+          include: {
+            company: {
+              select: {
+                buyerType: true,
+              }
+            }
+          }
+        }) : [];
+
+        // 기업 유형별 집계
+        const stats = {
+          totalCompanies: referrals.length + userReferrals.length,
+          privateCompanies: 0,
+          publicCompanies: 0,
+          governmentCompanies: 0,
+          standardWorkplaces: 0,
+        };
+
+        referrals.forEach(ref => {
+          if (ref.company?.buyerType) {
+            switch (ref.company.buyerType) {
+              case 'PRIVATE_COMPANY': stats.privateCompanies++; break;
+              case 'PUBLIC_INSTITUTION': stats.publicCompanies++; break;
+              case 'GOVERNMENT': stats.governmentCompanies++; break;
+              case 'STANDARD_WORKPLACE': stats.standardWorkplaces++; break;
+            }
+          }
+        });
+
+        userReferrals.forEach(r => {
+          const type = r.company?.buyerType;
+          if (type) {
+            switch (type) {
+              case 'PRIVATE_COMPANY': stats.privateCompanies++; break;
+              case 'PUBLIC_INSTITUTION': stats.publicCompanies++; break;
+              case 'GOVERNMENT': stats.governmentCompanies++; break;
+              case 'STANDARD_WORKPLACE': stats.standardWorkplaces++; break;
+            }
+          }
+        });
+
+        // 상위 조직 정보
+        let headquartersName = '-';
+        let branchName = '-';
+        
+        if (manager.manager) {
+          if (manager.manager.role === 'BRANCH_MANAGER') {
+            branchName = manager.manager.organizationName || manager.manager.name;
+            // 지사장의 상위(본부장) 찾기
+            const branch = await prisma.salesPerson.findUnique({
+              where: { id: manager.manager.id },
+              include: {
+                manager: {
+                  select: {
+                    organizationName: true,
+                    name: true,
+                  },
+                },
+              },
+            });
+            if (branch?.manager) {
+              headquartersName = branch.manager.organizationName || branch.manager.name;
+            }
+          } else if (manager.manager.role === 'HEAD_MANAGER') {
+            headquartersName = manager.manager.organizationName || manager.manager.name;
+          }
+        }
+
+        return {
+          id: manager.id,
+          name: manager.name,
+          phone: manager.phone,
+          email: manager.email,
+          headquartersName,
+          branchName,
+          stats,
+        };
+      })
+    );
+
+    res.json({
+      headquarters: headquartersStats,
+      branches: branchesStats,
+      managers: managersStats,
+      summary: {
+        totalHeadquarters: headquartersStats.length,
+        totalBranches: branchesStats.length,
+        totalManagers: managersStats.length,
+        totalCompanies: headquartersStats.reduce((sum, hq) => sum + hq.stats.totalCompanies, 0),
+      },
+    });
+  } catch (error: any) {
+    console.error('[GET /sales/stats/hierarchy] Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export default router;
