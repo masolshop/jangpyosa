@@ -109,10 +109,17 @@ export default function SalesManagementPage() {
 
   // 필터링
   useEffect(() => {
+    console.log('🔍 필터링 시작:', {
+      전체매니저수: salesPeople.length,
+      선택된역할: selectedRole,
+      검색어: searchTerm,
+    });
+    
     let filtered = salesPeople;
 
     if (selectedRole !== 'ALL') {
       filtered = filtered.filter(p => p.role === selectedRole);
+      console.log(`📊 역할 필터 후: ${filtered.length}명 (${selectedRole})`);
     }
 
     if (searchTerm) {
@@ -121,17 +128,24 @@ export default function SalesManagementPage() {
         p.phone.includes(searchTerm) ||
         p.email?.includes(searchTerm)
       );
+      console.log(`🔍 검색 필터 후: ${filtered.length}명 (검색어: ${searchTerm})`);
     }
 
+    console.log(`✅ 최종 필터 결과: ${filtered.length}명`);
     setFilteredPeople(filtered);
   }, [salesPeople, selectedRole, searchTerm]);
 
   const loadSalesPeople = async () => {
     try {
       setLoading(true);
+      console.log('🔍 활성 매니저 로드 시작...');
       const data = await apiFetch('/sales/people?isActive=true');
+      console.log('✅ API 응답:', data);
+      console.log('📊 매니저 수:', data.salesPeople?.length || 0);
       setSalesPeople(data.salesPeople || []);
+      console.log('✅ State 업데이트 완료:', data.salesPeople?.length || 0, '명');
     } catch (err: any) {
+      console.error('❌ 데이터 로드 실패:', err);
       setError(err.message || '데이터 로드 실패');
     } finally {
       setLoading(false);
