@@ -113,14 +113,7 @@ router.get('/people', requireAuth, requireRole('SUPER_ADMIN'), async (req, res) 
             activeReferrals: true,
           },
         },
-        referredBy: {
-          select: {
-            id: true,
-            name: true,
-            phone: true,
-            role: true,
-          },
-        },
+        // referredBy는 제거 (Prisma Client 버전 문제로 인한 오류 회피)
         referredCompanies: {
           where: { isActive: true },
           select: {
