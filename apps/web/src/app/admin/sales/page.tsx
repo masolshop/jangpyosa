@@ -230,6 +230,13 @@ export default function SalesLoginPage() {
     e.preventDefault();
     setError('');
 
+    console.log('🔍 회원가입 시도:', {
+      identityVerified,
+      selectedHeadquarter,
+      managerId: signupForm.managerId,
+      phone: signupForm.phone,
+    });
+
     // 실명인증 확인
     if (!identityVerified) {
       setError('실명인증을 먼저 진행해주세요');
@@ -238,6 +245,7 @@ export default function SalesLoginPage() {
 
     // 본부/지사 선택 필수
     if (!signupForm.managerId) {
+      console.error('❌ managerId가 비어있음:', signupForm.managerId);
       setError('소속 본부 또는 지사를 선택해주세요');
       return;
     }
