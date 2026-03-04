@@ -6,6 +6,5 @@ export const config = {
   corsOrigin: process.env.CORS_ORIGIN ?? "http://localhost:3000",
   jwtSecret: process.env.JWT_SECRET ?? "dev_secret",
   jwtRefreshSecret: process.env.JWT_REFRESH_SECRET ?? "dev_refresh",
-  apickProvider: (process.env.APICK_PROVIDER ?? "real") as "mock" | "real",
   apickApiKey: process.env.APICK_API_KEY ?? "",
 };

@@ -8,8 +8,12 @@ module.exports = {
       env: {
         NODE_ENV: "production",
         PORT: 4000,
-        APICK_PROVIDER: "mock",
-        APICK_API_KEY: ""
+        CORS_ORIGIN: "https://jangpyosa.com",
+        DATABASE_URL: process.env.DATABASE_URL || "postgresql://jp:jp_pw@localhost:5432/jangpyosa?schema=public",
+        JWT_SECRET: process.env.JWT_SECRET || "change_me_super_secret_jangpyosa_2026",
+        JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET || "change_me_refresh_secret_jangpyosa_2026",
+        APICK_PROVIDER: "real",
+        APICK_API_KEY: "41173030f4fc1055778b2f97ce9659b5"
       },
       max_memory_restart: "500M",
       error_file: "/home/ubuntu/.pm2/logs/jangpyosa-api-error.log",

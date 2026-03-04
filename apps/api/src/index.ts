@@ -120,7 +120,7 @@ initializeWebSocket(httpServer);
 httpServer.listen(config.port, '0.0.0.0', async () => {
   console.log(`🚀 장표사닷컴 API listening on 0.0.0.0:${config.port}`);
   console.log(`📊 Database: ${process.env.DATABASE_URL?.split("@")[1] || "local"}`);
-  console.log(`🔐 APICK Provider: ${config.apickProvider}`);
+  console.log(`🔐 APICK API: ${config.apickApiKey ? 'Configured ✅' : 'Not configured ❌'}`);
   
   // 근태 스케줄러 시작
   try {

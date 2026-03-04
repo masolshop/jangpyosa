@@ -55,23 +55,6 @@ export async function verifyBizNo(
     return { ok: false, error: "사업자번호는 10자리 숫자여야 합니다" };
   }
 
-  // Mock 모드
-  if (config.apickProvider === "mock") {
-    return {
-      ok: true,
-      name: "MOCK_COMPANY_" + cleanBizNo.slice(0, 5),
-      representative: "홍길동",
-      data: {
-        회사명: "MOCK_COMPANY_" + cleanBizNo.slice(0, 5),
-        사업자등록번호: cleanBizNo,
-        사업자상태: "계속사업자",
-        과세유형: "부가가치세 일반과세자",
-        대표명: "홍길동",
-        success: 1,
-      },
-    };
-  }
-
   // 실제 APICK API 호출
   try {
     const apiKey = config.apickApiKey;
