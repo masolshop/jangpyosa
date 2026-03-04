@@ -9,6 +9,13 @@ interface SalesPerson {
   userId: string;
   name: string;
   organizationName?: string;
+  organizationId?: string;
+  organization?: {
+    id: string;
+    name: string;
+    type: 'HEADQUARTERS' | 'BRANCH';
+    leaderName: string;
+  };
   phone: string;
   email?: string;
   role: 'MANAGER' | 'BRANCH_MANAGER' | 'HEAD_MANAGER';
