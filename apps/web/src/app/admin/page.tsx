@@ -18,6 +18,7 @@ export default function AdminRootPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [pendingPeople, setPendingPeople] = useState<PendingSalesPerson[]>([]);
+  const [approvedPeople, setApprovedPeople] = useState<PendingSalesPerson[]>([]); // 🆕 승인 완료 매니저
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [showApprovalModal, setShowApprovalModal] = useState(false);
@@ -38,6 +39,7 @@ export default function AdminRootPage() {
   useEffect(() => {
     if (!loading) {
       loadPendingPeople();
+      loadApprovedPeople(); // 🆕 승인 완료 매니저 로드
     }
   }, [loading]);
 
@@ -66,6 +68,18 @@ export default function AdminRootPage() {
     }
   };
 
+  // 🆕 승인 완료 매니저 로드
+  const loadApprovedPeople = async () => {
+    try {
+      console.log('✅ 승인 완료 매니저 로드 시작...');
+      const data = await apiFetch('/sales/people?isActive=true');
+      console.log('📊 승인 완료 매니저 수:', data.salesPeople?.length || 0);
+      setApprovedPeople(data.salesPeople || []);
+    } catch (err: any) {
+      console.error('❌ 승인 완료 목록 로드 실패:', err);
+    }
+  };
+
   const handleApprove = async (personId: string) => {
     try {
       await apiFetch(`/sales/people/${personId}/toggle-active`, {
@@ -80,6 +94,7 @@ export default function AdminRootPage() {
       setShowApprovalModal(false);
       setSelectedPerson(null);
       loadPendingPeople();
+      loadApprovedPeople(); // 🆕 승인 완료 목록도 새로고침
     } catch (err: any) {
       setError(err.message || '승인 실패');
       setTimeout(() => setError(''), 3000);
@@ -422,6 +437,96 @@ export default function AdminRootPage() {
                     >
                       ✗ 거절
                     </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 🆕 승인 완료 매니저 리스트 */}
+        {approvedPeople.length > 0 && (
+          <div style={{
+            background: 'white',
+            borderRadius: 8,
+            padding: 24,
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+            marginTop: 24,
+          }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: 20,
+            }}>
+              <h2 style={{ fontSize: 24, fontWeight: 'bold', margin: 0 }}>
+                ✅ 승인 완료 매니저 리스트
+              </h2>
+              <span style={{
+                background: '#4CAF50',
+                color: 'white',
+                padding: '4px 12px',
+                borderRadius: 16,
+                fontSize: 14,
+                fontWeight: 'bold',
+              }}>
+                총 {approvedPeople.length}명
+              </span>
+            </div>
+
+            <div style={{
+              display: 'grid',
+              gap: 12,
+            }}>
+              {approvedPeople.map((person) => (
+                <div
+                  key={person.id}
+                  style={{
+                    border: '1px solid #e8f5e9',
+                    borderRadius: 8,
+                    padding: 16,
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    backgroundColor: '#f1f8f4',
+                  }}
+                >
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 6 }}>
+                      <span style={{
+                        background: '#4CAF50',
+                        color: 'white',
+                        padding: '4px 10px',
+                        borderRadius: 4,
+                        fontSize: 13,
+                        fontWeight: 'bold',
+                      }}>
+                        {getRoleName(person.role)}
+                      </span>
+                      <h3 style={{ fontSize: 16, fontWeight: 'bold', margin: 0 }}>
+                        {person.name}
+                      </h3>
+                      {person.organizationName && (
+                        <span style={{ color: '#666', fontSize: 13 }}>
+                          ({person.organizationName})
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', gap: 16, fontSize: 13, color: '#666' }}>
+                      <span>📱 {person.phone}</span>
+                      {person.email && <span>📧 {person.email}</span>}
+                      <span>🗓️ {new Date(person.createdAt).toLocaleDateString('ko-KR')}</span>
+                    </div>
+                  </div>
+                  <div style={{
+                    padding: '6px 16px',
+                    background: '#4CAF50',
+                    color: 'white',
+                    borderRadius: 20,
+                    fontSize: 13,
+                    fontWeight: 'bold',
+                  }}>
+                    ✓ 활성
                   </div>
                 </div>
               ))}
