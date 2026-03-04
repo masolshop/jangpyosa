@@ -136,7 +136,7 @@ export default function SalesLoginPage() {
   // 본부 선택 시 지사 필터링
   useEffect(() => {
     if (selectedHeadquarter) {
-      const filtered = organizations.branches.filter(b => b.managerId === selectedHeadquarter);
+      const filtered = organizations.branches.filter(b => b.parentId === selectedHeadquarter);
       setAvailableBranches(filtered);
       // 본부를 바꾸면 지사 선택 초기화
       if (signupForm.managerId && !filtered.find(b => b.id === signupForm.managerId)) {

@@ -1426,7 +1426,7 @@ router.get('/organizations', async (req, res) => {
         leaderName: branch.leaderName,
         phone: branch.phone,
         email: branch.email,
-        managerId: branch.parentId,
+        parentId: branch.parentId,
         salesPeople: branch.salesPeople,
         createdAt: branch.createdAt,
       })),

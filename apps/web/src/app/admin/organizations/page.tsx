@@ -101,6 +101,12 @@ export default function OrganizationsManagementPage() {
       
       if (response.ok) {
         const data = await response.json();
+        console.log('📊 조직 목록 로드:', data);
+        console.log('본부 수:', data.headquarters?.length);
+        console.log('지사 수:', data.branches?.length);
+        data.headquarters?.forEach((hq: any) => {
+          console.log(`본부 "${hq.name}": 지사 ${hq.branches?.length || 0}개, 매니저 ${hq.salesPeople?.length || 0}명`);
+        });
         setOrganizations(data);
       } else {
         showMessage('error', '조직 목록을 불러오는데 실패했습니다');
