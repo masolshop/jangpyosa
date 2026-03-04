@@ -43,6 +43,14 @@ interface SalesPerson {
   createdAt: string;
   promotedAt?: string;
   promotedBy?: string;
+  referredCompanies?: Array<{
+    id: string;
+    companyName: string;
+    companyBizNo: string;
+    companyType: string;
+    totalPayments: number;
+    createdAt: string;
+  }>;
 }
 
 type ViewMode = 'stats' | 'headquarters' | 'branches' | 'managers';
