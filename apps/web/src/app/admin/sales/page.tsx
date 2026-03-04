@@ -237,12 +237,15 @@ export default function SalesLoginPage() {
     e.preventDefault();
     setError('');
 
-    console.log('🔍 회원가입 시도:', {
-      identityVerified,
-      selectedHeadquarter,
-      managerId: signupForm.managerId,
-      phone: signupForm.phone,
-    });
+    console.log('========================================');
+    console.log('🔍 회원가입 시도 - 전체 상태:');
+    console.log('  • identityVerified:', identityVerified);
+    console.log('  • selectedHeadquarter:', selectedHeadquarter);
+    console.log('  • signupForm.managerId:', signupForm.managerId);
+    console.log('  • signupForm.managerId 타입:', typeof signupForm.managerId);
+    console.log('  • signupForm.managerId 길이:', signupForm.managerId?.length);
+    console.log('  • signupForm:', JSON.stringify(signupForm, null, 2));
+    console.log('========================================');
 
     // 실명인증 확인
     if (!identityVerified) {
@@ -252,7 +255,9 @@ export default function SalesLoginPage() {
 
     // 본부/지사 선택 필수
     if (!signupForm.managerId) {
-      console.error('❌ managerId가 비어있음:', signupForm.managerId);
+      console.error('❌ managerId가 비어있음!');
+      console.error('  • signupForm.managerId:', signupForm.managerId);
+      console.error('  • selectedHeadquarter:', selectedHeadquarter);
       setError('소속 본부 또는 지사를 선택해주세요');
       return;
     }
@@ -763,9 +768,15 @@ export default function SalesLoginPage() {
               <select
                 value={selectedHeadquarter}
                 onChange={(e) => {
-                  setSelectedHeadquarter(e.target.value);
+                  const hqId = e.target.value;
+                  console.log('🏢 본부 선택:', hqId);
+                  setSelectedHeadquarter(hqId);
                   // 본부 직속인 경우 본부 ID를 managerId로 설정
-                  setSignupForm({ ...signupForm, managerId: e.target.value });
+                  setSignupForm(prev => {
+                    const updated = { ...prev, managerId: hqId };
+                    console.log('📝 signupForm 업데이트:', updated);
+                    return updated;
+                  });
                 }}
                 required
                 style={{
@@ -794,7 +805,15 @@ export default function SalesLoginPage() {
                 </label>
                 <select
                   value={signupForm.managerId}
-                  onChange={(e) => setSignupForm({ ...signupForm, managerId: e.target.value || selectedHeadquarter })}
+                  onChange={(e) => {
+                    const branchId = e.target.value || selectedHeadquarter;
+                    console.log('🏪 지사 선택:', e.target.value, '→ managerId:', branchId);
+                    setSignupForm(prev => {
+                      const updated = { ...prev, managerId: branchId };
+                      console.log('📝 signupForm 업데이트:', updated);
+                      return updated;
+                    });
+                  }}
                   style={{
                     width: '100%',
                     padding: '12px',
