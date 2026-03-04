@@ -169,6 +169,7 @@ export default function OrganizationsManagementPage() {
       return;
     }
     
+    console.log('🔍 매니저 검색 시작:', managerSearch);
     setLoadingManagers(true);
     try {
       const token = localStorage.getItem('accessToken');
@@ -183,12 +184,19 @@ export default function OrganizationsManagementPage() {
       
       if (response.ok) {
         const data = await response.json();
-        setManagerResults(data.managers || []);
+        const managers = data.managers || [];
+        console.log('✅ 검색 결과:', managers.length, '명', managers);
+        setManagerResults(managers);
+        
+        if (managers.length === 0) {
+          showMessage('error', `"${managerSearch}" 검색 결과가 없습니다`);
+        }
       } else {
+        console.error('❌ 검색 실패:', response.status);
         showMessage('error', '매니저 검색에 실패했습니다');
       }
     } catch (error) {
-      console.error('매니저 검색 에러:', error);
+      console.error('❌ 매니저 검색 에러:', error);
       showMessage('error', '서버 연결에 실패했습니다');
     } finally {
       setLoadingManagers(false);
@@ -197,10 +205,12 @@ export default function OrganizationsManagementPage() {
   
   // 매니저 선택
   const handleSelectManager = (manager: Manager) => {
+    console.log('🔵 매니저 선택:', manager);
     setSelectedManager(manager);
     setFormData({ ...formData, managerId: manager.id });
     setManagerResults([]);
     setManagerSearch('');
+    console.log('✅ 매니저 선택 완료:', { managerId: manager.id, name: manager.name });
   };
   
   // 🆕 추천 매니저 검색
