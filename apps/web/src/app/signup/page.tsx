@@ -1078,7 +1078,7 @@ function SignupContent() {
                 💡 사업자번호를 입력하고 <strong>엔터</strong> 또는 <strong>인증 버튼</strong>을 클릭하세요
               </p>
               
-              {/* APICK 인증 결과 */}
+              {/* 사업자번호 인증 결과 */}
               {companyInfo && (
                 <div style={{
                   marginTop: 12,
@@ -1088,7 +1088,9 @@ function SignupContent() {
                   fontSize: 13,
                   lineHeight: 1.6
                 }}>
-                  <p style={{ margin: 0, fontWeight: 600, color: "#0070f3" }}>✅ APICK 인증 완료</p>
+                  <p style={{ margin: 0, fontWeight: 600, color: "#0070f3" }}>
+                    {type === "supplier" ? "✅ 고용노동부인증 표준사업장" : "✅ APICK 인증 완료"}
+                  </p>
                   <p style={{ margin: "8px 0 0 0", color: "#333" }}>
                     <strong>상호명:</strong> {companyInfo.name}<br/>
                     <strong>대표자명:</strong> {companyInfo.ceo}
