@@ -89,6 +89,14 @@ router.get('/people', requireAuth, requireRole('SUPER_ADMIN'), async (req, res) 
     const salesPeople = await prisma.salesPerson.findMany({
       where,
       include: {
+        organization: {
+          select: {
+            id: true,
+            name: true,
+            type: true,
+            leaderName: true,
+          },
+        },
         manager: {
           select: {
             id: true,
