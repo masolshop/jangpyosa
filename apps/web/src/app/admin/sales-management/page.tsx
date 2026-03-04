@@ -943,17 +943,21 @@ export default function SalesManagementPage() {
                       <td style={{ padding: 16, color: '#666' }}>{person.email || '-'}</td>
                       <td style={{ padding: 16, textAlign: 'center' }}>
                         {(() => {
-                          // 본부 찾기 (본인이 본부장이거나, 상위가 본부장이거나, 상위의 상위가 본부장인 경우)
+                          // 본부 찾기
                           if (person.role === 'HEAD_MANAGER') {
-                            return <span style={{ fontWeight: 600, color: '#d32f2f' }}>{person.name} 본부</span>;
+                            // 본부장: 본인의 조직명 표시
+                            return <span style={{ fontWeight: 600, color: '#d32f2f' }}>{person.organizationName || '-'}</span>;
                           } else if (person.manager) {
                             if (person.manager.role === 'HEAD_MANAGER') {
-                              return person.manager.name + ' 본부';
+                              // 상위가 본부장: 상위의 조직명 찾기
+                              const headManager = salesPeople.find(p => p.id === person.manager?.id);
+                              return headManager?.organizationName || '-';
                             } else if (person.manager.role === 'BRANCH_MANAGER') {
-                              // 지사장의 상위를 찾아야 함
+                              // 상위가 지사장: 지사장의 상위(본부장) 조직명 찾기
                               const branchManager = salesPeople.find(p => p.id === person.manager?.id);
                               if (branchManager?.manager) {
-                                return branchManager.manager.name + ' 본부';
+                                const headManager = salesPeople.find(p => p.id === branchManager.manager?.id);
+                                return headManager?.organizationName || '-';
                               }
                             }
                           }
@@ -966,10 +970,13 @@ export default function SalesManagementPage() {
                           if (person.role === 'HEAD_MANAGER') {
                             return '-'; // 본부장은 지사 없음
                           } else if (person.role === 'BRANCH_MANAGER') {
-                            return <span style={{ fontWeight: 600, color: '#f57c00' }}>{person.name} 지사</span>;
+                            // 지사장: 본인의 조직명 표시
+                            return <span style={{ fontWeight: 600, color: '#f57c00' }}>{person.organizationName || '-'}</span>;
                           } else if (person.manager) {
                             if (person.manager.role === 'BRANCH_MANAGER') {
-                              return person.manager.name + ' 지사';
+                              // 상위가 지사장: 상위의 조직명 찾기
+                              const branchManager = salesPeople.find(p => p.id === person.manager?.id);
+                              return branchManager?.organizationName || '-';
                             } else if (person.manager.role === 'HEAD_MANAGER') {
                               return '-'; // 본부 직속 매니저는 지사 없음
                             }
