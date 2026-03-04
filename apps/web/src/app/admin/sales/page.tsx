@@ -285,7 +285,7 @@ export default function SalesLoginPage() {
           rrn1: identityForm.rrn1,
           rrn2: identityForm.rrn2,
           verified: identityVerified,
-          managerId: signupForm.managerId, // 선택한 본부/지사 ID
+          organizationId: signupForm.managerId, // 선택한 본부/지사 ID (Organization 테이블)
         }),
       });
 
