@@ -824,7 +824,7 @@ export default function OrganizationsManagementPage() {
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder={formData.type === 'HEADQUARTERS' ? '예: 서울본부' : '예: 강남지사'}
+                  placeholder={formData.type === 'HEADQUARTERS' ? '예: 서울본부, 드림본부, KSK본부' : '예: 강남지사, 서울지사'}
                   style={{
                     width: '100%',
                     padding: 12,
@@ -833,6 +833,14 @@ export default function OrganizationsManagementPage() {
                     fontSize: 14,
                   }}
                 />
+                <p style={{ 
+                  margin: '6px 0 0 0', 
+                  fontSize: 12, 
+                  color: '#ef4444',
+                  fontWeight: 500,
+                }}>
+                  ⚠️ 조직명을 입력하세요. 개인 이름(예: 김철수, 이영희)이 아닌 본부/지사 이름을 입력하세요!
+                </p>
               </div>
 
               {/* 매니저 검색 및 선택 (등록 모드만) */}
