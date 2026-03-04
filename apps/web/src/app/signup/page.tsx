@@ -812,7 +812,7 @@ function SignupContent() {
           {type === "agent" && (
             <p style={{ margin: 0 }}>
               💡 <strong>매니저 가입 안내</strong><br/>
-              본부장급은 소속 지사 선택 없이 가입 가능합니다. 나중에 관리자가 본부/지사를 배정해드립니다.<br/>
+              <strong style={{ color: "#1976d2" }}>소속 본부나 지사가 없어도 가입 가능합니다.</strong> 나중에 관리자가 본부/지사를 배정해드립니다.<br/>
               기업 추천 시 사용할 고유한 추천코드를 등록하세요.
             </p>
           )}
@@ -858,9 +858,9 @@ function SignupContent() {
                 onChange={(e) => setEmail(e.target.value)}
               />
 
-              <label>소속 지사 (선택)</label>
+              <label>소속 지사 (선택사항)</label>
               <select value={branchId} onChange={(e) => setBranchId(e.target.value)}>
-                <option value="">지사를 선택하세요 (본부장급은 선택 안함)</option>
+                <option value="">선택하지 않아도 가입 가능합니다</option>
                 {branches.map((branch) => (
                   <option key={branch.id} value={branch.id}>
                     {branch.name} ({branch.region})
@@ -872,11 +872,11 @@ function SignupContent() {
                 color: "#666", 
                 marginTop: 4,
                 padding: "8px 12px",
-                backgroundColor: "#f5f5f5",
+                backgroundColor: "#fffbeb",
                 borderRadius: 4,
-                border: "1px solid #e0e0e0"
+                border: "1px solid #fbbf24"
               }}>
-                💡 <strong>본부장급</strong>은 지사를 선택하지 않고 가입하세요. 관리자가 나중에 본부를 배정해드립니다.
+                ℹ️ 본부나 지사가 없어도 가입할 수 있습니다. 관리자가 나중에 배정해드립니다.
               </div>
 
               <label>추천코드 (선택)</label>
