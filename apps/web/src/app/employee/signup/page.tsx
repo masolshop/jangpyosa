@@ -31,6 +31,19 @@ export default function EmployeeSignupPage() {
   // ======================================
   // Step 1: 사업자등록번호로 등록 기업 확인
   // ======================================
+  
+  // 🆕 사업자등록번호 자동 포맷팅 (123-45-67890)
+  const formatBizNo = (value: string) => {
+    // 숫자만 추출
+    const cleaned = value.replace(/\D/g, "");
+    // 최대 10자리까지만
+    const limited = cleaned.slice(0, 10);
+    // 포맷팅: 123-45-67890
+    if (limited.length <= 3) return limited;
+    if (limited.length <= 5) return `${limited.slice(0, 3)}-${limited.slice(3)}`;
+    return `${limited.slice(0, 3)}-${limited.slice(3, 5)}-${limited.slice(5)}`;
+  };
+  
   const handleVerifyCompany = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -269,9 +282,10 @@ export default function EmployeeSignupPage() {
               <input
                 type="text"
                 value={bizNo}
-                onChange={(e) => setBizNo(e.target.value)}
-                placeholder="123-45-67890 또는 1234567890"
+                onChange={(e) => setBizNo(formatBizNo(e.target.value))}
+                placeholder="123-45-67890"
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                maxLength={12}
                 required
               />
               <p className="text-xs text-gray-500 mt-1">
