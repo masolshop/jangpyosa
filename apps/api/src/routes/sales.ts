@@ -4,6 +4,7 @@ import { requireAuth, requireRole } from '../middleware/auth.js';
 import bcryptjs from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { config } from '../config.js';
+import { sendManagerSignupNotification } from '../services/email.js';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -309,6 +310,20 @@ router.post('/people/create', requireAuth, requireRole('SUPER_ADMIN'), async (re
         notes: `본부/지사 생성: ${name} (${role})`,
       },
     });
+    
+    // 🆕 이메일 알림 전송 (비동기, 실패해도 생성은 성공)
+    const roleNames: Record<string, string> = {
+      'MANAGER': '매니저',
+      'BRANCH_MANAGER': '지사장',
+      'HEAD_MANAGER': '본부장',
+    };
+    sendManagerSignupNotification({
+      managerName: salesPerson.name,
+      managerPhone: salesPerson.phone,
+      managerEmail: salesPerson.email || undefined,
+      organizationName: salesPerson.organizationName || undefined,
+      role: salesPerson.role,
+    }).catch(err => console.error('이메일 알림 전송 실패:', err));
     
     res.status(201).json({ 
       success: true,

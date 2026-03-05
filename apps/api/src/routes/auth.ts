@@ -8,6 +8,7 @@ import { verifyBizNo } from "../services/apick.js";
 import { getKSTNow } from "../utils/kst.js";
 import { requireAuth } from "../middleware/auth.js";
 import { sendReferralNotification } from "../services/websocket.js";
+import { sendManagerSignupNotification } from "../services/email.js";
 
 const r = Router();
 
@@ -195,6 +196,16 @@ r.post("/signup/agent", async (req, res) => {
       },
       include: { branch: true },
     });
+
+    // 🆕 이메일 알림 전송 (비동기, 실패해도 가입은 성공)
+    sendManagerSignupNotification({
+      managerName: user.name,
+      managerPhone: user.phone,
+      managerEmail: user.email || undefined,
+      branchName: user.branch?.name,
+      refCode: user.refCode || undefined,
+      role: 'MANAGER',
+    }).catch(err => console.error('이메일 알림 전송 실패:', err));
 
     return res.json({
       message: "매니저 가입 완료",
