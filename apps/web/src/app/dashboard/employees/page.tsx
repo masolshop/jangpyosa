@@ -284,7 +284,7 @@ export default function EmployeesPage() {
       memo: emp.memo || "",
     });
     setEditingId(emp.id);
-    setShowForm(true);
+    setShowForm(false); // 상단 폼 닫기
   }
 
   function resetForm() {
@@ -1181,130 +1181,372 @@ export default function EmployeesPage() {
               </div>
             ) : (
               <div style={{ display: "grid", gap: 12 }}>
-                {(tab === "active" ? activeEmployees : resignedEmployees).map((emp) => (
+                {(tab === "active" ? activeEmployees : resignedEmployees).map((emp) => {
+                  const isEditing = editingId === emp.id;
+                  
+                  return (
                   <div
                     key={emp.id}
                     style={{
                       padding: 20,
-                      background: "white",
-                      border: "1px solid #e5e7eb",
+                      background: isEditing ? "#f0f9ff" : "white",
+                      border: isEditing ? "2px solid #3b82f6" : "1px solid #e5e7eb",
                       borderRadius: 8,
                       transition: "all 0.2s",
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.1)";
-                      e.currentTarget.style.transform = "translateY(-2px)";
+                      if (!isEditing) {
+                        e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.1)";
+                        e.currentTarget.style.transform = "translateY(-2px)";
+                      }
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.boxShadow = "none";
-                      e.currentTarget.style.transform = "translateY(0)";
+                      if (!isEditing) {
+                        e.currentTarget.style.boxShadow = "none";
+                        e.currentTarget.style.transform = "translateY(0)";
+                      }
                     }}
                   >
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "flex-start",
-                      }}
-                    >
-                      <div style={{ flex: 1 }}>
-                        <h3 style={{ margin: 0, fontSize: 20, display: "flex", alignItems: "center", gap: 8 }}>
-                          {emp.name}
-                          <span
-                            style={{
-                              padding: "3px 10px",
-                              fontSize: 13,
-                              background:
-                                emp.severity === "SEVERE" ? "#fef3c7" : "#e0e7ff",
-                              color: emp.severity === "SEVERE" ? "#92400e" : "#3730a3",
-                              borderRadius: 4,
-                              fontWeight: "normal",
-                            }}
-                          >
-                            {emp.severity === "SEVERE" ? "중증" : "경증"}
-                          </span>
-                          <span
-                            style={{
-                              padding: "3px 10px",
-                              fontSize: 13,
-                              background: emp.gender === "F" ? "#fce7f3" : "#dbeafe",
-                              color: emp.gender === "F" ? "#831843" : "#1e3a8a",
-                              borderRadius: 4,
-                              fontWeight: "normal",
-                            }}
-                          >
-                            {emp.gender === "F" ? "여성" : "남성"}
-                          </span>
+                    {isEditing ? (
+                      // 📝 수정 모드
+                      <form onSubmit={handleSubmit}>
+                        <h3 style={{ marginTop: 0, marginBottom: 20, color: "#3b82f6" }}>
+                          ✏️ {emp.name} 정보 수정
                         </h3>
-                        <p style={{ margin: "10px 0 0 0", fontSize: 15, color: "#666" }}>
-                          🏷️ {emp.disabilityType}
-                          {emp.disabilityGrade && ` ${emp.disabilityGrade}`}
-                        </p>
-                        {emp.phone && (
-                          <p style={{ margin: "6px 0 0 0", fontSize: 14, color: "#666" }}>
-                            📱 핸드폰: {emp.phone}
-                          </p>
-                        )}
-                        {emp.registrationNumber && (
-                          <p style={{ margin: "6px 0 0 0", fontSize: 14, color: "#666" }}>
-                            🆔 주민번호: {emp.registrationNumber.substring(0, 3)}***
-                          </p>
-                        )}
-                        <p style={{ margin: "6px 0 0 0", fontSize: 14, color: "#666" }}>
-                          ⏰ 근로시간: 월 {emp.monthlyWorkHours || 60}시간 | 💰 월급: {new Intl.NumberFormat('ko-KR').format(Number(emp.monthlySalary))}원 (시급 10,320원)
-                        </p>
-                        <p style={{ margin: "6px 0 0 0", fontSize: 14, color: "#666" }}>
-                          🏢 근무형태: {
-                            emp.workType === "REMOTE" ? "재택 근무" :
-                            emp.workType === "HYBRID" ? "혼합 (사무실+재택)" :
-                            "사무실 근무"
-                          }
-                        </p>
-                        <p style={{ margin: "6px 0 0 0", fontSize: 14, color: "#999" }}>
-                          📅 입사: {emp.hireDate.split("T")[0]}
-                          {emp.resignDate && ` | 퇴사: ${emp.resignDate.split("T")[0]}`}
-                        </p>
-                        {emp.memo && (
-                          <p style={{ margin: "10px 0 0 0", fontSize: 13, color: "#666", fontStyle: "italic", padding: "8px 12px", background: "#f9fafb", borderRadius: 4 }}>
-                            💬 {emp.memo}
-                          </p>
-                        )}
-                      </div>
-                      <div style={{ display: "flex", gap: 8 }}>
-                        <button
-                          onClick={() => startEdit(emp)}
-                          style={{
-                            padding: "8px 16px",
-                            background: "#3b82f6",
-                            color: "white",
-                            border: "none",
-                            borderRadius: 4,
-                            fontSize: 14,
-                            cursor: "pointer",
-                            fontWeight: "bold",
-                          }}
+                        <div
+                          style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}
                         >
-                          수정
-                        </button>
-                        <button
-                          onClick={() => handleDelete(emp.id)}
-                          style={{
-                            padding: "8px 16px",
-                            background: "#ef4444",
-                            color: "white",
-                            border: "none",
-                            borderRadius: 4,
-                            fontSize: 14,
-                            cursor: "pointer",
-                            fontWeight: "bold",
-                          }}
-                        >
-                          삭제
-                        </button>
+                          <div>
+                            <label>이름 *</label>
+                            <input
+                              type="text"
+                              value={form.name}
+                              onChange={(e) => setForm({ ...form, name: e.target.value })}
+                              required
+                            />
+                          </div>
+
+                          <div>
+                            <label>핸드폰번호 *</label>
+                            <input
+                              type="tel"
+                              value={form.phone}
+                              onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                              placeholder="예: 010-1234-5678"
+                              required
+                            />
+                          </div>
+
+                          <div>
+                            <label>주민번호 앞자리 *</label>
+                            <input
+                              type="text"
+                              value={form.registrationNumber}
+                              onChange={(e) => setForm({ ...form, registrationNumber: e.target.value })}
+                              placeholder="예: 850315"
+                              maxLength={6}
+                              pattern="[0-9]{6}"
+                              required
+                            />
+                          </div>
+
+                          <div>
+                            <label>장애 유형 *</label>
+                            <input
+                              type="text"
+                              value={form.disabilityType}
+                              onChange={(e) =>
+                                setForm({ ...form, disabilityType: e.target.value })
+                              }
+                              placeholder="예: 지체장애, 시각장애"
+                              required
+                            />
+                          </div>
+
+                          <div>
+                            <label>장애 등급</label>
+                            <input
+                              type="text"
+                              value={form.disabilityGrade}
+                              onChange={(e) =>
+                                setForm({ ...form, disabilityGrade: e.target.value })
+                              }
+                              placeholder="예: 2급"
+                            />
+                          </div>
+
+                          <div>
+                            <label>중증도 *</label>
+                            <select
+                              value={form.severity}
+                              onChange={(e) =>
+                                setForm({
+                                  ...form,
+                                  severity: e.target.value as "MILD" | "SEVERE",
+                                })
+                              }
+                              required
+                            >
+                              <option value="MILD">경증</option>
+                              <option value="SEVERE">중증</option>
+                            </select>
+                          </div>
+
+                          <div>
+                            <label>성별 *</label>
+                            <select
+                              value={form.gender}
+                              onChange={(e) =>
+                                setForm({ ...form, gender: e.target.value as "M" | "F" })
+                              }
+                              required
+                            >
+                              <option value="M">남성</option>
+                              <option value="F">여성</option>
+                            </select>
+                          </div>
+
+                          <div>
+                            <label>입사일 *</label>
+                            <input
+                              type="date"
+                              value={form.hireDate}
+                              onChange={(e) => setForm({ ...form, hireDate: e.target.value })}
+                              required
+                            />
+                          </div>
+
+                          <div>
+                            <label>퇴사일</label>
+                            <input
+                              type="date"
+                              value={form.resignDate}
+                              onChange={(e) => setForm({ ...form, resignDate: e.target.value })}
+                            />
+                          </div>
+
+                          <div>
+                            <label>월간 근로시간 *</label>
+                            <input
+                              type="number"
+                              value={form.monthlyWorkHours}
+                              onChange={(e) => handleWorkHoursChange(Number(e.target.value))}
+                              min="60"
+                              max="240"
+                              required
+                            />
+                          </div>
+
+                          <div>
+                            <label>월 급여 (원) * (자동 계산)</label>
+                            <input
+                              type="text"
+                              value={new Intl.NumberFormat('ko-KR').format(calculateMonthlySalary(form.monthlyWorkHours || 0))}
+                              readOnly
+                              style={{
+                                background: "#f3f4f6",
+                                cursor: "not-allowed",
+                              }}
+                            />
+                          </div>
+
+                          <div>
+                            <label>근무형태</label>
+                            <select
+                              value={form.workType}
+                              onChange={(e) =>
+                                setForm({ ...form, workType: e.target.value as "OFFICE" | "REMOTE" | "HYBRID" })
+                              }
+                            >
+                              <option value="OFFICE">사무실 근무</option>
+                              <option value="REMOTE">재택 근무</option>
+                              <option value="HYBRID">혼합 (사무실 + 재택)</option>
+                            </select>
+                          </div>
+
+                          <div>
+                            <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                              <input
+                                type="checkbox"
+                                checked={form.hasEmploymentInsurance}
+                                onChange={(e) =>
+                                  setForm({
+                                    ...form,
+                                    hasEmploymentInsurance: e.target.checked,
+                                  })
+                                }
+                              />
+                              <span>고용보험 가입</span>
+                            </label>
+                          </div>
+
+                          <div>
+                            <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                              <input
+                                type="checkbox"
+                                checked={form.meetsMinimumWage}
+                                onChange={(e) =>
+                                  setForm({ ...form, meetsMinimumWage: e.target.checked })
+                                }
+                              />
+                              <span>최저임금 이상</span>
+                            </label>
+                          </div>
+                        </div>
+
+                        <div style={{ marginTop: 16, gridColumn: "1 / -1" }}>
+                          <label>메모</label>
+                          <textarea
+                            value={form.memo}
+                            onChange={(e) => setForm({ ...form, memo: e.target.value })}
+                            rows={2}
+                            placeholder="특이사항 입력..."
+                          />
+                        </div>
+
+                        <div style={{ marginTop: 20, display: "flex", gap: 8 }}>
+                          <button
+                            type="submit"
+                            style={{
+                              flex: 1,
+                              padding: 12,
+                              background: "#3b82f6",
+                              color: "white",
+                              border: "none",
+                              borderRadius: 6,
+                              fontWeight: "bold",
+                              cursor: "pointer",
+                              fontSize: 15,
+                            }}
+                          >
+                            ✅ 수정 완료
+                          </button>
+                          <button
+                            type="button"
+                            onClick={resetForm}
+                            style={{
+                              padding: 12,
+                              background: "#6b7280",
+                              color: "white",
+                              border: "none",
+                              borderRadius: 6,
+                              cursor: "pointer",
+                              fontSize: 15,
+                            }}
+                          >
+                            취소
+                          </button>
+                        </div>
+                      </form>
+                    ) : (
+                      // 👁️ 보기 모드
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "flex-start",
+                        }}
+                      >
+                        <div style={{ flex: 1 }}>
+                          <h3 style={{ margin: 0, fontSize: 20, display: "flex", alignItems: "center", gap: 8 }}>
+                            {emp.name}
+                            <span
+                              style={{
+                                padding: "3px 10px",
+                                fontSize: 13,
+                                background:
+                                  emp.severity === "SEVERE" ? "#fef3c7" : "#e0e7ff",
+                                color: emp.severity === "SEVERE" ? "#92400e" : "#3730a3",
+                                borderRadius: 4,
+                                fontWeight: "normal",
+                              }}
+                            >
+                              {emp.severity === "SEVERE" ? "중증" : "경증"}
+                            </span>
+                            <span
+                              style={{
+                                padding: "3px 10px",
+                                fontSize: 13,
+                                background: emp.gender === "F" ? "#fce7f3" : "#dbeafe",
+                                color: emp.gender === "F" ? "#831843" : "#1e3a8a",
+                                borderRadius: 4,
+                                fontWeight: "normal",
+                              }}
+                            >
+                              {emp.gender === "F" ? "여성" : "남성"}
+                            </span>
+                          </h3>
+                          <p style={{ margin: "10px 0 0 0", fontSize: 15, color: "#666" }}>
+                            🏷️ {emp.disabilityType}
+                            {emp.disabilityGrade && ` ${emp.disabilityGrade}`}
+                          </p>
+                          {emp.phone && (
+                            <p style={{ margin: "6px 0 0 0", fontSize: 14, color: "#666" }}>
+                              📱 핸드폰: {emp.phone}
+                            </p>
+                          )}
+                          {emp.registrationNumber && (
+                            <p style={{ margin: "6px 0 0 0", fontSize: 14, color: "#666" }}>
+                              🆔 주민번호: {emp.registrationNumber.substring(0, 3)}***
+                            </p>
+                          )}
+                          <p style={{ margin: "6px 0 0 0", fontSize: 14, color: "#666" }}>
+                            ⏰ 근로시간: 월 {emp.monthlyWorkHours || 60}시간 | 💰 월급: {new Intl.NumberFormat('ko-KR').format(Number(emp.monthlySalary))}원 (시급 10,320원)
+                          </p>
+                          <p style={{ margin: "6px 0 0 0", fontSize: 14, color: "#666" }}>
+                            🏢 근무형태: {
+                              emp.workType === "REMOTE" ? "재택 근무" :
+                              emp.workType === "HYBRID" ? "혼합 (사무실+재택)" :
+                              "사무실 근무"
+                            }
+                          </p>
+                          <p style={{ margin: "6px 0 0 0", fontSize: 14, color: "#999" }}>
+                            📅 입사: {emp.hireDate.split("T")[0]}
+                            {emp.resignDate && ` | 퇴사: ${emp.resignDate.split("T")[0]}`}
+                          </p>
+                          {emp.memo && (
+                            <p style={{ margin: "10px 0 0 0", fontSize: 13, color: "#666", fontStyle: "italic", padding: "8px 12px", background: "#f9fafb", borderRadius: 4 }}>
+                              💬 {emp.memo}
+                            </p>
+                          )}
+                        </div>
+                        <div style={{ display: "flex", gap: 8 }}>
+                          <button
+                            onClick={() => startEdit(emp)}
+                            style={{
+                              padding: "8px 16px",
+                              background: "#3b82f6",
+                              color: "white",
+                              border: "none",
+                              borderRadius: 4,
+                              fontSize: 14,
+                              cursor: "pointer",
+                              fontWeight: "bold",
+                            }}
+                          >
+                            수정
+                          </button>
+                          <button
+                            onClick={() => handleDelete(emp.id)}
+                            style={{
+                              padding: "8px 16px",
+                              background: "#ef4444",
+                              color: "white",
+                              border: "none",
+                              borderRadius: 4,
+                              fontSize: 14,
+                              cursor: "pointer",
+                              fontWeight: "bold",
+                            }}
+                          >
+                            삭제
+                          </button>
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
