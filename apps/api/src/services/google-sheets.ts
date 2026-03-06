@@ -147,12 +147,54 @@ export async function syncManagersToSheet(managers: any[]) {
 }
 
 /**
+ * 추천 기업 데이터 동기화
+ */
+export async function syncReferredCompaniesToSheet(companies: any[]) {
+  if (!sheetsService || !config) {
+    throw new Error('Google Sheets 서비스가 초기화되지 않았습니다');
+  }
+
+  const values = [
+    ['ID', '기업명', '사업자번호', '기업유형', '대표자', '담당자', '담당자전화', '담당자이메일', '추천인ID', '추천인명', '추천인역할', '추천코드', '추천경로', '활성상태', '비고', '추천일', '수정일'],
+    ...companies.map(company => [
+      company.id,
+      company.companyName || '',
+      company.companyBizNo || '',
+      getCompanyTypeKorean(company.companyType),
+      company.company?.representative || '',
+      company.company?.ownerUser?.managerName || '',
+      company.company?.ownerUser?.managerPhone || '',
+      company.company?.ownerUser?.managerEmail || '',
+      company.salesPersonId,
+      company.salesPerson?.name || '',
+      getRoleKorean(company.salesPerson?.role || ''),
+      company.referralCode,
+      getReferralSourceKorean(company.referralSource),
+      company.isActive ? 'Y' : 'N',
+      company.notes || '',
+      company.createdAt.toISOString(),
+      company.updatedAt.toISOString(),
+    ]),
+  ];
+
+  await sheetsService.spreadsheets.values.update({
+    spreadsheetId: config.spreadsheetId,
+    range: '추천기업!A1',
+    valueInputOption: 'RAW',
+    requestBody: { values },
+  });
+
+  console.log(`✅ 추천 기업 ${companies.length}개 동기화 완료`);
+}
+
+/**
  * 전체 데이터 동기화
  */
 export async function syncAllDataToSheet(data: {
   headquarters: any[];
   branches: any[];
   managers: any[];
+  referredCompanies?: any[];
 }) {
   console.log('🔄 구글 시트 전체 동기화 시작...');
   
@@ -160,6 +202,11 @@ export async function syncAllDataToSheet(data: {
     await syncHeadquartersToSheet(data.headquarters);
     await syncBranchesToSheet(data.branches);
     await syncManagersToSheet(data.managers);
+    
+    // 추천 기업 동기화 (선택 사항)
+    if (data.referredCompanies) {
+      await syncReferredCompaniesToSheet(data.referredCompanies);
+    }
     
     // 마지막 동기화 시간 기록
     if (sheetsService && config) {
@@ -198,7 +245,7 @@ export async function syncToGoogleSheetRealtime(prisma: any) {
     console.log('🔄 실시간 구글 시트 동기화 시작...');
     
     // 전체 데이터 조회
-    const [organizations, salesPeople] = await Promise.all([
+    const [organizations, salesPeople, referredCompanies] = await Promise.all([
       prisma.organization.findMany({
         where: { isActive: true },
         include: {
@@ -214,6 +261,31 @@ export async function syncToGoogleSheetRealtime(prisma: any) {
         },
         orderBy: { createdAt: 'asc' },
       }),
+      prisma.companyReferral.findMany({
+        where: { isActive: true },
+        include: {
+          salesPerson: {
+            select: {
+              id: true,
+              name: true,
+              role: true,
+              phone: true,
+            },
+          },
+          company: {
+            include: {
+              ownerUser: {
+                select: {
+                  managerName: true,
+                  managerPhone: true,
+                  managerEmail: true,
+                },
+              },
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
     ]);
 
     // 본부와 지사 분리
@@ -225,6 +297,7 @@ export async function syncToGoogleSheetRealtime(prisma: any) {
       headquarters,
       branches,
       managers: salesPeople,
+      referredCompanies,
     });
 
     console.log('✅ 실시간 동기화 완료');
@@ -248,6 +321,36 @@ function getRoleKorean(role: string): string {
 }
 
 /**
+ * 기업 유형 한글 변환
+ */
+function getCompanyTypeKorean(type: string): string {
+  const typeMap: Record<string, string> = {
+    STANDARD_WORKPLACE: '표준사업장',
+    EMPLOYMENT_OBLIGATION: '고용의무기업',
+    PRIVATE_COMPANY: '민간기업',
+    PUBLIC_INSTITUTION: '공공기관',
+    GOVERNMENT: '정부기관',
+    SUPPLIER: '공급기업',
+    BUYER: '구매기업',
+  };
+  return typeMap[type] || type;
+}
+
+/**
+ * 추천 경로 한글 변환
+ */
+function getReferralSourceKorean(source: string): string {
+  const sourceMap: Record<string, string> = {
+    direct_link: '직접링크',
+    qr_code: 'QR코드',
+    manual: '수동등록',
+    website: '웹사이트',
+    mobile_app: '모바일앱',
+  };
+  return sourceMap[source] || source;
+}
+
+/**
  * 구글 시트 초기 설정 (시트 생성 및 헤더 포맷팅)
  */
 export async function setupGoogleSheet() {
@@ -262,7 +365,7 @@ export async function setupGoogleSheet() {
     });
 
     const existingSheets = spreadsheet.data.sheets?.map(s => s.properties?.title) || [];
-    const requiredSheets = ['본부', '지사', '매니저', '동기화정보'];
+    const requiredSheets = ['본부', '지사', '매니저', '추천기업', '동기화정보'];
 
     for (const sheetName of requiredSheets) {
       if (!existingSheets.includes(sheetName)) {

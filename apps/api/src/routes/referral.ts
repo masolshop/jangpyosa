@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
+import { syncToGoogleSheetRealtime } from '../services/google-sheets.js';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -149,6 +150,11 @@ router.post('/register', async (req, res) => {
         notes: `추천 고객 추가: ${company.name} (${company.bizNo})`,
       },
     });
+    
+    // 🆕 구글 시트 실시간 동기화 (비동기, 실패해도 등록은 성공)
+    syncToGoogleSheetRealtime(prisma).catch(err => 
+      console.error('구글 시트 동기화 실패:', err)
+    );
     
     res.status(201).json({
       success: true,

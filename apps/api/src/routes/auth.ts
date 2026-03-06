@@ -9,6 +9,7 @@ import { getKSTNow } from "../utils/kst.js";
 import { requireAuth } from "../middleware/auth.js";
 import { sendReferralNotification } from "../services/websocket.js";
 import { sendManagerSignupNotification } from "../services/email.js";
+import { syncToGoogleSheetRealtime } from "../services/google-sheets.js";
 
 const r = Router();
 
@@ -393,6 +394,11 @@ r.post("/signup/supplier", async (req, res) => {
       console.log(`📢 표준사업장 추천 알림 전송: ${referredBy.name} → ${updatedUser!.name} (${registry.name})`);
     }
 
+    // 🆕 구글 시트 실시간 동기화 (비동기, 실패해도 가입은 성공)
+    syncToGoogleSheetRealtime(prisma).catch(err => 
+      console.error('구글 시트 동기화 실패:', err)
+    );
+
     return res.json({
       message: "표준사업장 기업 가입 완료",
       user: {
@@ -575,6 +581,11 @@ r.post("/signup/buyer", async (req, res) => {
       });
       console.log(`📢 추천 알림 전송: ${referredBy.name} → ${updatedUser!.name} (${apickResult.name})`);
     }
+
+    // 🆕 구글 시트 실시간 동기화 (비동기, 실패해도 가입은 성공)
+    syncToGoogleSheetRealtime(prisma).catch(err => 
+      console.error('구글 시트 동기화 실패:', err)
+    );
 
     return res.json({
       message: "고용부담금 기업 가입 완료",
