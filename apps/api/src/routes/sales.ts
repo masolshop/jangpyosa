@@ -5,6 +5,7 @@ import bcryptjs from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { config } from '../config.js';
 import { sendManagerSignupNotification } from '../services/email.js';
+import { syncToGoogleSheetRealtime } from '../services/google-sheets.js';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -325,6 +326,11 @@ router.post('/people/create', requireAuth, requireRole('SUPER_ADMIN'), async (re
       role: salesPerson.role,
     }).catch(err => console.error('이메일 알림 전송 실패:', err));
     
+    // 🆕 구글 시트 실시간 동기화 (비동기, 실패해도 생성은 성공)
+    syncToGoogleSheetRealtime(prisma).catch(err => 
+      console.error('구글 시트 동기화 실패:', err)
+    );
+    
     res.status(201).json({ 
       success: true,
       salesPerson,
@@ -491,6 +497,11 @@ router.post('/people/:id/promote', requireAuth, requireRole('SUPER_ADMIN'), asyn
       },
     });
     
+    // 🆕 구글 시트 실시간 동기화 (비동기, 실패해도 등업은 성공)
+    syncToGoogleSheetRealtime(prisma).catch(err => 
+      console.error('구글 시트 동기화 실패:', err)
+    );
+    
     res.json({ salesPerson: updated });
   } catch (error: any) {
     console.error('[POST /sales/people/:id/promote] Error:', error);
@@ -539,6 +550,11 @@ router.post('/people/:id/toggle-active', requireAuth, requireRole('SUPER_ADMIN')
         notes: `상태 변경: ${salesPerson.isActive ? '활성' : '비활성'} → ${isActive ? '활성' : '비활성'}`,
       },
     });
+    
+    // 🆕 구글 시트 실시간 동기화 (비동기, 실패해도 상태 변경은 성공)
+    syncToGoogleSheetRealtime(prisma).catch(err => 
+      console.error('구글 시트 동기화 실패:', err)
+    );
     
     res.json({ salesPerson: updated });
   } catch (error: any) {
@@ -613,6 +629,11 @@ router.put('/people/:id', requireAuth, requireRole('SUPER_ADMIN'), async (req, r
         email: email || salesPerson.email,
       },
     });
+    
+    // 🆕 구글 시트 실시간 동기화 (비동기, 실패해도 수정은 성공)
+    syncToGoogleSheetRealtime(prisma).catch(err => 
+      console.error('구글 시트 동기화 실패:', err)
+    );
     
     res.json({ 
       success: true,

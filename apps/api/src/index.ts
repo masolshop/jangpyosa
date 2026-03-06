@@ -10,6 +10,7 @@ import { dirname } from "path";
 import { getKSTNow } from "./utils/kst.js";
 import { createPrismaWithMonitoring, startPerformanceReporting } from "./lib/prisma-monitoring.js";
 import { initializeWebSocket } from "./services/websocket.js";
+import { initGoogleSheets, setupGoogleSheet } from "./services/google-sheets.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -44,6 +45,7 @@ import referralRoutes from "./routes/referral.js";
 import salesAuthRoutes from "./routes/sales-auth.js";
 import superAdminRoutes from "./routes/super-admin.js";
 import agentStatsRoutes from "./routes/agent-stats.js";
+import syncRoutes from "./routes/sync.js";
 
 // Prisma Client with monitoring
 export const prisma = createPrismaWithMonitoring();
@@ -121,6 +123,29 @@ httpServer.listen(config.port, '0.0.0.0', async () => {
   console.log(`🚀 장표사닷컴 API listening on 0.0.0.0:${config.port}`);
   console.log(`📊 Database: ${process.env.DATABASE_URL?.split("@")[1] || "local"}`);
   console.log(`🔐 APICK API: ${config.apickApiKey ? 'Configured ✅' : 'Not configured ❌'}`);
+  
+  // Google Sheets 초기화
+  try {
+    const googleSheetsConfig = {
+      clientEmail: process.env.GOOGLE_SHEETS_CLIENT_EMAIL || '',
+      privateKey: process.env.GOOGLE_SHEETS_PRIVATE_KEY || '',
+      spreadsheetId: process.env.GOOGLE_SHEETS_SPREADSHEET_ID || '',
+    };
+    
+    if (googleSheetsConfig.clientEmail && googleSheetsConfig.privateKey && googleSheetsConfig.spreadsheetId) {
+      const initialized = initGoogleSheets(googleSheetsConfig);
+      if (initialized) {
+        await setupGoogleSheet();
+        console.log('📊 Google Sheets: Configured ✅');
+      } else {
+        console.log('⚠️  Google Sheets: 초기화 실패');
+      }
+    } else {
+      console.log('📊 Google Sheets: Not configured (선택 기능)');
+    }
+  } catch (error) {
+    console.error('⚠️  Google Sheets 초기화 실패:', error);
+  }
   
   // 근태 스케줄러 시작
   try {
