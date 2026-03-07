@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 
 interface ConsultingService {
   id: string
@@ -11,6 +12,7 @@ interface ConsultingService {
 }
 
 export default function ConsultingCatalogPage() {
+  const router = useRouter()
   const [hoveredId, setHoveredId] = useState<string | null>(null)
 
   const services: ConsultingService[] = [
@@ -32,7 +34,7 @@ export default function ConsultingCatalogPage() {
       id: "rental",
       title: "기업 물품 렌탈",
       icon: "📦",
-      description: "사무용품 및 장비 렌탈",
+      description: "기업용 2만가지 상품 렌탈",
       color: "purple"
     },
     {
@@ -146,12 +148,14 @@ export default function ConsultingCatalogPage() {
                   border-2 ${hoveredId === service.id ? `border-${service.color}-400` : 'border-gray-100'}
                 `}
               >
-                {/* 준비중 배지 */}
-                <div className="absolute top-4 right-4">
-                  <span className="bg-yellow-100 text-yellow-800 text-sm font-semibold px-3 py-1 rounded-full border border-yellow-300">
-                    준비중
-                  </span>
-                </div>
+                {/* 준비중 배지 (렌탈 서비스 제외) */}
+                {service.id !== 'rental' && (
+                  <div className="absolute top-4 right-4">
+                    <span className="bg-yellow-100 text-yellow-800 text-sm font-semibold px-3 py-1 rounded-full border border-yellow-300">
+                      준비중
+                    </span>
+                  </div>
+                )}
 
                 {/* 아이콘 */}
                 <div className="text-5xl mb-4 text-center">
@@ -170,6 +174,11 @@ export default function ConsultingCatalogPage() {
 
                 {/* 버튼 */}
                 <button
+                  onClick={() => {
+                    if (service.id === 'rental') {
+                      router.push(`/catalog/${service.id}`)
+                    }
+                  }}
                   className={`
                     w-full py-3 rounded-lg font-semibold
                     transition-all duration-300
@@ -178,9 +187,9 @@ export default function ConsultingCatalogPage() {
                     hover:from-${service.color}-600 hover:to-${service.color}-700
                     transform hover:translate-y-[-2px]
                     shadow-md hover:shadow-lg
-                    disabled:opacity-50 disabled:cursor-not-allowed
+                    ${service.id !== 'rental' ? 'opacity-50 cursor-not-allowed' : ''}
                   `}
-                  disabled
+                  disabled={service.id !== 'rental'}
                 >
                   상세보기
                 </button>
