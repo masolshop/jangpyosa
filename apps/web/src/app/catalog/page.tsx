@@ -35,7 +35,7 @@ export default function ConsultingCatalogPage() {
       title: "기업 물품 렌탈",
       icon: "📦",
       description: "기업용 2만가지 상품 렌탈",
-      color: "purple"
+      color: "orange"
     },
     {
       id: "book-publishing",
