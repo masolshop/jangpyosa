@@ -6,6 +6,33 @@ const router = Router();
 const prisma = new PrismaClient();
 
 /**
+ * 핸드폰 번호 정규화
+ * 지원 형식: 010-1234-5678, 01012345678, 1012345678
+ * @param phone 입력된 핸드폰 번호
+ * @returns 11자리 숫자 문자열 (예: 01012345678)
+ */
+function normalizePhone(phone: string): string {
+  // 숫자만 추출
+  let cleanPhone = phone.replace(/\D/g, "");
+  
+  // 10자리이고 0으로 시작하지 않으면 0 추가 (1012345678 -> 01012345678)
+  if (cleanPhone.length === 10 && cleanPhone[0] !== "0") {
+    cleanPhone = "0" + cleanPhone;
+  }
+  
+  return cleanPhone;
+}
+
+/**
+ * 추천인 코드 생성 (DB 저장용)
+ * 핸드폰 번호에서 앞의 0을 제거 (01012345678 -> 1012345678)
+ */
+function toReferralCode(phone: string): string {
+  const normalized = normalizePhone(phone);
+  return normalized.startsWith('0') ? normalized.substring(1) : normalized;
+}
+
+/**
  * GET /referral/validate/:code
  * 추천인 코드 검증
  * 
@@ -17,8 +44,9 @@ router.get('/validate/:code', async (req, res) => {
   try {
     const { code } = req.params;
     
-    // 핸드폰번호 정규화 (하이픈 제거)
-    const referralCode = code.replace(/-/g, '');
+    // 핸드폰번호 정규화 (010-1234-5678, 01012345678, 1012345678 모두 지원)
+    // DB에는 앞의 0을 제거한 형태로 저장됨 (1012345678)
+    const referralCode = toReferralCode(code);
     
     // 추천인 조회
     const salesPerson = await prisma.salesPerson.findUnique({
@@ -77,9 +105,12 @@ router.post('/register', async (req, res) => {
   try {
     const {
       companyId,
-      referralCode,
+      referralCode: rawReferralCode,
       referralSource,
     } = req.body;
+    
+    // 핸드폰번호 정규화 (DB 저장 형식으로 변환)
+    const referralCode = toReferralCode(rawReferralCode);
     
     // 기업 정보 조회
     const company = await prisma.company.findUnique({

@@ -12,6 +12,33 @@ const prisma = new PrismaClient();
 
 const JWT_SECRET = config.jwtSecret || 'your-secret-key';
 
+/**
+ * 핸드폰 번호 정규화
+ * 지원 형식: 010-1234-5678, 01012345678, 1012345678
+ * @param phone 입력된 핸드폰 번호
+ * @returns 11자리 숫자 문자열 (예: 01012345678)
+ */
+function normalizePhone(phone: string): string {
+  // 숫자만 추출
+  let cleanPhone = phone.replace(/\D/g, "");
+  
+  // 10자리이고 0으로 시작하지 않으면 0 추가 (1012345678 -> 01012345678)
+  if (cleanPhone.length === 10 && cleanPhone[0] !== "0") {
+    cleanPhone = "0" + cleanPhone;
+  }
+  
+  return cleanPhone;
+}
+
+/**
+ * 추천인 코드 생성 (DB 저장용)
+ * 핸드폰 번호에서 앞의 0을 제거 (01012345678 -> 1012345678)
+ */
+function toReferralCode(phone: string): string {
+  const normalized = normalizePhone(phone);
+  return normalized.startsWith('0') ? normalized.substring(1) : normalized;
+}
+
 // 영업 사원 전용 인증 미들웨어
 const requireSalesAuth = async (req: any, res: any, next: any) => {
   try {
@@ -366,9 +393,9 @@ router.post('/people', requireAuth, requireRole('SUPER_ADMIN'), async (req, res)
       return res.status(400).json({ error: '이미 등록된 핸드폰번호입니다' });
     }
     
-    // 추천인 코드 생성 (핸드폰번호에서 - 제거)
-    const referralCode = phone.replace(/-/g, '');
-    const referralLink = `https://jangpyosa.com/${referralCode}`;
+    // 추천인 코드 생성 (010-1234-5678, 01012345678, 1012345678 모두 지원)
+    const referralCode = toReferralCode(phone);
+    const referralLink = `https://jangpyosa.com/${normalizePhone(phone)}`;
     
     const salesPerson = await prisma.salesPerson.create({
       data: {
