@@ -430,8 +430,8 @@ export default function Sidebar() {
               <MenuItem href="/employment-levy-obligation" label="장애인의무고용부담금" icon="📋" active={isActive("/employment-levy-obligation")} />
               <MenuItem href="/linkage-levy-exemption-system" label="연계고용부담금감면제도" icon="📉" active={isActive("/linkage-levy-exemption-system")} />
               <MenuItem href="/public-purchase-system" label="공공기관우선구매제도" icon="🏛️" active={isActive("/public-purchase-system")} />
-              <MenuItem href="/standard-workplace-establishment" label="장애인표준사업장 및 자회사형 설립컨설팅" icon="🏭" active={isActive("/standard-workplace-establishment")} />
-              <MenuItem href="/catalog" label="고용부담금감면 및 공공기관 우선구매 컨설팅" icon="💡" active={pathname?.startsWith("/catalog")} />
+              <MenuItem href="/standard-workplace-establishment" label="장애인표준사업장 및 자회사형 설립컨설팅" icon="✨" active={isActive("/standard-workplace-establishment")} goldBorder={true} />
+              <MenuItem href="/catalog" label="고용부담금감면 및 공공기관 우선구매 컨설팅" icon="✨" active={pathname?.startsWith("/catalog")} goldBorder={true} />
               <MenuItem href="/contract-sample" label="표준도급계약서 샘플" icon="📄" active={isActive("/contract-sample")} />
               <MenuItem href="/products/manage" label="표준사업장감면맞춤컨설팅등록" icon="🏭" active={isActive("/products/manage") || isActive("/supplier/profile")} requiresRole={["SUPPLIER"]} currentRole={userRole} requiresAuth={true} />
             </div>
@@ -522,9 +522,10 @@ interface MenuItemProps {
   notificationCount?: number; // 알림 개수 (종으로 표시)
   requiresAuth?: boolean; // 로그인 필요 여부
   onMobileClick?: () => void; // 🆕 모바일에서 클릭 시 콜백
+  goldBorder?: boolean; // 골드 테두리 적용 여부
 }
 
-function MenuItem({ href, label, icon, active = false, onClick, onNotificationClear, subItems, requiresRole, currentRole, notificationCount, requiresAuth = false, onMobileClick }: MenuItemProps) {
+function MenuItem({ href, label, icon, active = false, onClick, onNotificationClear, subItems, requiresRole, currentRole, notificationCount, requiresAuth = false, onMobileClick, goldBorder = false }: MenuItemProps) {
   const pathname = usePathname();
   const [showSubItems, setShowSubItems] = useState(false);
   // 🔧 수정: requiresRole이 없거나 undefined면 공개 메뉴 (항상 접근 가능)
@@ -583,9 +584,9 @@ function MenuItem({ href, label, icon, active = false, onClick, onNotificationCl
           padding: "8px 14px",
           marginBottom: 5,
           borderRadius: 8,
-          border: "1px solid rgba(255, 255, 255, 0.3)",
+          border: goldBorder ? "2px solid #EAB308" : "1px solid rgba(255, 255, 255, 0.3)",
           textDecoration: "none",
-          color: active ? "white" : "#ccc",
+          color: active ? "white" : (goldBorder ? "#FCD34D" : "#ccc"),
           background: active ? "#0070f3" : "transparent",
           fontSize: 18.2,
           fontWeight: active ? 600 : 400,
@@ -597,7 +598,7 @@ function MenuItem({ href, label, icon, active = false, onClick, onNotificationCl
           if (!active) {
             e.currentTarget.style.background = "#2a2a2a";
             e.currentTarget.style.color = "white";
-            e.currentTarget.style.border = "1px solid rgba(255, 255, 255, 0.5)";
+            e.currentTarget.style.border = goldBorder ? "2px solid #FBBF24" : "1px solid rgba(255, 255, 255, 0.5)";
             const iconEl = e.currentTarget.querySelector(".menu-icon") as HTMLElement;
             if (iconEl) iconEl.style.opacity = "1";
           }
@@ -605,8 +606,8 @@ function MenuItem({ href, label, icon, active = false, onClick, onNotificationCl
         onMouseLeave={(e) => {
           if (!active) {
             e.currentTarget.style.background = "transparent";
-            e.currentTarget.style.color = "#ccc";
-            e.currentTarget.style.border = "1px solid rgba(255, 255, 255, 0.3)";
+            e.currentTarget.style.color = goldBorder ? "#FCD34D" : "#ccc";
+            e.currentTarget.style.border = goldBorder ? "2px solid #EAB308" : "1px solid rgba(255, 255, 255, 0.3)";
             const iconEl = e.currentTarget.querySelector(".menu-icon") as HTMLElement;
             if (iconEl && !active) iconEl.style.opacity = "0";
           }
