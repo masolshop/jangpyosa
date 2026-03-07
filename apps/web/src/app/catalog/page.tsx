@@ -152,7 +152,7 @@ export default function ConsultingCatalogPage() {
                   relative bg-white rounded-xl shadow-lg p-6 
                   transform transition-all duration-300 cursor-pointer
                   hover:scale-105 hover:shadow-2xl
-                  border-2 ${hoveredId === service.id ? `border-${service.color}-400` : 'border-gray-100'}
+                  border-2 ${hoveredId === service.id ? `border-${service.color}-400` : 'border-yellow-500'}
                 `}
               >
                 {/* 준비중 배지 (렌탈 서비스 제외) */}

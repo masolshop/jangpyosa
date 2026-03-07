@@ -431,7 +431,7 @@ export default function Sidebar() {
               <MenuItem href="/linkage-levy-exemption-system" label="연계고용부담금감면제도" icon="📉" active={isActive("/linkage-levy-exemption-system")} />
               <MenuItem href="/public-purchase-system" label="공공기관우선구매제도" icon="🏛️" active={isActive("/public-purchase-system")} />
               <MenuItem href="/standard-workplace-establishment" label="장애인표준사업장 및 자회사형 설립컨설팅" icon="🏭" active={isActive("/standard-workplace-establishment")} />
-              <MenuItem href="/catalog" label="부담금감면/우선구매 맞춤컨설팅" icon="💡" active={pathname?.startsWith("/catalog")} />
+              <MenuItem href="/catalog" label="고용부담금감면 및 공공기관 우선구매 컨설팅" icon="💡" active={pathname?.startsWith("/catalog")} />
               <MenuItem href="/contract-sample" label="표준도급계약서 샘플" icon="📄" active={isActive("/contract-sample")} />
               <MenuItem href="/products/manage" label="표준사업장감면맞춤컨설팅등록" icon="🏭" active={isActive("/products/manage") || isActive("/supplier/profile")} requiresRole={["SUPPLIER"]} currentRole={userRole} requiresAuth={true} />
             </div>
