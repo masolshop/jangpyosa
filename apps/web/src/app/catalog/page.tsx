@@ -171,12 +171,12 @@ export default function ConsultingCatalogPage() {
                 </div>
 
                 {/* 제목 */}
-                <h3 className="text-lg md:text-xl font-bold text-gray-900 text-center mb-3">
+                <h3 className={`text-lg md:text-xl font-bold text-center mb-3 transition-colors ${hoveredId === service.id ? 'text-white' : 'text-gray-900'}`}>
                   {service.title}
                 </h3>
 
                 {/* 설명 */}
-                <p className="text-base text-gray-600 text-center mb-4">
+                <p className={`text-base text-center mb-4 transition-colors ${hoveredId === service.id ? 'text-white/90' : 'text-gray-600'}`}>
                   {service.description}
                 </p>
 
@@ -191,7 +191,7 @@ export default function ConsultingCatalogPage() {
                     w-full py-3 rounded-lg font-bold text-base
                     transition-all duration-300 relative z-10
                     ${service.id === 'rental' || service.id === 'health-keeper'
-                      ? `bg-white text-${service.color}-600 hover:bg-${service.color}-700 hover:text-white shadow-lg hover:shadow-xl transform hover:translate-y-[-2px] border-2 border-${service.color}-200` 
+                      ? 'bg-white text-purple-600 hover:bg-purple-700 hover:text-white shadow-lg hover:shadow-xl transform hover:translate-y-[-2px] border-2 border-purple-200' 
                       : 'bg-gray-200 text-gray-500 cursor-not-allowed'
                     }
                   `}
