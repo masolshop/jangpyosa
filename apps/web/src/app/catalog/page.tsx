@@ -121,7 +121,7 @@ export default function ConsultingCatalogPage() {
             <div className="text-3xl">🎯</div>
             <h2 className="text-xl font-bold text-gray-800">서비스 개요</h2>
           </div>
-          <p className="text-gray-700 leading-relaxed text-base md:text-lg">
+          <p className="text-gray-700 leading-relaxed text-lg md:text-xl">
             매몰자금인 <strong className="text-blue-600">장애인 고용 부담금</strong> 및 
             <strong className="text-purple-600"> 공공기관 우선구매 의무자금</strong>으로 
             기업 직원 복지를 실현하고, 기업 성장에 필요한 마케팅 전문서비스로 
