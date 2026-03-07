@@ -421,11 +421,11 @@ export default function Sidebar() {
             </div>
           )}
 
-          {/* 연계고용부담금감면센터 메뉴 (직원이 아닌 경우만 표시, 비로그인 시 회원가입 페이지로 이동) */}
+          {/* 고용부담금감면및우선구매컨설팅 메뉴 (직원이 아닌 경우만 표시, 비로그인 시 회원가입 페이지로 이동) */}
           {userRole !== "EMPLOYEE" && (
             <div style={{ marginBottom: 12 }}>
               <div style={{ fontSize: 18, color: "#fff", marginBottom: 8, fontWeight: "bold", textAlign: "center" }}>
-                연계고용부담금감면센터
+                고용부담금감면및우선구매컨설팅
               </div>
               <MenuItem href="/employment-levy-obligation" label="장애인의무고용부담금" icon="📋" active={isActive("/employment-levy-obligation")} />
               <MenuItem href="/linkage-levy-exemption-system" label="연계고용부담금감면제도" icon="📉" active={isActive("/linkage-levy-exemption-system")} />

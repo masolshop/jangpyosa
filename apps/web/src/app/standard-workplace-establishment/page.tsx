@@ -525,18 +525,12 @@ export default function StandardWorkplaceEstablishmentPage() {
             일반형과 자회사형 중 귀사에 맞는 최적의 방안을 제안하고,<br />
             설립부터 인증까지 전 과정을 전문 컨설턴트가 지원합니다
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex justify-center">
             <a
               href="/catalog"
               className="bg-white text-indigo-600 px-8 py-4 rounded-lg text-lg font-bold hover:bg-gray-100 transition-colors shadow-lg"
             >
               💡 맞춤 컨설팅 신청
-            </a>
-            <a
-              href="/contact"
-              className="bg-indigo-800 text-white px-8 py-4 rounded-lg text-lg font-bold hover:bg-indigo-900 transition-colors"
-            >
-              📞 상담 문의 (1588-1519)
             </a>
           </div>
         </div>
