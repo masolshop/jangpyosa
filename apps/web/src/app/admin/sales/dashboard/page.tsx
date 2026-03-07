@@ -1737,17 +1737,13 @@ export default function SalesDashboard() {
   const [headquartersBranches, setHeadquartersBranches] = useState<HeadquartersBranch[]>([]);
 
   useEffect(() => {
-    console.log('[Dashboard] Component mounted');
     loadDashboard();
   }, []);
 
   const loadDashboard = async () => {
-    console.log('[Dashboard] loadDashboard called');
     const token = getManagerToken();
-    console.log('[Dashboard] Token:', token ? 'exists' : 'not found');
     
     if (!token) {
-      console.log('[Dashboard] No token, redirecting to login');
       router.push('/admin/sales');
       return;
     }
@@ -1757,33 +1753,24 @@ export default function SalesDashboard() {
       setError('');
 
       // 1. 계정 정보 가져오기
-      console.log('[Dashboard] Fetching account info...');
       const meResponse = await fetch(`${API_BASE}/sales/auth/me`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
       });
 
-      console.log('[Dashboard] /sales/auth/me response status:', meResponse.status);
-
       if (!meResponse.ok) {
-        const errorText = await meResponse.text();
-        console.error('[Dashboard] Auth failed:', errorText);
         throw new Error('인증이 만료되었습니다');
       }
 
       const meData = await meResponse.json();
-      console.log('[Dashboard] Raw API response:', meData);
       
       // API returns { salesPerson: {...} }
       const salesPerson = meData.salesPerson || meData;
-      console.log('[Dashboard] SalesPerson data:', salesPerson);
       
       const role = salesPerson.role;
-      console.log('[Dashboard] User role:', role);
       
       if (!role) {
-        console.error('[Dashboard] Role is undefined! SalesPerson:', salesPerson);
         throw new Error('역할 정보를 찾을 수 없습니다');
       }
       
@@ -1797,7 +1784,6 @@ export default function SalesDashboard() {
       });
 
       // 2. 역할별 데이터 로드
-      console.log('[Dashboard] Loading role-specific data...');
       if (role === 'MANAGER') {
         await loadManagerDashboard(token);
       } else if (role === 'BRANCH_MANAGER') {
@@ -1806,22 +1792,15 @@ export default function SalesDashboard() {
         await loadHeadquartersDashboard(token);
       }
 
-      console.log('[Dashboard] Dashboard loaded successfully');
-
     } catch (error: any) {
-      console.error('[Dashboard] Dashboard load error:', error);
-      console.error('[Dashboard] Error message:', error.message);
-      console.error('[Dashboard] Error stack:', error.stack);
       setError(error.message || '대시보드를 불러오는데 실패했습니다');
       if (error.message.includes('인증')) {
-        console.log('[Dashboard] Auth error, clearing and redirecting');
         clearManagerAuth();
         setTimeout(() => {
           router.push('/admin/sales');
         }, 100);
       }
     } finally {
-      console.log('[Dashboard] Setting loading to false');
       setLoading(false);
     }
   };
@@ -1844,15 +1823,12 @@ export default function SalesDashboard() {
   const loadManagerDashboard = async (token: string) => {
     try {
       // 통계
-      console.log('[Dashboard] Fetching manager stats...');
       const statsResponse = await fetch(`${API_BASE}/sales/dashboard/stats`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
-      console.log('[Dashboard] Stats response status:', statsResponse.status);
       
       if (statsResponse.ok) {
         const data = await statsResponse.json();
-        console.log('[Dashboard] Stats data:', data);
         // API returns { role, name, phone, email, stats: {...} }
         const stats = data.stats || data;
         setManagerStats({
@@ -1863,8 +1839,6 @@ export default function SalesDashboard() {
           standardWorkplaces: stats.standardWorkplaces || 0,
         });
       } else {
-        const errorText = await statsResponse.text();
-        console.error('[Dashboard] Stats error:', errorText);
         // 기본값 설정
         setManagerStats({
           totalCompanies: 0,
@@ -1876,23 +1850,17 @@ export default function SalesDashboard() {
       }
 
       // 추천 기업 리스트
-      console.log('[Dashboard] Fetching companies...');
       const companiesResponse = await fetch(`${API_BASE}/sales/dashboard/companies`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
-      console.log('[Dashboard] Companies response status:', companiesResponse.status);
       
       if (companiesResponse.ok) {
         const companies = await companiesResponse.json();
-        console.log('[Dashboard] Companies count:', companies.length);
         setManagerCompanies(companies);
       } else {
-        const errorText = await companiesResponse.text();
-        console.error('[Dashboard] Companies error:', errorText);
         setManagerCompanies([]);
       }
     } catch (error) {
-      console.error('[Dashboard] Manager dashboard load error:', error);
       // 기본값 설정
       setManagerStats({
         totalCompanies: 0,
@@ -1908,15 +1876,12 @@ export default function SalesDashboard() {
   const loadBranchDashboard = async (token: string) => {
     try {
       // 통계
-      console.log('[Dashboard] Fetching branch stats...');
       const statsResponse = await fetch(`${API_BASE}/sales/dashboard/stats`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
-      console.log('[Dashboard] Branch stats response status:', statsResponse.status);
       
       if (statsResponse.ok) {
         const data = await statsResponse.json();
-        console.log('[Dashboard] Branch stats data:', data);
         // API returns { role, name, phone, email, stats: {...} }
         const stats = data.stats || data;
         setBranchStats({
@@ -1928,8 +1893,6 @@ export default function SalesDashboard() {
           standardWorkplaces: stats.standardWorkplaces || 0,
         });
       } else {
-        const errorText = await statsResponse.text();
-        console.error('[Dashboard] Branch stats error:', errorText);
         // 기본값 설정
         setBranchStats({
           totalManagers: 0,
@@ -1942,23 +1905,17 @@ export default function SalesDashboard() {
       }
 
       // 매니저 리스트
-      console.log('[Dashboard] Fetching managers...');
       const managersResponse = await fetch(`${API_BASE}/sales/dashboard/managers`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
-      console.log('[Dashboard] Managers response status:', managersResponse.status);
       
       if (managersResponse.ok) {
         const managers = await managersResponse.json();
-        console.log('[Dashboard] Managers count:', managers.length);
         setBranchManagers(managers);
       } else {
-        const errorText = await managersResponse.text();
-        console.error('[Dashboard] Managers error:', errorText);
         setBranchManagers([]);
       }
     } catch (error) {
-      console.error('[Dashboard] Branch dashboard load error:', error);
       // 기본값 설정
       setBranchStats({
         totalManagers: 0,
@@ -1975,15 +1932,12 @@ export default function SalesDashboard() {
   const loadHeadquartersDashboard = async (token: string) => {
     try {
       // 통계
-      console.log('[Dashboard] Fetching headquarters stats...');
       const statsResponse = await fetch(`${API_BASE}/sales/dashboard/stats`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
-      console.log('[Dashboard] HQ stats response status:', statsResponse.status);
       
       if (statsResponse.ok) {
         const data = await statsResponse.json();
-        console.log('[Dashboard] HQ stats data:', data);
         // API returns { role, name, phone, email, stats: {...} }
         const stats = data.stats || data;
         setHeadquartersStats({
@@ -1996,8 +1950,6 @@ export default function SalesDashboard() {
           standardWorkplaces: stats.standardWorkplaces || 0,
         });
       } else {
-        const errorText = await statsResponse.text();
-        console.error('[Dashboard] HQ stats error:', errorText);
         // 기본값 설정
         setHeadquartersStats({
           totalBranches: 0,
@@ -2011,23 +1963,17 @@ export default function SalesDashboard() {
       }
 
       // 지사 리스트
-      console.log('[Dashboard] Fetching branches...');
       const branchesResponse = await fetch(`${API_BASE}/sales/dashboard/branches`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
-      console.log('[Dashboard] Branches response status:', branchesResponse.status);
       
       if (branchesResponse.ok) {
         const branches = await branchesResponse.json();
-        console.log('[Dashboard] Branches count:', branches.length);
         setHeadquartersBranches(branches);
       } else {
-        const errorText = await branchesResponse.text();
-        console.error('[Dashboard] Branches error:', errorText);
         setHeadquartersBranches([]);
       }
     } catch (error) {
-      console.error('[Dashboard] Headquarters dashboard load error:', error);
       // 기본값 설정
       setHeadquartersStats({
         totalBranches: 0,
