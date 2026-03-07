@@ -180,14 +180,12 @@ export default function ConsultingCatalogPage() {
                     }
                   }}
                   className={`
-                    w-full py-3 rounded-lg font-semibold
+                    w-full py-3 rounded-lg font-bold text-base
                     transition-all duration-300
-                    bg-gradient-to-r from-${service.color}-500 to-${service.color}-600
-                    text-white
-                    hover:from-${service.color}-600 hover:to-${service.color}-700
-                    transform hover:translate-y-[-2px]
-                    shadow-md hover:shadow-lg
-                    ${service.id !== 'rental' ? 'opacity-50 cursor-not-allowed' : ''}
+                    ${service.id === 'rental' 
+                      ? 'bg-gradient-to-r from-purple-600 to-purple-700 text-white hover:from-purple-700 hover:to-purple-800 shadow-lg hover:shadow-xl transform hover:translate-y-[-2px]' 
+                      : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                    }
                   `}
                   disabled={service.id !== 'rental'}
                 >
