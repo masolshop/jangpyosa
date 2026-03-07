@@ -427,8 +427,7 @@ export default function Sidebar() {
               <div style={{ fontSize: 18, color: "#fff", marginBottom: 8, fontWeight: "bold", textAlign: "center" }}>
                 연계고용부담금감면센터
               </div>
-              <MenuItem href="/employment-obligation" label="장애인고용의무" icon="📋" active={isActive("/employment-obligation")} />
-              <MenuItem href="/employment-levy" label="장애인고용부담금" icon="💰" active={isActive("/employment-levy")} />
+              <MenuItem href="/employment-levy-obligation" label="장애인의무고용부담금" icon="📋" active={isActive("/employment-levy-obligation")} />
               <MenuItem href="/linkage-levy-exemption" label="연계고용부담금감면" icon="📉" active={isActive("/linkage-levy-exemption")} />
               <MenuItem href="/purchase-cases" label="연계고용부담금감면사례" icon="📦" active={isActive("/purchase-cases")} />
               <MenuItem href="/priority-purchase" label="공공기관우선구매제도" icon="🏛️" active={isActive("/priority-purchase")} />
