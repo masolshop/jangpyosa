@@ -153,6 +153,7 @@ export default function ConsultingCatalogPage() {
                   transform transition-all duration-300 cursor-pointer
                   hover:scale-105 hover:shadow-2xl
                   border-2 ${hoveredId === service.id ? `border-${service.color}-400` : 'border-yellow-500'}
+                  ${hoveredId === service.id ? `bg-gradient-to-br from-${service.color}-500 to-${service.color}-600` : ''}
                 `}
               >
                 {/* 준비중 배지 (렌탈, 헬스키퍼 서비스 제외) */}
@@ -182,15 +183,15 @@ export default function ConsultingCatalogPage() {
                 {/* 버튼 */}
                 <button
                   onClick={() => {
-                    if (service.id === 'rental') {
+                    if (service.id === 'rental' || service.id === 'health-keeper') {
                       router.push(`/catalog/${service.id}`)
                     }
                   }}
                   className={`
                     w-full py-3 rounded-lg font-bold text-base
-                    transition-all duration-300
-                    ${service.id === 'rental' 
-                      ? 'bg-gradient-to-r from-purple-600 to-purple-700 text-white hover:from-purple-700 hover:to-purple-800 shadow-lg hover:shadow-xl transform hover:translate-y-[-2px]' 
+                    transition-all duration-300 relative z-10
+                    ${service.id === 'rental' || service.id === 'health-keeper'
+                      ? `bg-white text-${service.color}-600 hover:bg-${service.color}-700 hover:text-white shadow-lg hover:shadow-xl transform hover:translate-y-[-2px] border-2 border-${service.color}-200` 
                       : 'bg-gray-200 text-gray-500 cursor-not-allowed'
                     }
                   `}
@@ -201,7 +202,7 @@ export default function ConsultingCatalogPage() {
 
                 {/* 호버 효과 */}
                 {hoveredId === service.id && (
-                  <div className="absolute inset-0 bg-gradient-to-br from-transparent to-blue-50 opacity-20 rounded-xl pointer-events-none"></div>
+                  <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-white/10 rounded-xl pointer-events-none"></div>
                 )}
               </div>
             ))}
