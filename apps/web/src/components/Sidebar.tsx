@@ -430,7 +430,7 @@ export default function Sidebar() {
               <MenuItem href="/employment-levy-obligation" label="장애인의무고용부담금" icon="📋" active={isActive("/employment-levy-obligation")} />
               <MenuItem href="/linkage-levy-exemption-system" label="연계고용부담금감면제도" icon="📉" active={isActive("/linkage-levy-exemption-system")} />
               <MenuItem href="/public-purchase-system" label="공공기관우선구매제도" icon="🏛️" active={isActive("/public-purchase-system")} />
-              <MenuItem href="/catalog" label="표준사업장감면맞춤컨설팅" icon="🛒" active={pathname?.startsWith("/catalog")} />
+              <MenuItem href="/catalog" label="부담금감면/우선구매 맞춤컨설팅" icon="💡" active={pathname?.startsWith("/catalog")} />
               <MenuItem href="/cart" label="도급감면계약장바구니" icon="🛍️" active={isActive("/cart")} requiresRole={["BUYER"]} currentRole={userRole} requiresAuth={true} />
               <MenuItem href="/dashboard/performances" label="월별 도급계약감면관리" icon="📊" active={pathname?.startsWith("/dashboard/performances")} requiresRole={["BUYER", "SUPER_ADMIN", "SUPPLIER"]} currentRole={userRole} requiresAuth={true} />
               <MenuItem href="/contract-sample" label="표준도급계약서 샘플" icon="📄" active={isActive("/contract-sample")} />
