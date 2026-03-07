@@ -98,7 +98,7 @@ export default function ConsultingCatalogPage() {
       <div className="max-w-7xl mx-auto">
         {/* 헤더 */}
         <div className="text-center mb-10">
-          <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-3">
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">
             연계고용부담금감면 및 공공 우선구매
             <br />
             <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
@@ -106,10 +106,10 @@ export default function ConsultingCatalogPage() {
             </span>
           </h1>
           <div className="mt-4 max-w-3xl mx-auto">
-            <p className="text-sm md:text-base font-semibold text-gray-700 mb-2">
+            <p className="text-base md:text-lg font-semibold text-gray-700 mb-2">
               부담금 감면과 우선구매를 넘어 기업 브랜드 및 마케팅 성장
             </p>
-            <p className="text-xs md:text-sm text-gray-600">
+            <p className="text-sm md:text-base text-gray-600">
               장애인 고용 확대와 ESG 경영까지 실현하는 기업 맞춤형 연계고용 컨설팅 플랫폼
             </p>
           </div>
@@ -118,10 +118,10 @@ export default function ConsultingCatalogPage() {
         {/* 설명 섹션 */}
         <div className="bg-white rounded-xl shadow-lg p-6 mb-10 border border-blue-100">
           <div className="flex items-center gap-2 mb-4">
-            <div className="text-2xl">🎯</div>
-            <h2 className="text-lg font-bold text-gray-800">서비스 개요</h2>
+            <div className="text-3xl">🎯</div>
+            <h2 className="text-xl font-bold text-gray-800">서비스 개요</h2>
           </div>
-          <p className="text-gray-700 leading-relaxed text-sm md:text-base">
+          <p className="text-gray-700 leading-relaxed text-base md:text-lg">
             매몰자금인 <strong className="text-blue-600">장애인 고용 부담금</strong> 및 
             <strong className="text-purple-600"> 공공기관 우선구매 의무자금</strong>으로 
             기업 직원 복지를 실현하고, 기업 성장에 필요한 마케팅 전문서비스로 
@@ -133,7 +133,7 @@ export default function ConsultingCatalogPage() {
 
         {/* 컨설팅 서비스 카드 그리드 */}
         <div className="mb-12">
-          <h2 className="text-xl md:text-2xl font-bold text-center text-gray-800 mb-8">
+          <h2 className="text-2xl md:text-3xl font-bold text-center text-gray-800 mb-8">
             맞춤형 컨설팅 서비스
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -151,23 +151,23 @@ export default function ConsultingCatalogPage() {
               >
                 {/* 준비중 배지 */}
                 <div className="absolute top-4 right-4">
-                  <span className="bg-yellow-100 text-yellow-800 text-xs font-semibold px-3 py-1 rounded-full border border-yellow-300">
+                  <span className="bg-yellow-100 text-yellow-800 text-sm font-semibold px-3 py-1 rounded-full border border-yellow-300">
                     준비중
                   </span>
                 </div>
 
                 {/* 아이콘 */}
-                <div className="text-4xl mb-4 text-center">
+                <div className="text-5xl mb-4 text-center">
                   {service.icon}
                 </div>
 
                 {/* 제목 */}
-                <h3 className="text-base md:text-lg font-bold text-gray-900 text-center mb-3">
+                <h3 className="text-lg md:text-xl font-bold text-gray-900 text-center mb-3">
                   {service.title}
                 </h3>
 
                 {/* 설명 */}
-                <p className="text-sm text-gray-600 text-center mb-4">
+                <p className="text-base text-gray-600 text-center mb-4">
                   {service.description}
                 </p>
 
@@ -200,11 +200,11 @@ export default function ConsultingCatalogPage() {
         {/* 준비중 안내 */}
         <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-2xl shadow-lg p-8 border-2 border-yellow-200">
           <div className="text-center">
-            <div className="text-3xl mb-4">🚧</div>
-            <h3 className="text-lg md:text-xl font-bold text-gray-800 mb-4">
+            <div className="text-4xl mb-4">🚧</div>
+            <h3 className="text-xl md:text-2xl font-bold text-gray-800 mb-4">
               맞춤형 컨설팅 서비스 준비 중
             </h3>
-            <p className="text-sm text-gray-700 leading-relaxed mb-6">
+            <p className="text-base text-gray-700 leading-relaxed mb-6">
               현재 각 분야별 전문 컨설팅 서비스를 준비하고 있습니다.
               <br />
               보다 나은 서비스로 찾아뵙겠습니다.
@@ -212,19 +212,19 @@ export default function ConsultingCatalogPage() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <a
                 href="/employment-levy-obligation"
-                className="bg-blue-600 text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors"
+                className="bg-blue-600 text-white px-6 py-3 rounded-lg text-base font-semibold hover:bg-blue-700 transition-colors"
               >
                 📋 장애인의무고용부담금 알아보기
               </a>
               <a
                 href="/linkage-levy-exemption-system"
-                className="bg-purple-600 text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-purple-700 transition-colors"
+                className="bg-purple-600 text-white px-6 py-3 rounded-lg text-base font-semibold hover:bg-purple-700 transition-colors"
               >
                 📉 연계고용부담금감면제도 알아보기
               </a>
               <a
                 href="/public-purchase-system"
-                className="bg-green-600 text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-green-700 transition-colors"
+                className="bg-green-600 text-white px-6 py-3 rounded-lg text-base font-semibold hover:bg-green-700 transition-colors"
               >
                 🏛️ 공공기관우선구매제도 알아보기
               </a>
