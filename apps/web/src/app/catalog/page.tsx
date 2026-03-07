@@ -155,8 +155,8 @@ export default function ConsultingCatalogPage() {
                   border-2 ${hoveredId === service.id ? `border-${service.color}-400` : 'border-yellow-500'}
                 `}
               >
-                {/* 준비중 배지 (렌탈 서비스 제외) */}
-                {service.id !== 'rental' && (
+                {/* 준비중 배지 (렌탈, 헬스키퍼 서비스 제외) */}
+                {service.id !== 'rental' && service.id !== 'health-keeper' && (
                   <div className="absolute top-4 right-4">
                     <span className="bg-yellow-100 text-yellow-800 text-sm font-semibold px-3 py-1 rounded-full border border-yellow-300">
                       준비중
@@ -194,7 +194,7 @@ export default function ConsultingCatalogPage() {
                       : 'bg-gray-200 text-gray-500 cursor-not-allowed'
                     }
                   `}
-                  disabled={service.id !== 'rental'}
+                  disabled={service.id !== 'rental' && service.id !== 'health-keeper'}
                 >
                   상세보기
                 </button>
