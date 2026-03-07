@@ -92,6 +92,13 @@ export default function ConsultingCatalogPage() {
       icon: "🏥",
       description: "의료기관 전문 마케팅",
       color: "emerald"
+    },
+    {
+      id: "seo",
+      title: "네이버구글 SEO최적화",
+      icon: "🔍",
+      description: "검색엔진 최적화 및 상위노출",
+      color: "blue"
     }
   ]
 
