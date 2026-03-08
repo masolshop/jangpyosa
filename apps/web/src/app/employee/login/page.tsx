@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { API_BASE } from "@/lib/api";
+import Image from "next/image";
 
 export default function EmployeeLoginPage() {
   const router = useRouter();
@@ -122,14 +123,21 @@ export default function EmployeeLoginPage() {
             boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)"
           }}>
             <div style={{
-              fontSize: "48px",
-              fontWeight: "700",
-              color: "#00695c",
-              marginBottom: "12px",
-              letterSpacing: "-1px",
-              fontFamily: "system-ui, -apple-system, sans-serif"
+              width: "100%",
+              maxWidth: "280px",
+              margin: "0 auto 16px",
+              display: "flex",
+              justifyContent: "center"
             }}>
-              장표사닷컴
+              <img 
+                src="/jangpyosa_logo.png" 
+                alt="장표사닷컴" 
+                style={{
+                  width: "100%",
+                  height: "auto",
+                  objectFit: "contain"
+                }}
+              />
             </div>
             <div style={{
               fontSize: "16px",
@@ -331,18 +339,41 @@ export default function EmployeeLoginPage() {
               </button>
             </form>
 
-            {/* 비밀번호 찾기 / 회원가입 */}
+            {/* 아이디/비밀번호 찾기 & 회원가입 */}
             <div style={{
               marginTop: "24px",
-              textAlign: "center"
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              gap: "16px"
             }}>
+              <a
+                href="/employee/forgot-password"
+                style={{
+                  fontSize: "13px",
+                  color: "#616161",
+                  textDecoration: "none",
+                  fontWeight: "500"
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = "#00897b";
+                  e.currentTarget.style.textDecoration = "underline";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = "#616161";
+                  e.currentTarget.style.textDecoration = "none";
+                }}
+              >
+                아이디/비밀번호 찾기
+              </a>
+              <span style={{ color: "#e0e0e0" }}>|</span>
               <a
                 href="/employee/signup"
                 style={{
                   fontSize: "13px",
                   color: "#00897b",
                   textDecoration: "none",
-                  fontWeight: "500"
+                  fontWeight: "600"
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.textDecoration = "underline";
@@ -351,7 +382,7 @@ export default function EmployeeLoginPage() {
                   e.currentTarget.style.textDecoration = "none";
                 }}
               >
-                비밀번호를 잊으셨나요?
+                회원가입
               </a>
             </div>
           </div>
