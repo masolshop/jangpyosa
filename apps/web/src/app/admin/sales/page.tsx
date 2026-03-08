@@ -39,18 +39,6 @@ const clearManagerAuth = () => {
   localStorage.removeItem(MANAGER_INFO_KEY);
 };
 
-// 페마연을 최상단으로 정렬하는 함수
-const sortHeadquarters = (hqs: Array<{ id: string; name: string }>) => {
-  return [...hqs].sort((a, b) => {
-    const aIsPemayeon = a.name.includes("페마연");
-    const bIsPemayeon = b.name.includes("페마연");
-    if (aIsPemayeon && !bIsPemayeon) return -1;
-    if (!aIsPemayeon && bIsPemayeon) return 1;
-    return 0;
-  });
-};
-
-
 export default function SalesLoginPage() {
   const router = useRouter();
   const [isLogin, setIsLogin] = useState(true); // true: 로그인, false: 회원가입
@@ -80,16 +68,6 @@ export default function SalesLoginPage() {
   }>({ headquarters: [], branches: [] });
   const [selectedHeadquarter, setSelectedHeadquarter] = useState(''); // 선택한 본부
   const [availableBranches, setAvailableBranches] = useState<Array<{ id: string; name: string }>>([]); // 필터링된 지사
-
-  // 추천 매니저 검색 상태
-  const [referralManager, setReferralManager] = useState<{
-    id: string;
-    name: string;
-    phone: string;
-    organizationName: string;
-  } | null>(null);
-  const [referralSearch, setReferralSearch] = useState("");
-  const [referralSearching, setReferralSearching] = useState(false);
 
   // 실명인증 폼 (회원가입 전 단계)
   const [identityForm, setIdentityForm] = useState({
@@ -158,10 +136,7 @@ export default function SalesLoginPage() {
           console.log('본부 목록 상세:', JSON.stringify(data.headquarters, null, 2));
           console.log('지사 목록 상세:', JSON.stringify(data.branches, null, 2));
           console.log('========================================');
-          setOrganizations({
-            headquarters: sortHeadquarters(data.headquarters),
-            branches: data.branches,
-          });
+          setOrganizations(data);
           console.log('✅ organizations 상태 업데이트 완료');
         } else {
           console.error('❌ 본부/지사 로드 실패:', data);
@@ -269,35 +244,6 @@ export default function SalesLoginPage() {
     }
   };
 
-  // 추천 매니저 검색 처리
-  const handleSearchReferralManager = async () => {
-    if (!referralSearch.trim()) {
-      setError("이름 또는 핸드폰번호를 입력해주세요");
-      return;
-    }
-
-    setReferralSearching(true);
-    setError("");
-
-    try {
-      const response = await fetch();
-      const data = await response.json();
-
-      if (response.ok && data.manager) {
-        setReferralManager(data.manager);
-        alert();
-      } else {
-        setReferralManager(null);
-        setError(data.error || "추천 매니저를 찾을 수 없습니다");
-      }
-    } catch (err) {
-      setError("서버 연결에 실패했습니다");
-    } finally {
-      setReferralSearching(false);
-    }
-  };
-
-
   // 회원가입 처리
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -357,7 +303,6 @@ export default function SalesLoginPage() {
           rrn2: identityForm.rrn2,
           verified: identityVerified,
           organizationId: signupForm.managerId, // 선택한 본부/지사 ID (Organization 테이블)
-          referredById: referralManager?.id || null, // 🆕 추천 매니저 ID
         }),
       });
 
@@ -908,70 +853,6 @@ export default function SalesLoginPage() {
                   지사를 선택하지 않으면 본부 직속으로 배정됩니다.
                 </div>
               </div>
-            
-
-            {/* 추천 매니저 검색 */}
-            <div style={{ marginBottom: 24 }}>
-              <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, fontSize: 14 }}>
-                추천 매니저 (선택 - 일반 매니저만 해당)
-              </label>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <input
-                  type="text"
-                  value={referralSearch}
-                  onChange={(e) => setReferralSearch(e.target.value)}
-                  placeholder="매니저 이름 또는 핸드폰번호"
-                  style={{
-                    flex: 1,
-                    padding: '12px',
-                    border: '1px solid #d1d5db',
-                    borderRadius: 8,
-                    fontSize: 14,
-                  }}
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleSearchReferralManager();
-                    }
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={handleSearchReferralManager}
-                  disabled={referralSearching}
-                  style={{
-                    padding: '12px 20px',
-                    background: referralSearching ? '#9ca3af' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: 8,
-                    cursor: referralSearching ? 'not-allowed' : 'pointer',
-                    fontWeight: 600,
-                    fontSize: 14,
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {referralSearching ? '검색 중...' : '검색'}
-                </button>
-              </div>
-              {referralManager && (
-                <div style={{
-                  marginTop: 8,
-                  padding: 12,
-                  background: '#d1fae5',
-                  borderRadius: 8,
-                  fontSize: 13,
-                  color: '#065f46',
-                }}>
-                  ✅ <strong>{referralManager.name}</strong> ({referralManager.phone})
-                  <br />
-                  소속: {referralManager.organizationName}
-                </div>
-              )}
-              <div style={{ fontSize: 12, color: '#6b7280', marginTop: 4 }}>
-                추천인(매니저)이 있으시면 검색하여 선택해주세요. (선택사항)
-              </div>
-            </div>
             )}
 
             <div style={{ marginBottom: 24 }} />
