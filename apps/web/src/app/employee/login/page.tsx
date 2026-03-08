@@ -125,7 +125,7 @@ export default function EmployeeLoginPage() {
             <div style={{
               width: "100%",
               maxWidth: "280px",
-              margin: "0 auto 16px",
+              margin: "0 auto 8px",
               display: "flex",
               justifyContent: "center"
             }}>
@@ -140,10 +140,10 @@ export default function EmployeeLoginPage() {
               />
             </div>
             <div style={{
-              fontSize: "16px",
+              fontSize: "24px",
               color: "#00897b",
               letterSpacing: "0.5px",
-              fontWeight: "600"
+              fontWeight: "700"
             }}>
               장애인직원 전용
             </div>
