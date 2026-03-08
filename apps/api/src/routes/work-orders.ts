@@ -456,7 +456,7 @@ router.post('/create', requireAuth, async (req, res) => {
               type: 'WORK_ORDER',
               title: `📋 새 업무지시: ${validated.title}`,
               message: validated.content.substring(0, 100),
-              link: `/dashboard/work-orders`,
+              link: `/employee/work-orders`,
               data: JSON.stringify({ workOrderId: workOrder.id })
             }
           })
@@ -648,15 +648,8 @@ router.post('/:id/confirm', requireAuth, async (req, res) => {
       totalCount = 1;
     }
 
-    // 관리자에게 알림 (첫 확인, 50%, 100% 또는 마지막 1명 남았을 때)
-    const confirmPercentage = totalCount > 0 ? (confirmedCount / totalCount) * 100 : 0;
-    const shouldNotify = 
-      confirmedCount === 1 || // 첫 확인
-      confirmPercentage >= 50 && confirmedCount === Math.ceil(totalCount * 0.5) ||
-      confirmedCount === totalCount || // 전체 완료
-      (totalCount - confirmedCount) === 1; // 마지막 1명 남음
-
-    if (shouldNotify) {
+    // 🔔 관리자에게 즉시 알림 (모든 확인마다 전송)
+    try {
       // 관리자 조회
       const managers = await prisma.user.findMany({
         where: {
@@ -682,7 +675,12 @@ router.post('/:id/confirm', requireAuth, async (req, res) => {
           confirmedCount,
           totalCount
         });
+
+        console.log(`[업무완료 알림] ${employee?.name}님 업무 완료 → 관리자 ${managers.length}명에게 알림 전송`);
       }
+    } catch (notifError) {
+      console.error('[업무완료 알림] 알림 전송 실패:', notifError);
+      // 알림 실패해도 확인 처리는 성공으로 처리
     }
 
     return res.json({ 

@@ -94,6 +94,47 @@ router.post("/clock-in", requireAuth, async (req, res) => {
       },
     });
 
+    // 🔔 실시간 알림: 관리자에게 출근 알림 전송
+    try {
+      // 직원 이름 조회
+      const employeeInfo = await prisma.disabledEmployee.findUnique({
+        where: { id: user.employeeId },
+        select: { name: true }
+      });
+
+      // 관리자 조회 (BUYER 역할)
+      const managers = await prisma.user.findMany({
+        where: {
+          companyId: user.companyId,
+          role: { in: ['BUYER', 'SUPER_ADMIN'] }
+        },
+        select: { id: true }
+      });
+
+      if (managers.length > 0 && employeeInfo) {
+        // 각 관리자에게 알림 생성
+        await Promise.all(
+          managers.map(manager =>
+            createNotification({
+              userId: manager.id,
+              type: 'ATTENDANCE_REMINDER' as any,
+              title: `✅ ${employeeInfo.name}님 출근 완료`,
+              message: `${clockInTime} 출근 체크되었습니다. (${body.workType === 'OFFICE' ? '사무실' : '재택'} 근무)`,
+              link: '/dashboard/attendance',
+              data: { employeeId: user.employeeId, date: today, clockIn: clockInTime },
+              priority: 'NORMAL' as any,
+              category: 'GENERAL' as any
+            })
+          )
+        );
+
+        console.log(`[출근 알림] ${employeeInfo.name}님 출근 → 관리자 ${managers.length}명에게 알림 전송`);
+      }
+    } catch (notifError) {
+      console.error('[출근 알림] 알림 전송 실패:', notifError);
+      // 알림 실패해도 출근 처리는 성공으로 처리
+    }
+
     return res.json({ 
       message: "출근 처리되었습니다.", 
       record,
