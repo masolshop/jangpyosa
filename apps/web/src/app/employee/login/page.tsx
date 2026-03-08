@@ -122,31 +122,22 @@ export default function EmployeeLoginPage() {
             boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)"
           }}>
             <div style={{
-              fontSize: "56px",
-              fontWeight: "300",
+              fontSize: "48px",
+              fontWeight: "700",
               color: "#00695c",
-              marginBottom: "8px",
-              letterSpacing: "2px",
+              marginBottom: "12px",
+              letterSpacing: "-1px",
               fontFamily: "system-ui, -apple-system, sans-serif"
             }}>
-              mod<span style={{ 
-                display: "inline-block",
-                width: "10px",
-                height: "10px",
-                background: "#26a69a",
-                borderRadius: "50%",
-                marginLeft: "2px",
-                marginRight: "2px",
-                verticalAlign: "middle"
-              }}></span>be
+              장표사닷컴
             </div>
             <div style={{
-              fontSize: "13px",
+              fontSize: "16px",
               color: "#00897b",
-              letterSpacing: "1px",
-              fontWeight: "400"
+              letterSpacing: "0.5px",
+              fontWeight: "600"
             }}>
-              모두비 장애인 직원 출퇴근
+              장애인직원 전용
             </div>
           </div>
 
@@ -346,7 +337,7 @@ export default function EmployeeLoginPage() {
               textAlign: "center"
             }}>
               <a
-                href="/employee/forgot-password"
+                href="/employee/signup"
                 style={{
                   fontSize: "13px",
                   color: "#00897b",
@@ -363,32 +354,6 @@ export default function EmployeeLoginPage() {
                 비밀번호를 잊으셨나요?
               </a>
             </div>
-          </div>
-
-          {/* 고객센터 문의 */}
-          <div style={{
-            marginTop: "24px",
-            padding: "20px",
-            background: "rgba(255, 255, 255, 0.8)",
-            borderRadius: "16px",
-            textAlign: "center",
-            boxShadow: "0 2px 12px rgba(0, 0, 0, 0.06)"
-          }}>
-            <p style={{
-              fontSize: "16px",
-              fontWeight: "700",
-              color: "#424242",
-              margin: "0 0 4px 0"
-            }}>
-              고객센터 1544-9338
-            </p>
-            <p style={{
-              fontSize: "13px",
-              color: "#757575",
-              margin: 0
-            }}>
-              문의사항이 있으시면 연락주세요
-            </p>
           </div>
         </div>
       </div>
