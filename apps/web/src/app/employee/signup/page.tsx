@@ -69,7 +69,20 @@ export default function EmployeeSignupPage() {
       setVerifiedCompany(data.company);
       setStep(2);
     } catch (err: any) {
-      setError("서버 오류가 발생했습니다");
+      console.error("Company verification error:", err);
+      
+      // 사용자 친화적 에러 메시지
+      let errorMsg = "회사 인증 중 오류가 발생했습니다";
+      
+      if (err.error === "COMPANY_NOT_FOUND") {
+        errorMsg = "등록된 회사를 찾을 수 없습니다. 사업자번호를 확인해주세요.";
+      } else if (err.error === "INVALID_BIZNO") {
+        errorMsg = "유효하지 않은 사업자번호입니다. 숫자만 입력해주세요.";
+      } else if (err.message) {
+        errorMsg = err.message;
+      }
+      
+      setError(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -107,7 +120,22 @@ export default function EmployeeSignupPage() {
       setPhone(employeePhone);
       setStep(3);
     } catch (err: any) {
-      setError("서버 오류가 발생했습니다");
+      console.error("Employee verification error:", err);
+      
+      // 사용자 친화적 에러 메시지
+      let errorMsg = "직원 확인 중 오류가 발생했습니다";
+      
+      if (err.error === "EMPLOYEE_NOT_FOUND") {
+        errorMsg = "등록된 직원 정보를 찾을 수 없습니다. 이름, 핸드폰 번호, 주민번호를 확인해주세요.";
+      } else if (err.error === "INVALID_REGISTRATION_NUMBER") {
+        errorMsg = "올바르지 않은 주민등록번호 형식입니다.";
+      } else if (err.error === "ALREADY_REGISTERED") {
+        errorMsg = "이미 회원가입이 완료된 직원입니다. 로그인 페이지에서 로그인해주세요.";
+      } else if (err.message) {
+        errorMsg = err.message;
+      }
+      
+      setError(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -171,7 +199,24 @@ export default function EmployeeSignupPage() {
       alert("✅ 회원가입이 완료되었습니다!");
       router.push("/employee/login");
     } catch (err: any) {
-      setError("서버 오류가 발생했습니다");
+      console.error("Signup error:", err);
+      
+      // 사용자 친화적 에러 메시지
+      let errorMsg = "회원가입 중 오류가 발생했습니다";
+      
+      if (err.error === "PHONE_ALREADY_EXISTS") {
+        errorMsg = "이미 가입된 핸드폰 번호입니다. 로그인 페이지에서 로그인해주세요.";
+      } else if (err.error === "WEAK_PASSWORD") {
+        errorMsg = "비밀번호는 최소 8자 이상이어야 합니다.";
+      } else if (err.error === "VALIDATION_ERROR") {
+        errorMsg = "입력 정보를 확인해주세요. 필수 항목이 누락되었거나 형식이 잘못되었습니다.";
+      } else if (err.error === "EMPLOYEE_ALREADY_HAS_ACCOUNT") {
+        errorMsg = "이미 계정이 있는 직원입니다. 로그인 페이지에서 로그인해주세요.";
+      } else if (err.message) {
+        errorMsg = err.message;
+      }
+      
+      setError(errorMsg);
     } finally {
       setLoading(false);
     }
