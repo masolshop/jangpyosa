@@ -56,305 +56,410 @@ export default function EmployeeLoginPage() {
   return (
     <div style={{
       minHeight: "100vh",
-      background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+      background: "linear-gradient(180deg, #667eea 0%, #764ba2 100%)",
       display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      padding: "20px"
+      flexDirection: "column",
+      position: "relative",
+      overflow: "hidden"
     }}>
+      {/* 배경 장식 */}
       <div style={{
-        maxWidth: "500px",
-        width: "100%",
-        background: "white",
-        borderRadius: "24px",
-        padding: "40px 32px",
-        boxShadow: "0 20px 60px rgba(0, 0, 0, 0.3)"
+        position: "absolute",
+        top: "-50%",
+        right: "-20%",
+        width: "400px",
+        height: "400px",
+        background: "rgba(255, 255, 255, 0.1)",
+        borderRadius: "50%",
+        filter: "blur(60px)"
+      }} />
+      <div style={{
+        position: "absolute",
+        bottom: "-30%",
+        left: "-10%",
+        width: "300px",
+        height: "300px",
+        background: "rgba(255, 255, 255, 0.1)",
+        borderRadius: "50%",
+        filter: "blur(50px)"
+      }} />
+
+      {/* 메인 컨텐츠 */}
+      <div style={{
+        flex: 1,
+        display: "flex",
+        flexDirection: "column",
+        padding: "32px 24px",
+        paddingBottom: "100px", // 하단 메뉴 공간 확보
+        position: "relative",
+        zIndex: 1
       }}>
         {/* 헤더 */}
-        <div style={{ textAlign: "center", marginBottom: "40px" }}>
+        <div style={{
+          textAlign: "center",
+          marginBottom: "48px",
+          paddingTop: "20px"
+        }}>
           <div style={{
-            width: "80px",
-            height: "80px",
-            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+            width: "120px",
+            height: "120px",
+            background: "rgba(255, 255, 255, 0.95)",
             borderRadius: "50%",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            margin: "0 auto 20px",
-            fontSize: "40px"
+            margin: "0 auto 24px",
+            fontSize: "60px",
+            boxShadow: "0 10px 40px rgba(0, 0, 0, 0.2)"
           }}>
             👷
           </div>
           <h1 style={{
-            fontSize: "32px",
-            fontWeight: "800",
-            color: "#1a202c",
-            margin: "0 0 8px 0"
+            fontSize: "36px",
+            fontWeight: "900",
+            color: "white",
+            margin: "0 0 12px 0",
+            textShadow: "0 2px 20px rgba(0, 0, 0, 0.2)",
+            letterSpacing: "-0.5px"
           }}>
             직원 로그인
           </h1>
           <p style={{
             fontSize: "18px",
-            color: "#718096",
-            margin: 0
+            color: "rgba(255, 255, 255, 0.95)",
+            margin: 0,
+            fontWeight: "500"
           }}>
             장애인 직원 전용 로그인
           </p>
         </div>
 
-        {/* 에러 메시지 */}
-        {error && (
-          <div style={{
-            padding: "20px",
-            background: "#fff5f5",
-            border: "3px solid #fc8181",
-            borderRadius: "16px",
-            marginBottom: "24px"
-          }}>
+        {/* 로그인 폼 */}
+        <div style={{
+          background: "rgba(255, 255, 255, 0.98)",
+          borderRadius: "32px",
+          padding: "36px 28px",
+          boxShadow: "0 20px 60px rgba(0, 0, 0, 0.3)",
+          backdropFilter: "blur(20px)"
+        }}>
+          {/* 에러 메시지 */}
+          {error && (
             <div style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "12px"
+              padding: "20px",
+              background: "#fff5f5",
+              border: "3px solid #fc8181",
+              borderRadius: "20px",
+              marginBottom: "24px"
             }}>
-              <span style={{ fontSize: "28px" }}>❌</span>
-              <span style={{
+              <div style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "12px"
+              }}>
+                <span style={{ fontSize: "28px" }}>❌</span>
+                <span style={{
+                  fontSize: "16px",
+                  fontWeight: "700",
+                  color: "#c53030"
+                }}>
+                  {error}
+                </span>
+              </div>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit}>
+            {/* 핸드폰 번호 */}
+            <div style={{ marginBottom: "24px" }}>
+              <label style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+                marginBottom: "12px",
                 fontSize: "18px",
                 fontWeight: "700",
-                color: "#c53030"
+                color: "#2d3748"
               }}>
-                {error}
-              </span>
-            </div>
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit}>
-          {/* 핸드폰 번호 */}
-          <div style={{ marginBottom: "24px" }}>
-            <label style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              marginBottom: "12px",
-              fontSize: "18px",
-              fontWeight: "700",
-              color: "#2d3748"
-            }}>
-              <span style={{ fontSize: "24px" }}>📱</span>
-              핸드폰 번호
-            </label>
-            <input
-              type="tel"
-              value={form.phone}
-              onChange={(e) => setForm({ ...form, phone: e.target.value })}
-              placeholder="010-1234-5678"
-              required
-              autoFocus
-              style={{
-                width: "100%",
-                padding: "20px",
-                fontSize: "20px",
-                fontWeight: "600",
-                border: "3px solid #e2e8f0",
-                borderRadius: "16px",
-                outline: "none",
-                transition: "all 0.3s",
-                boxSizing: "border-box"
-              }}
-              onFocus={(e) => e.target.style.borderColor = "#667eea"}
-              onBlur={(e) => e.target.style.borderColor = "#e2e8f0"}
-            />
-          </div>
-
-          {/* 비밀번호 */}
-          <div style={{ marginBottom: "32px" }}>
-            <label style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              marginBottom: "12px",
-              fontSize: "18px",
-              fontWeight: "700",
-              color: "#2d3748"
-            }}>
-              <span style={{ fontSize: "24px" }}>🔒</span>
-              비밀번호
-            </label>
-            <div style={{ position: "relative" }}>
+                <span style={{ fontSize: "26px" }}>📱</span>
+                핸드폰 번호
+              </label>
               <input
-                type={showPassword ? "text" : "password"}
-                value={form.password}
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
-                placeholder="비밀번호"
+                type="tel"
+                value={form.phone}
+                onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                placeholder="010-1234-5678"
                 required
+                autoFocus
                 style={{
                   width: "100%",
-                  padding: "20px",
-                  paddingRight: "60px",
+                  padding: "22px 20px",
                   fontSize: "20px",
                   fontWeight: "600",
                   border: "3px solid #e2e8f0",
-                  borderRadius: "16px",
+                  borderRadius: "20px",
                   outline: "none",
                   transition: "all 0.3s",
-                  boxSizing: "border-box"
+                  boxSizing: "border-box",
+                  background: "#f7fafc"
                 }}
-                onFocus={(e) => e.target.style.borderColor = "#667eea"}
-                onBlur={(e) => e.target.style.borderColor = "#e2e8f0"}
+                onFocus={(e) => {
+                  e.target.style.borderColor = "#667eea";
+                  e.target.style.background = "white";
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = "#e2e8f0";
+                  e.target.style.background = "#f7fafc";
+                }}
               />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                style={{
-                  position: "absolute",
-                  right: "16px",
-                  top: "50%",
-                  transform: "translateY(-50%)",
-                  background: "none",
-                  border: "none",
-                  fontSize: "24px",
-                  cursor: "pointer",
-                  padding: "8px"
-                }}
-                aria-label={showPassword ? "비밀번호 숨기기" : "비밀번호 보기"}
-              >
-                {showPassword ? "🙈" : "👁️"}
-              </button>
             </div>
-          </div>
 
-          {/* 로그인 버튼 */}
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              width: "100%",
-              padding: "24px",
-              fontSize: "22px",
-              fontWeight: "800",
-              color: "white",
-              background: loading ? "#cbd5e0" : "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-              border: "none",
-              borderRadius: "16px",
-              cursor: loading ? "not-allowed" : "pointer",
-              transition: "all 0.3s",
-              boxShadow: loading ? "none" : "0 8px 24px rgba(102, 126, 234, 0.4)",
-              transform: loading ? "none" : "translateY(0)"
-            }}
-            onMouseEnter={(e) => {
-              if (!loading) {
-                e.currentTarget.style.transform = "translateY(-2px)";
-                e.currentTarget.style.boxShadow = "0 12px 32px rgba(102, 126, 234, 0.5)";
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!loading) {
-                e.currentTarget.style.transform = "translateY(0)";
-                e.currentTarget.style.boxShadow = "0 8px 24px rgba(102, 126, 234, 0.4)";
-              }
-            }}
-          >
-            {loading ? "⏳ 로그인 중..." : "🔑 로그인"}
-          </button>
-        </form>
-
-        {/* 회원가입 링크 */}
-        <div style={{
-          marginTop: "32px",
-          padding: "24px",
-          background: "#f7fafc",
-          borderRadius: "16px",
-          textAlign: "center"
-        }}>
-          <p style={{
-            fontSize: "18px",
-            color: "#4a5568",
-            margin: "0 0 16px 0",
-            fontWeight: "600"
-          }}>
-            계정이 없으신가요?
-          </p>
-          <a
-            href="/employee/signup"
-            style={{
-              display: "inline-block",
-              padding: "16px 32px",
-              fontSize: "18px",
-              fontWeight: "700",
-              color: "#667eea",
-              background: "white",
-              border: "3px solid #667eea",
-              borderRadius: "12px",
-              textDecoration: "none",
-              transition: "all 0.3s"
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = "#667eea";
-              e.currentTarget.style.color = "white";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "white";
-              e.currentTarget.style.color = "#667eea";
-            }}
-          >
-            ✍️ 회원가입
-          </a>
-        </div>
-
-        {/* 기업 로그인 링크 */}
-        <div style={{
-          marginTop: "20px",
-          textAlign: "center"
-        }}>
-          <p style={{
-            fontSize: "16px",
-            color: "#718096"
-          }}>
-            기업 담당자이신가요?{" "}
-            <a
-              href="/login"
-              style={{
-                color: "#667eea",
+            {/* 비밀번호 */}
+            <div style={{ marginBottom: "32px" }}>
+              <label style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+                marginBottom: "12px",
+                fontSize: "18px",
                 fontWeight: "700",
-                textDecoration: "none"
+                color: "#2d3748"
+              }}>
+                <span style={{ fontSize: "26px" }}>🔒</span>
+                비밀번호
+              </label>
+              <div style={{ position: "relative" }}>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={form.password}
+                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  placeholder="비밀번호"
+                  required
+                  style={{
+                    width: "100%",
+                    padding: "22px 20px",
+                    paddingRight: "60px",
+                    fontSize: "20px",
+                    fontWeight: "600",
+                    border: "3px solid #e2e8f0",
+                    borderRadius: "20px",
+                    outline: "none",
+                    transition: "all 0.3s",
+                    boxSizing: "border-box",
+                    background: "#f7fafc"
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.borderColor = "#667eea";
+                    e.target.style.background = "white";
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.borderColor = "#e2e8f0";
+                    e.target.style.background = "#f7fafc";
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{
+                    position: "absolute",
+                    right: "16px",
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    background: "none",
+                    border: "none",
+                    fontSize: "26px",
+                    cursor: "pointer",
+                    padding: "8px"
+                  }}
+                  aria-label={showPassword ? "비밀번호 숨기기" : "비밀번호 보기"}
+                >
+                  {showPassword ? "🙈" : "👁️"}
+                </button>
+              </div>
+            </div>
+
+            {/* 로그인 버튼 */}
+            <button
+              type="submit"
+              disabled={loading}
+              style={{
+                width: "100%",
+                padding: "26px",
+                fontSize: "22px",
+                fontWeight: "900",
+                color: "white",
+                background: loading ? "#cbd5e0" : "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                border: "none",
+                borderRadius: "20px",
+                cursor: loading ? "not-allowed" : "pointer",
+                transition: "all 0.3s",
+                boxShadow: loading ? "none" : "0 12px 32px rgba(102, 126, 234, 0.5)",
+                transform: loading ? "none" : "translateY(0)"
+              }}
+              onMouseEnter={(e) => {
+                if (!loading) {
+                  e.currentTarget.style.transform = "translateY(-3px)";
+                  e.currentTarget.style.boxShadow = "0 16px 40px rgba(102, 126, 234, 0.6)";
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!loading) {
+                  e.currentTarget.style.transform = "translateY(0)";
+                  e.currentTarget.style.boxShadow = "0 12px 32px rgba(102, 126, 234, 0.5)";
+                }
               }}
             >
-              기업 로그인 →
-            </a>
-          </p>
-        </div>
+              {loading ? "⏳ 로그인 중..." : "🔑 로그인"}
+            </button>
+          </form>
 
-        {/* 안내 */}
-        <div style={{
-          marginTop: "32px",
-          padding: "20px",
-          background: "#edf2f7",
-          borderRadius: "16px",
-          border: "3px solid #cbd5e0"
+          {/* 회원가입 링크 */}
+          <div style={{
+            marginTop: "28px",
+            padding: "24px",
+            background: "linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%)",
+            borderRadius: "20px",
+            textAlign: "center"
+          }}>
+            <p style={{
+              fontSize: "17px",
+              color: "#4a5568",
+              margin: "0 0 16px 0",
+              fontWeight: "600"
+            }}>
+              계정이 없으신가요?
+            </p>
+            <a
+              href="/employee/signup"
+              style={{
+                display: "inline-block",
+                padding: "18px 36px",
+                fontSize: "18px",
+                fontWeight: "800",
+                color: "#667eea",
+                background: "white",
+                border: "3px solid #667eea",
+                borderRadius: "16px",
+                textDecoration: "none",
+                transition: "all 0.3s",
+                boxShadow: "0 4px 12px rgba(102, 126, 234, 0.2)"
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "#667eea";
+                e.currentTarget.style.color = "white";
+                e.currentTarget.style.transform = "translateY(-2px)";
+                e.currentTarget.style.boxShadow = "0 8px 20px rgba(102, 126, 234, 0.4)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "white";
+                e.currentTarget.style.color = "#667eea";
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow = "0 4px 12px rgba(102, 126, 234, 0.2)";
+              }}
+            >
+              ✍️ 회원가입하기
+            </a>
+          </div>
+        </div>
+      </div>
+
+      {/* 하단 네비게이션 바 - 고정 */}
+      <div style={{
+        position: "fixed",
+        bottom: 0,
+        left: 0,
+        right: 0,
+        background: "white",
+        borderTop: "3px solid #e2e8f0",
+        display: "flex",
+        justifyContent: "space-around",
+        padding: "12px 8px 20px 8px",
+        boxShadow: "0 -4px 20px rgba(0, 0, 0, 0.1)",
+        zIndex: 100
+      }}>
+        <a href="/employee/attendance" style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          textDecoration: "none",
+          color: "#718096",
+          padding: "8px 12px",
+          transition: "all 0.3s",
+          flex: 1
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.color = "#667eea";
+          e.currentTarget.style.transform = "translateY(-2px)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.color = "#718096";
+          e.currentTarget.style.transform = "translateY(0)";
         }}>
-          <h4 style={{
-            margin: "0 0 12px 0",
-            fontSize: "18px",
-            fontWeight: "800",
-            color: "#2d3748",
-            display: "flex",
-            alignItems: "center",
-            gap: "8px"
-          }}>
-            <span style={{ fontSize: "24px" }}>💡</span>
-            로그인 안내
-          </h4>
-          <ul style={{
-            margin: 0,
-            paddingLeft: "28px",
-            color: "#4a5568",
-            fontSize: "16px",
-            lineHeight: "1.8"
-          }}>
-            <li>회원가입 시 등록한 핸드폰 번호와 비밀번호를 입력하세요</li>
-            <li>로그인 후 출퇴근 관리 기능을 사용할 수 있습니다</li>
-            <li>문제가 있으면 소속 기업 담당자에게 문의하세요</li>
-          </ul>
+          <span style={{ fontSize: "28px", marginBottom: "4px" }}>📅</span>
+          <span style={{ fontSize: "13px", fontWeight: "700" }}>근태관리</span>
+        </a>
+        <a href="/employee/work-orders" style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          textDecoration: "none",
+          color: "#718096",
+          padding: "8px 12px",
+          transition: "all 0.3s",
+          flex: 1
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.color = "#667eea";
+          e.currentTarget.style.transform = "translateY(-2px)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.color = "#718096";
+          e.currentTarget.style.transform = "translateY(0)";
+        }}>
+          <span style={{ fontSize: "28px", marginBottom: "4px" }}>📋</span>
+          <span style={{ fontSize: "13px", fontWeight: "700" }}>업무지시</span>
+        </a>
+        <a href="/employee/leave" style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          textDecoration: "none",
+          color: "#718096",
+          padding: "8px 12px",
+          transition: "all 0.3s",
+          flex: 1
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.color = "#667eea";
+          e.currentTarget.style.transform = "translateY(-2px)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.color = "#718096";
+          e.currentTarget.style.transform = "translateY(0)";
+        }}>
+          <span style={{ fontSize: "28px", marginBottom: "4px" }}>✈️</span>
+          <span style={{ fontSize: "13px", fontWeight: "700" }}>휴가신청</span>
+        </a>
+        <div style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          color: "#667eea",
+          padding: "8px 12px",
+          flex: 1,
+          position: "relative"
+        }}>
+          <div style={{
+            position: "absolute",
+            top: 0,
+            left: "50%",
+            transform: "translateX(-50%)",
+            width: "60px",
+            height: "4px",
+            background: "#667eea",
+            borderRadius: "2px"
+          }} />
+          <span style={{ fontSize: "28px", marginBottom: "4px" }}>🔒</span>
+          <span style={{ fontSize: "13px", fontWeight: "900" }}>로그인</span>
         </div>
       </div>
     </div>
