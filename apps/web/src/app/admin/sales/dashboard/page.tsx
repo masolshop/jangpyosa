@@ -339,7 +339,7 @@ const ManagerDashboard = ({
         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg shadow-sm border border-blue-200">
           <h2 className="text-xl font-bold mb-4 flex items-center text-blue-900">
             <span className="mr-2">📊</span>
-            추천 실적 현황
+            매니저추천실적현황
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="bg-white p-4 rounded-lg">
@@ -367,7 +367,7 @@ const ManagerDashboard = ({
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold flex items-center">
             <span className="mr-2">📈</span>
-            추천 실적 리포트
+            추천매니저 리스트
           </h2>
           <div className="flex items-center space-x-2">
             <select
@@ -708,7 +708,7 @@ const BranchDashboard = ({
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold flex items-center">
             <span className="mr-2">📈</span>
-            지사 추천 실적 리포트
+            지사 추천매니저 리스트
           </h2>
           <div className="flex items-center space-x-2">
             <select
@@ -1289,7 +1289,7 @@ const HeadquartersDashboard = ({
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold flex items-center">
             <span className="mr-2">📈</span>
-            전체 추천 실적 리포트
+            전체 추천매니저 리스트
           </h2>
           <div className="flex items-center space-x-2">
             <select
