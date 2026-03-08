@@ -59,7 +59,10 @@ async function checkAndPromote(salesPersonId: string) {
     }
 
     // 활성 추천 매니저 수 계산
-    const activeReferredCount = salesPerson.referredManagers.filter(m => m.isActive).length;
+    // 오직 MANAGER 역할만 카운트 (지사장/본부장 제외)
+    const activeReferredCount = salesPerson.referredManagers.filter(
+      m => m.isActive && m.role === 'MANAGER'
+    ).length;
 
     let newRole = salesPerson.role;
     let shouldPromote = false;
@@ -165,7 +168,8 @@ router.get('/search-manager', async (req, res) => {
     const manager = await prisma.salesPerson.findFirst({
       where: {
         AND: [
-          { isActive: true },
+          { isActive: true }, // 활성 매니저만
+          { role: 'MANAGER' }, // 오직 일반 매니저만 (지사장/본부장 제외)
           {
             OR: [
               { name: { contains: searchTerm } },
@@ -297,7 +301,8 @@ router.get('/search-manager', async (req, res) => {
     const manager = await prisma.salesPerson.findFirst({
       where: {
         AND: [
-          { isActive: true },
+          { isActive: true }, // 활성 매니저만
+          { role: 'MANAGER' }, // 오직 일반 매니저만 (지사장/본부장 제외)
           {
             OR: [
               { name: { contains: searchTerm } },

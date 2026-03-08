@@ -913,7 +913,7 @@ export default function SalesLoginPage() {
             {/* 추천 매니저 검색 */}
             <div style={{ marginBottom: 24 }}>
               <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, fontSize: 14 }}>
-                추천 매니저 (선택)
+                추천 매니저 (선택 - 일반 매니저만 해당)
               </label>
               <div style={{ display: 'flex', gap: 8 }}>
                 <input
@@ -969,7 +969,7 @@ export default function SalesLoginPage() {
                 </div>
               )}
               <div style={{ fontSize: 12, color: '#6b7280', marginTop: 4 }}>
-                추천인이 있으시면 검색하여 선택해주세요.
+                추천인(매니저)이 있으시면 검색하여 선택해주세요. (선택사항)
               </div>
             </div>
             )}
