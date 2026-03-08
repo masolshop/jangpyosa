@@ -39,6 +39,66 @@ function toReferralCode(phone: string): string {
   return normalized.startsWith('0') ? normalized.substring(1) : normalized;
 }
 
+
+/**
+ * 추천 매니저 수에 따른 자동 승급 체크
+ * @param salesPersonId 체크할 매니저 ID
+ */
+async function checkAndPromote(salesPersonId: string) {
+  try {
+    const salesPerson = await prisma.salesPerson.findUnique({
+      where: { id: salesPersonId },
+      include: {
+        referredManagers: true, // 추천한 매니저 목록
+      },
+    });
+
+    if (!salesPerson) {
+      console.error(`[checkAndPromote] SalesPerson not found: ${salesPersonId}`);
+      return;
+    }
+
+    // 활성 추천 매니저 수 계산
+    const activeReferredCount = salesPerson.referredManagers.filter(m => m.isActive).length;
+
+    let newRole = salesPerson.role;
+    let shouldPromote = false;
+
+    // 승급 조건 체크
+    if (salesPerson.role === 'MANAGER' && activeReferredCount >= 50) {
+      newRole = 'BRANCH_MANAGER'; // 지사장
+      shouldPromote = true;
+    } else if (salesPerson.role === 'BRANCH_MANAGER' && activeReferredCount >= 100) {
+      newRole = 'HEAD_MANAGER'; // 본부장
+      shouldPromote = true;
+    }
+
+    if (shouldPromote) {
+      // 승급 실행
+      await prisma.salesPerson.update({
+        where: { id: salesPersonId },
+        data: { role: newRole },
+      });
+
+      // 활동 로그 기록
+      await prisma.salesActivityLog.create({
+        data: {
+          salesPersonId,
+          action: 'PROMOTION',
+          fromValue: salesPerson.role,
+          toValue: newRole,
+          reason: `추천 매니저 ${activeReferredCount}명 달성으로 자동 승급`,
+        },
+      });
+
+      console.log(`✅ [Auto-Promotion] ${salesPerson.name} (${salesPerson.phone}): ${salesPerson.role} → ${newRole}`);
+      console.log(`   추천 매니저 수: ${activeReferredCount}명`);
+    }
+  } catch (error) {
+    console.error('[checkAndPromote] Error:', error);
+  }
+}
+
 // 영업 사원 전용 인증 미들웨어
 const requireSalesAuth = async (req: any, res: any, next: any) => {
   try {
@@ -86,6 +146,57 @@ export enum SalesAction {
   STATUS_CHANGE = 'STATUS_CHANGE', // 상태 변경
   REFERRAL_ADDED = 'REFERRAL_ADDED', // 추천 고객 추가
 }
+
+
+/**
+ * GET /sales/search-manager
+ * 추천 매니저 검색 (이름 또는 핸드폰번호)
+ */
+router.get('/search-manager', async (req, res) => {
+  try {
+    const { q } = req.query;
+
+    if (!q || typeof q !== 'string') {
+      return res.status(400).json({ error: '검색어를 입력해주세요' });
+    }
+
+    const searchTerm = q.trim();
+
+    const manager = await prisma.salesPerson.findFirst({
+      where: {
+        AND: [
+          { isActive: true },
+          {
+            OR: [
+              { name: { contains: searchTerm } },
+              { phone: { contains: searchTerm } },
+            ],
+          },
+        ],
+      },
+      include: {
+        organization: true,
+      },
+    });
+
+    if (!manager) {
+      return res.status(404).json({ error: '매니저를 찾을 수 없습니다' });
+    }
+
+    res.json({
+      success: true,
+      manager: {
+        id: manager.id,
+        name: manager.name,
+        phone: manager.phone,
+        organizationName: manager.organization?.name || manager.organizationName || '소속 없음',
+      },
+    });
+  } catch (error: any) {
+    console.error('[GET /sales/search-manager] Error:', error);
+    return res.status(500).json({ error: error.message });
+  }
+});
 
 /**
  * GET /sales/people
@@ -165,6 +276,57 @@ router.get('/people', requireAuth, requireRole('SUPER_ADMIN'), async (req, res) 
   } catch (error: any) {
     console.error('[GET /sales/people] Error:', error);
     res.status(500).json({ error: error.message });
+  }
+});
+
+
+/**
+ * GET /sales/search-manager
+ * 추천 매니저 검색 (이름 또는 핸드폰번호)
+ */
+router.get('/search-manager', async (req, res) => {
+  try {
+    const { q } = req.query;
+
+    if (!q || typeof q !== 'string') {
+      return res.status(400).json({ error: '검색어를 입력해주세요' });
+    }
+
+    const searchTerm = q.trim();
+
+    const manager = await prisma.salesPerson.findFirst({
+      where: {
+        AND: [
+          { isActive: true },
+          {
+            OR: [
+              { name: { contains: searchTerm } },
+              { phone: { contains: searchTerm } },
+            ],
+          },
+        ],
+      },
+      include: {
+        organization: true,
+      },
+    });
+
+    if (!manager) {
+      return res.status(404).json({ error: '매니저를 찾을 수 없습니다' });
+    }
+
+    res.json({
+      success: true,
+      manager: {
+        id: manager.id,
+        name: manager.name,
+        phone: manager.phone,
+        organizationName: manager.organization?.name || manager.organizationName || '소속 없음',
+      },
+    });
+  } catch (error: any) {
+    console.error('[GET /sales/search-manager] Error:', error);
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -463,6 +625,14 @@ router.put('/people/:id', requireAuth, requireRole('SUPER_ADMIN'), async (req, r
         subordinates: true,
       },
     });
+
+    // 🆕 매니저 승인 시: 추천인의 승급 조건 체크
+    if (isActive === true && salesPerson.referredById) {
+      // 백그라운드로 추천인 승급 체크 (응답 지연 방지)
+      checkAndPromote(salesPerson.referredById).catch(err => {
+        console.error('[PUT /people/:id] checkAndPromote error:', err);
+      });
+    }
     
     res.json({ salesPerson });
   } catch (error: any) {

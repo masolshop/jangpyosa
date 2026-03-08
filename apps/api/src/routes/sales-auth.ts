@@ -120,7 +120,7 @@ router.post('/verify-identity-with-name', async (req, res) => {
  */
 router.post('/signup', async (req, res) => {
   try {
-    const { name, phone, email, password, rrn1, rrn2, verified, managerId, organizationId } = req.body;
+    const { name, phone, email, password, rrn1, rrn2, verified, managerId, organizationId, referredById } = req.body;
 
     // 입력 검증
     if (!name || !phone || !password) {
@@ -172,7 +172,8 @@ router.post('/signup', async (req, res) => {
         email: user.email,
         role: 'MANAGER', // 기본 매니저로 시작
         organizationId: selectedOrgId, // 소속 조직 ID (Organization 테이블 참조)
-        managerId: null, // 상위 매니저는 없음 (슈퍼어드민이 나중에 설정)
+        managerId: null, // 상위 매니저는 없음
+        referredById: referredById || null, // 🆕 추천한 매니저 ID (슈퍼어드민이 나중에 설정)
         referralCode: user.phone.replace(/^0/, ''), // 0 제거
         referralLink: `https://jangpyosa.com/${user.phone}`,
         totalReferrals: 0,
@@ -267,7 +268,18 @@ router.post('/login', async (req, res) => {
             name: true,
             role: true,
           },
+        referredManagers: {
+          where: { isActive: true }, // 활성 매니저만
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+            role: true,
+            organizationName: true,
+            createdAt: true,
+          },
         },
+      },
       },
     });
 
