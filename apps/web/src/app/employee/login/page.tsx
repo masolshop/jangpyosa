@@ -31,6 +31,12 @@ export default function EmployeeLoginPage() {
         }),
       });
 
+      // JSON 파싱 시도 전에 응답 타입 확인
+      const contentType = res.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error("서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+      }
+
       const json = await res.json();
 
       if (!res.ok) {
