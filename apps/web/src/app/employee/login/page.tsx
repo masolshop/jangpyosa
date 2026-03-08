@@ -9,6 +9,7 @@ export default function EmployeeLoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
 
   const [form, setForm] = useState({
     phone: "",
@@ -63,177 +64,167 @@ export default function EmployeeLoginPage() {
     <>
       <div style={{
         minHeight: "100vh",
-        background: "linear-gradient(180deg, #667eea 0%, #764ba2 100%)",
+        background: "linear-gradient(135deg, #e0f2f1 0%, #b2dfdb 50%, #80cbc4 100%)",
         display: "flex",
         flexDirection: "column",
         justifyContent: "center",
         alignItems: "center",
         padding: "20px",
-        paddingBottom: "100px", // 하단 메뉴 공간
+        paddingBottom: "100px",
         position: "relative",
         overflow: "hidden"
       }}>
-        {/* 배경 장식 */}
+        {/* 배경 장식 - 부드러운 원형 */}
         <div style={{
           position: "absolute",
-          top: "-50%",
-          right: "-20%",
-          width: "500px",
-          height: "500px",
-          background: "rgba(255, 255, 255, 0.1)",
+          top: "-10%",
+          right: "-5%",
+          width: "350px",
+          height: "350px",
+          background: "rgba(255, 255, 255, 0.3)",
           borderRadius: "50%",
           filter: "blur(80px)"
         }} />
         <div style={{
           position: "absolute",
-          bottom: "-30%",
-          left: "-10%",
-          width: "400px",
-          height: "400px",
-          background: "rgba(255, 255, 255, 0.1)",
+          bottom: "-10%",
+          left: "-5%",
+          width: "300px",
+          height: "300px",
+          background: "rgba(178, 223, 219, 0.4)",
           borderRadius: "50%",
           filter: "blur(60px)"
+        }} />
+        <div style={{
+          position: "absolute",
+          top: "30%",
+          right: "10%",
+          width: "200px",
+          height: "200px",
+          background: "rgba(128, 203, 196, 0.3)",
+          borderRadius: "50%",
+          filter: "blur(50px)"
         }} />
 
         {/* 메인 컨텐츠 */}
         <div style={{
           width: "100%",
-          maxWidth: "480px",
+          maxWidth: "440px",
           position: "relative",
           zIndex: 1
         }}>
-          {/* 헤더 */}
+          {/* 로고 & 타이틀 */}
           <div style={{
+            background: "rgba(255, 255, 255, 0.95)",
+            borderRadius: "24px 24px 0 0",
+            padding: "40px 32px 32px",
             textAlign: "center",
-            marginBottom: "40px"
+            boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)"
           }}>
             <div style={{
-              width: "140px",
-              height: "140px",
-              background: "rgba(255, 255, 255, 0.98)",
-              borderRadius: "50%",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              margin: "0 auto 28px",
-              fontSize: "70px",
-              boxShadow: "0 15px 50px rgba(0, 0, 0, 0.25)"
+              fontSize: "56px",
+              fontWeight: "300",
+              color: "#00695c",
+              marginBottom: "8px",
+              letterSpacing: "2px",
+              fontFamily: "system-ui, -apple-system, sans-serif"
             }}>
-              👷
+              mod<span style={{ 
+                display: "inline-block",
+                width: "10px",
+                height: "10px",
+                background: "#26a69a",
+                borderRadius: "50%",
+                marginLeft: "2px",
+                marginRight: "2px",
+                verticalAlign: "middle"
+              }}></span>be
             </div>
-            <h1 style={{
-              fontSize: "42px",
-              fontWeight: "900",
-              color: "white",
-              margin: "0 0 16px 0",
-              textShadow: "0 3px 25px rgba(0, 0, 0, 0.3)",
-              letterSpacing: "-1px"
+            <div style={{
+              fontSize: "13px",
+              color: "#00897b",
+              letterSpacing: "1px",
+              fontWeight: "400"
             }}>
-              직원 로그인
-            </h1>
-            <p style={{
-              fontSize: "20px",
-              color: "rgba(255, 255, 255, 0.95)",
-              margin: 0,
-              fontWeight: "600"
-            }}>
-              장애인 직원 전용 로그인
-            </p>
+              모두비 장애인 직원 출퇴근
+            </div>
           </div>
 
           {/* 로그인 폼 */}
           <div style={{
-            background: "rgba(255, 255, 255, 0.98)",
-            borderRadius: "36px",
-            padding: "48px 36px",
-            boxShadow: "0 25px 70px rgba(0, 0, 0, 0.35)",
-            backdropFilter: "blur(30px)"
+            background: "rgba(255, 255, 255, 0.95)",
+            borderRadius: "0 0 24px 24px",
+            padding: "32px",
+            boxShadow: "0 8px 32px rgba(0, 0, 0, 0.12)",
+            backdropFilter: "blur(10px)"
           }}>
             {/* 에러 메시지 */}
             {error && (
               <div style={{
-                padding: "24px",
-                background: "#fff5f5",
-                border: "4px solid #fc8181",
-                borderRadius: "24px",
-                marginBottom: "32px"
+                padding: "16px",
+                background: "#ffebee",
+                border: "1px solid #ef5350",
+                borderRadius: "12px",
+                marginBottom: "24px",
+                color: "#c62828",
+                fontSize: "14px",
+                fontWeight: "500"
               }}>
-                <div style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "16px"
-                }}>
-                  <span style={{ fontSize: "32px" }}>❌</span>
-                  <span style={{
-                    fontSize: "18px",
-                    fontWeight: "700",
-                    color: "#c53030"
-                  }}>
-                    {error}
-                  </span>
-                </div>
+                {error}
               </div>
             )}
 
             <form onSubmit={handleSubmit}>
-              {/* 핸드폰 번호 */}
-              <div style={{ marginBottom: "32px" }}>
+              {/* 아이디 (핸드폰 번호) */}
+              <div style={{ marginBottom: "20px" }}>
                 <label style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "12px",
-                  marginBottom: "16px",
-                  fontSize: "20px",
-                  fontWeight: "800",
-                  color: "#2d3748"
+                  display: "block",
+                  marginBottom: "8px",
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  color: "#424242"
                 }}>
-                  <span style={{ fontSize: "30px" }}>📱</span>
-                  핸드폰 번호
+                  아이디
                 </label>
                 <input
                   type="tel"
                   value={form.phone}
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  placeholder="010-1234-5678"
+                  placeholder="예시"
                   required
                   autoFocus
                   style={{
                     width: "100%",
-                    padding: "26px 24px",
-                    fontSize: "22px",
-                    fontWeight: "600",
-                    border: "4px solid #e2e8f0",
-                    borderRadius: "24px",
+                    padding: "14px 16px",
+                    fontSize: "15px",
+                    border: "1px solid #e0e0e0",
+                    borderRadius: "8px",
                     outline: "none",
-                    transition: "all 0.3s",
+                    transition: "all 0.2s",
                     boxSizing: "border-box",
-                    background: "#f7fafc"
+                    background: "#fafafa",
+                    color: "#424242"
                   }}
                   onFocus={(e) => {
-                    e.target.style.borderColor = "#667eea";
-                    e.target.style.background = "white";
-                    e.target.style.transform = "scale(1.01)";
+                    e.target.style.borderColor = "#26a69a";
+                    e.target.style.background = "#ffffff";
                   }}
                   onBlur={(e) => {
-                    e.target.style.borderColor = "#e2e8f0";
-                    e.target.style.background = "#f7fafc";
-                    e.target.style.transform = "scale(1)";
+                    e.target.style.borderColor = "#e0e0e0";
+                    e.target.style.background = "#fafafa";
                   }}
                 />
               </div>
 
               {/* 비밀번호 */}
-              <div style={{ marginBottom: "40px" }}>
+              <div style={{ marginBottom: "24px" }}>
                 <label style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "12px",
-                  marginBottom: "16px",
-                  fontSize: "20px",
-                  fontWeight: "800",
-                  color: "#2d3748"
+                  display: "block",
+                  marginBottom: "8px",
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  color: "#424242"
                 }}>
-                  <span style={{ fontSize: "30px" }}>🔒</span>
                   비밀번호
                 </label>
                 <div style={{ position: "relative" }}>
@@ -245,26 +236,24 @@ export default function EmployeeLoginPage() {
                     required
                     style={{
                       width: "100%",
-                      padding: "26px 24px",
-                      paddingRight: "70px",
-                      fontSize: "22px",
-                      fontWeight: "600",
-                      border: "4px solid #e2e8f0",
-                      borderRadius: "24px",
+                      padding: "14px 16px",
+                      paddingRight: "48px",
+                      fontSize: "15px",
+                      border: "1px solid #e0e0e0",
+                      borderRadius: "8px",
                       outline: "none",
-                      transition: "all 0.3s",
+                      transition: "all 0.2s",
                       boxSizing: "border-box",
-                      background: "#f7fafc"
+                      background: "#fafafa",
+                      color: "#424242"
                     }}
                     onFocus={(e) => {
-                      e.target.style.borderColor = "#667eea";
-                      e.target.style.background = "white";
-                      e.target.style.transform = "scale(1.01)";
+                      e.target.style.borderColor = "#26a69a";
+                      e.target.style.background = "#ffffff";
                     }}
                     onBlur={(e) => {
-                      e.target.style.borderColor = "#e2e8f0";
-                      e.target.style.background = "#f7fafc";
-                      e.target.style.transform = "scale(1)";
+                      e.target.style.borderColor = "#e0e0e0";
+                      e.target.style.background = "#fafafa";
                     }}
                   />
                   <button
@@ -272,14 +261,14 @@ export default function EmployeeLoginPage() {
                     onClick={() => setShowPassword(!showPassword)}
                     style={{
                       position: "absolute",
-                      right: "20px",
+                      right: "12px",
                       top: "50%",
                       transform: "translateY(-50%)",
                       background: "none",
                       border: "none",
-                      fontSize: "30px",
+                      fontSize: "20px",
                       cursor: "pointer",
-                      padding: "12px"
+                      padding: "4px"
                     }}
                     aria-label={showPassword ? "비밀번호 숨기기" : "비밀번호 보기"}
                   >
@@ -288,88 +277,118 @@ export default function EmployeeLoginPage() {
                 </div>
               </div>
 
+              {/* 아이디 기억하기 체크박스 */}
+              <div style={{
+                display: "flex",
+                alignItems: "center",
+                marginBottom: "24px"
+              }}>
+                <label style={{
+                  display: "flex",
+                  alignItems: "center",
+                  cursor: "pointer",
+                  fontSize: "14px",
+                  color: "#616161"
+                }}>
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    style={{
+                      width: "16px",
+                      height: "16px",
+                      marginRight: "8px",
+                      cursor: "pointer",
+                      accentColor: "#26a69a"
+                    }}
+                  />
+                  아이디 기억하기
+                </label>
+              </div>
+
               {/* 로그인 버튼 */}
               <button
                 type="submit"
                 disabled={loading}
                 style={{
                   width: "100%",
-                  padding: "30px",
-                  fontSize: "24px",
-                  fontWeight: "900",
+                  padding: "16px",
+                  fontSize: "16px",
+                  fontWeight: "700",
                   color: "white",
-                  background: loading ? "#cbd5e0" : "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                  background: loading ? "#b0bec5" : "#00796b",
                   border: "none",
-                  borderRadius: "24px",
+                  borderRadius: "8px",
                   cursor: loading ? "not-allowed" : "pointer",
-                  transition: "all 0.3s",
-                  boxShadow: loading ? "none" : "0 15px 40px rgba(102, 126, 234, 0.6)",
-                  transform: loading ? "none" : "translateY(0)"
+                  transition: "all 0.2s",
+                  boxShadow: loading ? "none" : "0 2px 8px rgba(0, 121, 107, 0.3)"
                 }}
                 onMouseEnter={(e) => {
                   if (!loading) {
-                    e.currentTarget.style.transform = "translateY(-4px)";
-                    e.currentTarget.style.boxShadow = "0 20px 50px rgba(102, 126, 234, 0.7)";
+                    e.currentTarget.style.background = "#00695c";
+                    e.currentTarget.style.boxShadow = "0 4px 12px rgba(0, 121, 107, 0.4)";
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (!loading) {
-                    e.currentTarget.style.transform = "translateY(0)";
-                    e.currentTarget.style.boxShadow = "0 15px 40px rgba(102, 126, 234, 0.6)";
+                    e.currentTarget.style.background = "#00796b";
+                    e.currentTarget.style.boxShadow = "0 2px 8px rgba(0, 121, 107, 0.3)";
                   }
                 }}
               >
-                {loading ? "⏳ 로그인 중..." : "🔑 로그인"}
+                {loading ? "로그인 중..." : "로그인"}
               </button>
             </form>
 
-            {/* 회원가입 링크 */}
+            {/* 비밀번호 찾기 / 회원가입 */}
             <div style={{
-              marginTop: "36px",
-              padding: "28px",
-              background: "linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%)",
-              borderRadius: "24px",
+              marginTop: "24px",
               textAlign: "center"
             }}>
-              <p style={{
-                fontSize: "19px",
-                color: "#4a5568",
-                margin: "0 0 20px 0",
-                fontWeight: "700"
-              }}>
-                계정이 없으신가요?
-              </p>
               <a
-                href="/employee/signup"
+                href="/employee/forgot-password"
                 style={{
-                  display: "inline-block",
-                  padding: "20px 44px",
-                  fontSize: "20px",
-                  fontWeight: "900",
-                  color: "#667eea",
-                  background: "white",
-                  border: "4px solid #667eea",
-                  borderRadius: "20px",
+                  fontSize: "13px",
+                  color: "#00897b",
                   textDecoration: "none",
-                  transition: "all 0.3s",
-                  boxShadow: "0 6px 16px rgba(102, 126, 234, 0.25)"
+                  fontWeight: "500"
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "#667eea";
-                  e.currentTarget.style.color = "white";
-                  e.currentTarget.style.transform = "translateY(-3px)";
-                  e.currentTarget.style.boxShadow = "0 10px 25px rgba(102, 126, 234, 0.45)";
+                  e.currentTarget.style.textDecoration = "underline";
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "white";
-                  e.currentTarget.style.color = "#667eea";
-                  e.currentTarget.style.transform = "translateY(0)";
-                  e.currentTarget.style.boxShadow = "0 6px 16px rgba(102, 126, 234, 0.25)";
+                  e.currentTarget.style.textDecoration = "none";
                 }}
               >
-                ✍️ 회원가입하기
+                비밀번호를 잊으셨나요?
               </a>
             </div>
+          </div>
+
+          {/* 고객센터 문의 */}
+          <div style={{
+            marginTop: "24px",
+            padding: "20px",
+            background: "rgba(255, 255, 255, 0.8)",
+            borderRadius: "16px",
+            textAlign: "center",
+            boxShadow: "0 2px 12px rgba(0, 0, 0, 0.06)"
+          }}>
+            <p style={{
+              fontSize: "16px",
+              fontWeight: "700",
+              color: "#424242",
+              margin: "0 0 4px 0"
+            }}>
+              고객센터 1544-9338
+            </p>
+            <p style={{
+              fontSize: "13px",
+              color: "#757575",
+              margin: 0
+            }}>
+              문의사항이 있으시면 연락주세요
+            </p>
           </div>
         </div>
       </div>
@@ -381,11 +400,11 @@ export default function EmployeeLoginPage() {
         left: 0,
         right: 0,
         background: "white",
-        borderTop: "3px solid #e2e8f0",
+        borderTop: "1px solid #e0e0e0",
         display: "flex",
         justifyContent: "center",
-        padding: "12px 8px 20px 8px",
-        boxShadow: "0 -4px 20px rgba(0, 0, 0, 0.1)",
+        padding: "8px 8px 16px 8px",
+        boxShadow: "0 -2px 10px rgba(0, 0, 0, 0.05)",
         zIndex: 100
       }}>
         <div style={{
@@ -408,22 +427,20 @@ export default function EmployeeLoginPage() {
             flexDirection: "column",
             alignItems: "center",
             textDecoration: "none",
-            color: "#718096",
+            color: "#9e9e9e",
             padding: "8px 12px",
-            transition: "all 0.3s",
+            transition: "all 0.2s",
             flex: 1,
             cursor: "pointer"
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.color = "#667eea";
-            e.currentTarget.style.transform = "translateY(-2px)";
+            e.currentTarget.style.color = "#00897b";
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.color = "#718096";
-            e.currentTarget.style.transform = "translateY(0)";
+            e.currentTarget.style.color = "#9e9e9e";
           }}>
-          <span style={{ fontSize: "28px", marginBottom: "4px" }}>📅</span>
-          <span style={{ fontSize: "13px", fontWeight: "700" }}>근태관리</span>
+          <span style={{ fontSize: "24px", marginBottom: "4px" }}>📅</span>
+          <span style={{ fontSize: "11px", fontWeight: "600" }}>근태관리</span>
         </div>
         <div 
           onClick={() => {
@@ -439,22 +456,20 @@ export default function EmployeeLoginPage() {
             flexDirection: "column",
             alignItems: "center",
             textDecoration: "none",
-            color: "#718096",
+            color: "#9e9e9e",
             padding: "8px 12px",
-            transition: "all 0.3s",
+            transition: "all 0.2s",
             flex: 1,
             cursor: "pointer"
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.color = "#667eea";
-            e.currentTarget.style.transform = "translateY(-2px)";
+            e.currentTarget.style.color = "#00897b";
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.color = "#718096";
-            e.currentTarget.style.transform = "translateY(0)";
+            e.currentTarget.style.color = "#9e9e9e";
           }}>
-          <span style={{ fontSize: "28px", marginBottom: "4px" }}>📋</span>
-          <span style={{ fontSize: "13px", fontWeight: "700" }}>업무지시</span>
+          <span style={{ fontSize: "24px", marginBottom: "4px" }}>📋</span>
+          <span style={{ fontSize: "11px", fontWeight: "600" }}>업무지시</span>
         </div>
         <div 
           onClick={() => {
@@ -470,28 +485,26 @@ export default function EmployeeLoginPage() {
             flexDirection: "column",
             alignItems: "center",
             textDecoration: "none",
-            color: "#718096",
+            color: "#9e9e9e",
             padding: "8px 12px",
-            transition: "all 0.3s",
+            transition: "all 0.2s",
             flex: 1,
             cursor: "pointer"
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.color = "#667eea";
-            e.currentTarget.style.transform = "translateY(-2px)";
+            e.currentTarget.style.color = "#00897b";
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.color = "#718096";
-            e.currentTarget.style.transform = "translateY(0)";
+            e.currentTarget.style.color = "#9e9e9e";
           }}>
-          <span style={{ fontSize: "28px", marginBottom: "4px" }}>✈️</span>
-          <span style={{ fontSize: "13px", fontWeight: "700" }}>휴가신청</span>
+          <span style={{ fontSize: "24px", marginBottom: "4px" }}>✈️</span>
+          <span style={{ fontSize: "11px", fontWeight: "600" }}>휴가신청</span>
         </div>
         <div style={{
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          color: "#667eea",
+          color: "#00897b",
           padding: "8px 12px",
           flex: 1,
           position: "relative"
@@ -501,13 +514,13 @@ export default function EmployeeLoginPage() {
             top: 0,
             left: "50%",
             transform: "translateX(-50%)",
-            width: "60px",
-            height: "4px",
-            background: "#667eea",
+            width: "50px",
+            height: "3px",
+            background: "#00897b",
             borderRadius: "2px"
           }} />
-          <span style={{ fontSize: "28px", marginBottom: "4px" }}>🔒</span>
-          <span style={{ fontSize: "13px", fontWeight: "900" }}>로그인</span>
+          <span style={{ fontSize: "24px", marginBottom: "4px" }}>🔓</span>
+          <span style={{ fontSize: "11px", fontWeight: "700" }}>로그인</span>
         </div>
         </div>
       </div>
