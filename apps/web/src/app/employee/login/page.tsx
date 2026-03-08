@@ -388,72 +388,99 @@ export default function EmployeeLoginPage() {
           maxWidth: "600px",
           width: "100%"
         }}>
-        <a href="/employee/attendance" style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          textDecoration: "none",
-          color: "#718096",
-          padding: "8px 12px",
-          transition: "all 0.3s",
-          flex: 1,
-          cursor: "pointer"
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.color = "#667eea";
-          e.currentTarget.style.transform = "translateY(-2px)";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.color = "#718096";
-          e.currentTarget.style.transform = "translateY(0)";
-        }}>
+        <div 
+          onClick={() => {
+            const token = localStorage.getItem("accessToken");
+            if (!token) {
+              alert("로그인이 필요합니다.");
+            } else {
+              window.location.href = "/employee/attendance";
+            }
+          }}
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            textDecoration: "none",
+            color: "#718096",
+            padding: "8px 12px",
+            transition: "all 0.3s",
+            flex: 1,
+            cursor: "pointer"
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = "#667eea";
+            e.currentTarget.style.transform = "translateY(-2px)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = "#718096";
+            e.currentTarget.style.transform = "translateY(0)";
+          }}>
           <span style={{ fontSize: "28px", marginBottom: "4px" }}>📅</span>
           <span style={{ fontSize: "13px", fontWeight: "700" }}>근태관리</span>
-        </a>
-        <a href="/employee/work-orders" style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          textDecoration: "none",
-          color: "#718096",
-          padding: "8px 12px",
-          transition: "all 0.3s",
-          flex: 1,
-          cursor: "pointer"
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.color = "#667eea";
-          e.currentTarget.style.transform = "translateY(-2px)";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.color = "#718096";
-          e.currentTarget.style.transform = "translateY(0)";
-        }}>
+        </div>
+        <div 
+          onClick={() => {
+            const token = localStorage.getItem("accessToken");
+            if (!token) {
+              alert("로그인이 필요합니다.");
+            } else {
+              window.location.href = "/employee/work-orders";
+            }
+          }}
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            textDecoration: "none",
+            color: "#718096",
+            padding: "8px 12px",
+            transition: "all 0.3s",
+            flex: 1,
+            cursor: "pointer"
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = "#667eea";
+            e.currentTarget.style.transform = "translateY(-2px)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = "#718096";
+            e.currentTarget.style.transform = "translateY(0)";
+          }}>
           <span style={{ fontSize: "28px", marginBottom: "4px" }}>📋</span>
           <span style={{ fontSize: "13px", fontWeight: "700" }}>업무지시</span>
-        </a>
-        <a href="/employee/leave" style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          textDecoration: "none",
-          color: "#718096",
-          padding: "8px 12px",
-          transition: "all 0.3s",
-          flex: 1,
-          cursor: "pointer"
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.color = "#667eea";
-          e.currentTarget.style.transform = "translateY(-2px)";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.color = "#718096";
-          e.currentTarget.style.transform = "translateY(0)";
-        }}>
+        </div>
+        <div 
+          onClick={() => {
+            const token = localStorage.getItem("accessToken");
+            if (!token) {
+              alert("로그인이 필요합니다.");
+            } else {
+              window.location.href = "/employee/leave";
+            }
+          }}
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            textDecoration: "none",
+            color: "#718096",
+            padding: "8px 12px",
+            transition: "all 0.3s",
+            flex: 1,
+            cursor: "pointer"
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = "#667eea";
+            e.currentTarget.style.transform = "translateY(-2px)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = "#718096";
+            e.currentTarget.style.transform = "translateY(0)";
+          }}>
           <span style={{ fontSize: "28px", marginBottom: "4px" }}>✈️</span>
           <span style={{ fontSize: "13px", fontWeight: "700" }}>휴가신청</span>
-        </a>
+        </div>
         <div style={{
           display: "flex",
           flexDirection: "column",
