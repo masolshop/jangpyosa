@@ -44,7 +44,12 @@ function toReferralCode(phone: string): string {
  * 추천 매니저 수에 따른 자동 승급 체크
  * @param salesPersonId 체크할 매니저 ID
  */
-async function checkAndPromote(salesPersonId: string) {
+/**
+ * 매니저의 승급 자격 확인 (자동 승급 없음, 조건만 체크)
+ * @param salesPersonId 체크할 매니저 ID
+ * @returns 승급 가능 여부 및 다음 역할
+ */
+async function checkPromotionEligibility(salesPersonId: string) {
   try {
     const salesPerson = await prisma.salesPerson.findUnique({
       where: { id: salesPersonId },
@@ -54,51 +59,45 @@ async function checkAndPromote(salesPersonId: string) {
     });
 
     if (!salesPerson) {
-      console.error(`[checkAndPromote] SalesPerson not found: ${salesPersonId}`);
-      return;
+      return { eligible: false, reason: '매니저를 찾을 수 없습니다' };
     }
 
-    // 활성 추천 매니저 수 계산
     // 오직 MANAGER 역할만 카운트 (지사장/본부장 제외)
     const activeReferredCount = salesPerson.referredManagers.filter(
       m => m.isActive && m.role === 'MANAGER'
     ).length;
 
-    let newRole = salesPerson.role;
-    let shouldPromote = false;
-
     // 승급 조건 체크
     if (salesPerson.role === 'MANAGER' && activeReferredCount >= 50) {
-      newRole = 'BRANCH_MANAGER'; // 지사장
-      shouldPromote = true;
+      return {
+        eligible: true,
+        currentRole: 'MANAGER',
+        nextRole: 'BRANCH_MANAGER',
+        referredCount: activeReferredCount,
+        requiredCount: 50,
+      };
     } else if (salesPerson.role === 'BRANCH_MANAGER' && activeReferredCount >= 100) {
-      newRole = 'HEAD_MANAGER'; // 본부장
-      shouldPromote = true;
+      return {
+        eligible: true,
+        currentRole: 'BRANCH_MANAGER',
+        nextRole: 'HEAD_MANAGER',
+        referredCount: activeReferredCount,
+        requiredCount: 100,
+      };
     }
 
-    if (shouldPromote) {
-      // 승급 실행
-      await prisma.salesPerson.update({
-        where: { id: salesPersonId },
-        data: { role: newRole },
-      });
-
-      // 활동 로그 기록
-      await prisma.salesActivityLog.create({
-        data: {
-          salesPersonId,
-          action: 'PROMOTION',
-          fromValue: salesPerson.role,
-          toValue: newRole,
-          reason: `추천 매니저 ${activeReferredCount}명 달성으로 자동 승급`,
-        },
-      });
-
-      console.log(`✅ [Auto-Promotion] ${salesPerson.name} (${salesPerson.phone}): ${salesPerson.role} → ${newRole}`);
-      console.log(`   추천 매니저 수: ${activeReferredCount}명`);
-    }
+    // 승급 불가능
+    const requiredCount = salesPerson.role === 'MANAGER' ? 50 : 100;
+    return {
+      eligible: false,
+      currentRole: salesPerson.role,
+      referredCount: activeReferredCount,
+      requiredCount,
+      reason: `추천 매니저 ${activeReferredCount}명 (필요: ${requiredCount}명)`,
+    };
   } catch (error) {
-    console.error('[checkAndPromote] Error:', error);
+    console.error('[checkPromotionEligibility] Error:', error);
+    return { eligible: false, reason: '조회 중 오류 발생' };
   }
 }
 
@@ -631,17 +630,32 @@ router.put('/people/:id', requireAuth, requireRole('SUPER_ADMIN'), async (req, r
       },
     });
 
-    // 🆕 매니저 승인 시: 추천인의 승급 조건 체크
+    // 매니저 승인 시: 추천인은 슈퍼관리자가 수동으로 승급
     if (isActive === true && salesPerson.referredById) {
-      // 백그라운드로 추천인 승급 체크 (응답 지연 방지)
-      checkAndPromote(salesPerson.referredById).catch(err => {
-        console.error('[PUT /people/:id] checkAndPromote error:', err);
-      });
+      console.log(`[PUT /people/:id] 매니저 ${salesPerson.name} 승인됨. 추천인 ID: ${salesPerson.referredById}`);
+      console.log('  → 슈퍼관리자가 추천인의 승급 조건을 확인하여 수동 승급하세요.');
     }
     
     res.json({ salesPerson });
   } catch (error: any) {
     console.error('[PUT /sales/people/:id] Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /sales/people/:id/promotion-eligibility
+ * 매니저 승급 자격 확인
+ */
+router.get('/people/:id/promotion-eligibility', requireAuth, requireRole('SUPER_ADMIN'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const eligibility = await checkPromotionEligibility(id);
+    
+    res.json(eligibility);
+  } catch (error: any) {
+    console.error('[GET /sales/people/:id/promotion-eligibility] Error:', error);
     res.status(500).json({ error: error.message });
   }
 });
