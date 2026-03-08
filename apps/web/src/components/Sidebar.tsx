@@ -235,6 +235,7 @@ export default function Sidebar() {
   }, [pathname]);
 
   const handleLogout = () => {
+    const currentRole = userRole;
     clearToken();
     if (typeof window !== "undefined") {
       localStorage.removeItem("user");
@@ -246,18 +247,9 @@ export default function Sidebar() {
     setUserName(null);
     setCompanyName(null);
     setSalesRole(null);
-    window.location.href = "/";
+    // 장애인직원인 경우 직원 로그인 페이지로, 그 외는 메인으로
+    window.location.href = currentRole === "EMPLOYEE" ? "/employee/login" : "/";
   };
-
-  const isActive = (path: string) => pathname === path;
-
-  return (
-    <>
-      {/* 🔔 Toast 알림 컨테이너 */}
-      <Toaster />
-      
-      <button
-        onClick={() => setIsOpen(!isOpen)}
         style={{
           position: "fixed",
           top: 16,
