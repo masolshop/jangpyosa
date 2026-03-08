@@ -42,6 +42,13 @@ export default function EmployeeLayout({
     router.push("/employee/login");
   };
 
+  // 로그인/회원가입 페이지는 레이아웃 없이 표시
+  const isAuthPage = pathname === "/employee/login" || pathname === "/employee/signup";
+
+  if (isAuthPage) {
+    return <>{children}</>;
+  }
+
   return (
     <div style={{ display: "flex", minHeight: "100vh" }}>
       <Sidebar />
