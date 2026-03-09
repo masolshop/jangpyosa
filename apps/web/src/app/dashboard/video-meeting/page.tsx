@@ -8,6 +8,12 @@ interface Employee {
   name: string
   phone: string
   department?: string
+  position?: string
+}
+
+interface Company {
+  id: string
+  name: string
 }
 
 export default function DashboardVideoMeetingPage() {
@@ -15,7 +21,7 @@ export default function DashboardVideoMeetingPage() {
   const [isInMeeting, setIsInMeeting] = useState(false)
   const [roomName, setRoomName] = useState('')
   const [userName, setUserName] = useState('')
-  const [companyName, setCompanyName] = useState('')
+  const [company, setCompany] = useState<Company | null>(null)
   const [employees, setEmployees] = useState<Employee[]>([])
   const [loading, setLoading] = useState(false)
   const [selectedEmployees, setSelectedEmployees] = useState<Set<string>>(new Set())
@@ -24,29 +30,69 @@ export default function DashboardVideoMeetingPage() {
   useEffect(() => {
     setMounted(true)
     
-    // localStorage에서 사용자 정보 가져오기
     if (typeof window !== 'undefined') {
-      const storedUserName = localStorage.getItem('userName') || '관리자'
-      const storedCompanyName = localStorage.getItem('companyName') || '장표사닷컴'
-      setUserName(storedUserName)
-      setCompanyName(storedCompanyName)
-      
-      // 기본 회의실 이름 생성 (회사명-날짜-시간)
-      const now = new Date()
-      const dateStr = now.toISOString().split('T')[0].replace(/-/g, '')
-      const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '').substring(0, 4)
-      setRoomName(`${storedCompanyName}-meeting-${dateStr}-${timeStr}`)
-
+      // 사용자 정보 및 회사 정보 가져오기
+      fetchUserAndCompany()
       // 직원 목록 가져오기
       fetchEmployees()
     }
   }, [])
 
+  const fetchUserAndCompany = async () => {
+    try {
+      const token = localStorage.getItem('token')
+      if (!token) return
+
+      // 로그인한 사용자의 정보 가져오기 (회사 정보 포함)
+      const userResponse = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/auth/profile`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (userResponse.ok) {
+        const userData = await userResponse.json()
+        setUserName(userData.name || '관리자')
+        
+        if (userData.company) {
+          setCompany(userData.company)
+          // 회사명을 로컬스토리지에도 저장
+          localStorage.setItem('companyName', userData.company.name)
+          
+          // 회의실 이름 생성 (회사명 사용)
+          generateRoomName(userData.company.name)
+        } else {
+          // 회사 정보가 없으면 기본값 사용
+          const storedCompanyName = localStorage.getItem('companyName') || '장표사닷컴'
+          setCompany({ id: '', name: storedCompanyName })
+          generateRoomName(storedCompanyName)
+        }
+      }
+    } catch (error) {
+      console.error('사용자/회사 정보 조회 실패:', error)
+      // 실패 시 localStorage에서 가져오기
+      const storedUserName = localStorage.getItem('userName') || '관리자'
+      const storedCompanyName = localStorage.getItem('companyName') || '장표사닷컴'
+      setUserName(storedUserName)
+      setCompany({ id: '', name: storedCompanyName })
+      generateRoomName(storedCompanyName)
+    }
+  }
+
+  const generateRoomName = (companyName: string) => {
+    const now = new Date()
+    const dateStr = now.toISOString().split('T')[0].replace(/-/g, '')
+    const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '').substring(0, 4)
+    setRoomName(`${companyName}-meeting-${dateStr}-${timeStr}`)
+  }
+
   const fetchEmployees = async () => {
     setLoading(true)
     try {
       const token = localStorage.getItem('token')
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/employees/list`, {
+      if (!token) return
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/employees`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -67,9 +113,9 @@ export default function DashboardVideoMeetingPage() {
     if (roomName.trim()) {
       setIsInMeeting(true)
       
-      // 선택된 직원들에게 SMS 초대 전송 (옵션)
+      // 선택된 직원들에게 초대 알림 (향후 구현)
       if (selectedEmployees.size > 0) {
-        sendInvitations()
+        console.log('선택된 직원:', Array.from(selectedEmployees))
       }
     }
   }
@@ -88,33 +134,22 @@ export default function DashboardVideoMeetingPage() {
     setSelectedEmployees(newSelected)
   }
 
-  const sendInvitations = async () => {
-    try {
-      const token = localStorage.getItem('token')
-      const selectedEmployeesList = employees.filter(emp => selectedEmployees.has(emp.id))
-      
-      const invitationMessage = `[${companyName}] 화상회의 초대\n\n회의실: ${roomName}\n참여 링크: https://jangpyosa.com/employee/video-meeting\n\n위 링크 접속 후 회의실 이름을 입력하세요.`
-      
-      // API 호출하여 SMS 전송 (실제 구현 시)
-      console.log('초대 메시지:', invitationMessage)
-      console.log('초대 대상:', selectedEmployeesList)
-      
-      // TODO: SMS API 연동
-    } catch (error) {
-      console.error('초대 전송 실패:', error)
-    }
-  }
-
   const copyRoomLink = () => {
-    const link = `https://jangpyosa.com/employee/video-meeting?room=${roomName}`
+    const link = `https://jangpyosa.com/employee/video-meeting?room=${encodeURIComponent(roomName)}`
     navigator.clipboard.writeText(link)
     alert('회의실 링크가 복사되었습니다!')
+  }
+
+  const copyRoomName = () => {
+    navigator.clipboard.writeText(roomName)
+    alert('회의실 이름이 복사되었습니다!')
   }
 
   const filteredEmployees = employees.filter(emp => 
     emp.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     emp.phone.includes(searchQuery) ||
-    emp.department?.toLowerCase().includes(searchQuery.toLowerCase())
+    emp.department?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    emp.position?.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
   if (!mounted) {
@@ -148,7 +183,9 @@ export default function DashboardVideoMeetingPage() {
                     <span className="text-2xl">🏢</span>
                     <div>
                       <p className="text-sm text-gray-600">회사명</p>
-                      <p className="text-lg font-semibold text-gray-900">{companyName}</p>
+                      <p className="text-lg font-semibold text-gray-900">
+                        {company?.name || '로딩 중...'}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -158,13 +195,21 @@ export default function DashboardVideoMeetingPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     회의실 이름
                   </label>
-                  <input
-                    type="text"
-                    value={roomName}
-                    onChange={(e) => setRoomName(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="예: 아침-출근-확인-20260310"
-                  />
+                  <div className="flex space-x-2">
+                    <input
+                      type="text"
+                      value={roomName}
+                      onChange={(e) => setRoomName(e.target.value)}
+                      className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="예: 아침-출근-확인-20260310"
+                    />
+                    <button
+                      onClick={copyRoomName}
+                      className="px-4 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors whitespace-nowrap"
+                    >
+                      복사
+                    </button>
+                  </div>
                   <p className="mt-2 text-sm text-gray-500">
                     💡 회의실 이름은 영문, 숫자, 하이픈(-)만 사용 가능합니다.
                   </p>
@@ -184,7 +229,7 @@ export default function DashboardVideoMeetingPage() {
                   />
                 </div>
 
-                {/* 회의실 링크 복사 */}
+                {/* 회의실 링크 */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     회의실 링크
@@ -192,17 +237,20 @@ export default function DashboardVideoMeetingPage() {
                   <div className="flex space-x-2">
                     <input
                       type="text"
-                      value={`https://jangpyosa.com/employee/video-meeting?room=${roomName}`}
+                      value={`https://jangpyosa.com/employee/video-meeting?room=${encodeURIComponent(roomName)}`}
                       readOnly
                       className="flex-1 px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-sm"
                     />
                     <button
                       onClick={copyRoomLink}
-                      className="px-4 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                      className="px-4 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors whitespace-nowrap"
                     >
                       복사
                     </button>
                   </div>
+                  <p className="mt-2 text-sm text-gray-500">
+                    🔗 이 링크를 공유하면 회의실 이름이 자동으로 입력됩니다.
+                  </p>
                 </div>
 
                 {/* 회의 시작 버튼 */}
@@ -273,7 +321,7 @@ export default function DashboardVideoMeetingPage() {
                   </div>
                 ) : filteredEmployees.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
-                    등록된 직원이 없습니다.
+                    {searchQuery ? '검색 결과가 없습니다.' : '등록된 직원이 없습니다.'}
                   </div>
                 ) : (
                   filteredEmployees.map((employee) => (
@@ -294,6 +342,11 @@ export default function DashboardVideoMeetingPage() {
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-gray-900 truncate">
                           {employee.name}
+                          {employee.position && (
+                            <span className="ml-2 text-xs text-gray-500">
+                              ({employee.position})
+                            </span>
+                          )}
                         </p>
                         <p className="text-xs text-gray-500 truncate">
                           {employee.phone}
@@ -330,7 +383,7 @@ export default function DashboardVideoMeetingPage() {
               <p className="text-lg font-semibold text-gray-900">{roomName}</p>
               {selectedEmployees.size > 0 && (
                 <p className="text-sm text-blue-600">
-                  {selectedEmployees.size}명의 직원에게 초대 전송됨
+                  {selectedEmployees.size}명의 직원 초대됨
                 </p>
               )}
             </div>
