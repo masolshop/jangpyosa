@@ -1,159 +1,118 @@
-"use client"
+'use client';
 
-import { useState, useEffect } from 'react'
-import VideoCall from '@/components/VideoCall'
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 
-export default function EmployeeVideoMeetingPage() {
-  const [mounted, setMounted] = useState(false)
-  const [isInMeeting, setIsInMeeting] = useState(false)
-  const [roomName, setRoomName] = useState('')
-  const [userName, setUserName] = useState('')
+export default function VideoMeetingPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const roomParam = searchParams?.get('room');
+
+  const [roomName, setRoomName] = useState(roomParam || '');
+  const [participantName, setParticipantName] = useState('');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setMounted(true)
-    
-    // localStorage에서 사용자 정보 가져오기
-    if (typeof window !== 'undefined') {
-      const storedUserName = localStorage.getItem('employeeName') || '직원'
-      const storedCompanyName = localStorage.getItem('companyName') || '회사'
-      setUserName(storedUserName)
-      
-      // URL 파라미터에서 회의실 이름 가져오기
-      const urlParams = new URLSearchParams(window.location.search)
-      const roomParam = urlParams.get('room')
-      
-      if (roomParam) {
-        setRoomName(roomParam)
-      } else {
-        // 기본 회의실 이름 생성
-        const now = new Date()
-        const dateStr = now.toISOString().split('T')[0].replace(/-/g, '')
-        setRoomName(`${storedCompanyName}-meeting-${dateStr}`)
-      }
+    // localStorage에서 사용자 이름 불러오기
+    const userName = localStorage.getItem('userName');
+    if (userName) {
+      setParticipantName(userName);
     }
-  }, [])
+    setLoading(false);
+  }, []);
 
   const handleJoinMeeting = () => {
-    if (roomName.trim()) {
-      setIsInMeeting(true)
+    if (!roomName.trim()) {
+      alert('회의실 이름을 입력해주세요.');
+      return;
     }
-  }
 
-  const handleLeaveMeeting = () => {
-    setIsInMeeting(false)
-  }
+    if (!participantName.trim()) {
+      alert('참가자 이름을 입력해주세요.');
+      return;
+    }
 
-  if (!mounted) {
+    // 회의실 이름에서 공백 제거 및 URL 안전 문자로 변환
+    const sanitizedRoomName = roomName.trim().replace(/\s+/g, '-');
+    const sanitizedParticipantName = encodeURIComponent(participantName.trim());
+
+    // Jitsi Meet URL로 이동
+    const jitsiUrl = `https://meet.jangpyosa.com/${sanitizedRoomName}#userInfo.displayName="${sanitizedParticipantName}"`;
+    window.open(jitsiUrl, '_blank');
+  };
+
+  if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="text-gray-500">로딩 중...</div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-gray-600">로딩 중...</div>
       </div>
-    )
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
-      <div className="p-4 max-w-4xl mx-auto">
-        <div className="mb-4">
-          <h1 className="text-2xl font-bold text-gray-900 mb-1">
-            🎥 화상회의
-          </h1>
-          <p className="text-sm text-gray-600">
-            관리자와 화상으로 연결하세요
+    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md mx-auto">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">🎥 화상회의</h1>
+          <p className="text-gray-600">
+            관리자가 공유한 회의실 이름을 입력하고 참가하세요.
           </p>
         </div>
 
-        {!isInMeeting ? (
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <div className="space-y-4">
-              {/* 내 이름 표시 */}
-              <div className="bg-blue-50 p-4 rounded-lg">
-                <div className="flex items-center space-x-2">
-                  <span className="text-2xl">👤</span>
-                  <div>
-                    <p className="text-xs text-gray-600">내 이름</p>
-                    <p className="text-base font-semibold text-gray-900">{userName}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* 회의실 이름 입력 */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  회의실 이름
-                </label>
-                <input
-                  type="text"
-                  value={roomName}
-                  onChange={(e) => setRoomName(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
-                  placeholder="관리자가 알려준 회의실 이름을 입력하세요"
-                />
-              </div>
-
-              {/* 참가 버튼 */}
-              <button
-                onClick={handleJoinMeeting}
-                disabled={!roomName.trim()}
-                className="w-full bg-blue-600 text-white py-4 rounded-lg font-semibold text-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-              >
-                🎥 회의 참가하기
-              </button>
-
-              {/* 안내 메시지 */}
-              <div className="bg-yellow-50 p-4 rounded-lg">
-                <div className="flex space-x-2">
-                  <span className="text-xl">💡</span>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-900 mb-2">
-                      사용 방법
-                    </p>
-                    <ul className="space-y-1 text-xs text-gray-600">
-                      <li>1️⃣ 관리자가 알려준 회의실 이름을 입력하세요</li>
-                      <li>2️⃣ "회의 참가하기" 버튼을 누르세요</li>
-                      <li>3️⃣ 카메라와 마이크 사용을 허용하세요</li>
-                      <li>4️⃣ 화면에서 관리자를 만날 수 있어요</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-
-              {/* 도움말 */}
-              <div className="border-t pt-4">
-                <p className="text-xs text-gray-500 text-center">
-                  ❓ 문제가 있으면 관리자에게 연락하세요
-                </p>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {/* 회의 정보 */}
-            <div className="bg-white rounded-lg shadow-sm p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-gray-600">현재 회의실</p>
-                  <p className="text-base font-semibold text-gray-900">{roomName}</p>
-                </div>
-                <button
-                  onClick={handleLeaveMeeting}
-                  className="bg-red-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-700 transition-colors text-sm"
-                >
-                  나가기
-                </button>
-              </div>
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="space-y-6">
+            {/* 회의실 이름 입력 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                회의실 이름 *
+              </label>
+              <input
+                type="text"
+                value={roomName}
+                onChange={(e) => setRoomName(e.target.value)}
+                placeholder="예: 장표사닷컴-meeting-20260310-0800"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+              <p className="mt-1 text-sm text-gray-500">
+                관리자가 알려준 회의실 이름을 정확히 입력해주세요.
+              </p>
             </div>
 
-            {/* 화상회의 영역 */}
-            <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-              <VideoCall
-                roomName={roomName}
-                userName={userName}
+            {/* 참가자 이름 입력 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                내 이름 *
+              </label>
+              <input
+                type="text"
+                value={participantName}
+                onChange={(e) => setParticipantName(e.target.value)}
+                placeholder="예: 홍길동"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
+
+            {/* 참가 버튼 */}
+            <button
+              onClick={handleJoinMeeting}
+              className="w-full bg-blue-600 text-white py-4 px-6 rounded-lg font-semibold hover:bg-blue-700 transition-colors text-lg shadow-lg"
+            >
+              회의 참가하기
+            </button>
           </div>
-        )}
+
+          {/* 안내 사항 */}
+          <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+            <h3 className="text-sm font-semibold text-blue-900 mb-2">📌 참가 방법</h3>
+            <ul className="text-sm text-blue-800 space-y-1">
+              <li>1. 관리자가 공유한 회의실 이름을 입력하세요</li>
+              <li>2. 내 이름을 입력하세요</li>
+              <li>3. "회의 참가하기" 버튼을 클릭하세요</li>
+              <li>4. 카메라와 마이크 권한을 허용하세요</li>
+            </ul>
+          </div>
+        </div>
       </div>
     </div>
-  )
+  );
 }

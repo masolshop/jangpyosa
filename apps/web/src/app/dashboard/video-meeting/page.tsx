@@ -1,386 +1,354 @@
-"use client"
+'use client';
 
-import { useState, useEffect } from 'react'
-import VideoCall from '@/components/VideoCall'
+import { useState, useEffect } from 'react';
 
 interface Employee {
-  id: string
-  name: string
-  phone: string
-  department?: string
-  position?: string
+  id: string;
+  name: string;
+  phone: string;
+  department: string;
+  position?: string;
 }
 
-interface Company {
-  id: string
-  name: string
-}
-
-export default function DashboardVideoMeetingPage() {
-  const [mounted, setMounted] = useState(false)
-  const [isInMeeting, setIsInMeeting] = useState(false)
-  const [roomName, setRoomName] = useState('')
-  const [userName, setUserName] = useState('')
-  const [company, setCompany] = useState<Company | null>(null)
-  const [employees, setEmployees] = useState<Employee[]>([])
-  const [loading, setLoading] = useState(false)
-  const [selectedEmployees, setSelectedEmployees] = useState<Set<string>>(new Set())
-  const [searchQuery, setSearchQuery] = useState('')
+export default function AdminVideoMeetingPage() {
+  const [companyName, setCompanyName] = useState('');
+  const [roomName, setRoomName] = useState('');
+  const [participantName, setParticipantName] = useState('');
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [filteredEmployees, setFilteredEmployees] = useState<Employee[]>([]);
+  const [selectedEmployees, setSelectedEmployees] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setMounted(true)
-    
-    if (typeof window !== 'undefined') {
-      // 사용자 정보 및 회사 정보 가져오기
-      fetchUserAndCompany()
-      // 직원 목록 가져오기
-      fetchEmployees()
-    }
-  }, [])
+    fetchUserAndCompany();
+    fetchEmployees();
+  }, []);
 
+  useEffect(() => {
+    // 검색 필터링
+    if (!searchQuery.trim()) {
+      setFilteredEmployees(employees);
+      return;
+    }
+
+    const query = searchQuery.toLowerCase();
+    const filtered = employees.filter(
+      (emp) =>
+        emp.name.toLowerCase().includes(query) ||
+        emp.phone.toLowerCase().includes(query) ||
+        emp.department.toLowerCase().includes(query) ||
+        emp.position?.toLowerCase().includes(query)
+    );
+    setFilteredEmployees(filtered);
+  }, [searchQuery, employees]);
+
+  // 회사 정보 및 사용자 이름 가져오기
   const fetchUserAndCompany = async () => {
     try {
-      const token = localStorage.getItem('token')
+      const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
       if (!token) {
-        console.log('토큰이 없습니다')
-        useFallback()
-        return
+        console.log('토큰이 없습니다');
+        setError('로그인이 필요합니다.');
+        setLoading(false);
+        return;
       }
 
-      // /auth/me 엔드포인트로 사용자 정보 가져오기
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/auth/me`, {
+      const response = await fetch('/api/auth/me', {
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      })
+          'Authorization': `Bearer ${token}`,
+        },
+      });
 
-      if (response.ok) {
-        const data = await response.json()
-        console.log('사용자 정보:', data)
-        
-        const userData = data.user
-        setUserName(userData.name || '관리자')
-        
-        if (userData.company) {
-          setCompany(userData.company)
-          localStorage.setItem('companyName', userData.company.name)
-          generateRoomName(userData.company.name)
-        } else {
-          console.log('회사 정보 없음, fallback 사용')
-          useFallback()
-        }
-      } else {
-        console.error('API 응답 실패:', response.status)
-        useFallback()
-      }
-    } catch (error) {
-      console.error('사용자/회사 정보 조회 실패:', error)
-      useFallback()
-    }
-  }
-
-  const useFallback = () => {
-    const storedUserName = localStorage.getItem('userName') || '관리자'
-    const storedCompanyName = localStorage.getItem('companyName') || '장표사닷컴'
-    setUserName(storedUserName)
-    setCompany({ id: '', name: storedCompanyName })
-    generateRoomName(storedCompanyName)
-  }
-
-  const generateRoomName = (companyName: string) => {
-    const now = new Date()
-    const dateStr = now.toISOString().split('T')[0].replace(/-/g, '')
-    const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '').substring(0, 4)
-    setRoomName(`${companyName}-meeting-${dateStr}-${timeStr}`)
-  }
-
-  const fetchEmployees = async () => {
-    setLoading(true)
-    try {
-      const token = localStorage.getItem('token')
-      if (!token) {
-        console.log('토큰이 없습니다')
-        setLoading(false)
-        return
+      if (!response.ok) {
+        console.error('API 응답 실패:', response.status, response.statusText);
+        throw new Error(`API 요청 실패: ${response.status}`);
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/employees`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      })
-      
-      if (response.ok) {
-        const data = await response.json()
-        console.log('직원 목록:', data)
-        setEmployees(data)
-      } else {
-        console.error('직원 목록 조회 실패:', response.status)
+      const data = await response.json();
+      console.log('사용자 정보:', data);
+
+      if (data.user) {
+        const userName = data.user.name || '관리자';
+        const company = data.user.company?.name || '회사명';
+
+        setParticipantName(userName);
+        setCompanyName(company);
+
+        // 회의실 이름 자동 생성
+        generateRoomName(company);
       }
-    } catch (error) {
-      console.error('직원 목록 조회 실패:', error)
+
+    } catch (error: any) {
+      console.error('사용자 정보 가져오기 실패:', error);
+      setError('사용자 정보를 가져오는데 실패했습니다.');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
-  const handleStartMeeting = () => {
-    if (roomName.trim()) {
-      setIsInMeeting(true)
-      
-      if (selectedEmployees.size > 0) {
-        console.log('선택된 직원:', Array.from(selectedEmployees))
+  // 직원 목록 가져오기
+  const fetchEmployees = async () => {
+    try {
+      const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
+      if (!token) {
+        console.log('토큰이 없습니다');
+        return;
       }
+
+      const response = await fetch('/api/employees', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        console.error('직원 목록 API 응답 실패:', response.status, response.statusText);
+        throw new Error(`직원 목록 조회 실패: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('직원 목록:', data);
+
+      if (Array.isArray(data)) {
+        const employeeList: Employee[] = data.map((emp: any) => ({
+          id: emp.id,
+          name: emp.name || '이름 없음',
+          phone: emp.phone || '전화번호 없음',
+          department: emp.department || '부서 미정',
+          position: emp.position || '직위 미정',
+        }));
+        setEmployees(employeeList);
+        setFilteredEmployees(employeeList);
+      }
+
+    } catch (error: any) {
+      console.error('직원 목록 가져오기 실패:', error);
     }
-  }
+  };
 
-  const handleEndMeeting = () => {
-    setIsInMeeting(false)
-  }
+  // 회의실 이름 자동 생성
+  const generateRoomName = (company: string) => {
+    const now = new Date();
+    const date = now.toISOString().slice(0, 10).replace(/-/g, '');
+    const time = now.toTimeString().slice(0, 5).replace(':', '');
+    const generated = `${company}-meeting-${date}-${time}`;
+    setRoomName(generated);
+  };
 
-  const toggleEmployeeSelection = (employeeId: string) => {
-    const newSelected = new Set(selectedEmployees)
-    if (newSelected.has(employeeId)) {
-      newSelected.delete(employeeId)
-    } else {
-      newSelected.add(employeeId)
+  // 회의 시작
+  const handleStartMeeting = () => {
+    if (!roomName.trim()) {
+      alert('회의실 이름을 입력해주세요.');
+      return;
     }
-    setSelectedEmployees(newSelected)
-  }
 
+    if (!participantName.trim()) {
+      alert('참가자 이름을 입력해주세요.');
+      return;
+    }
+
+    // 선택된 직원들에게 초대 링크 전송 (향후 구현)
+    if (selectedEmployees.length > 0) {
+      console.log('선택된 직원:', selectedEmployees);
+      // TODO: SMS/알림톡 발송 API 호출
+    }
+
+    // Jitsi Meet 열기
+    const sanitizedRoomName = roomName.trim().replace(/\s+/g, '-');
+    const sanitizedParticipantName = encodeURIComponent(participantName.trim());
+    const jitsiUrl = `https://meet.jangpyosa.com/${sanitizedRoomName}#userInfo.displayName="${sanitizedParticipantName}"`;
+    window.open(jitsiUrl, '_blank');
+  };
+
+  // 직원 선택/해제
+  const toggleEmployeeSelection = (id: string) => {
+    setSelectedEmployees((prev) =>
+      prev.includes(id) ? prev.filter((empId) => empId !== id) : [...prev, id]
+    );
+  };
+
+  // 링크 복사
   const copyRoomLink = () => {
-    const link = `https://jangpyosa.com/employee/video-meeting?room=${encodeURIComponent(roomName)}`
-    navigator.clipboard.writeText(link)
-    alert('회의실 링크가 복사되었습니다!')
-  }
+    const sanitizedRoomName = roomName.trim().replace(/\s+/g, '-');
+    const link = `https://jangpyosa.com/employee/video-meeting?room=${encodeURIComponent(sanitizedRoomName)}`;
+    navigator.clipboard.writeText(link);
+    alert('회의 링크가 복사되었습니다!');
+  };
 
+  // 회의실 이름 복사
   const copyRoomName = () => {
-    navigator.clipboard.writeText(roomName)
-    alert('회의실 이름이 복사되었습니다!')
+    navigator.clipboard.writeText(roomName);
+    alert('회의실 이름이 복사되었습니다!');
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-gray-600">로딩 중...</div>
+      </div>
+    );
   }
 
-  const filteredEmployees = employees.filter(emp => 
-    emp.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    emp.phone.includes(searchQuery) ||
-    emp.department?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    emp.position?.toLowerCase().includes(searchQuery.toLowerCase())
-  )
-
-  if (!mounted) {
+  if (error) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-gray-500">로딩 중...</div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-red-600">{error}</div>
       </div>
-    )
+    );
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          🎥 장애인직원 화상회의
-        </h1>
-        <p className="text-gray-600">
-          자체 Jitsi Meet 서버를 활용한 화상회의 시스템
-        </p>
-      </div>
+    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            🎥 장애인직원 화상회의
+          </h1>
+          <p className="text-gray-600">
+            화상회의를 시작하고 직원들을 초대하세요.
+          </p>
+        </div>
 
-      {!isInMeeting ? (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* 왼쪽: 회의실 설정 */}
+          {/* 왼쪽: 회의 설정 */}
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-lg shadow-md p-8">
-              <div className="space-y-6">
-                {/* 회사 정보 */}
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-2xl">🏢</span>
-                    <div>
-                      <p className="text-sm text-gray-600">회사명</p>
-                      <p className="text-lg font-semibold text-gray-900">
-                        {company?.name || '로딩 중...'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 회의실 이름 입력 */}
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">
+                회의 설정
+              </h2>
+              <div className="space-y-4">
+                {/* 회사명 */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    회의실 이름
-                  </label>
-                  <div className="flex space-x-2">
-                    <input
-                      type="text"
-                      value={roomName}
-                      onChange={(e) => setRoomName(e.target.value)}
-                      className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="예: 아침-출근-확인-20260310"
-                    />
-                    <button
-                      onClick={copyRoomName}
-                      className="px-4 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors whitespace-nowrap"
-                    >
-                      복사
-                    </button>
-                  </div>
-                  <p className="mt-2 text-sm text-gray-500">
-                    💡 회의실 이름은 영문, 숫자, 하이픈(-)만 사용 가능합니다.
-                  </p>
-                </div>
-
-                {/* 사용자 이름 입력 */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    참가자 이름
+                    회사명
                   </label>
                   <input
                     type="text"
-                    value={userName}
-                    onChange={(e) => setUserName(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="예: 홍길동 관리자"
+                    value={companyName}
+                    disabled
+                    className="w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-700"
                   />
                 </div>
 
-                {/* 회의실 링크 */}
+                {/* 회의실 이름 */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    회의실 링크
+                    회의실 이름 *
                   </label>
-                  <div className="flex space-x-2">
+                  <input
+                    type="text"
+                    value={roomName}
+                    onChange={(e) => setRoomName(e.target.value)}
+                    placeholder="예: 회사명-meeting-20260310-0800"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                  <button
+                    onClick={copyRoomName}
+                    className="mt-2 text-sm text-blue-600 hover:text-blue-800"
+                  >
+                    📋 회의실 이름 복사
+                  </button>
+                </div>
+
+                {/* 참가자 이름 */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    내 이름 *
+                  </label>
+                  <input
+                    type="text"
+                    value={participantName}
+                    onChange={(e) => setParticipantName(e.target.value)}
+                    placeholder="예: 홍길동"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                {/* 회의 링크 */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    회의 링크 (직원 초대용)
+                  </label>
+                  <div className="flex gap-2">
                     <input
                       type="text"
                       value={`https://jangpyosa.com/employee/video-meeting?room=${encodeURIComponent(roomName)}`}
-                      readOnly
-                      className="flex-1 px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-sm"
+                      disabled
+                      className="flex-1 px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-700 text-sm"
                     />
                     <button
                       onClick={copyRoomLink}
-                      className="px-4 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors whitespace-nowrap"
+                      className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
                     >
-                      복사
+                      📋 복사
                     </button>
                   </div>
-                  <p className="mt-2 text-sm text-gray-500">
-                    🔗 이 링크를 공유하면 회의실 이름이 자동으로 입력됩니다.
-                  </p>
                 </div>
 
                 {/* 회의 시작 버튼 */}
                 <button
                   onClick={handleStartMeeting}
-                  disabled={!roomName.trim()}
-                  className="w-full bg-blue-600 text-white py-4 rounded-lg font-semibold text-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
+                  className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition-colors text-lg shadow-lg"
                 >
-                  <span>🎥</span>
-                  <span>화상회의 시작</span>
+                  화상회의 시작하기
                 </button>
-
-                {/* 사용 안내 */}
-                <div className="bg-gray-50 p-4 rounded-lg space-y-3">
-                  <h3 className="font-semibold text-gray-900 flex items-center space-x-2">
-                    <span>📌</span>
-                    <span>사용 안내</span>
-                  </h3>
-                  <ul className="space-y-2 text-sm text-gray-600">
-                    <li className="flex items-start space-x-2">
-                      <span className="text-green-500 mt-1">✓</span>
-                      <span>회의실 이름 또는 링크를 장애인 직원과 공유하세요.</span>
-                    </li>
-                    <li className="flex items-start space-x-2">
-                      <span className="text-green-500 mt-1">✓</span>
-                      <span>오른쪽 직원 목록에서 초대할 직원을 선택할 수 있습니다.</span>
-                    </li>
-                    <li className="flex items-start space-x-2">
-                      <span className="text-green-500 mt-1">✓</span>
-                      <span>화면 공유, 채팅, 녹화 기능을 사용할 수 있습니다.</span>
-                    </li>
-                    <li className="flex items-start space-x-2">
-                      <span className="text-green-500 mt-1">✓</span>
-                      <span>자체 서버로 안전하게 운영됩니다 (meet.jangpyosa.com).</span>
-                    </li>
-                  </ul>
-                </div>
               </div>
             </div>
           </div>
 
-          {/* 오른쪽: 직원 리스트 */}
+          {/* 오른쪽: 직원 초대 */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-md p-6 sticky top-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center justify-between">
-                <span>👥 직원 초대</span>
-                <span className="text-sm font-normal text-gray-500">
-                  {selectedEmployees.size}명 선택
-                </span>
-              </h3>
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">
+                직원 초대 ({selectedEmployees.length}명 선택)
+              </h2>
 
               {/* 검색 */}
-              <div className="mb-4">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="이름, 전화번호, 부서 검색..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
+              <input
+                type="text"
+                placeholder="이름, 전화번호, 부서 검색..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full px-4 py-2 mb-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              />
 
-              {/* 직원 리스트 */}
-              <div className="space-y-2 max-h-96 overflow-y-auto">
-                {loading ? (
-                  <div className="text-center py-8 text-gray-500">
-                    로딩 중...
-                  </div>
-                ) : filteredEmployees.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    {searchQuery ? '검색 결과가 없습니다.' : '등록된 직원이 없습니다.'}
-                  </div>
-                ) : (
-                  filteredEmployees.map((employee) => (
+              {/* 직원 목록 */}
+              <div className="max-h-96 overflow-y-auto space-y-2">
+                {filteredEmployees.length > 0 ? (
+                  filteredEmployees.map((emp) => (
                     <label
-                      key={employee.id}
-                      className={`flex items-center space-x-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                        selectedEmployees.has(employee.id)
-                          ? 'bg-blue-50 border-blue-300'
-                          : 'bg-white border-gray-200 hover:bg-gray-50'
-                      }`}
+                      key={emp.id}
+                      className="flex items-start p-3 hover:bg-gray-50 rounded-lg cursor-pointer"
                     >
                       <input
                         type="checkbox"
-                        checked={selectedEmployees.has(employee.id)}
-                        onChange={() => toggleEmployeeSelection(employee.id)}
-                        className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                        checked={selectedEmployees.includes(emp.id)}
+                        onChange={() => toggleEmployeeSelection(emp.id)}
+                        className="mt-1 mr-3"
                       />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">
-                          {employee.name}
-                          {employee.position && (
-                            <span className="ml-2 text-xs text-gray-500">
-                              ({employee.position})
-                            </span>
-                          )}
+                        <p className="font-medium text-gray-900">{emp.name}</p>
+                        <p className="text-sm text-gray-600">{emp.phone}</p>
+                        <p className="text-sm text-gray-500">
+                          {emp.department} · {emp.position}
                         </p>
-                        <p className="text-xs text-gray-500 truncate">
-                          {employee.phone}
-                        </p>
-                        {employee.department && (
-                          <p className="text-xs text-gray-400">
-                            {employee.department}
-                          </p>
-                        )}
                       </div>
                     </label>
                   ))
+                ) : (
+                  <p className="text-gray-500 text-sm text-center py-4">
+                    {searchQuery ? '검색 결과가 없습니다.' : '등록된 직원이 없습니다.'}
+                  </p>
                 )}
               </div>
 
-              {/* 선택 초기화 */}
-              {selectedEmployees.size > 0 && (
+              {/* 초기화 버튼 */}
+              {selectedEmployees.length > 0 && (
                 <button
-                  onClick={() => setSelectedEmployees(new Set())}
-                  className="w-full mt-4 px-4 py-2 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  onClick={() => setSelectedEmployees([])}
+                  className="w-full mt-4 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
                 >
                   선택 초기화
                 </button>
@@ -388,36 +356,19 @@ export default function DashboardVideoMeetingPage() {
             </div>
           </div>
         </div>
-      ) : (
-        <div className="space-y-4">
-          {/* 회의 정보 헤더 */}
-          <div className="bg-white rounded-lg shadow-md p-4 flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">현재 회의실</p>
-              <p className="text-lg font-semibold text-gray-900">{roomName}</p>
-              {selectedEmployees.size > 0 && (
-                <p className="text-sm text-blue-600">
-                  {selectedEmployees.size}명의 직원 초대됨
-                </p>
-              )}
-            </div>
-            <button
-              onClick={handleEndMeeting}
-              className="bg-red-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-red-700 transition-colors"
-            >
-              회의 종료
-            </button>
-          </div>
 
-          {/* 화상회의 영역 */}
-          <div className="bg-white rounded-lg shadow-md overflow-hidden">
-            <VideoCall
-              roomName={roomName}
-              userName={userName}
-            />
-          </div>
+        {/* 안내 사항 */}
+        <div className="mt-6 bg-blue-50 rounded-lg p-4">
+          <h3 className="font-semibold text-blue-900 mb-2">📌 사용 방법</h3>
+          <ul className="text-sm text-blue-800 space-y-1">
+            <li>1. 회의실 이름이 자동 생성됩니다 (수정 가능)</li>
+            <li>2. 초대할 직원을 선택하세요 (선택사항)</li>
+            <li>3. "화상회의 시작하기" 버튼을 클릭하세요</li>
+            <li>4. 회의실 이름이나 링크를 복사하여 직원들에게 공유하세요</li>
+            <li>5. 직원들은 공유받은 이름/링크로 회의에 참가할 수 있습니다</li>
+          </ul>
         </div>
-      )}
+      </div>
     </div>
-  )
+  );
 }
