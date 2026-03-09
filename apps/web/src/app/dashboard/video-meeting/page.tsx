@@ -41,42 +41,50 @@ export default function DashboardVideoMeetingPage() {
   const fetchUserAndCompany = async () => {
     try {
       const token = localStorage.getItem('token')
-      if (!token) return
+      if (!token) {
+        console.log('토큰이 없습니다')
+        useFallback()
+        return
+      }
 
-      // 로그인한 사용자의 정보 가져오기 (회사 정보 포함)
-      const userResponse = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/auth/profile`, {
+      // /auth/me 엔드포인트로 사용자 정보 가져오기
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/auth/me`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       })
 
-      if (userResponse.ok) {
-        const userData = await userResponse.json()
+      if (response.ok) {
+        const data = await response.json()
+        console.log('사용자 정보:', data)
+        
+        const userData = data.user
         setUserName(userData.name || '관리자')
         
         if (userData.company) {
           setCompany(userData.company)
-          // 회사명을 로컬스토리지에도 저장
           localStorage.setItem('companyName', userData.company.name)
-          
-          // 회의실 이름 생성 (회사명 사용)
           generateRoomName(userData.company.name)
         } else {
-          // 회사 정보가 없으면 기본값 사용
-          const storedCompanyName = localStorage.getItem('companyName') || '장표사닷컴'
-          setCompany({ id: '', name: storedCompanyName })
-          generateRoomName(storedCompanyName)
+          console.log('회사 정보 없음, fallback 사용')
+          useFallback()
         }
+      } else {
+        console.error('API 응답 실패:', response.status)
+        useFallback()
       }
     } catch (error) {
       console.error('사용자/회사 정보 조회 실패:', error)
-      // 실패 시 localStorage에서 가져오기
-      const storedUserName = localStorage.getItem('userName') || '관리자'
-      const storedCompanyName = localStorage.getItem('companyName') || '장표사닷컴'
-      setUserName(storedUserName)
-      setCompany({ id: '', name: storedCompanyName })
-      generateRoomName(storedCompanyName)
+      useFallback()
     }
+  }
+
+  const useFallback = () => {
+    const storedUserName = localStorage.getItem('userName') || '관리자'
+    const storedCompanyName = localStorage.getItem('companyName') || '장표사닷컴'
+    setUserName(storedUserName)
+    setCompany({ id: '', name: storedCompanyName })
+    generateRoomName(storedCompanyName)
   }
 
   const generateRoomName = (companyName: string) => {
@@ -90,7 +98,11 @@ export default function DashboardVideoMeetingPage() {
     setLoading(true)
     try {
       const token = localStorage.getItem('token')
-      if (!token) return
+      if (!token) {
+        console.log('토큰이 없습니다')
+        setLoading(false)
+        return
+      }
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/employees`, {
         headers: {
@@ -100,7 +112,10 @@ export default function DashboardVideoMeetingPage() {
       
       if (response.ok) {
         const data = await response.json()
+        console.log('직원 목록:', data)
         setEmployees(data)
+      } else {
+        console.error('직원 목록 조회 실패:', response.status)
       }
     } catch (error) {
       console.error('직원 목록 조회 실패:', error)
@@ -113,7 +128,6 @@ export default function DashboardVideoMeetingPage() {
     if (roomName.trim()) {
       setIsInMeeting(true)
       
-      // 선택된 직원들에게 초대 알림 (향후 구현)
       if (selectedEmployees.size > 0) {
         console.log('선택된 직원:', Array.from(selectedEmployees))
       }
