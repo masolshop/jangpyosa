@@ -3,12 +3,23 @@
 import { useState, useEffect } from 'react'
 import VideoCall from '@/components/VideoCall'
 
+interface Employee {
+  id: string
+  name: string
+  phone: string
+  department?: string
+}
+
 export default function DashboardVideoMeetingPage() {
   const [mounted, setMounted] = useState(false)
   const [isInMeeting, setIsInMeeting] = useState(false)
   const [roomName, setRoomName] = useState('')
   const [userName, setUserName] = useState('')
   const [companyName, setCompanyName] = useState('')
+  const [employees, setEmployees] = useState<Employee[]>([])
+  const [loading, setLoading] = useState(false)
+  const [selectedEmployees, setSelectedEmployees] = useState<Set<string>>(new Set())
+  const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(() => {
     setMounted(true)
@@ -25,18 +36,86 @@ export default function DashboardVideoMeetingPage() {
       const dateStr = now.toISOString().split('T')[0].replace(/-/g, '')
       const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '').substring(0, 4)
       setRoomName(`${storedCompanyName}-meeting-${dateStr}-${timeStr}`)
+
+      // 직원 목록 가져오기
+      fetchEmployees()
     }
   }, [])
+
+  const fetchEmployees = async () => {
+    setLoading(true)
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/employees/list`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        setEmployees(data)
+      }
+    } catch (error) {
+      console.error('직원 목록 조회 실패:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleStartMeeting = () => {
     if (roomName.trim()) {
       setIsInMeeting(true)
+      
+      // 선택된 직원들에게 SMS 초대 전송 (옵션)
+      if (selectedEmployees.size > 0) {
+        sendInvitations()
+      }
     }
   }
 
   const handleEndMeeting = () => {
     setIsInMeeting(false)
   }
+
+  const toggleEmployeeSelection = (employeeId: string) => {
+    const newSelected = new Set(selectedEmployees)
+    if (newSelected.has(employeeId)) {
+      newSelected.delete(employeeId)
+    } else {
+      newSelected.add(employeeId)
+    }
+    setSelectedEmployees(newSelected)
+  }
+
+  const sendInvitations = async () => {
+    try {
+      const token = localStorage.getItem('token')
+      const selectedEmployeesList = employees.filter(emp => selectedEmployees.has(emp.id))
+      
+      const invitationMessage = `[${companyName}] 화상회의 초대\n\n회의실: ${roomName}\n참여 링크: https://jangpyosa.com/employee/video-meeting\n\n위 링크 접속 후 회의실 이름을 입력하세요.`
+      
+      // API 호출하여 SMS 전송 (실제 구현 시)
+      console.log('초대 메시지:', invitationMessage)
+      console.log('초대 대상:', selectedEmployeesList)
+      
+      // TODO: SMS API 연동
+    } catch (error) {
+      console.error('초대 전송 실패:', error)
+    }
+  }
+
+  const copyRoomLink = () => {
+    const link = `https://jangpyosa.com/employee/video-meeting?room=${roomName}`
+    navigator.clipboard.writeText(link)
+    alert('회의실 링크가 복사되었습니다!')
+  }
+
+  const filteredEmployees = employees.filter(emp => 
+    emp.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    emp.phone.includes(searchQuery) ||
+    emp.department?.toLowerCase().includes(searchQuery.toLowerCase())
+  )
 
   if (!mounted) {
     return (
@@ -53,96 +132,192 @@ export default function DashboardVideoMeetingPage() {
           🎥 장애인직원 화상회의
         </h1>
         <p className="text-gray-600">
-          자체 Jitsi Meet 서버를 활용한 무제한 화상회의 시스템
+          자체 Jitsi Meet 서버를 활용한 화상회의 시스템
         </p>
       </div>
 
       {!isInMeeting ? (
-        <div className="bg-white rounded-lg shadow-md p-8 max-w-2xl mx-auto">
-          <div className="space-y-6">
-            {/* 회사 정보 */}
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <div className="flex items-center space-x-2">
-                <span className="text-2xl">🏢</span>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* 왼쪽: 회의실 설정 */}
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-lg shadow-md p-8">
+              <div className="space-y-6">
+                {/* 회사 정보 */}
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-2xl">🏢</span>
+                    <div>
+                      <p className="text-sm text-gray-600">회사명</p>
+                      <p className="text-lg font-semibold text-gray-900">{companyName}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 회의실 이름 입력 */}
                 <div>
-                  <p className="text-sm text-gray-600">회사명</p>
-                  <p className="text-lg font-semibold text-gray-900">{companyName}</p>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    회의실 이름
+                  </label>
+                  <input
+                    type="text"
+                    value={roomName}
+                    onChange={(e) => setRoomName(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="예: 아침-출근-확인-20260310"
+                  />
+                  <p className="mt-2 text-sm text-gray-500">
+                    💡 회의실 이름은 영문, 숫자, 하이픈(-)만 사용 가능합니다.
+                  </p>
+                </div>
+
+                {/* 사용자 이름 입력 */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    참가자 이름
+                  </label>
+                  <input
+                    type="text"
+                    value={userName}
+                    onChange={(e) => setUserName(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="예: 홍길동 관리자"
+                  />
+                </div>
+
+                {/* 회의실 링크 복사 */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    회의실 링크
+                  </label>
+                  <div className="flex space-x-2">
+                    <input
+                      type="text"
+                      value={`https://jangpyosa.com/employee/video-meeting?room=${roomName}`}
+                      readOnly
+                      className="flex-1 px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-sm"
+                    />
+                    <button
+                      onClick={copyRoomLink}
+                      className="px-4 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                    >
+                      복사
+                    </button>
+                  </div>
+                </div>
+
+                {/* 회의 시작 버튼 */}
+                <button
+                  onClick={handleStartMeeting}
+                  disabled={!roomName.trim()}
+                  className="w-full bg-blue-600 text-white py-4 rounded-lg font-semibold text-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
+                >
+                  <span>🎥</span>
+                  <span>화상회의 시작</span>
+                </button>
+
+                {/* 사용 안내 */}
+                <div className="bg-gray-50 p-4 rounded-lg space-y-3">
+                  <h3 className="font-semibold text-gray-900 flex items-center space-x-2">
+                    <span>📌</span>
+                    <span>사용 안내</span>
+                  </h3>
+                  <ul className="space-y-2 text-sm text-gray-600">
+                    <li className="flex items-start space-x-2">
+                      <span className="text-green-500 mt-1">✓</span>
+                      <span>회의실 이름 또는 링크를 장애인 직원과 공유하세요.</span>
+                    </li>
+                    <li className="flex items-start space-x-2">
+                      <span className="text-green-500 mt-1">✓</span>
+                      <span>오른쪽 직원 목록에서 초대할 직원을 선택할 수 있습니다.</span>
+                    </li>
+                    <li className="flex items-start space-x-2">
+                      <span className="text-green-500 mt-1">✓</span>
+                      <span>화면 공유, 채팅, 녹화 기능을 사용할 수 있습니다.</span>
+                    </li>
+                    <li className="flex items-start space-x-2">
+                      <span className="text-green-500 mt-1">✓</span>
+                      <span>자체 서버로 안전하게 운영됩니다 (meet.jangpyosa.com).</span>
+                    </li>
+                  </ul>
                 </div>
               </div>
             </div>
+          </div>
 
-            {/* 회의실 이름 입력 */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                회의실 이름
-              </label>
-              <input
-                type="text"
-                value={roomName}
-                onChange={(e) => setRoomName(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="예: 아침-출근-확인-20260310"
-              />
-              <p className="mt-2 text-sm text-gray-500">
-                💡 회의실 이름은 영문, 숫자, 하이픈(-)만 사용 가능합니다.
-              </p>
-            </div>
-
-            {/* 사용자 이름 입력 */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                참가자 이름
-              </label>
-              <input
-                type="text"
-                value={userName}
-                onChange={(e) => setUserName(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="예: 홍길동 관리자"
-              />
-            </div>
-
-            {/* 회의 시작 버튼 */}
-            <button
-              onClick={handleStartMeeting}
-              disabled={!roomName.trim()}
-              className="w-full bg-blue-600 text-white py-4 rounded-lg font-semibold text-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
-            >
-              <span>🎥</span>
-              <span>화상회의 시작</span>
-            </button>
-
-            {/* 사용 안내 */}
-            <div className="bg-gray-50 p-4 rounded-lg space-y-3">
-              <h3 className="font-semibold text-gray-900 flex items-center space-x-2">
-                <span>📌</span>
-                <span>사용 안내</span>
+          {/* 오른쪽: 직원 리스트 */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-lg shadow-md p-6 sticky top-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center justify-between">
+                <span>👥 직원 초대</span>
+                <span className="text-sm font-normal text-gray-500">
+                  {selectedEmployees.size}명 선택
+                </span>
               </h3>
-              <ul className="space-y-2 text-sm text-gray-600">
-                <li className="flex items-start space-x-2">
-                  <span className="text-green-500 mt-1">✓</span>
-                  <span>회의실 이름을 장애인 직원과 공유하여 초대하세요.</span>
-                </li>
-                <li className="flex items-start space-x-2">
-                  <span className="text-green-500 mt-1">✓</span>
-                  <span>시간 제한 없이 무제한으로 사용 가능합니다.</span>
-                </li>
-                <li className="flex items-start space-x-2">
-                  <span className="text-green-500 mt-1">✓</span>
-                  <span>화면 공유, 채팅, 녹화 기능을 모두 사용할 수 있습니다.</span>
-                </li>
-                <li className="flex items-start space-x-2">
-                  <span className="text-green-500 mt-1">✓</span>
-                  <span>자체 서버로 안전하게 운영됩니다 (meet.jangpyosa.com).</span>
-                </li>
-              </ul>
-            </div>
 
-            {/* 서버 정보 */}
-            <div className="border-t pt-4">
-              <p className="text-xs text-gray-500 text-center">
-                🔒 자체 Jitsi Meet 서버 • 무제한 사용 • 워터마크 없음
-              </p>
+              {/* 검색 */}
+              <div className="mb-4">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="이름, 전화번호, 부서 검색..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              {/* 직원 리스트 */}
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {loading ? (
+                  <div className="text-center py-8 text-gray-500">
+                    로딩 중...
+                  </div>
+                ) : filteredEmployees.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    등록된 직원이 없습니다.
+                  </div>
+                ) : (
+                  filteredEmployees.map((employee) => (
+                    <label
+                      key={employee.id}
+                      className={`flex items-center space-x-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                        selectedEmployees.has(employee.id)
+                          ? 'bg-blue-50 border-blue-300'
+                          : 'bg-white border-gray-200 hover:bg-gray-50'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedEmployees.has(employee.id)}
+                        onChange={() => toggleEmployeeSelection(employee.id)}
+                        className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 truncate">
+                          {employee.name}
+                        </p>
+                        <p className="text-xs text-gray-500 truncate">
+                          {employee.phone}
+                        </p>
+                        {employee.department && (
+                          <p className="text-xs text-gray-400">
+                            {employee.department}
+                          </p>
+                        )}
+                      </div>
+                    </label>
+                  ))
+                )}
+              </div>
+
+              {/* 선택 초기화 */}
+              {selectedEmployees.size > 0 && (
+                <button
+                  onClick={() => setSelectedEmployees(new Set())}
+                  className="w-full mt-4 px-4 py-2 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  선택 초기화
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -153,6 +328,11 @@ export default function DashboardVideoMeetingPage() {
             <div>
               <p className="text-sm text-gray-600">현재 회의실</p>
               <p className="text-lg font-semibold text-gray-900">{roomName}</p>
+              {selectedEmployees.size > 0 && (
+                <p className="text-sm text-blue-600">
+                  {selectedEmployees.size}명의 직원에게 초대 전송됨
+                </p>
+              )}
             </div>
             <button
               onClick={handleEndMeeting}

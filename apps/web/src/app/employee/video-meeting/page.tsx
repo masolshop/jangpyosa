@@ -18,10 +18,18 @@ export default function EmployeeVideoMeetingPage() {
       const storedCompanyName = localStorage.getItem('companyName') || '회사'
       setUserName(storedUserName)
       
-      // 기본 회의실 이름 생성
-      const now = new Date()
-      const dateStr = now.toISOString().split('T')[0].replace(/-/g, '')
-      setRoomName(`${storedCompanyName}-meeting-${dateStr}`)
+      // URL 파라미터에서 회의실 이름 가져오기
+      const urlParams = new URLSearchParams(window.location.search)
+      const roomParam = urlParams.get('room')
+      
+      if (roomParam) {
+        setRoomName(roomParam)
+      } else {
+        // 기본 회의실 이름 생성
+        const now = new Date()
+        const dateStr = now.toISOString().split('T')[0].replace(/-/g, '')
+        setRoomName(`${storedCompanyName}-meeting-${dateStr}`)
+      }
     }
   }, [])
 
