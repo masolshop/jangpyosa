@@ -23,7 +23,7 @@ module.exports = {
       env: {
         NODE_ENV: 'production',
         PORT: 3003,
-        NEXT_PUBLIC_API_BASE: 'http://localhost:4000'
+        NEXT_PUBLIC_API_BASE: '/api'
       }
     }
   ]
