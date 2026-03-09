@@ -15,19 +15,16 @@ export default function AdminVideoMeetingPage() {
   const [roomName, setRoomName] = useState('');
   const [participantName, setParticipantName] = useState('');
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const [filteredEmployees, setFilteredEmployees] = useState<Employee[]>([]);
   const [selectedEmployees, setSelectedEmployees] = useState<string[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isManager, setIsManager] = useState(false); // role 또는 company.type 기반
+  const [isManager, setIsManager] = useState(false);
 
   useEffect(() => {
     fetchUserAndCompany();
   }, []);
 
   useEffect(() => {
-    // 관리자인 경우에만 직원 목록 조회
     if (isManager) {
       console.log('✅ 관리자이므로 직원 목록 조회 시작');
       fetchEmployees();
@@ -36,25 +33,6 @@ export default function AdminVideoMeetingPage() {
     }
   }, [isManager]);
 
-  useEffect(() => {
-    // 검색 필터링
-    if (!searchQuery.trim()) {
-      setFilteredEmployees(employees);
-      return;
-    }
-
-    const query = searchQuery.toLowerCase();
-    const filtered = employees.filter(
-      (emp) =>
-        emp.name.toLowerCase().includes(query) ||
-        emp.phone.toLowerCase().includes(query) ||
-        emp.department.toLowerCase().includes(query) ||
-        emp.position?.toLowerCase().includes(query)
-    );
-    setFilteredEmployees(filtered);
-  }, [searchQuery, employees]);
-
-  // 회사 정보 및 사용자 이름 가져오기
   const fetchUserAndCompany = async () => {
     try {
       const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
@@ -89,7 +67,6 @@ export default function AdminVideoMeetingPage() {
         console.log('🏢 회사 타입:', companyType);
         console.log('🏢 회사명:', company);
 
-        // 관리자 여부 판단: role이 BUYER/SUPPLIER이거나, company.type이 BUYER/SUPPLIER인 경우
         const isManagerUser = 
           userRole === 'BUYER' || 
           userRole === 'SUPPLIER' || 
@@ -102,8 +79,6 @@ export default function AdminVideoMeetingPage() {
         setParticipantName(userName);
         setCompanyName(company);
         setIsManager(isManagerUser);
-
-        // 회의실 이름 자동 생성
         generateRoomName(company);
       }
 
@@ -115,7 +90,6 @@ export default function AdminVideoMeetingPage() {
     }
   };
 
-  // 직원 목록 가져오기 (관리자만)
   const fetchEmployees = async () => {
     try {
       const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
@@ -134,7 +108,6 @@ export default function AdminVideoMeetingPage() {
       console.log('📡 /api/employees 응답:', response.status, response.statusText);
 
       if (!response.ok) {
-        // 403 오류는 조용히 처리 (권한 없음)
         if (response.status === 403) {
           console.log('⚠️ 직원 목록 조회 권한 없음 (403)');
           return;
@@ -145,7 +118,6 @@ export default function AdminVideoMeetingPage() {
       const data = await response.json();
       console.log('✅ 직원 목록 응답:', data);
 
-      // API 응답 구조에 맞게 수정
       const employeeList = data.employees || data;
       console.log('📋 직원 목록 배열:', employeeList);
       
@@ -154,12 +126,11 @@ export default function AdminVideoMeetingPage() {
           id: emp.id,
           name: emp.name || '이름 없음',
           phone: emp.phone || '전화번호 없음',
-          department: emp.department || '부서 미정',
-          position: emp.position || '직위 미정',
+          department: '부서', // 임시
+          position: '직위', // 임시
         }));
         console.log('✅ 최종 직원 목록:', employees);
         setEmployees(employees);
-        setFilteredEmployees(employees);
       } else {
         console.error('❌ 직원 목록이 배열이 아닙니다:', employeeList);
       }
@@ -169,7 +140,6 @@ export default function AdminVideoMeetingPage() {
     }
   };
 
-  // 회의실 이름 자동 생성
   const generateRoomName = (company: string) => {
     const now = new Date();
     const date = now.toISOString().slice(0, 10).replace(/-/g, '');
@@ -178,7 +148,6 @@ export default function AdminVideoMeetingPage() {
     setRoomName(generated);
   };
 
-  // 회의 시작
   const handleStartMeeting = () => {
     if (!roomName.trim()) {
       alert('회의실 이름을 입력해주세요.');
@@ -190,27 +159,22 @@ export default function AdminVideoMeetingPage() {
       return;
     }
 
-    // 선택된 직원들에게 초대 링크 전송 (향후 구현)
     if (selectedEmployees.length > 0) {
       console.log('선택된 직원:', selectedEmployees);
-      // TODO: SMS/알림톡 발송 API 호출
     }
 
-    // Jitsi Meet 열기
     const sanitizedRoomName = roomName.trim().replace(/\s+/g, '-');
     const sanitizedParticipantName = encodeURIComponent(participantName.trim());
     const jitsiUrl = `https://meet.jangpyosa.com/${sanitizedRoomName}#userInfo.displayName="${sanitizedParticipantName}"`;
     window.open(jitsiUrl, '_blank');
   };
 
-  // 직원 선택/해제
   const toggleEmployeeSelection = (id: string) => {
     setSelectedEmployees((prev) =>
       prev.includes(id) ? prev.filter((empId) => empId !== id) : [...prev, id]
     );
   };
 
-  // 링크 복사
   const copyRoomLink = () => {
     const sanitizedRoomName = roomName.trim().replace(/\s+/g, '-');
     const link = `https://jangpyosa.com/employee/video-meeting?room=${encodeURIComponent(sanitizedRoomName)}`;
@@ -218,7 +182,6 @@ export default function AdminVideoMeetingPage() {
     alert('회의 링크가 복사되었습니다!');
   };
 
-  // 회의실 이름 복사
   const copyRoomName = () => {
     navigator.clipboard.writeText(roomName);
     alert('회의실 이름이 복사되었습니다!');
@@ -252,21 +215,18 @@ export default function AdminVideoMeetingPage() {
           <p className="text-gray-600">
             화상회의를 시작하고 직원들을 초대하세요.
           </p>
-          {/* 디버그 정보 */}
           <p className="text-xs text-gray-400 mt-2">
             관리자: {isManager ? '예' : '아니오'} | 직원: {employees.length}명
           </p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* 왼쪽: 회의 설정 */}
           <div className={!isManager ? 'lg:col-span-3' : 'lg:col-span-2'}>
             <div className="bg-white rounded-lg shadow-md p-6">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">
                 회의 설정
               </h2>
               <div className="space-y-4">
-                {/* 회사명 */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     회사명
@@ -279,7 +239,6 @@ export default function AdminVideoMeetingPage() {
                   />
                 </div>
 
-                {/* 회의실 이름 */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     회의실 이름 *
@@ -299,7 +258,6 @@ export default function AdminVideoMeetingPage() {
                   </button>
                 </div>
 
-                {/* 참가자 이름 */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     내 이름 *
@@ -313,7 +271,6 @@ export default function AdminVideoMeetingPage() {
                   />
                 </div>
 
-                {/* 회의 링크 */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     회의 링크 (직원 초대용)
@@ -334,7 +291,6 @@ export default function AdminVideoMeetingPage() {
                   </div>
                 </div>
 
-                {/* 회의 시작 버튼 */}
                 <button
                   onClick={handleStartMeeting}
                   className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition-colors text-lg shadow-lg"
@@ -345,7 +301,6 @@ export default function AdminVideoMeetingPage() {
             </div>
           </div>
 
-          {/* 오른쪽: 직원 초대 (관리자만 표시) */}
           {isManager && (
             <div className="lg:col-span-1">
               <div className="bg-white rounded-lg shadow-md p-6">
@@ -353,22 +308,13 @@ export default function AdminVideoMeetingPage() {
                   직원 초대 ({selectedEmployees.length}명 선택)
                 </h2>
 
-                {/* 검색 */}
-                <input
-                  type="text"
-                  placeholder="이름, 전화번호, 부서 검색..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full px-4 py-2 mb-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                />
-
-                {/* 직원 목록 */}
+                {/* 직원 목록 (검색창 제거) */}
                 <div className="max-h-96 overflow-y-auto space-y-2">
-                  {filteredEmployees.length > 0 ? (
-                    filteredEmployees.map((emp) => (
+                  {employees.length > 0 ? (
+                    employees.map((emp) => (
                       <label
                         key={emp.id}
-                        className="flex items-start p-3 hover:bg-gray-50 rounded-lg cursor-pointer"
+                        className="flex items-start p-3 hover:bg-gray-50 rounded-lg cursor-pointer border border-gray-200"
                       >
                         <input
                           type="checkbox"
@@ -379,20 +325,19 @@ export default function AdminVideoMeetingPage() {
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-gray-900">{emp.name}</p>
                           <p className="text-sm text-gray-600">{emp.phone}</p>
-                          <p className="text-sm text-gray-500">
-                            {emp.department} · {emp.position}
-                          </p>
                         </div>
                       </label>
                     ))
                   ) : (
-                    <p className="text-gray-500 text-sm text-center py-4">
-                      {searchQuery ? '검색 결과가 없습니다.' : '등록된 직원이 없습니다.'}
-                    </p>
+                    <div className="text-center py-8">
+                      <p className="text-gray-500 text-sm mb-2">등록된 직원이 없습니다.</p>
+                      <p className="text-xs text-gray-400">
+                        직원 관리 메뉴에서 직원을 먼저 등록해주세요.
+                      </p>
+                    </div>
                   )}
                 </div>
 
-                {/* 초기화 버튼 */}
                 {selectedEmployees.length > 0 && (
                   <button
                     onClick={() => setSelectedEmployees([])}
@@ -406,12 +351,11 @@ export default function AdminVideoMeetingPage() {
           )}
         </div>
 
-        {/* 안내 사항 */}
         <div className="mt-6 bg-blue-50 rounded-lg p-4">
           <h3 className="font-semibold text-blue-900 mb-2">📌 사용 방법</h3>
           <ul className="text-sm text-blue-800 space-y-1">
             <li>1. 회의실 이름이 자동 생성됩니다 (수정 가능)</li>
-            {isManager && <li>2. 초대할 직원을 선택하세요 (선택사항)</li>}
+            {isManager && <li>2. 오른쪽에서 초대할 직원을 선택하세요 (선택사항)</li>}
             <li>3. "화상회의 시작하기" 버튼을 클릭하세요</li>
             <li>4. 회의실 이름이나 링크를 복사하여 직원들에게 공유하세요</li>
             <li>5. 직원들은 공유받은 이름/링크로 회의에 참가할 수 있습니다</li>
