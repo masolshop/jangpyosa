@@ -1,10 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 
-export default function VideoMeetingPage() {
-  const router = useRouter();
+function VideoMeetingContent() {
   const searchParams = useSearchParams();
   const roomParam = searchParams?.get('room');
 
@@ -114,5 +113,17 @@ export default function VideoMeetingPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function VideoMeetingPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-gray-600">로딩 중...</div>
+      </div>
+    }>
+      <VideoMeetingContent />
+    </Suspense>
   );
 }
