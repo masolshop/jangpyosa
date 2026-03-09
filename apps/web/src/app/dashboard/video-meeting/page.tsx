@@ -27,9 +27,13 @@ export default function AdminVideoMeetingPage() {
   }, []);
 
   useEffect(() => {
+    console.log('🔍 [useEffect] userRole 변경됨:', userRole);
     // EMPLOYEE 역할이 아닌 경우에만 직원 목록 조회
     if (userRole && userRole !== 'EMPLOYEE') {
+      console.log('✅ 직원 목록 조회 시작 (역할:', userRole, ')');
       fetchEmployees();
+    } else if (userRole === 'EMPLOYEE') {
+      console.log('⚠️ EMPLOYEE 역할이므로 직원 목록 조회 생략');
     }
   }, [userRole]);
 
@@ -56,7 +60,7 @@ export default function AdminVideoMeetingPage() {
     try {
       const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
       if (!token) {
-        console.log('토큰이 없습니다');
+        console.log('❌ 토큰이 없습니다');
         setError('로그인이 필요합니다.');
         setLoading(false);
         return;
@@ -69,17 +73,20 @@ export default function AdminVideoMeetingPage() {
       });
 
       if (!response.ok) {
-        console.error('API 응답 실패:', response.status, response.statusText);
+        console.error('❌ API 응답 실패:', response.status, response.statusText);
         throw new Error(`API 요청 실패: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log('사용자 정보:', data);
+      console.log('✅ 사용자 정보:', data);
 
       if (data.user) {
         const userName = data.user.name || '관리자';
         const company = data.user.company?.name || '회사명';
         const role = data.user.role || '';
+
+        console.log('📋 사용자 역할:', role);
+        console.log('🏢 회사명:', company);
 
         setParticipantName(userName);
         setCompanyName(company);
@@ -90,7 +97,7 @@ export default function AdminVideoMeetingPage() {
       }
 
     } catch (error: any) {
-      console.error('사용자 정보 가져오기 실패:', error);
+      console.error('❌ 사용자 정보 가져오기 실패:', error);
       setError('사용자 정보를 가져오는데 실패했습니다.');
     } finally {
       setLoading(false);
@@ -102,31 +109,34 @@ export default function AdminVideoMeetingPage() {
     try {
       const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
       if (!token) {
-        console.log('토큰이 없습니다');
+        console.log('❌ 토큰이 없습니다');
         return;
       }
 
+      console.log('📡 /api/employees 호출 중...');
       const response = await fetch('/api/employees', {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
       });
 
+      console.log('📡 /api/employees 응답:', response.status, response.statusText);
+
       if (!response.ok) {
-        console.error('직원 목록 API 응답 실패:', response.status, response.statusText);
         // 403 오류는 조용히 처리 (권한 없음)
         if (response.status === 403) {
-          console.log('직원 목록 조회 권한 없음 (EMPLOYEE 역할)');
+          console.log('⚠️ 직원 목록 조회 권한 없음 (403)');
           return;
         }
         throw new Error(`직원 목록 조회 실패: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log('직원 목록:', data);
+      console.log('✅ 직원 목록 응답:', data);
 
       // API 응답 구조에 맞게 수정
       const employeeList = data.employees || data;
+      console.log('📋 직원 목록 배열:', employeeList);
       
       if (Array.isArray(employeeList)) {
         const employees: Employee[] = employeeList.map((emp: any) => ({
@@ -136,12 +146,15 @@ export default function AdminVideoMeetingPage() {
           department: emp.department || '부서 미정',
           position: emp.position || '직위 미정',
         }));
+        console.log('✅ 최종 직원 목록:', employees);
         setEmployees(employees);
         setFilteredEmployees(employees);
+      } else {
+        console.error('❌ 직원 목록이 배열이 아닙니다:', employeeList);
       }
 
     } catch (error: any) {
-      console.error('직원 목록 가져오기 실패:', error);
+      console.error('❌ 직원 목록 가져오기 실패:', error);
     }
   };
 
@@ -200,6 +213,8 @@ export default function AdminVideoMeetingPage() {
     alert('회의실 이름이 복사되었습니다!');
   };
 
+  console.log('🎨 렌더링 - userRole:', userRole, ', employees:', employees.length, '명');
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -225,6 +240,10 @@ export default function AdminVideoMeetingPage() {
           </h1>
           <p className="text-gray-600">
             화상회의를 시작하고 직원들을 초대하세요.
+          </p>
+          {/* 디버그 정보 */}
+          <p className="text-xs text-gray-400 mt-2">
+            역할: {userRole || '로딩 중...'} | 직원: {employees.length}명
           </p>
         </div>
 
