@@ -376,6 +376,7 @@ export default function Sidebar() {
               <MenuItem href="/dashboard/work-orders" label="장애인직원업무관리" active={isActive("/dashboard/work-orders")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} notificationCount={notificationCounts.workOrder} onNotificationClear={() => markNotificationsByTypeAsRead(['WORK_ORDER', 'WORK_ORDER_COMPLETED'])} requiresAuth={true} />
               <MenuItem href="/dashboard/announcements" label="장애인직원공지관리" active={isActive("/dashboard/announcements")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} notificationCount={notificationCounts.announcement} onNotificationClear={() => markNotificationsByTypeAsRead(['ANNOUNCEMENT', 'ANNOUNCEMENT_READ'])} requiresAuth={true} />
               <MenuItem href="/dashboard/leave" label="장애인직원휴가관리" active={isActive("/dashboard/leave")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} notificationCount={notificationCounts.leave} onNotificationClear={() => markNotificationsByTypeAsRead(['LEAVE_REQUEST', 'LEAVE_APPROVED', 'LEAVE_REJECTED'])} requiresAuth={true} />
+              <MenuItem href="/dashboard/video-meeting" label="장애인직원화상회의" icon="📹" active={isActive("/dashboard/video-meeting")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} requiresAuth={true} />
               <MenuItem href="/dashboard/company" label="기업대시보드" icon="🏢" active={isActive("/dashboard/company")} requiresRole={["BUYER", "SUPPLIER", "SUPER_ADMIN"]} currentRole={userRole} requiresAuth={true} />
             </div>
           )}
@@ -406,6 +407,12 @@ export default function Sidebar() {
                 active={isActive("/employee/leave")}
                 notificationCount={notificationCounts.leave}
                 onNotificationClear={() => markNotificationsByTypeAsRead(['LEAVE_REQUEST', 'LEAVE_APPROVED', 'LEAVE_REJECTED'])}
+              />
+              <MenuItem
+                href="/employee/video-meeting"
+                label="화상회의"
+                icon="📹"
+                active={isActive("/employee/video-meeting")}
               />
             </div>
           )}
