@@ -20,22 +20,21 @@ export default function AdminVideoMeetingPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [userRole, setUserRole] = useState<string>('');
+  const [isManager, setIsManager] = useState(false); // role 또는 company.type 기반
 
   useEffect(() => {
     fetchUserAndCompany();
   }, []);
 
   useEffect(() => {
-    console.log('🔍 [useEffect] userRole 변경됨:', userRole);
-    // EMPLOYEE 역할이 아닌 경우에만 직원 목록 조회
-    if (userRole && userRole !== 'EMPLOYEE') {
-      console.log('✅ 직원 목록 조회 시작 (역할:', userRole, ')');
+    // 관리자인 경우에만 직원 목록 조회
+    if (isManager) {
+      console.log('✅ 관리자이므로 직원 목록 조회 시작');
       fetchEmployees();
-    } else if (userRole === 'EMPLOYEE') {
-      console.log('⚠️ EMPLOYEE 역할이므로 직원 목록 조회 생략');
+    } else {
+      console.log('⚠️ 관리자가 아니므로 직원 목록 조회 생략');
     }
-  }, [userRole]);
+  }, [isManager]);
 
   useEffect(() => {
     // 검색 필터링
@@ -83,14 +82,26 @@ export default function AdminVideoMeetingPage() {
       if (data.user) {
         const userName = data.user.name || '관리자';
         const company = data.user.company?.name || '회사명';
-        const role = data.user.role || '';
+        const userRole = data.user.role || '';
+        const companyType = data.user.company?.type || '';
 
-        console.log('📋 사용자 역할:', role);
+        console.log('📋 사용자 역할:', userRole);
+        console.log('🏢 회사 타입:', companyType);
         console.log('🏢 회사명:', company);
+
+        // 관리자 여부 판단: role이 BUYER/SUPPLIER이거나, company.type이 BUYER/SUPPLIER인 경우
+        const isManagerUser = 
+          userRole === 'BUYER' || 
+          userRole === 'SUPPLIER' || 
+          userRole === 'SUPER_ADMIN' ||
+          companyType === 'BUYER' || 
+          companyType === 'SUPPLIER';
+
+        console.log('👤 관리자 여부:', isManagerUser);
 
         setParticipantName(userName);
         setCompanyName(company);
-        setUserRole(role);
+        setIsManager(isManagerUser);
 
         // 회의실 이름 자동 생성
         generateRoomName(company);
@@ -213,7 +224,7 @@ export default function AdminVideoMeetingPage() {
     alert('회의실 이름이 복사되었습니다!');
   };
 
-  console.log('🎨 렌더링 - userRole:', userRole, ', employees:', employees.length, '명');
+  console.log('🎨 렌더링 - isManager:', isManager, ', employees:', employees.length, '명');
 
   if (loading) {
     return (
@@ -243,13 +254,13 @@ export default function AdminVideoMeetingPage() {
           </p>
           {/* 디버그 정보 */}
           <p className="text-xs text-gray-400 mt-2">
-            역할: {userRole || '로딩 중...'} | 직원: {employees.length}명
+            관리자: {isManager ? '예' : '아니오'} | 직원: {employees.length}명
           </p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* 왼쪽: 회의 설정 */}
-          <div className={userRole === 'EMPLOYEE' ? 'lg:col-span-3' : 'lg:col-span-2'}>
+          <div className={!isManager ? 'lg:col-span-3' : 'lg:col-span-2'}>
             <div className="bg-white rounded-lg shadow-md p-6">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">
                 회의 설정
@@ -335,7 +346,7 @@ export default function AdminVideoMeetingPage() {
           </div>
 
           {/* 오른쪽: 직원 초대 (관리자만 표시) */}
-          {userRole !== 'EMPLOYEE' && (
+          {isManager && (
             <div className="lg:col-span-1">
               <div className="bg-white rounded-lg shadow-md p-6">
                 <h2 className="text-xl font-semibold text-gray-900 mb-4">
@@ -400,7 +411,7 @@ export default function AdminVideoMeetingPage() {
           <h3 className="font-semibold text-blue-900 mb-2">📌 사용 방법</h3>
           <ul className="text-sm text-blue-800 space-y-1">
             <li>1. 회의실 이름이 자동 생성됩니다 (수정 가능)</li>
-            {userRole !== 'EMPLOYEE' && <li>2. 초대할 직원을 선택하세요 (선택사항)</li>}
+            {isManager && <li>2. 초대할 직원을 선택하세요 (선택사항)</li>}
             <li>3. "화상회의 시작하기" 버튼을 클릭하세요</li>
             <li>4. 회의실 이름이나 링크를 복사하여 직원들에게 공유하세요</li>
             <li>5. 직원들은 공유받은 이름/링크로 회의에 참가할 수 있습니다</li>
