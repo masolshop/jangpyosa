@@ -209,13 +209,13 @@ export default function AdminVideoMeetingPage() {
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          <h1 className="text-5xl font-bold text-gray-900 mb-2">
             🎥 장애인직원 화상회의
           </h1>
           <p className="text-gray-600">
             화상회의를 시작하고 직원들을 초대하세요.
           </p>
-          <p className="text-xs text-gray-400 mt-2">
+          <p className="text-sm text-gray-400 mt-2">
             관리자: {isManager ? '예' : '아니오'} | 직원: {employees.length}명
           </p>
         </div>
@@ -223,12 +223,12 @@ export default function AdminVideoMeetingPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className={!isManager ? 'lg:col-span-3' : 'lg:col-span-2'}>
             <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">
+              <h2 className="text-3xl font-semibold text-gray-900 mb-4">
                 회의 설정
               </h2>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-lg font-medium text-gray-700 mb-2">
                     회사명
                   </label>
                   <input
@@ -240,7 +240,7 @@ export default function AdminVideoMeetingPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-lg font-medium text-gray-700 mb-2">
                     회의실 이름 *
                   </label>
                   <input
@@ -252,14 +252,14 @@ export default function AdminVideoMeetingPage() {
                   />
                   <button
                     onClick={copyRoomName}
-                    className="mt-2 text-sm text-blue-600 hover:text-blue-800"
+                    className="mt-3 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white text-2xl font-medium rounded-lg shadow-sm transition-colors"
                   >
                     📋 회의실 이름 복사
                   </button>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-lg font-medium text-gray-700 mb-2">
                     내 이름 *
                   </label>
                   <input
@@ -272,7 +272,7 @@ export default function AdminVideoMeetingPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-lg font-medium text-gray-700 mb-2">
                     회의 링크 (직원 초대용)
                   </label>
                   <div className="flex gap-2">
@@ -280,7 +280,7 @@ export default function AdminVideoMeetingPage() {
                       type="text"
                       value={`https://jangpyosa.com/employee/video-meeting?room=${encodeURIComponent(roomName)}`}
                       disabled
-                      className="flex-1 px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-700 text-sm"
+                      className="flex-1 px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-700 text-2xl"
                     />
                     <button
                       onClick={copyRoomLink}
@@ -293,7 +293,7 @@ export default function AdminVideoMeetingPage() {
 
                 <button
                   onClick={handleStartMeeting}
-                  className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition-colors text-lg shadow-lg"
+                  className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition-colors text-2xl shadow-lg"
                 >
                   화상회의 시작하기
                 </button>
@@ -304,7 +304,7 @@ export default function AdminVideoMeetingPage() {
           {isManager && (
             <div className="lg:col-span-1">
               <div className="bg-white rounded-lg shadow-md p-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">
+                <h2 className="text-3xl font-semibold text-gray-900 mb-4">
                   직원 초대 ({selectedEmployees.length}명 선택)
                 </h2>
 
@@ -324,14 +324,14 @@ export default function AdminVideoMeetingPage() {
                         />
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-gray-900">{emp.name}</p>
-                          <p className="text-sm text-gray-600">{emp.phone}</p>
+                          <p className="text-2xl text-gray-600">{emp.phone}</p>
                         </div>
                       </label>
                     ))
                   ) : (
                     <div className="text-center py-8">
-                      <p className="text-gray-500 text-sm mb-2">등록된 직원이 없습니다.</p>
-                      <p className="text-xs text-gray-400">
+                      <p className="text-gray-500 text-2xl mb-2">등록된 직원이 없습니다.</p>
+                      <p className="text-sm text-gray-400">
                         직원 관리 메뉴에서 직원을 먼저 등록해주세요.
                       </p>
                     </div>
@@ -353,7 +353,7 @@ export default function AdminVideoMeetingPage() {
 
         <div className="mt-6 bg-blue-50 rounded-lg p-4">
           <h3 className="font-semibold text-blue-900 mb-2">📌 사용 방법</h3>
-          <ul className="text-sm text-blue-800 space-y-1">
+          <ul className="text-2xl text-blue-800 space-y-1">
             <li>1. 회의실 이름이 자동 생성됩니다 (수정 가능)</li>
             {isManager && <li>2. 오른쪽에서 초대할 직원을 선택하세요 (선택사항)</li>}
             <li>3. "화상회의 시작하기" 버튼을 클릭하세요</li>
