@@ -17,15 +17,41 @@ router.get("/", requireAuth, async (req, res) => {
     const userId = req.user!.id;
     const userRole = req.user!.role;
 
-    console.log("🔍 [GET /employees] userId:", userId);
-    console.log("🔍 [GET /employees] userRole:", userRole);
+    console.log(`[/api/employees] 요청 사용자: ${userId}, 역할: ${userRole}`);
 
-    // BUYER, SUPPLIER, SUPER_ADMIN 모두 접근 가능
-    if (userRole !== "BUYER" && userRole !== "SUPPLIER" && userRole !== "SUPER_ADMIN") {
-      console.log("❌ [GET /employees] 역할 불일치:", userRole);
-      return res.status(403).json({ error: "부담금기업 또는 표준사업장만 접근 가능합니다." });
+    // 1. 사용자 정보 조회 (회사 타입 포함)
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { 
+        company: true,
+        branch: true
+      }
+    });
+
+    if (!user) {
+      console.log(`[/api/employees] 사용자 없음: ${userId}`);
+      return res.status(404).json({ error: '사용자를 찾을 수 없습니다' });
     }
 
+    const companyType = user.company?.type;
+    console.log(`[/api/employees] 회사 타입: ${companyType}`);
+
+    // 2. 권한 체크: user.role 또는 company.type이 BUYER/SUPPLIER/SUPER_ADMIN이면 허용
+    const isManager = 
+      ['BUYER', 'SUPPLIER', 'SUPER_ADMIN'].includes(userRole) ||
+      ['BUYER', 'SUPPLIER'].includes(companyType || '');
+
+    if (!isManager) {
+      console.log(`[/api/employees] 권한 없음: role=${userRole}, companyType=${companyType}`);
+      return res.status(403).json({ 
+        error: '직원 목록을 조회할 권한이 없습니다',
+        details: { role: userRole, companyType }
+      });
+    }
+
+    console.log(`[/api/employees] 권한 확인 OK - role=${userRole}, companyType=${companyType}`);
+
+    // 3. 회사 정보 조회
     const company = await getUserCompany(userId, userRole);
     
     console.log("🔍 [GET /employees] company:", company ? {
@@ -43,6 +69,8 @@ router.get("/", requireAuth, async (req, res) => {
       where: { buyerId: company.buyerProfile.id },
       orderBy: [{ resignDate: "asc" }, { hireDate: "asc" }],
     });
+
+    console.log(`[/api/employees] 조회된 직원 수: ${employees.length}`);
 
     return res.json({ employees });
   } catch (error: any) {
