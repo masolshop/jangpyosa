@@ -1,0 +1,939 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 
+  (typeof window !== 'undefined' && window.location.hostname === 'jangpyosa.com' 
+    ? 'https://jangpyosa.com/api' 
+    : 'http://localhost:4000');
+
+// 매니저 전용 인증 토큰 관리
+const MANAGER_TOKEN_KEY = 'manager_auth_token';
+const MANAGER_INFO_KEY = 'manager_info';
+
+const getManagerToken = () => {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem(MANAGER_TOKEN_KEY);
+};
+
+const setManagerToken = (token: string) => {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(MANAGER_TOKEN_KEY, token);
+};
+
+const getManagerInfo = () => {
+  if (typeof window === 'undefined') return null;
+  const info = localStorage.getItem(MANAGER_INFO_KEY);
+  return info ? JSON.parse(info) : null;
+};
+
+const setManagerInfo = (info: any) => {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(MANAGER_INFO_KEY, JSON.stringify(info));
+};
+
+const clearManagerAuth = () => {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem(MANAGER_TOKEN_KEY);
+  localStorage.removeItem(MANAGER_INFO_KEY);
+};
+
+export default function SalesLoginPage() {
+  const router = useRouter();
+  const [isLogin, setIsLogin] = useState(true); // true: 로그인, false: 회원가입
+  const [loading, setLoading] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true); // 인증 체크 중
+  const [error, setError] = useState('');
+
+  // 로그인 폼
+  const [loginForm, setLoginForm] = useState({
+    phone: '',
+    password: '',
+  });
+
+  // 회원가입 폼
+  const [signupForm, setSignupForm] = useState({
+    phone: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    managerId: '', // 선택한 본부/지사 ID
+  });
+
+  // 본부/지사 목록
+  const [organizations, setOrganizations] = useState<{
+    headquarters: Array<{ id: string; name: string }>;
+    branches: Array<{ id: string; name: string; parentId: string }>;
+  }>({ headquarters: [], branches: [] });
+  const [selectedHeadquarter, setSelectedHeadquarter] = useState(''); // 선택한 본부
+  const [availableBranches, setAvailableBranches] = useState<Array<{ id: string; name: string }>>([]); // 필터링된 지사
+
+  // 실명인증 폼 (회원가입 전 단계)
+  const [identityForm, setIdentityForm] = useState({
+    name: '', // 성명
+    rrn1: '', // 주민번호 앞 6자리
+    rrn2: '', // 주민번호 뒤 7자리
+  });
+
+  // 실명인증 결과
+  const [identityVerified, setIdentityVerified] = useState(false);
+  const [verifiedName, setVerifiedName] = useState(''); // 인증된 이름
+  const [verifying, setVerifying] = useState(false);
+
+  // 이미 로그인되어 있는지 확인
+  useEffect(() => {
+    const checkAuth = async () => {
+      const token = getManagerToken();
+      if (!token) {
+        console.log('[Login] No token found');
+        setCheckingAuth(false);
+        return;
+      }
+
+      try {
+        console.log('[Login] Verifying token...');
+        const response = await fetch(`${API_BASE}/sales/auth/me`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          console.log('[Login] Token valid, redirecting to dashboard');
+          window.location.href = '/admin/sales/dashboard';
+        } else {
+          console.log('[Login] Token invalid, clearing auth');
+          clearManagerAuth();
+          setCheckingAuth(false);
+        }
+      } catch (error) {
+        console.error('[Login] Auth check error:', error);
+        clearManagerAuth();
+        setCheckingAuth(false);
+      }
+    };
+
+    checkAuth();
+  }, [router]);
+
+  // 본부/지사 목록 로드
+  useEffect(() => {
+    const loadOrganizations = async () => {
+      try {
+        const response = await fetch(`${API_BASE}/sales/organizations`);
+        const data = await response.json();
+        if (response.ok) {
+          console.log('========================================');
+          console.log('📊 본부/지사 목록 로드 성공');
+          console.log('  • headquarters 타입:', typeof data.headquarters);
+          console.log('  • headquarters Array.isArray:', Array.isArray(data.headquarters));
+          console.log('  • headquarters 길이:', data.headquarters?.length || 0);
+          console.log('  • branches 타입:', typeof data.branches);
+          console.log('  • branches Array.isArray:', Array.isArray(data.branches));
+          console.log('  • branches 길이:', data.branches?.length || 0);
+          console.log('========================================');
+          console.log('본부 목록 상세:', JSON.stringify(data.headquarters, null, 2));
+          console.log('지사 목록 상세:', JSON.stringify(data.branches, null, 2));
+          console.log('========================================');
+          setOrganizations(data);
+          console.log('✅ organizations 상태 업데이트 완료');
+        } else {
+          console.error('❌ 본부/지사 로드 실패:', data);
+        }
+      } catch (err) {
+        console.error('본부/지사 목록 로드 실패:', err);
+      }
+    };
+    loadOrganizations();
+  }, []);
+
+  // 본부 선택 시 지사 필터링
+  useEffect(() => {
+    if (selectedHeadquarter) {
+      const filtered = organizations.branches.filter(b => b.parentId === selectedHeadquarter);
+      setAvailableBranches(filtered);
+      // 본부를 바꾸면 지사 선택 초기화 (단, 본부 ID 자체는 유지)
+      if (signupForm.managerId && 
+          signupForm.managerId !== selectedHeadquarter && 
+          !filtered.find(b => b.id === signupForm.managerId)) {
+        console.log('⚠️ managerId 초기화 (이전 지사 선택 제거)');
+        // 본부 ID로 재설정
+        setSignupForm(prev => ({ ...prev, managerId: selectedHeadquarter }));
+      }
+    } else {
+      setAvailableBranches([]);
+    }
+  }, [selectedHeadquarter, organizations.branches]);
+
+  // 로그인 처리
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    try {
+      const response = await fetch(`${API_BASE}/sales/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          phone: loginForm.phone,
+          password: loginForm.password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // 토큰과 사용자 정보 저장
+        setManagerToken(data.token);
+        setManagerInfo(data.salesPerson);
+        
+        // 대시보드로 이동 (새로고침하여 상태 완전 초기화)
+        window.location.href = '/admin/sales/dashboard';
+      } else {
+        setError(data.error || '로그인에 실패했습니다');
+      }
+    } catch (err) {
+      setError('서버 연결에 실패했습니다');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 실명인증 처리 (1단계: 주민번호 + 이름 입력)
+  const handleVerifyIdentity = async () => {
+    if (!identityForm.name || !identityForm.rrn1 || !identityForm.rrn2) {
+      setError('성명과 주민등록번호를 모두 입력해주세요');
+      return;
+    }
+
+    setVerifying(true);
+    setError('');
+
+    try {
+      const response = await fetch(`${API_BASE}/sales/auth/verify-identity-with-name`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: identityForm.name,
+          rrn1: identityForm.rrn1,
+          rrn2: identityForm.rrn2,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.verified) {
+        setIdentityVerified(true);
+        setVerifiedName(data.name);
+        setError('');
+        alert('✅ 실명인증이 완료되었습니다!');
+      } else {
+        setIdentityVerified(false);
+        setError(data.error || '실명인증에 실패했습니다');
+      }
+    } catch (err) {
+      setError('서버 연결에 실패했습니다');
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  // 회원가입 처리
+  const handleSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    console.log('========================================');
+    console.log('🔍 회원가입 시도 - 전체 상태:');
+    console.log('  • identityVerified:', identityVerified);
+    console.log('  • selectedHeadquarter:', selectedHeadquarter);
+    console.log('  • signupForm.managerId:', signupForm.managerId);
+    console.log('  • signupForm.managerId 타입:', typeof signupForm.managerId);
+    console.log('  • signupForm.managerId 길이:', signupForm.managerId?.length);
+    console.log('  • signupForm:', JSON.stringify(signupForm, null, 2));
+    console.log('========================================');
+
+    // 실명인증 확인
+    if (!identityVerified) {
+      setError('실명인증을 먼저 진행해주세요');
+      return;
+    }
+
+    // 본부/지사 선택 필수
+    if (!signupForm.managerId) {
+      console.error('❌ managerId가 비어있음!');
+      console.error('  • signupForm.managerId:', signupForm.managerId);
+      console.error('  • selectedHeadquarter:', selectedHeadquarter);
+      setError('소속 본부 또는 지사를 선택해주세요');
+      return;
+    }
+
+    // 비밀번호 확인
+    if (signupForm.password !== signupForm.confirmPassword) {
+      setError('비밀번호가 일치하지 않습니다');
+      return;
+    }
+
+    // 비밀번호 길이 확인
+    if (signupForm.password.length < 6) {
+      setError('비밀번호는 최소 6자 이상이어야 합니다');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await fetch(`${API_BASE}/sales/auth/signup`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: verifiedName, // 인증된 이름
+          phone: signupForm.phone,
+          email: signupForm.email,
+          password: signupForm.password,
+          rrn1: identityForm.rrn1,
+          rrn2: identityForm.rrn2,
+          verified: identityVerified,
+          organizationId: signupForm.managerId, // 선택한 본부/지사 ID (Organization 테이블)
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // 승인 대기 메시지 표시
+        alert('회원가입이 완료되었습니다!\n\n슈퍼어드민 승인 후 로그인이 가능합니다.');
+        
+        // 로그인 페이지로 이동
+        setIsLogin(true);
+        setIdentityVerified(false);
+        setVerifiedName('');
+        setSignupForm({
+          phone: '',
+          email: '',
+          password: '',
+          confirmPassword: '',
+          managerId: '',
+        });
+        setIdentityForm({
+          name: '',
+          rrn1: '',
+          rrn2: '',
+        });
+        setSelectedHeadquarter('');
+      } else {
+        setError(data.error || '회원가입에 실패했습니다');
+      }
+    } catch (err) {
+      setError('서버 연결에 실패했습니다');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 인증 체크 중일 때 로딩 표시
+  if (checkingAuth) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}>
+        <div style={{ textAlign: 'center', color: 'white' }}>
+          <div style={{
+            border: '4px solid rgba(255,255,255,0.3)',
+            borderTop: '4px solid white',
+            borderRadius: '50%',
+            width: 50,
+            height: 50,
+            animation: 'spin 1s linear infinite',
+            margin: '0 auto 20px',
+          }} />
+          <p style={{ fontSize: 18 }}>인증 확인 중...</p>
+          <style jsx>{`
+            @keyframes spin {
+              0% { transform: rotate(0deg); }
+              100% { transform: rotate(360deg); }
+            }
+          `}</style>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '20px',
+    }}>
+      <div style={{
+        background: 'white',
+        borderRadius: 16,
+        boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
+        width: '100%',
+        maxWidth: 450,
+        padding: 40,
+        position: 'relative',
+      }}>
+        {/* 닫기 버튼 (항상 표시) */}
+        <button
+          onClick={() => router.push('/')}
+          style={{
+            position: 'absolute',
+            top: 16,
+            right: 16,
+            background: 'transparent',
+            border: 'none',
+            fontSize: 24,
+            cursor: 'pointer',
+            color: '#6b7280',
+            padding: 8,
+            lineHeight: 1,
+          }}
+        >
+          ×
+        </button>
+        {/* 로고 및 제목 */}
+        <div style={{ textAlign: 'center', marginBottom: 32 }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>📊</div>
+          <h1 style={{ fontSize: 28, fontWeight: 'bold', margin: 0, marginBottom: 8 }}>
+            본부지사매니저전용
+          </h1>
+          <p style={{ fontSize: 14, color: '#6b7280', margin: 0 }}>
+            장표사닷컴 영업 관리 시스템
+          </p>
+        </div>
+
+        {/* 탭 전환 */}
+        <div style={{
+          display: 'flex',
+          gap: 8,
+          marginBottom: 24,
+          background: '#f3f4f6',
+          borderRadius: 8,
+          padding: 4,
+        }}>
+          <button
+            onClick={() => setIsLogin(true)}
+            style={{
+              flex: 1,
+              padding: '12px',
+              background: isLogin ? 'white' : 'transparent',
+              border: 'none',
+              borderRadius: 6,
+              cursor: 'pointer',
+              fontWeight: isLogin ? 600 : 400,
+              color: isLogin ? '#111' : '#6b7280',
+              boxShadow: isLogin ? '0 2px 4px rgba(0,0,0,0.1)' : 'none',
+              transition: 'all 0.2s',
+            }}
+          >
+            로그인
+          </button>
+          <button
+            onClick={() => setIsLogin(false)}
+            style={{
+              flex: 1,
+              padding: '12px',
+              background: !isLogin ? 'white' : 'transparent',
+              border: 'none',
+              borderRadius: 6,
+              cursor: 'pointer',
+              fontWeight: !isLogin ? 600 : 400,
+              color: !isLogin ? '#111' : '#6b7280',
+              boxShadow: !isLogin ? '0 2px 4px rgba(0,0,0,0.1)' : 'none',
+              transition: 'all 0.2s',
+            }}
+          >
+            회원가입
+          </button>
+        </div>
+
+        {/* 에러 메시지 */}
+        {error && (
+          <div style={{
+            padding: '12px 16px',
+            background: '#fee',
+            border: '1px solid #fcc',
+            borderRadius: 6,
+            color: '#c00',
+            fontSize: 14,
+            marginBottom: 16,
+          }}>
+            {error}
+          </div>
+        )}
+
+        {/* 로그인 폼 */}
+        {isLogin ? (
+          <form onSubmit={handleLogin}>
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, fontSize: 14 }}>
+                아이디 (핸드폰번호)
+              </label>
+              <input
+                type="tel"
+                value={loginForm.phone}
+                onChange={(e) => setLoginForm({ ...loginForm, phone: e.target.value })}
+                placeholder="01012345678"
+                required
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: 8,
+                  fontSize: 14,
+                }}
+              />
+            </div>
+
+            <div style={{ marginBottom: 24 }}>
+              <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, fontSize: 14 }}>
+                비밀번호
+              </label>
+              <input
+                type="password"
+                value={loginForm.password}
+                onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
+                placeholder="비밀번호 입력"
+                required
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: 8,
+                  fontSize: 14,
+                }}
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              style={{
+                width: '100%',
+                padding: '14px',
+                background: loading ? '#9ca3af' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                color: 'white',
+                border: 'none',
+                borderRadius: 8,
+                cursor: loading ? 'not-allowed' : 'pointer',
+                fontWeight: 600,
+                fontSize: 16,
+              }}
+            >
+              {loading ? '로그인 중...' : '로그인'}
+            </button>
+          </form>
+        ) : (
+          /* 회원가입 폼 - 2단계 프로세스 */
+          <div>
+            {/* 1단계: 실명인증 */}
+            {!identityVerified ? (
+              <div>
+                <div style={{
+                  marginBottom: 16,
+                  padding: 12,
+                  background: '#fef3c7',
+                  borderRadius: 8,
+                  fontSize: 13,
+                  color: '#92400e',
+                }}>
+                  🔐 <strong>1단계: 실명인증</strong><br/>
+                  주민등록번호로 본인인증을 진행합니다
+                </div>
+
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, fontSize: 14 }}>
+                    성명 *
+                  </label>
+                  <input
+                    type="text"
+                    value={identityForm.name}
+                    onChange={(e) => setIdentityForm({ ...identityForm, name: e.target.value })}
+                    placeholder="홍길동"
+                    required
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: 8,
+                      fontSize: 14,
+                    }}
+                  />
+                </div>
+
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, fontSize: 14 }}>
+                    주민등록번호 *
+                  </label>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <input
+                      type="text"
+                      value={identityForm.rrn1}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, '');
+                        if (value.length <= 6) {
+                          setIdentityForm({ ...identityForm, rrn1: value });
+                        }
+                      }}
+                      placeholder="생년월일 6자리"
+                      maxLength={6}
+                      required
+                      style={{
+                        flex: 1,
+                        padding: '12px',
+                        border: '1px solid #d1d5db',
+                        borderRadius: 8,
+                        fontSize: 14,
+                        textAlign: 'center',
+                      }}
+                    />
+                    <span style={{ fontSize: 18, fontWeight: 'bold' }}>-</span>
+                    <input
+                      type="password"
+                      value={identityForm.rrn2}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, '');
+                        if (value.length <= 7) {
+                          setIdentityForm({ ...identityForm, rrn2: value });
+                        }
+                      }}
+                      placeholder="●●●●●●●"
+                      maxLength={7}
+                      required
+                      style={{
+                        flex: 1,
+                        padding: '12px',
+                        border: '1px solid #d1d5db',
+                        borderRadius: 8,
+                        fontSize: 14,
+                        textAlign: 'center',
+                      }}
+                    />
+                  </div>
+                  <div style={{ fontSize: 12, color: '#6b7280', marginTop: 4 }}>
+                    예: 850101-1234567
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleVerifyIdentity}
+                  disabled={verifying || !identityForm.name || !identityForm.rrn1 || !identityForm.rrn2}
+                  style={{
+                    width: '100%',
+                    padding: '14px',
+                    background: verifying ? '#9ca3af' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: 8,
+                    cursor: verifying ? 'not-allowed' : 'pointer',
+                    fontWeight: 600,
+                    fontSize: 16,
+                  }}
+                >
+                  {verifying ? '인증 중...' : '실명인증'}
+                </button>
+              </div>
+            ) : (
+              /* 2단계: 회원가입 정보 입력 */
+              <form onSubmit={handleSignup}>
+                <div style={{
+                  marginBottom: 16,
+                  padding: 12,
+                  background: '#d1fae5',
+                  borderRadius: 8,
+                  fontSize: 13,
+                  color: '#065f46',
+                }}>
+                  ✅ <strong>실명인증 완료</strong><br/>
+                  이제 회원가입 정보를 입력해주세요
+                </div>
+
+                {/* 인증된 이름 (읽기 전용) */}
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, fontSize: 14 }}>
+                    이름
+                  </label>
+                  <input
+                    type="text"
+                    value={verifiedName}
+                    readOnly
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: 8,
+                      fontSize: 14,
+                      background: '#f9fafb',
+                      color: '#6b7280',
+                    }}
+                  />
+                  <div style={{ fontSize: 12, color: '#10b981', marginTop: 4 }}>
+                    ✅ 실명인증 완료
+                  </div>
+                </div>
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, fontSize: 14 }}>
+                아이디 (핸드폰번호) *
+              </label>
+              <input
+                type="tel"
+                value={signupForm.phone}
+                onChange={(e) => setSignupForm({ ...signupForm, phone: e.target.value })}
+                placeholder="01012345678"
+                required
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: 8,
+                  fontSize: 14,
+                }}
+              />
+              <div style={{ fontSize: 12, color: '#6b7280', marginTop: 4 }}>
+                추천인 링크: https://jangpyosa.com/{signupForm.phone || '핸드폰번호'}
+              </div>
+            </div>
+
+
+
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, fontSize: 14 }}>
+                이메일
+              </label>
+              <input
+                type="email"
+                value={signupForm.email}
+                onChange={(e) => setSignupForm({ ...signupForm, email: e.target.value })}
+                placeholder="example@jangpyosa.com"
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: 8,
+                  fontSize: 14,
+                }}
+              />
+            </div>
+
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, fontSize: 14 }}>
+                비밀번호 *
+              </label>
+              <input
+                type="password"
+                value={signupForm.password}
+                onChange={(e) => setSignupForm({ ...signupForm, password: e.target.value })}
+                placeholder="최소 6자 이상"
+                required
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: 8,
+                  fontSize: 14,
+                }}
+              />
+            </div>
+
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, fontSize: 14 }}>
+                비밀번호 확인 *
+              </label>
+              <input
+                type="password"
+                value={signupForm.confirmPassword}
+                onChange={(e) => setSignupForm({ ...signupForm, confirmPassword: e.target.value })}
+                placeholder="비밀번호 재입력"
+                required
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: 8,
+                  fontSize: 14,
+                }}
+              />
+            </div>
+
+            {/* 본부 선택 */}
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, fontSize: 14 }}>
+                소속 본부 선택 *
+              </label>
+              <select
+                value={selectedHeadquarter}
+                onChange={(e) => {
+                  const hqId = e.target.value;
+                  console.log('🏢 본부 선택:', hqId);
+                  setSelectedHeadquarter(hqId);
+                  // 본부 직속인 경우 본부 ID를 managerId로 설정
+                  setSignupForm(prev => {
+                    const updated = { ...prev, managerId: hqId };
+                    console.log('📝 signupForm 업데이트:', updated);
+                    return updated;
+                  });
+                }}
+                required
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: 8,
+                  fontSize: 14,
+                  background: 'white',
+                }}
+              >
+                <option value="">본부를 선택해주세요</option>
+                {(() => {
+                  console.log('🔍 본부 드롭다운 렌더링:', {
+                    'organizations.headquarters': organizations.headquarters,
+                    'isArray': Array.isArray(organizations.headquarters),
+                    'length': organizations.headquarters?.length
+                  });
+                  return organizations.headquarters.map((hq) => (
+                    <option key={hq.id} value={hq.id}>
+                      {hq.name}
+                    </option>
+                  ));
+                })()}
+              </select>
+            </div>
+
+            {/* 지사 선택 (본부 선택 시에만 표시) */}
+            {selectedHeadquarter && availableBranches.length > 0 && (
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, fontSize: 14 }}>
+                  소속 지사 선택 (선택사항)
+                </label>
+                <select
+                  value={signupForm.managerId}
+                  onChange={(e) => {
+                    const branchId = e.target.value || selectedHeadquarter;
+                    console.log('🏪 지사 선택:', e.target.value, '→ managerId:', branchId);
+                    setSignupForm(prev => {
+                      const updated = { ...prev, managerId: branchId };
+                      console.log('📝 signupForm 업데이트:', updated);
+                      return updated;
+                    });
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: 8,
+                    fontSize: 14,
+                    background: 'white',
+                  }}
+                >
+                  <option value={selectedHeadquarter}>본부 직속</option>
+                  {availableBranches.map((branch) => (
+                    <option key={branch.id} value={branch.id}>
+                      {branch.name}
+                    </option>
+                  ))}
+                </select>
+                <div style={{ fontSize: 12, color: '#6b7280', marginTop: 4 }}>
+                  지사를 선택하지 않으면 본부 직속으로 배정됩니다.
+                </div>
+              </div>
+            )}
+
+            <div style={{ marginBottom: 24 }} />
+
+            <button
+              type="submit"
+              disabled={loading}
+              style={{
+                width: '100%',
+                padding: '14px',
+                background: loading ? '#9ca3af' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                color: 'white',
+                border: 'none',
+                borderRadius: 8,
+                cursor: loading ? 'not-allowed' : 'pointer',
+                fontWeight: 600,
+                fontSize: 16,
+              }}
+            >
+              {loading ? '가입 중...' : '회원가입'}
+            </button>
+          </form>
+            )}
+          </div>
+        )}
+
+        {/* 아이디/비밀번호 찾기 */}
+        {isLogin && (
+          <div style={{
+            marginTop: 16,
+            textAlign: 'center',
+            fontSize: 14,
+          }}>
+            <a href="/forgot-password" style={{ color: '#6b7280', textDecoration: 'underline' }}>
+              아이디/비밀번호 찾기
+            </a>
+          </div>
+        )}
+
+        {/* 회원가입 시 로그인 페이지로 이동 버튼 */}
+        {!isLogin && (
+          <div style={{
+            marginTop: 16,
+            textAlign: 'center',
+            fontSize: 14,
+          }}>
+            <span style={{ color: '#6b7280' }}>이미 계정이 있으신가요? </span>
+            <button
+              onClick={() => setIsLogin(true)}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: '#667eea',
+                textDecoration: 'underline',
+                cursor: 'pointer',
+                fontSize: 14,
+                fontWeight: 600,
+              }}
+            >
+              로그인하기
+            </button>
+          </div>
+        )}
+
+        {/* 안내 메시지 */}
+        <div style={{
+          marginTop: 24,
+          padding: 16,
+          background: '#f9fafb',
+          borderRadius: 8,
+          fontSize: 13,
+          color: '#6b7280',
+        }}>
+          <p style={{ margin: 0, marginBottom: 8 }}>
+            💼 <strong>본부지사매니저 전용 계정입니다</strong>
+          </p>
+          <p style={{ margin: 0 }}>
+            기업 고용의무/표준사업장 회원은 메인 페이지에서 가입해주세요.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -960,3 +960,55 @@ Company ID (최상위)
 - **User.employeeId 연동**: 16개 계정 모두 정상
 
 상세 정보: [docs/ID_SYSTEM_ARCHITECTURE.md](./docs/ID_SYSTEM_ARCHITECTURE.md)
+
+---
+
+## ⚠️ APICK API 통합 - 수정 금지 ⚠️
+
+**현재 프로덕션 환경에서 정상 작동 중인 APICK API 통합입니다.**
+
+### 🔒 절대 수정하지 말 것
+
+다음 파일들은 **절대 수정하지 마세요**:
+
+1. `apps/api/src/services/apick.ts` - APICK API 호출 로직
+2. `ecosystem.config.js` - APICK_API_KEY 환경변수 설정
+3. `.env` - APICK API 키 저장
+4. `apps/api/src/config.ts` - 환경변수 로드
+
+### 📋 현재 작동 중인 설정
+
+- **API 키**: `41173030f4fc1055778b2f97ce9659b5`
+- **엔드포인트**: `https://apick.app/rest/biz_detail`
+- **Content-Type**: `application/x-www-form-urlencoded`
+- **Body 형식**: URLSearchParams
+
+### 🆘 문제 발생 시 복구 방법
+
+```bash
+# 백업에서 복구
+cp .apick_backups/apick.ts.WORKING_* apps/api/src/services/apick.ts
+cp .apick_backups/ecosystem.config.js.WORKING_* ecosystem.config.js
+cp .apick_backups/.env.WORKING_* .env
+
+# 빌드 및 재시작
+cd apps/api
+npm run build
+cd ../..
+pm2 restart jangpyosa-api --update-env
+```
+
+### 📝 Git 커밋 참조
+
+작동하는 버전: **2be0c54** (APICK Mock 모드 완전 제거 및 실제 API 키 복구)
+
+```bash
+# 작동하는 버전으로 복구
+git show 2be0c54:apps/api/src/services/apick.ts > apps/api/src/services/apick.ts
+```
+
+**마지막 작동 확인**: 2026-03-13
+**담당자**: AI Assistant
+**중요도**: ⭐⭐⭐⭐⭐ (최고)
+
+---
