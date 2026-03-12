@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 module.exports = {
   apps: [
     {
@@ -9,7 +11,12 @@ module.exports = {
       watch: false,
       env: {
         NODE_ENV: 'production',
-        PORT: 4000
+        PORT: process.env.PORT || 4000,
+        DATABASE_URL: process.env.DATABASE_URL,
+        JWT_SECRET: process.env.JWT_SECRET,
+        JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET,
+        APICK_API_KEY: process.env.APICK_API_KEY,
+        CORS_ORIGIN: process.env.CORS_ORIGIN || 'https://jangpyosa.com'
       }
     },
     {
