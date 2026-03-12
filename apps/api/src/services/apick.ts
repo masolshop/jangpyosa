@@ -1,5 +1,4 @@
 import { config } from "../config.js";
-import crypto from "crypto";
 
 // APICK API 응답 타입
 export type ApickBizDetail = {
@@ -59,6 +58,15 @@ export async function verifyBizNo(
   // 실제 APICK API 호출
   try {
     const apiKey = config.apickApiKey;
+    
+    // 🔍 디버깅: API 키 확인
+    console.log("🔍 [APICK] API Key Check:");
+    console.log("  - Key exists:", !!apiKey);
+    console.log("  - Key length:", apiKey ? apiKey.length : 0);
+    console.log("  - Key first 8 chars:", apiKey ? apiKey.substring(0, 8) : 'N/A');
+    console.log("  - Key last 8 chars:", apiKey ? apiKey.substring(apiKey.length - 8) : 'N/A');
+    console.log("  - BizNo:", cleanBizNo);
+    
     if (!apiKey) {
       console.error("❌ APICK API Key not configured");
       return { ok: false, error: "APICK API Key가 설정되지 않았습니다" };
@@ -67,6 +75,12 @@ export async function verifyBizNo(
     // FormData 생성
     const formData = new URLSearchParams();
     formData.append("biz_no", cleanBizNo);
+    
+    console.log("📤 [APICK] Request:");
+    console.log("  - URL: https://apick.app/rest/biz_detail");
+    console.log("  - Method: POST");
+    console.log("  - Header CL_AUTH_KEY:", apiKey.substring(0, 8) + "..." + apiKey.substring(apiKey.length - 4));
+    console.log("  - Body:", formData.toString());
 
     const response = await fetch("https://apick.app/rest/biz_detail", {
       method: "POST",
@@ -76,6 +90,10 @@ export async function verifyBizNo(
       },
       body: formData.toString(),
     });
+
+    console.log("📥 [APICK] Response:");
+    console.log("  - Status:", response.status, response.statusText);
+    console.log("  - OK:", response.ok);
 
     if (!response.ok) {
       console.error(`❌ APICK API HTTP error: ${response.status} ${response.statusText}`);
@@ -105,7 +123,7 @@ export async function verifyBizNo(
 
     // result.error 체크 (에러 응답)
     if (result.result && result.result.error) {
-      console.error(`❌ APICK API error: ${result.result.error}`);
+      console.error(`❌ APICK result error: ${result.result.error}`);
       return { ok: false, error: result.result.error };
     }
 
@@ -120,6 +138,12 @@ export async function verifyBizNo(
     // 데이터 성공 여부 확인
     if (bizData.success !== undefined && bizData.success !== 1) {
       console.error(`❌ APICK data validation failed: success=${bizData.success}`);
+      
+      // success=0인 경우 상세 에러 확인
+      if (bizData.error) {
+        return { ok: false, error: bizData.error };
+      }
+      
       return { ok: false, error: "사업자번호 검증 실패" };
     }
 
@@ -129,6 +153,7 @@ export async function verifyBizNo(
     }
 
     // 성공
+    console.log(`✅ APICK API 성공: ${bizData.회사명} (${bizData.대표명})`);
     return {
       ok: true,
       name: bizData.회사명,
@@ -136,7 +161,7 @@ export async function verifyBizNo(
       data: bizData,
     };
   } catch (error: any) {
-    console.error("❌ APICK API error:", error);
+    console.error("❌ APICK API exception:", error);
     return { ok: false, error: "APICK API 호출 중 오류 발생: " + error.message };
   }
 }
