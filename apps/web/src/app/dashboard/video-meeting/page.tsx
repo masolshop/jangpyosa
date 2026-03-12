@@ -71,6 +71,7 @@ export default function AdminVideoMeetingPage() {
           userRole === 'BUYER' || 
           userRole === 'SUPPLIER' || 
           userRole === 'SUPER_ADMIN' ||
+          (userRole === 'EMPLOYEE' && (companyType === 'BUYER' || companyType === 'SUPPLIER')) ||
           companyType === 'BUYER' || 
           companyType === 'SUPPLIER';
 

@@ -304,10 +304,17 @@ export default function OrganizationsManagementPage() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          ...formData,
-          referredById: selectedReferrer?.id || null, // 🆕 추천 매니저 ID 추가
-        }),
+        body: JSON.stringify(
+          modalMode === 'create'
+            ? { ...formData, referredById: selectedReferrer?.id || null }
+            : {
+                // edit 모드: 백엔드가 받는 필드만 전송
+                name: formData.name,
+                email: formData.email || null,
+                parentId: formData.parentId || null,
+                notes: formData.notes || null,
+              }
+        ),
       });
       
       const data = await response.json();
@@ -1090,7 +1097,7 @@ export default function OrganizationsManagementPage() {
               {/* 조직명 */}
               <div>
                 <label style={{ display: 'block', marginBottom: 6, fontWeight: 600, fontSize: 14 }}>
-                  {formData.type === 'HEADQUARTERS' ? '본부명' : '지사명'} *
+                  {(modalMode === "edit" ? selectedOrg?.type : formData.type) === "HEADQUARTERS" ? "본부명" : "지사명"} *
                 </label>
                 <input
                   type="text"
