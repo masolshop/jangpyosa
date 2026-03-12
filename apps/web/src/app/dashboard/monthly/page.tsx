@@ -97,32 +97,47 @@ export default function MonthlyManagementPage() {
   }, [year]);
 
   // ============================================
-  // 부담기초액 계산 함수 (2026년 기준)
+  // 부담기초액 계산 함수 (2026년 기준 - 백엔드와 일치)
   // ============================================
   
   /**
-   * 고용수준에 따른 월 부담기초액 계산
+   * 2026년 부담금 기초액: 1,294,128원 (최저임금 60%)
+   * 고용률에 따른 부담금 적용률:
+   * - 100% 이상: 0% (부담금 없음)
+   * - 75~100%: 25%
+   * - 50~75%: 50%
+   * - 25~50%: 75%
+   * - 0~25%: 100%
+   * 
    * @param obligatedCount 의무고용인원
-   * @param actualCount 실제 고용인원
-   * @returns 월 부담기초액
+   * @param recognizedCount 실제 인정 인원
+   * @returns 1인당 월 부담금
    */
-  function getMonthlyLevyBase(obligatedCount: number, actualCount: number): number {
+  function getMonthlyLevyBase(obligatedCount: number, recognizedCount: number): number {
     if (obligatedCount === 0) return 0;
     
-    const employmentRate = actualCount / obligatedCount;
+    const LEVY_BASE_AMOUNT = 1294128; // 2026년 기준 (최저임금 2,156,880 × 60%)
     
-    if (actualCount === 0) {
-      return 2156880; // 장애인 0명 고용
-    } else if (employmentRate < 0.25) {
-      return 1813000; // 1/4 미만
-    } else if (employmentRate < 0.5) {
-      return 1554000; // 1/4 ~ 1/2 미만
-    } else if (employmentRate < 0.75) {
-      return 1372700; // 1/2 ~ 3/4 미만
+    // 고용률 계산
+    const employmentRate = (recognizedCount / obligatedCount) * 100;
+    
+    // 부담금 적용률 결정
+    let applicationRate = 0;
+    if (employmentRate >= 100) {
+      applicationRate = 0;      // 100% 이상: 부담금 없음
+    } else if (employmentRate >= 75) {
+      applicationRate = 0.25;   // 75~100%: 25% 적용
+    } else if (employmentRate >= 50) {
+      applicationRate = 0.50;   // 50~75%: 50% 적용
+    } else if (employmentRate >= 25) {
+      applicationRate = 0.75;   // 25~50%: 75% 적용
     } else {
-      return 1295000; // 3/4 이상 (미달 시에도 적용)
+      applicationRate = 1.00;   // 0~25%: 100% 적용
     }
+    
+    return Math.round(LEVY_BASE_AMOUNT * applicationRate);
   }
+
 
   // ============================================
   // 월별 데이터 API
