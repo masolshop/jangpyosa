@@ -1,5 +1,3 @@
-require('dotenv').config();
-
 module.exports = {
   apps: [
     {
@@ -11,13 +9,14 @@ module.exports = {
       watch: false,
       env: {
         NODE_ENV: 'production',
-        PORT: process.env.PORT || 4000,
-        DATABASE_URL: process.env.DATABASE_URL,
-        JWT_SECRET: process.env.JWT_SECRET,
-        JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET,
-        APICK_API_KEY: process.env.APICK_API_KEY,
-        CORS_ORIGIN: process.env.CORS_ORIGIN || 'https://jangpyosa.com'
-      }
+        PORT: 4000,
+        CORS_ORIGIN: 'https://jangpyosa.com',
+        DATABASE_URL: process.env.DATABASE_URL || 'postgresql://jangpyosa_user:장표사2024!@localhost:5432/jangpyosa_db',
+        JWT_SECRET: process.env.JWT_SECRET || 'jangpyosa_jwt_secret_2024_production',
+        JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET || 'jangpyosa_jwt_refresh_secret_2024_production',
+        APICK_API_KEY: '41173030f4fc1055778b2f97ce9659b5'
+      },
+      max_memory_restart: '500M'
     },
     {
       name: 'jangpyosa-web',

@@ -1,5 +1,13 @@
 import dotenv from "dotenv";
-dotenv.config({ path: "../../.env" });
+import path from "path";
+import { fileURLToPath } from "url";
+
+// ES 모듈에서 __dirname 사용
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// 프로젝트 루트의 .env 파일 로드
+dotenv.config({ path: path.join(__dirname, "../../../.env") });
 
 export const config = {
   port: Number(process.env.PORT ?? 4000),
