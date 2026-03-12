@@ -26,6 +26,7 @@ export type ApickBizDetail = {
   갱신일?: string;
   최초등록일?: string;
   success: number; // 0: 실패, 1: 성공, 3: timeout
+  error?: string; // 에러 메시지
 };
 
 export type ApickResponse = {
@@ -90,6 +91,16 @@ export async function verifyBizNo(
     if (!result.api || !result.api.success) {
       console.error("❌ APICK API returned success=false");
       return { ok: false, error: "APICK API 호출 실패" };
+    }
+
+    // Rate Limit 에러 처리
+    if (result.data && result.data.error) {
+      if (result.data.error.includes("처리량이 너무 많습니다")) {
+        console.warn("⚠️ APICK API Rate Limit: 잠시 후 다시 시도해주세요");
+        return { ok: false, error: "현재 사업자번호 조회 요청이 많습니다. 잠시 후 다시 시도해주세요." };
+      }
+      console.error(`❌ APICK data error: ${result.data.error}`);
+      return { ok: false, error: result.data.error };
     }
 
     // result.error 체크 (에러 응답)
