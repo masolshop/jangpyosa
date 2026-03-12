@@ -321,7 +321,11 @@ export default function MonthlyManagementPage() {
         // 고용수준별 부담기초액 적용
         const monthlyLevyBase = getMonthlyLevyBase(obligatedCount, data.recognizedCount);
         const levy = shortfallCount * monthlyLevyBase;
-        const netAmount = data.incentive - levy;
+        
+        // ⚠️ 중요: 미달 시 장려금은 0원 (백엔드 로직과 일치)
+        const isDeficit = data.recognizedCount < obligatedCount;
+        const adjustedIncentive = isDeficit ? 0 : data.incentive;
+        const netAmount = adjustedIncentive - levy;
         
         return {
           ...data,
@@ -367,7 +371,11 @@ export default function MonthlyManagementPage() {
         // 고용수준별 부담기초액 적용
         const monthlyLevyBase = getMonthlyLevyBase(obligatedCount, firstRecognized);
         const levy = shortfallCount * monthlyLevyBase;
-        const netAmount = firstIncentive - levy;
+        
+        // ⚠️ 중요: 미달 시 장려금은 0원
+        const isDeficit = firstRecognized < obligatedCount;
+        const adjustedIncentive = isDeficit ? 0 : firstIncentive;
+        const netAmount = adjustedIncentive - levy;
         
         return {
           ...data,
@@ -399,7 +407,11 @@ export default function MonthlyManagementPage() {
           // 고용수준별 부담기초액 적용
           const monthlyLevyBase = getMonthlyLevyBase(obligatedCount, newData[i].recognizedCount);
           const levy = shortfallCount * monthlyLevyBase;
-          const netAmount = newData[i].incentive - levy;
+          
+          // ⚠️ 중요: 미달 시 장려금은 0원
+          const isDeficit = newData[i].recognizedCount < obligatedCount;
+          const adjustedIncentive = isDeficit ? 0 : newData[i].incentive;
+          const netAmount = adjustedIncentive - levy;
           
           newData[i] = {
             ...newData[i],
